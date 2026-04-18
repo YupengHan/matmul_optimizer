@@ -1,0 +1,66 @@
+{
+  "dataset_id": "fixed_bf16_gemm_v1",
+  "description": "Single fixed-shape BF16 GEMM benchmark for shape-specialized CUDA kernel optimization.",
+  "gemm": {
+    "m": 6464,
+    "n": 7776,
+    "k": 7232,
+    "layout_a": "row_major",
+    "layout_b": "row_major",
+    "layout_c": "row_major",
+    "input_dtype": "bf16",
+    "accumulator_dtype": "fp32",
+    "output_dtype": "bf16"
+  },
+  "distribution": {
+    "name": "uniform",
+    "low": -1.0,
+    "high": 1.0
+  },
+  "benchmark_policy": {
+    "benchmark_case": "case_00_seed_3407",
+    "correctness_cases": [
+      "case_00_seed_3407",
+      "case_01_seed_9713",
+      "case_02_seed_1729"
+    ],
+    "warmup_iterations": 10,
+    "timed_iterations": 30,
+    "cache_flush_scratch_mib": 256,
+    "metric_of_record": "median_kernel_runtime_ms"
+  },
+  "correctness_policy": {
+    "primary_target": "C_ref_fp32.bin",
+    "secondary_target": "C_ref_bf16.bin",
+    "initial_rtol": 0.01,
+    "initial_atol": 0.15,
+    "note": "Recalibrate on the first CUTLASS sanity run for this exact shape."
+  },
+  "cases": [
+    {
+      "case_id": "case_00_seed_3407",
+      "seed": 3407
+    },
+    {
+      "case_id": "case_01_seed_9713",
+      "seed": 9713
+    },
+    {
+      "case_id": "case_02_seed_1729",
+      "seed": 1729
+    }
+  ],
+  "file_layout": {
+    "directory_pattern": "artifacts/datasets/<dataset_id>/cases/<case_id>/",
+    "files": {
+      "A_bf16": "A.bf16.bin",
+      "B_bf16": "B.bf16.bin",
+      "C_ref_fp32": "C_ref_fp32.bin",
+      "C_ref_bf16": "C_ref_bf16.bin",
+      "meta": "meta.json",
+      "checksums": "checksums.json"
+    },
+    "bf16_storage": "raw uint16 bf16 bit patterns, row-major",
+    "fp32_storage": "raw float32, row-major"
+  }
+}
