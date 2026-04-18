@@ -9,12 +9,14 @@
 
 ## CUTLASS baseline
 
-- status: NOT RUN
-- runtime: N/A
-- TFLOP/s: N/A
-- date: N/A
-- artifact run dir: N/A
-- notes: CUTLASS reference runner has not been added or measured yet
+- status: RECORDED
+- kernel tag: `cutlass_ref_v0`
+- runtime: `25.91788864 ms` median on `case_00_seed_3407`
+- TFLOP/s: `28.05087373`
+- correctness: PASS on all 3 configured cases under the current tolerance policy
+- date: `2026-04-18`
+- artifact run dir: `runs/20260418_115324_cutlass_ref_v0`
+- notes: first CUTLASS baseline and first CUTLASS Nsight Compute artifacts now exist; `ncu_profile.ncu-rep` and `ncu_metrics.csv` were both recorded, with headline metrics including `sm__pipe_tensor_cycles_active = 49.25`, `sm__throughput = 49.39`, `dram__throughput = 42.76`, and `launch__occupancy_limit_registers = 2`
 
 ## Best custom kernel
 
@@ -28,6 +30,6 @@
 
 ## Gap
 
-- absolute runtime gap: UNKNOWN
-- percent gap: UNKNOWN
-- current view of limiting factor: a valid host-side custom-kernel baseline now exists, but there is still no CUTLASS reference result to compare against
+- absolute runtime gap: `776.92467116 ms` with `bf16_gemm_v1_host_v0` slower than CUTLASS on `case_00_seed_3407`
+- percent gap: `2997.63874269%` slower than CUTLASS, or `30.97638743x` the CUTLASS runtime
+- current view of limiting factor: the gap is still architectural rather than procedural; CUTLASS now shows a live Tensor Core path with `sm__pipe_tensor_cycles_active = 49.25`, while the current custom baseline still shows `sm__pipe_tensor_cycles_active = 0`

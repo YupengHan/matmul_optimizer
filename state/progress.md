@@ -23,9 +23,9 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - placeholder custom kernel: READY
 - first end-to-end evaluation attempt: COMPLETE
 - first host-side GPU run: COMPLETE
-- CUTLASS baseline: TODO
+- CUTLASS baseline: COMPLETE
 - current best custom kernel: HOST BASELINE RECORDED
-- gap to CUTLASS: UNKNOWN
+- gap to CUTLASS: KNOWN
 
 ## Verified snapshot
 
@@ -36,6 +36,11 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - correctness passed on all 3 configured cases under the current tolerance policy
 - the recorded performance result for `case_00_seed_3407` is `802.8425598 ms` median runtime, `796.2209229 ms` p10, `807.9350769 ms` p90, and `0.9055566534 TFLOP/s`
 - Nsight Compute completed successfully for the host-side run and wrote `ncu_profile.ncu-rep` plus `ncu_metrics.csv`
+- latest accepted CUTLASS baseline is `runs/20260418_115324_cutlass_ref_v0`
+- CUTLASS correctness passed on all 3 configured cases under the current tolerance policy
+- CUTLASS performance for `case_00_seed_3407` is recorded at `25.91788864 ms` median runtime, `25.30171776 ms` p10, `27.62199116 ms` p90, and `28.05087373 TFLOP/s`
+- the first CUTLASS Nsight Compute capture completed successfully and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
+- the current custom baseline is `776.92467116 ms` slower than CUTLASS on the metric-of-record case, which is a `30.97638743x` runtime ratio
 - the earlier sandbox-only run at `runs/20260418_021152_bf16_gemm_v1` still serves as a historical note about environment visibility, not a project-level CUDA failure
 
 ## Iteration log
@@ -79,9 +84,27 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
   - `launch__occupancy_limit_registers = 6`
   - this is consistent with a stable but very slow placeholder implementation rather than a Tensor Core path
 
+### Iteration 3 - CUTLASS baseline + first CUTLASS NCU
+
+- added a CUTLASS-specific wrapper path that now forwards `--ncu-bin` and related NCU arguments into `eval_kernel.py`
+- improved `eval_kernel.py` NCU CSV parsing so it can read the raw wide-table format produced by `ncu --csv --page raw`
+- recorded the first accepted CUTLASS baseline under `runs/20260418_115324_cutlass_ref_v0`
+- correctness passed for:
+  - `case_00_seed_3407`
+  - `case_01_seed_9713`
+  - `case_02_seed_1729`
+- performance for `case_00_seed_3407` was recorded at `25.91788864 ms` median runtime and `28.05087373 TFLOP/s`
+- Nsight Compute completed successfully for the CUTLASS baseline and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
+- quick NCU read for the CUTLASS reference path:
+  - `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active = 49.25`
+  - `sm__throughput.avg.pct_of_peak_sustained_elapsed = 49.39`
+  - `dram__throughput.avg.pct_of_peak_sustained_elapsed = 42.76`
+  - `launch__occupancy_limit_registers = 2`
+  - this confirms the reference path is exercising Tensor Core hardware and gives a concrete baseline target for the custom kernel
+
 ## Near-term next actions
 
-1. add and measure a CUTLASS reference runner on the same host
-2. record both baselines in `state/benchmark_baselines.md`
-3. use the host-side Nsight Compute result to choose the first optimization direction
-4. replace the placeholder GEMM path with a Tensor Core-aware implementation and re-measure
+1. compare the custom-kernel NCU snapshot directly against the new CUTLASS baseline to isolate the first architectural delta worth fixing
+2. replace the placeholder GEMM path with a Tensor Core-aware implementation and re-measure on the same harness
+3. track whether the next custom candidate raises `sm__pipe_tensor_cycles_active` toward the CUTLASS baseline while preserving correctness
+4. reduce the current `30.97638743x` runtime gap with the first non-placeholder kernel revision

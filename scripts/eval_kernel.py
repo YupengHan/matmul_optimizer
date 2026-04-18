@@ -147,33 +147,61 @@ def parse_ncu_csv(csv_path: Path) -> Dict[str, str]:
     except Exception:
         return {}
 
+    normalized_rows = [[cell.strip() for cell in row] for row in rows]
+
     header_idx = None
     metric_name_idx = None
     metric_value_idx = None
 
-    for i, row in enumerate(rows):
-        normalized = [cell.strip() for cell in row]
-        if 'Metric Name' in normalized and 'Metric Value' in normalized:
+    for i, row in enumerate(normalized_rows):
+        if 'Metric Name' in row and 'Metric Value' in row:
             header_idx = i
-            metric_name_idx = normalized.index('Metric Name')
-            metric_value_idx = normalized.index('Metric Value')
+            metric_name_idx = row.index('Metric Name')
+            metric_value_idx = row.index('Metric Value')
             break
 
-    if header_idx is None or metric_name_idx is None or metric_value_idx is None:
-        return {}
+    if header_idx is not None and metric_name_idx is not None and metric_value_idx is not None:
+        metrics: Dict[str, str] = {}
+        for row in normalized_rows[header_idx + 1:]:
+            if not row:
+                continue
+            if metric_name_idx >= len(row) or metric_value_idx >= len(row):
+                continue
+            name = row[metric_name_idx]
+            value = row[metric_value_idx]
+            if not name:
+                continue
+            metrics[name] = value
+        return metrics
 
-    metrics: Dict[str, str] = {}
-    for row in rows[header_idx + 1:]:
-        if not row:
+    # Nsight Compute `--csv --page raw` also emits a wide table after a pair of
+    # `==PROF==` banner lines. In that layout, row N is the header, row N+1 is
+    # mostly units, and row N+2 holds the values for a single kernel launch.
+    for i, row in enumerate(normalized_rows):
+        if 'ID' not in row:
             continue
-        if metric_name_idx >= len(row) or metric_value_idx >= len(row):
+        if not any('__' in cell or cell.startswith('launch__') for cell in row):
             continue
-        name = row[metric_name_idx].strip()
-        value = row[metric_value_idx].strip()
-        if not name:
-            continue
-        metrics[name] = value
-    return metrics
+
+        data_row = None
+        for candidate in normalized_rows[i + 1:]:
+            if len(candidate) != len(row):
+                continue
+            if candidate and candidate[0]:
+                data_row = candidate
+                break
+
+        if data_row is None:
+            return {}
+
+        metrics = {}
+        for name, value in zip(row, data_row):
+            if not name or not value:
+                continue
+            metrics[name] = value
+        return metrics
+
+    return {}
 
 
 def pick_headline_metrics(metrics: Dict[str, str], wanted: List[str]) -> Dict[str, str]:

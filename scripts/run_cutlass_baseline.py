@@ -30,6 +30,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--iters', type=int, default=None)
     parser.add_argument('--flush-cache-mb', type=int, default=256)
     parser.add_argument('--skip-ncu', action='store_true')
+    parser.add_argument('--ncu-bin', default='ncu', help='Nsight Compute CLI binary')
+    parser.add_argument('--ncu-metrics-file', type=Path, default=Path('configs/ncu_metrics_core.txt'))
     parser.add_argument('--extra-runner-arg', action='append', default=[], help='Extra arg appended to the CUTLASS runner; may be passed multiple times')
     return parser.parse_args()
 
@@ -45,6 +47,8 @@ def main() -> None:
         '--dataset-root', str(args.dataset_root),
         '--runs-root', str(args.runs_root),
         '--flush-cache-mb', str(args.flush_cache_mb),
+        '--ncu-bin', args.ncu_bin,
+        '--ncu-metrics-file', str(args.ncu_metrics_file),
     ]
 
     if args.workdir is not None:
