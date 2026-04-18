@@ -22,8 +22,9 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - custom CUDA runner: READY
 - placeholder custom kernel: READY
 - first end-to-end evaluation attempt: COMPLETE
+- first host-side GPU run: COMPLETE
 - CUTLASS baseline: TODO
-- current best custom kernel: NO VALID GPU RESULT YET
+- current best custom kernel: HOST BASELINE RECORDED
 - gap to CUTLASS: UNKNOWN
 
 ## Verified snapshot
@@ -31,10 +32,11 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - configured and built successfully with `cmake -S . -B build` and `cmake --build build -j 4`
 - local dataset summary exists under `artifacts/datasets/fixed_bf16_gemm_v1/generation_summary.json`
 - total generated dataset size is `1452.1171875 MiB` across 3 cases
-- latest local evaluation attempt is `runs/20260418_021152_bf16_gemm_v1`
-- that run was executed from the Codex sandbox and failed before measurement because the sandbox environment reported `cudaMalloc: no CUDA-capable device is detected`
-- this should be treated as a sandbox visibility limitation, not as proof that the project cannot run on the host GPU
-- operator note: the external host terminal can access the GPU; the missing piece is to record a successful host-side run back into the repo state
+- latest accepted host-side evaluation is `runs/20260418_111959_bf16_gemm_v1_host_v0`
+- correctness passed on all 3 configured cases under the current tolerance policy
+- the recorded performance result for `case_00_seed_3407` is `802.8425598 ms` median runtime, `796.2209229 ms` p10, `807.9350769 ms` p90, and `0.9055566534 TFLOP/s`
+- Nsight Compute completed successfully for the host-side run and wrote `ncu_profile.ncu-rep` plus `ncu_metrics.csv`
+- the earlier sandbox-only run at `runs/20260418_021152_bf16_gemm_v1` still serves as a historical note about environment visibility, not a project-level CUDA failure
 
 ## Iteration log
 
@@ -61,9 +63,25 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
   - `cudaMalloc: no CUDA-capable device is detected`
   - the failure came from sandbox GPU visibility, not from a confirmed host-side CUDA failure
 
+### Iteration 2 - first host GPU run
+
+- reran the existing `custom_runner` + `eval_kernel.py` pipeline on the host-visible RTX 3070 Laptop GPU
+- recorded the first accepted custom-kernel artifacts under `runs/20260418_111959_bf16_gemm_v1_host_v0`
+- correctness passed for:
+  - `case_00_seed_3407`
+  - `case_01_seed_9713`
+  - `case_02_seed_1729`
+- performance for `case_00_seed_3407` was recorded at `802.8425598 ms` median runtime and `0.9055566534 TFLOP/s`
+- Nsight Compute completed and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
+- quick NCU read for the placeholder kernel:
+  - `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active = 0`
+  - `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct = 57.07`
+  - `launch__occupancy_limit_registers = 6`
+  - this is consistent with a stable but very slow placeholder implementation rather than a Tensor Core path
+
 ## Near-term next actions
 
-1. rerun `build/custom_runner` from the host terminal that can see the GPU and capture the first accepted custom-kernel baseline
-2. add and measure a CUTLASS reference runner on the same host
-3. record both baselines in `state/benchmark_baselines.md`
-4. profile the first successful run with Nsight Compute and choose the first optimization direction
+1. add and measure a CUTLASS reference runner on the same host
+2. record both baselines in `state/benchmark_baselines.md`
+3. use the host-side Nsight Compute result to choose the first optimization direction
+4. replace the placeholder GEMM path with a Tensor Core-aware implementation and re-measure

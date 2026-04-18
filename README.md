@@ -88,14 +88,17 @@ What has been verified in this workspace:
 - `cmake -S . -B build` succeeds
 - `cmake --build build -j 4` succeeds
 - the fixed dataset manifest and generation summary exist locally under `artifacts/datasets/fixed_bf16_gemm_v1/`
-- an end-to-end evaluation attempt exists at `runs/20260418_021152_bf16_gemm_v1/`
+- a sandbox-side evaluation attempt exists at `runs/20260418_021152_bf16_gemm_v1/`
+- a successful host-side evaluation exists at `runs/20260418_111959_bf16_gemm_v1_host_v0/`
 
 Current measurement status:
 
-- the checked-in run under `runs/20260418_021152_bf16_gemm_v1/` was launched from the Codex sandbox and failed at `cudaMalloc` with `no CUDA-capable device is detected`
-- that failure reflects the sandbox runtime environment, not a confirmed project-level GPU bring-up failure on the host machine
-- per the current operator note, the host terminal outside Codex can access the GPU
-- the repo still does **not** yet contain a valid committed custom-kernel runtime or CUTLASS baseline
+- the sandbox-side run under `runs/20260418_021152_bf16_gemm_v1/` failed at `cudaMalloc` with `no CUDA-capable device is detected`
+- that failure reflects the sandbox runtime environment, not a project-level GPU bring-up failure on the host machine
+- the host-side run under `runs/20260418_111959_bf16_gemm_v1_host_v0/` passed correctness on all 3 configured cases with the current tolerance policy
+- the recorded performance result for `case_00_seed_3407` is `802.8425598 ms` median runtime and `0.9055566534 TFLOP/s`
+- Nsight Compute completed for the host-side run and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
+- the repo now contains a valid recorded custom-kernel host run, but it still does **not** yet contain a CUTLASS baseline
 
 ## Source layout rules
 
@@ -169,8 +172,7 @@ This is `agent_d` territory:
 
 ## Immediate next steps
 
-1. rerun the existing pipeline on a host where the RTX 3070 Laptop GPU is visible to CUDA,
-2. capture the first valid correctness and performance result for `bf16_gemm_v1` from the host terminal and write the run artifacts back under `runs/`,
-3. add a CUTLASS reference runner and record the first baseline in `state/benchmark_baselines.md`,
-4. use Nsight Compute on the first successful host-side run to identify the highest-value optimization target,
-5. start replacing the placeholder GEMM kernel with a Tensor Core-aware implementation.
+1. add a CUTLASS reference runner and record the first baseline in `state/benchmark_baselines.md`,
+2. compare the accepted host-side custom-kernel run against CUTLASS on the same machine,
+3. use the Nsight Compute data from `runs/20260418_111959_bf16_gemm_v1_host_v0/` to choose the first optimization direction,
+4. start replacing the placeholder GEMM kernel with a Tensor Core-aware implementation.
