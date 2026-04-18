@@ -71,6 +71,30 @@ matmul_optimizer/
 └── runs/
 ```
 
+## Current repository status
+
+As of `2026-04-18`, the repository is past the pure scaffold stage.
+
+What is already in place:
+
+- deterministic dataset generation via `scripts/generate_fixed_bf16_dataset.py`
+- a compilable CUDA runner target: `build/custom_runner`
+- a callable placeholder kernel in `src/kernels/bf16_gemm_v1.cu`
+- an evaluation orchestrator in `scripts/eval_kernel.py`
+- local state tracking under `state/`
+
+What has been verified in this workspace:
+
+- `cmake -S . -B build` succeeds
+- `cmake --build build -j 4` succeeds
+- the fixed dataset manifest and generation summary exist locally under `artifacts/datasets/fixed_bf16_gemm_v1/`
+- an end-to-end evaluation attempt exists at `runs/20260418_021152_bf16_gemm_v1/`
+
+Current blocking limitation:
+
+- the latest local run failed at `cudaMalloc` with `no CUDA-capable device is detected`
+- so the repo has a working bring-up path, but it does **not** yet have a valid custom-kernel runtime or CUTLASS baseline recorded from this environment
+
 ## Source layout rules
 
 - `src/runner/main.cpp` is the stable runner entrypoint that future CMake targets should compile into `custom_runner`.
@@ -143,8 +167,8 @@ This is `agent_d` territory:
 
 ## Immediate next steps
 
-1. generate the dataset locally,
-2. define the external runner contract for your custom CUDA binary,
-3. connect `scripts/eval_kernel.py` to that runner,
-4. add the first CUTLASS runner,
-5. start tracking the first measured baseline in `state/benchmark_baselines.md`.
+1. rerun the existing pipeline on a host where the RTX 3070 Laptop GPU is visible to CUDA,
+2. capture the first valid correctness and performance result for `bf16_gemm_v1`,
+3. add a CUTLASS reference runner and record the first baseline in `state/benchmark_baselines.md`,
+4. use Nsight Compute on the first successful run to identify the highest-value optimization target,
+5. start replacing the placeholder GEMM kernel with a Tensor Core-aware implementation.

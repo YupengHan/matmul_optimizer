@@ -15,7 +15,7 @@ Reason:
 - none are multiples of 128,
 - still practical for a single 3070 laptop-class GPU.
 
-Status: PENDING
+Status: IMPLEMENTED DEFAULT
 
 ---
 
@@ -27,7 +27,7 @@ Proposed starting policy:
 - start with `rtol=1e-2`, `atol=1.5e-1`
 - recalibrate after the first CUTLASS sanity run
 
-Status: PENDING
+Status: IMPLEMENTED DEFAULT
 
 ---
 
@@ -39,4 +39,4 @@ Proposed policy:
 - refresh every ~10 non-improving rounds,
 - refresh after major kernel rewrites
 
-Status: PENDING
+Status: PENDING AFTER FIRST VALID BASELINE
