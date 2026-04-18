@@ -100,6 +100,21 @@ Current measurement status:
 - Nsight Compute completed for the host-side run and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
 - the repo now contains a valid recorded custom-kernel host run, but it still does **not** yet contain a CUTLASS baseline
 
+## Building the CUTLASS runner
+
+`cutlass_runner` is built as a separate CMake target and keeps the same CLI and JSON contract as `custom_runner`.
+
+Build options:
+
+- default behavior: `cmake -S . -B build && cmake --build build -j 4`
+- if `CUTLASS_ROOT` is not provided, CMake downloads CUTLASS `v3.5.1` from NVIDIA's official release tarball during configure
+- if you already have a local CUTLASS checkout, point CMake at it with `cmake -S . -B build -DCUTLASS_ROOT=/path/to/cutlass`
+
+Expected output binaries:
+
+- `build/custom_runner`
+- `build/cutlass_runner`
+
 ## Source layout rules
 
 - `src/runner/main.cpp` is the stable runner entrypoint that future CMake targets should compile into `custom_runner`.
