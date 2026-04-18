@@ -27,6 +27,10 @@ target_include_directories(custom_runner PRIVATE
 
 target_compile_features(custom_runner PRIVATE cxx_std_17)
 
+target_compile_options(custom_runner PRIVATE
+  $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+)
+
 set_target_properties(custom_runner PROPERTIES
   CXX_STANDARD 17
   CXX_STANDARD_REQUIRED ON
