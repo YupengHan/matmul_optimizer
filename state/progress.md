@@ -26,6 +26,7 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - CUTLASS baseline: COMPLETE
 - current best custom kernel: HOST BASELINE RECORDED
 - gap to CUTLASS: KNOWN
+- agent input handoff package: READY
 
 ## Verified snapshot
 
@@ -41,6 +42,8 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - CUTLASS performance for `case_00_seed_3407` is recorded at `25.91788864 ms` median runtime, `25.30171776 ms` p10, `27.62199116 ms` p90, and `28.05087373 TFLOP/s`
 - the first CUTLASS Nsight Compute capture completed successfully and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
 - the current custom baseline is `776.92467116 ms` slower than CUTLASS on the metric-of-record case, which is a `30.97638743x` runtime ratio
+- the diagnosis handoff note now exists at `todo/agent_input_snapshot.md`
+- the machine-readable handoff manifest now exists at `todo/agent_input_manifest.json`
 - the earlier sandbox-only run at `runs/20260418_021152_bf16_gemm_v1` still serves as a historical note about environment visibility, not a project-level CUDA failure
 
 ## Iteration log
@@ -99,12 +102,23 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
   - `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active = 49.25`
   - `sm__throughput.avg.pct_of_peak_sustained_elapsed = 49.39`
   - `dram__throughput.avg.pct_of_peak_sustained_elapsed = 42.76`
-  - `launch__occupancy_limit_registers = 2`
-  - this confirms the reference path is exercising Tensor Core hardware and gives a concrete baseline target for the custom kernel
+- `launch__occupancy_limit_registers = 2`
+- this confirms the reference path is exercising Tensor Core hardware and gives a concrete baseline target for the custom kernel
+
+### Iteration 4 - agent input package prepared
+
+- selected `runs/20260418_111959_bf16_gemm_v1_host_v0` as the latest successful custom run
+- selected `runs/20260418_115324_cutlass_ref_v0` as the latest successful CUTLASS baseline run
+- wrote `todo/agent_input_snapshot.md` with the metric-of-record comparison, six notable NCU deltas, and the exact next-agent question
+- wrote `todo/agent_input_manifest.json` so the next diagnosis node can open the structured files directly without reconstructing paths from terminal history
+- the direct comparison reinforces the current bottleneck belief:
+  - the custom kernel still shows `sm__pipe_tensor_cycles_active = 0`
+  - `smsp__warp_issue_stalled_mio_throttle = 57.07`
+  - active warps are already abundant, so the first rewrite should prioritize a real Tensor Core data path over occupancy chasing
 
 ## Near-term next actions
 
-1. compare the custom-kernel NCU snapshot directly against the new CUTLASS baseline to isolate the first architectural delta worth fixing
-2. replace the placeholder GEMM path with a Tensor Core-aware implementation and re-measure on the same harness
-3. track whether the next custom candidate raises `sm__pipe_tensor_cycles_active` toward the CUTLASS baseline while preserving correctness
-4. reduce the current `30.97638743x` runtime gap with the first non-placeholder kernel revision
+1. feed `todo/agent_input_snapshot.md` and `todo/agent_input_manifest.json` to the diagnosis node and request exactly three optimization directions
+2. choose one direction that introduces a Tensor Core-aware steady-state path
+3. re-run correctness, perf, and NCU on the same harness after that implementation
+4. update `state/human_review.md` once the diagnosis options are ranked

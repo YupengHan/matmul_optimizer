@@ -82,3 +82,12 @@ Compare the latest custom kernel run against the latest CUTLASS baseline for fix
 ```text
 Please complete todo/04_prepare_agent_inputs.md. Build a compact handoff package from the latest successful custom run and latest successful CUTLASS run, then write a markdown snapshot that another agent can use to propose exactly three optimization directions.
 ```
+
+## Completion record
+
+- completed on: `2026-04-18`
+- selected custom run: `runs/20260418_111959_bf16_gemm_v1_host_v0`
+- selected CUTLASS run: `runs/20260418_115324_cutlass_ref_v0`
+- handoff snapshot: `todo/agent_input_snapshot.md`
+- machine-readable manifest: `todo/agent_input_manifest.json`
+- optional human-review `.ncu-rep` files remain in the original run directories

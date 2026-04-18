@@ -1,0 +1,44 @@
+{
+  "prepared_on": "2026-04-18",
+  "dataset_id": "fixed_bf16_gemm_v1",
+  "benchmark_case": "case_00_seed_3407",
+  "custom_run_dir": "runs/20260418_111959_bf16_gemm_v1_host_v0",
+  "cutlass_run_dir": "runs/20260418_115324_cutlass_ref_v0",
+  "snapshot_note": "todo/agent_input_snapshot.md",
+  "supporting_context": [
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/benchmark_baselines.md"
+  ],
+  "machine_readable_inputs": {
+    "custom": {
+      "summary_json": "runs/20260418_111959_bf16_gemm_v1_host_v0/summary.json",
+      "summary_md": "runs/20260418_111959_bf16_gemm_v1_host_v0/summary.md",
+      "perf_json": "runs/20260418_111959_bf16_gemm_v1_host_v0/perf_case_00_seed_3407.json",
+      "ncu_metrics_csv": "runs/20260418_111959_bf16_gemm_v1_host_v0/ncu_metrics.csv"
+    },
+    "cutlass": {
+      "summary_json": "runs/20260418_115324_cutlass_ref_v0/summary.json",
+      "summary_md": "runs/20260418_115324_cutlass_ref_v0/summary.md",
+      "perf_json": "runs/20260418_115324_cutlass_ref_v0/perf_case_00_seed_3407.json",
+      "ncu_metrics_csv": "runs/20260418_115324_cutlass_ref_v0/ncu_metrics.csv"
+    }
+  },
+  "optional_human_review_inputs": {
+    "custom_ncu_rep": "runs/20260418_111959_bf16_gemm_v1_host_v0/ncu_profile.ncu-rep",
+    "cutlass_ncu_rep": "runs/20260418_115324_cutlass_ref_v0/ncu_profile.ncu-rep"
+  },
+  "read_order": [
+    "todo/agent_input_snapshot.md",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/benchmark_baselines.md",
+    "runs/20260418_111959_bf16_gemm_v1_host_v0/summary.json",
+    "runs/20260418_111959_bf16_gemm_v1_host_v0/perf_case_00_seed_3407.json",
+    "runs/20260418_111959_bf16_gemm_v1_host_v0/ncu_metrics.csv",
+    "runs/20260418_115324_cutlass_ref_v0/summary.json",
+    "runs/20260418_115324_cutlass_ref_v0/perf_case_00_seed_3407.json",
+    "runs/20260418_115324_cutlass_ref_v0/ncu_metrics.csv"
+  ],
+  "question_for_next_agent": "Compare the latest custom kernel run against the latest CUTLASS baseline for fixed_bf16_gemm_v1. Based on summary.json, perf JSON, ncu_metrics.csv, docs/heuristics.md, and the current state files, propose exactly three optimization directions. For each direction, state the hypothesis, the bottleneck it targets, the code areas to change, the main risk, and the metrics to re-check after implementation."
+}
