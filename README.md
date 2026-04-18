@@ -90,10 +90,12 @@ What has been verified in this workspace:
 - the fixed dataset manifest and generation summary exist locally under `artifacts/datasets/fixed_bf16_gemm_v1/`
 - an end-to-end evaluation attempt exists at `runs/20260418_021152_bf16_gemm_v1/`
 
-Current blocking limitation:
+Current measurement status:
 
-- the latest local run failed at `cudaMalloc` with `no CUDA-capable device is detected`
-- so the repo has a working bring-up path, but it does **not** yet have a valid custom-kernel runtime or CUTLASS baseline recorded from this environment
+- the checked-in run under `runs/20260418_021152_bf16_gemm_v1/` was launched from the Codex sandbox and failed at `cudaMalloc` with `no CUDA-capable device is detected`
+- that failure reflects the sandbox runtime environment, not a confirmed project-level GPU bring-up failure on the host machine
+- per the current operator note, the host terminal outside Codex can access the GPU
+- the repo still does **not** yet contain a valid committed custom-kernel runtime or CUTLASS baseline
 
 ## Source layout rules
 
@@ -168,7 +170,7 @@ This is `agent_d` territory:
 ## Immediate next steps
 
 1. rerun the existing pipeline on a host where the RTX 3070 Laptop GPU is visible to CUDA,
-2. capture the first valid correctness and performance result for `bf16_gemm_v1`,
+2. capture the first valid correctness and performance result for `bf16_gemm_v1` from the host terminal and write the run artifacts back under `runs/`,
 3. add a CUTLASS reference runner and record the first baseline in `state/benchmark_baselines.md`,
-4. use Nsight Compute on the first successful run to identify the highest-value optimization target,
+4. use Nsight Compute on the first successful host-side run to identify the highest-value optimization target,
 5. start replacing the placeholder GEMM kernel with a Tensor Core-aware implementation.

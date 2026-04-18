@@ -24,10 +24,10 @@
 - TFLOP/s: N/A
 - date: `2026-04-18`
 - artifact run dir: `runs/20260418_021152_bf16_gemm_v1`
-- notes: the first end-to-end run executed through `build/custom_runner`, but every run failed with `cudaMalloc: no CUDA-capable device is detected`, so there is still no accepted custom-kernel baseline
+- notes: the only recorded run so far was launched from the Codex sandbox and failed with `cudaMalloc: no CUDA-capable device is detected`; treat this as a sandbox GPU-visibility issue, not as a confirmed host-side project failure
 
 ## Gap
 
 - absolute runtime gap: UNKNOWN
 - percent gap: UNKNOWN
-- current view of limiting factor: blocked by environment bring-up; no valid GPU measurement yet
+- current view of limiting factor: no accepted host-side GPU measurement has been recorded in the repo yet

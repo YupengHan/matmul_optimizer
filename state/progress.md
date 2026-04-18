@@ -32,7 +32,9 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
 - local dataset summary exists under `artifacts/datasets/fixed_bf16_gemm_v1/generation_summary.json`
 - total generated dataset size is `1452.1171875 MiB` across 3 cases
 - latest local evaluation attempt is `runs/20260418_021152_bf16_gemm_v1`
-- that run failed before measurement because the current environment reported `cudaMalloc: no CUDA-capable device is detected`
+- that run was executed from the Codex sandbox and failed before measurement because the sandbox environment reported `cudaMalloc: no CUDA-capable device is detected`
+- this should be treated as a sandbox visibility limitation, not as proof that the project cannot run on the host GPU
+- operator note: the external host terminal can access the GPU; the missing piece is to record a successful host-side run back into the repo state
 
 ## Iteration log
 
@@ -54,13 +56,14 @@ Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 
   - timed perf loop with cache flush and percentile summary
 - wired `scripts/eval_kernel.py` to the runner contract and run artifact layout
 - compiled the CUDA target successfully
-- executed the first end-to-end run locally
-- observed an environment blocker instead of a kernel-level result:
+- executed the first end-to-end run from the Codex sandbox
+- observed a tooling-environment blocker instead of a kernel-level result:
   - `cudaMalloc: no CUDA-capable device is detected`
+  - the failure came from sandbox GPU visibility, not from a confirmed host-side CUDA failure
 
 ## Near-term next actions
 
-1. rerun `build/custom_runner` on a CUDA-visible machine and capture the first accepted custom-kernel baseline
+1. rerun `build/custom_runner` from the host terminal that can see the GPU and capture the first accepted custom-kernel baseline
 2. add and measure a CUTLASS reference runner on the same host
 3. record both baselines in `state/benchmark_baselines.md`
 4. profile the first successful run with Nsight Compute and choose the first optimization direction
