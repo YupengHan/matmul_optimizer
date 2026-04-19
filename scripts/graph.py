@@ -1027,14 +1027,17 @@ def refresh_all_views() -> None:
 
 
 def tracked_dirty_paths() -> List[str]:
-    status = git_optional_output(['status', '--short']) or ''
-    dirty = []
-    for line in status.splitlines():
-        if not line:
-            continue
-        path = line[3:].strip()
-        dirty.append(path)
-    return dirty
+    dirty: set[str] = set()
+    for args in (
+        ['diff', '--name-only'],
+        ['diff', '--cached', '--name-only'],
+    ):
+        output = git_optional_output(args) or ''
+        for line in output.splitlines():
+            path = line.strip()
+            if path:
+                dirty.add(path)
+    return sorted(dirty)
 
 
 def refresh_node_c_context() -> None:
