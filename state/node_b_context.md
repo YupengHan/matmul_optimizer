@@ -39,4 +39,4 @@ Use the raw detailed CSV when the headline summary is too shallow to explain pip
 - median runtime: `46.771713 ms`
 - TFLOP/s: `15.543998 TFLOP/s`
 - measured commit: `da19f01bfb3793b3cca3cc67fd521b0fe4fcf2b7`
-- existing diagnosis status: `pending_generation`
+- existing diagnosis status: `completed`
