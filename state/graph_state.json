@@ -2,13 +2,13 @@
   "current_node": "node_b",
   "previous_node": "node_a",
   "status": "ready_for_node_b",
-  "latest_run_dir": "runs/20260418_214233_bf16_gemm_v1_d47590a",
+  "latest_run_dir": "runs/20260418_220017_bf16_gemm_v1_2e79574",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
-  "latest_commit": "d47590ae36c32c2afdf4a26e2202abe1cfb2161e",
+  "latest_commit": "2e7957446666c995bbe40f3fe8017e706d7a4cfe",
   "approved_direction_id": null,
   "recommended_direction_id": null,
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "plateau_counter": 1,
-  "notes": "Node A completed the final planned round. Review the results before starting another loop."
+  "plateau_counter": 2,
+  "notes": "Node A completed. Run node_b to produce exactly three directions from the latest measured summaries."
 }

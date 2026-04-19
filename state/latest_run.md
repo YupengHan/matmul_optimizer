@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_214233_bf16_gemm_v1_d47590a`
-- run dir: `runs/20260418_214233_bf16_gemm_v1_d47590a`
-- kernel tag: `bf16_gemm_v1_d47590a`
-- round label: `round 5/5`
+- run id: `20260418_220017_bf16_gemm_v1_2e79574`
+- run dir: `runs/20260418_220017_bf16_gemm_v1_2e79574`
+- kernel tag: `bf16_gemm_v1_2e79574`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `129.477127 ms`
-- p10 runtime: `128.902246 ms`
-- p90 runtime: `130.649493 ms`
-- TFLOP/s: `5.615041 TFLOP/s`
-- previous run id: `20260418_213511_bf16_gemm_v1_4473555`
-- runtime delta vs previous measured run: `+40.934025 ms`
-- TFLOP/s delta vs previous measured run: `-2.595868 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Rebalance the warp tile split to recover active warps`
-- raw summary json: `runs/20260418_214233_bf16_gemm_v1_d47590a/summary.json`
-- measured commit: `d47590ae36c32c2afdf4a26e2202abe1cfb2161e`
+- median runtime: `91.601360 ms`
+- p10 runtime: `90.689943 ms`
+- p90 runtime: `94.588517 ms`
+- TFLOP/s: `7.936775 TFLOP/s`
+- previous run id: `20260418_214233_bf16_gemm_v1_d47590a`
+- runtime delta vs previous measured run: `-37.875767 ms`
+- TFLOP/s delta vs previous measured run: `+2.321734 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- raw summary json: `runs/20260418_220017_bf16_gemm_v1_2e79574/summary.json`
+- measured commit: `2e7957446666c995bbe40f3fe8017e706d7a4cfe`
 - new best custom: `no`
-- generated at: `2026-04-18T21:42:44-07:00`
+- generated at: `2026-04-18T22:00:28-07:00`
