@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_123851_bf16_gemm_v1_98fdc11`
-- run dir: `runs/20260419_123851_bf16_gemm_v1_98fdc11`
-- kernel tag: `bf16_gemm_v1_98fdc11`
-- round label: `round 2/5`
+- run id: `20260419_124436_bf16_gemm_v1_05bac60`
+- run dir: `runs/20260419_124436_bf16_gemm_v1_05bac60`
+- kernel tag: `bf16_gemm_v1_05bac60`
+- round label: `round 3/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `36.462511 ms`
-- p10 runtime: `36.187008 ms`
-- p90 runtime: `37.263070 ms`
-- TFLOP/s: `19.938819 TFLOP/s`
-- previous run id: `20260419_123228_bf16_gemm_v1_1dd4420`
-- runtime delta vs previous measured run: `-5.797457 ms`
-- TFLOP/s delta vs previous measured run: `+2.735318 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `41.554512 ms`
+- p10 runtime: `40.910951 ms`
+- p90 runtime: `42.384792 ms`
+- TFLOP/s: `17.495559 TFLOP/s`
+- previous run id: `20260419_123851_bf16_gemm_v1_98fdc11`
+- runtime delta vs previous measured run: `+5.092001 ms`
+- TFLOP/s delta vs previous measured run: `-2.443260 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Split the fixed 64x384 hot path into explicit prologue, steady-state, and epilogue phases`
-- implemented selection mode: `approved`
-- implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_123851_bf16_gemm_v1_98fdc11/summary.json`
-- measured commit: `98fdc11cc6ae7dc163941540befb6c30ec91529e`
+- implemented direction name: `Straight-line the Tile384 cp.async producer schedule on the restored base`
+- implemented selection mode: `recommended`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260419_124436_bf16_gemm_v1_05bac60/summary.json`
+- measured commit: `05bac60ebd99e273cb46db683c56f34d8cdd87fe`
 - new best custom: `no`
-- generated at: `2026-04-19T12:39:00-07:00`
+- generated at: `2026-04-19T12:44:45-07:00`
