@@ -1,6 +1,6 @@
 {
   "active": true,
-  "status": "round_in_progress",
+  "status": "awaiting_measurement",
   "total_rounds": 5,
   "completed_rounds": 0,
   "remaining_rounds": 5,
@@ -11,5 +11,5 @@
   "completed_at": null,
   "last_completed_round": null,
   "history_path": "state/round_history.jsonl",
-  "notes": "Executing round 1/5."
+  "notes": "Build passed for round 1/5. Node A will measure the result next."
 }
