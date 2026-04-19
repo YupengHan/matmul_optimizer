@@ -1,80 +1,148 @@
 # State directory
 
-These files are the human-readable state layer of the repository.
+The state layer now has two tiers:
 
-## Purpose
+1. machine-readable JSON for scripts and Codex
+2. human-readable Markdown for review and hiring-manager readability
 
-The state layer is meant to be readable by:
+The two tiers should describe the same workflow state.
 
-- you,
-- future AI agents,
-- reviewers,
-- and hiring managers who want to understand the optimization process.
+## Machine-readable files
 
-## Files
+## `graph_state.json`
+
+Top-level workflow pointer.
+
+Key fields:
+
+- `current_node`: the next actionable node
+- `previous_node`: the most recently completed node
+- `status`: current workflow status
+- `latest_run_dir`
+- `latest_summary_json`
+- `latest_ncu_summary_json`
+- `latest_commit`
+- `approved_direction_id`
+- `recommended_direction_id`
+- `current_kernel_path`
+- `plateau_counter`
+- `notes`
+
+## `latest_run.json`
+
+Latest lightweight summary from node_a.
+
+Contains:
+
+- run id / run dir
+- kernel tag
+- correctness summary
+- performance summary
+- references to raw run artifacts
+
+## `latest_ncu_summary.json`
+
+Latest lightweight Nsight Compute summary from node_a.
+
+Contains:
+
+- source run id
+- kernel name
+- block / grid shape
+- registers / thread
+- shared memory / block
+- selected headline metrics
+
+## `latest_diagnosis.json`
+
+Node_b output.
+
+Contains:
+
+- source run references
+- exactly 3 ranked directions
+- one recommended direction
+
+## `active_direction.json`
+
+Node_c input.
+
+Contains:
+
+- selected direction id
+- selection mode
+- direction summary
+- implementation status
+
+## `benchmark_state.json`
+
+Machine-readable baseline registry for:
+
+- CUTLASS baseline
+- best custom run
+
+## `run_registry.jsonl`
+
+Append-only lightweight log of node_a measurements.
+
+## `round_loop_state.json`
+
+Current multi-round loop budget and progress.
+
+Contains:
+
+- whether a loop is active
+- total / completed / remaining rounds
+- current or next round index
+- whether recommended directions auto-select
+- last completed round summary
+
+## `round_history.jsonl`
+
+Append-only one-line summary for each completed round.
+
+## Human-readable files
+
+## `latest_run.md`
+
+Readable latest custom-run summary.
+
+## `latest_ncu_summary.md`
+
+Readable latest Nsight Compute snapshot.
 
 ## `progress.md`
 
-Narrative progress log.
-
-Use it to record:
-
-- the current best result,
-- the latest hypothesis,
-- why a change was attempted,
-- what happened after measurement.
+High-level narrative progress and current graph status.
 
 ## `current_focus.md`
 
-One small, current snapshot:
-
-- current branch,
-- current bottleneck belief,
-- active optimization direction,
-- immediate next action.
+Small snapshot of the next action.
 
 ## `human_review.md`
 
-Queue for explicit human decisions.
-
-Use it for:
-
-- whether to keep a candidate,
-- whether to widen scope,
-- whether to allow a branch rewrite,
-- whether to accept a tolerance policy change.
+Direction approval queue and node transition notes.
 
 ## `benchmark_baselines.md`
 
-Single source of truth for:
+Readable benchmark snapshot and CUTLASS gap.
 
-- current CUTLASS baseline,
-- current best custom kernel,
-- gap to baseline.
+## `rounds.md`
+
+Readable multi-round loop status and last completed round summary.
+
+## `node_b_context.md`
+
+Prepared read order and output contract for node_b.
+
+## `node_c_context.md`
+
+Prepared implementation brief and allowed edit surface for node_c.
 
 ## Update rules
 
-### After every measured kernel attempt
-
-Update:
-
-- `progress.md`
-- `current_focus.md`
-
-### After every new best result
-
-Update:
-
-- `benchmark_baselines.md`
-- optionally tag the commit
-
-### After a diagnosis node proposes directions
-
-Update:
-
-- `human_review.md`
-
-## What should not go here
-
-Do not dump raw logs or giant metric tables in this directory.  
-Raw machine artifacts belong under `runs/`.
+- node_a updates the latest run files, NCU files, graph state, progress, focus, and baselines
+- node_a also closes the current round when it is measuring a just-implemented direction
+- node_b updates diagnosis, review state, and graph state
+- node_c updates active-direction state, build status, and graph state
+- raw logs belong under `runs/`, not under `state/`

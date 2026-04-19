@@ -23,7 +23,9 @@ artifacts/*
 runs/*
 !runs/.gitkeep
 
+*.ncu-rep
 *.rep
 *.csv
 *.log
 *.tmp
+state/*.log

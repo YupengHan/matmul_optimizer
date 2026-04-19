@@ -1,230 +1,173 @@
-# Pipeline graph (LangGraph-inspired, script-first)
+# Pipeline graph
 
-The repo borrows the **node / edge / state** framing, but only uses agents where reasoning actually matters.
+This repo uses a lightweight, LangGraph-inspired workflow:
 
-## Design principle
+```text
+dataset_init -> node_a -> node_b -> node_c -> node_a
+```
 
-- deterministic execution steps -> **scripts**
-- interpretation / diagnosis / idea generation -> **agents**
-- acceptance / rejection / merge -> **human-in-loop**
+Only the state / node / edge idea is borrowed. The execution path stays local and script-first.
 
-This keeps token cost low and makes the benchmark path reproducible.
+## Design principles
+
+- execution-critical steps stay in scripts
+- reasoning-heavy steps are Codex-friendly agent nodes
+- machine-readable state and human-readable state are both required
+- git is the audit log for measured runs, diagnoses, and implementations
+- optional multi-round loop state can budget repeated node_b -> node_c -> node_a rounds
+- CUTLASS is a side-path baseline node, not part of the main loop
 
 ## Graph sketch
 
 ```mermaid
 flowchart TD
-    S[Start] --> D0[dataset_init script]
-    D0 --> EVAL[eval_kernel script]
-    EVAL --> B1[diagnose_bottlenecks agent]
-    B1 --> HR1[human review gate]
-    HR1 --> B2A[implement_direction_1 agent loop]
-    HR1 --> B2B[implement_direction_2 agent loop]
-    HR1 --> B2C[implement_direction_3 agent loop]
+    D0[dataset_init script] --> A[node_a script]
+    A --> B[node_b Codex diagnosis]
+    B --> SEL[approve or use recommended direction]
+    SEL --> C[node_c Codex implementation]
+    C --> A
 
-    B2A --> EVAL
-    B2B --> EVAL
-    B2C --> EVAL
+    A -. optional baseline refresh .-> CUTLASS[run_cutlass_baseline script]
+    CUTLASS -. update benchmark state .-> B
 
-    EVAL -->|every 10 stalled rounds| CUTLASS[run_cutlass_baseline script]
-    CUTLASS --> B1
-
-    EVAL -->|plateau / major rethink| D[outbox_thinking agent]
-    D --> HR2[human review gate]
-    HR2 --> BR[branch experiment]
-    BR --> EVAL
-    BR -->|improves| M[merge to main]
-    BR -->|fails| R[drop branch]
+    B -. optional later extension .-> OUTBOX[outbox thinking]
 ```
 
-## Nodes
+## Node semantics
 
-## `dataset_init` (script)
+## `dataset_init`
 
-One-time or rare node.
+One-time or rare setup node.
 
-### Responsibilities
+Responsibilities:
 
-- read `configs/fixed_bf16_gemm_v1.json`
-- generate deterministic BF16 input tensors and stored references
-- write local dataset artifacts
-- write checksums and manifest copy
+- generate the fixed dataset
+- populate `artifacts/datasets/fixed_bf16_gemm_v1/`
 
-### Inputs
+## `node_a`
 
-- dataset config JSON
+The fully script-first measurement node.
 
-### Outputs
+Responsibilities:
 
-- `artifacts/datasets/fixed_bf16_gemm_v1/...`
+- build `custom_runner` if needed
+- run `scripts/eval_kernel.py`
+- record correctness / performance / Nsight Compute
+- keep raw artifacts under `runs/`
+- write lightweight summaries under `state/`
+- update `state/graph_state.json` so the next node is `node_b`
+- create a `node_a:` commit with lightweight state only
 
----
+Key outputs:
 
-## `eval_kernel` (script)
+- `state/latest_run.json`
+- `state/latest_ncu_summary.json`
+- `state/latest_run.md`
+- `state/latest_ncu_summary.md`
+- `state/graph_state.json`
 
-This is the script version of the original `agent_a`.
+## `node_b`
 
-### Responsibilities
+The diagnosis node.
 
-- compile or call the provided kernel runner
-- warm up GPU
-- flush scratch/cache between runs
-- run correctness on all configured correctness cases
-- run timing on the benchmark case
-- launch Nsight Compute
-- write:
-  - raw logs
-  - `.rep`
-  - NCU CSV/raw summary
-  - machine-readable JSON summary
-  - human-readable Markdown summary
+Responsibilities:
 
-### Reads
+- read the latest lightweight run summary
+- read the latest lightweight NCU summary
+- read `docs/heuristics.md`
+- read the current kernel
+- output exactly 3 optimization directions
+- set one `recommended_direction_id`
+- update graph state so the workflow points at `node_c`
+- create a `node_b:` commit with lightweight state only
 
-- dataset manifest
-- current kernel binary or source build output
-- benchmark config
-- optional current baseline summary
+Key outputs:
 
-### Writes
+- `state/latest_diagnosis.json`
+- `state/human_review.md`
+- `state/node_c_context.md`
 
-- `runs/<timestamp>_<kernel_tag>/summary.json`
-- `runs/<timestamp>_<kernel_tag>/summary.md`
-- `runs/<timestamp>_<kernel_tag>/ncu_profile.rep`
-- `runs/<timestamp>_<kernel_tag>/ncu_metrics.csv`
-- `runs/<timestamp>_<kernel_tag>/ncu_summary.json`
-- `runs/<timestamp>_<kernel_tag>/ncu_summary.md`
+## `node_c`
 
----
+The implementation node.
 
-## `diagnose_bottlenecks` (agent)
+Responsibilities:
 
-This is the first half of `agent_b`.
+- read the selected direction
+- implement exactly one direction
+- build before claiming success
+- stop and update failure state if the build fails
+- commit code plus lightweight state after build success
+- auto-run `node_a` by default
 
-### Responsibilities
-
-- read the latest profile
-- identify under-utilized hardware or obvious stalls
-- cross-reference `docs/heuristics.md`
-- output **exactly three** candidate optimization directions
-
-### Required output format
-
-For each direction:
-
-1. hypothesis,
-2. expected bottleneck relieved,
-3. code areas to change,
-4. risk,
-5. metrics to re-check after implementation.
-
----
-
-## `implement_direction_i` (agent loop)
-
-This is the second half of `agent_b`.
-
-### Responsibilities
-
-- choose one approved direction
-- edit kernel code
-- compile
-- run `eval_kernel`
-- stop if compile fails, correctness fails, or performance regresses badly
-- document the change in progress state
-- prepare a candidate git commit message
-
-### Guardrails
+Guardrails:
 
 - one direction per loop
-- no automatic merge to `main`
-- human review before keeping a performance claim
+- no automatic merge
+- no performance claim before node_a re-measures
 
----
+## Side node: `run_cutlass_baseline`
 
-## `run_cutlass_baseline` (script)
+Responsibilities:
 
-This is the mostly-script version of `agent_c`.
+- measure the CUTLASS reference path on the same dataset
+- refresh the benchmark target
+- update benchmark state and human-readable baseline notes
 
-### Responsibilities
+This node is intentionally **off the execution-critical path**.
 
-- run the CUTLASS reference kernel on the same dataset
-- record correctness, timing, and NCU artifacts
-- maintain the current official baseline
-- refresh the baseline periodically
+## State model
 
-### Recommended cadence
+## Machine-readable state
 
-- run early to establish the target
-- rerun after major kernel changes
-- rerun every ~10 stalled or non-improving optimization rounds
+- `state/graph_state.json`
+- `state/latest_run.json`
+- `state/latest_ncu_summary.json`
+- `state/latest_diagnosis.json`
+- `state/active_direction.json`
+- `state/benchmark_state.json`
+- `state/run_registry.jsonl`
+- `state/round_loop_state.json`
+- `state/round_history.jsonl`
 
----
+## Human-readable state
 
-## `outbox_thinking` (agent)
-
-This is `agent_d`.
-
-### Responsibilities
-
-- read git history and current bottlenecks
-- compare custom kernel behavior with CUTLASS profile behavior
-- propose larger-step ideas that were not obvious from local hill-climbing
-- interact with a human more directly
-- test only on a feature branch unless explicitly approved otherwise
-
-## Edges
-
-## Main deterministic edges
-
-- `dataset_init -> eval_kernel`
-- `eval_kernel -> diagnose_bottlenecks`
-- `implement_direction_i -> eval_kernel`
-
-## Human-gated edges
-
-- `diagnose_bottlenecks -> implement_direction_i`
-- `outbox_thinking -> branch experiment`
-- `branch experiment -> merge to main`
-
-## Plateau edge
-
-- `eval_kernel -> run_cutlass_baseline` when incremental improvements stall
-
-## State
-
-In this repo, “state” is deliberately human-readable whenever possible.
-
-## Human-readable state files
-
+- `state/latest_run.md`
+- `state/latest_ncu_summary.md`
 - `state/progress.md`
 - `state/current_focus.md`
 - `state/human_review.md`
 - `state/benchmark_baselines.md`
+- `state/rounds.md`
+- `state/node_b_context.md`
+- `state/node_c_context.md`
 
-## Structured state / machine-readable state
+The two layers must not contradict each other.
 
-- `configs/*.json`
-- dataset manifests
-- run summaries under `runs/`
-- optional structured experiment logs later
+## Git as workflow memory
 
-## Git as long-term memory
+Git commit classes:
 
-Git stores:
+- `node_a:` measured state
+- `node_b:` diagnosis state
+- `node_c:` implementation after build success
 
-- why a kernel changed,
-- what hypothesis motivated the change,
-- what performance changed,
-- what profile evidence supported it,
-- and when a branch-level idea should be kept or rejected.
+When a multi-round loop is active, the node commits should carry the round label, and the node_a commit should record:
 
-## Rules for `main`
+- modification idea
+- runtime delta
+- TFLOP/s delta
+- run dir
+- profile paths
 
-Only merge to `main` when all of the following are true:
+This keeps the workflow auditable without committing raw artifacts.
 
-1. build succeeds,
-2. correctness passes,
-3. timing is re-measured,
-4. change is documented,
-5. the claimed improvement is clear.
+## Outbox thinking
+
+Outbox thinking remains intentionally small in this retrofit.
+
+Keep it as a later extension for:
+
+- branch-heavy exploration
+- larger architectural rewrites
+- ideas that should not enter the main loop immediately

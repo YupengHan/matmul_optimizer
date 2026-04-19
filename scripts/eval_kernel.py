@@ -126,11 +126,53 @@ def render_markdown_summary(summary: Dict) -> str:
         ncu = summary['ncu']
         lines.append(f"- rep path: `{ncu.get('rep_path', 'N/A')}`")
         lines.append(f"- csv path: `{ncu.get('csv_path', 'N/A')}`")
+        lines.append(f"- ncu summary json: `{ncu.get('summary_json_path', 'N/A')}`")
+        lines.append(f"- ncu summary md: `{ncu.get('summary_md_path', 'N/A')}`")
         if ncu.get('headline_metrics'):
             lines.append('')
             lines.append('### Headline metrics')
             for k, v in ncu['headline_metrics'].items():
                 lines.append(f"- `{k}`: `{v}`")
+
+    return '\n'.join(lines) + '\n'
+
+
+def build_ncu_summary(metrics: Dict[str, str], csv_path: Path, rep_path: Path) -> Dict:
+    return {
+        'status': 'available' if metrics else 'available_without_parsed_metrics',
+        'kernel_name': metrics.get('Kernel Name'),
+        'block_size': metrics.get('Block Size') or metrics.get('launch__block_size'),
+        'grid_size': metrics.get('Grid Size') or metrics.get('launch__grid_size'),
+        'registers_per_thread': metrics.get('launch__registers_per_thread'),
+        'shared_mem_per_block_allocated': metrics.get('launch__shared_mem_per_block_allocated'),
+        'headline_metrics': metrics,
+        'raw_csv_path': csv_path.name if csv_path.exists() else None,
+        'raw_rep_path': rep_path.name if rep_path.exists() else None,
+    }
+
+
+def render_markdown_ncu_summary(summary: Dict) -> str:
+    lines: List[str] = []
+    lines.append('# Nsight Compute summary')
+    lines.append('')
+    lines.append(f"- status: `{summary.get('status', 'unknown')}`")
+    lines.append(f"- raw csv path: `{summary.get('raw_csv_path', 'N/A')}`")
+    lines.append(f"- raw rep path: `{summary.get('raw_rep_path', 'N/A')}`")
+    lines.append(f"- kernel name: `{summary.get('kernel_name', 'N/A')}`")
+    lines.append(f"- block size: `{summary.get('block_size', 'N/A')}`")
+    lines.append(f"- grid size: `{summary.get('grid_size', 'N/A')}`")
+    lines.append(f"- registers / thread: `{summary.get('registers_per_thread', 'N/A')}`")
+    lines.append(f"- shared mem / block allocated: `{summary.get('shared_mem_per_block_allocated', 'N/A')}`")
+    lines.append('')
+    lines.append('## Headline metrics')
+    lines.append('')
+
+    headline_metrics = summary.get('headline_metrics', {})
+    if not headline_metrics:
+        lines.append('No headline metrics were parsed from the Nsight Compute CSV.')
+    else:
+        for key, value in headline_metrics.items():
+            lines.append(f"- `{key}`: `{value}`")
 
     return '\n'.join(lines) + '\n'
 
@@ -340,12 +382,26 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
         if csv_rc == 0 and csv_path.exists():
             csv_metrics = parse_ncu_csv(csv_path)
 
+    ncu_summary = None
+    if csv_path.exists() or rep_path.exists():
+        picked_metrics = pick_headline_metrics(csv_metrics, headline_metrics) if csv_metrics else {}
+        ncu_summary = build_ncu_summary(picked_metrics, csv_path, rep_path)
+        ncu_summary_json_path = run_dir / 'ncu_summary.json'
+        ncu_summary_md_path = run_dir / 'ncu_summary.md'
+        write_json(ncu_summary_json_path, ncu_summary)
+        ncu_summary_md_path.write_text(render_markdown_ncu_summary(ncu_summary), encoding='utf-8')
+    else:
+        ncu_summary_json_path = None
+        ncu_summary_md_path = None
+
     return {
         'rep_return_code': rep_rc,
         'rep_path': rep_path.name if rep_path.exists() else None,
         'csv_return_code': csv_rc,
         'csv_path': csv_path.name if csv_path.exists() else None,
         'headline_metrics': pick_headline_metrics(csv_metrics, headline_metrics) if csv_metrics else {},
+        'summary_json_path': ncu_summary_json_path.name if ncu_summary_json_path else None,
+        'summary_md_path': ncu_summary_md_path.name if ncu_summary_md_path else None,
     }
 
 

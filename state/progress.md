@@ -2,123 +2,49 @@
 
 ## Objective
 
-Beat the local CUTLASS baseline on a **single fixed BF16 GEMM shape** on an RTX 3070 Laptop GPU.
+Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1`.
 
-## Fixed workload
+## Workflow state
 
-- dataset: `fixed_bf16_gemm_v1`
-- shape: `m=6464, n=7776, k=7232`
-- benchmark case: `case_00_seed_3407`
-- correctness cases:
-  - `case_00_seed_3407`
-  - `case_01_seed_9713`
-  - `case_02_seed_1729`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `node_b_context_ready`
+- current kernel path: `src/kernels/bf16_gemm_v1.cu`
+- latest measured commit: `9e20de18aa67dc6b5eb289d5e8e4c203dae37fa6`
+- plateau counter: `0`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Fill state/latest_diagnosis.json with exactly three directions, then run node_b --finalize.`
 
-## Current status
+## Latest measured custom run
 
-- dataset generation scaffold: READY
-- local dataset generation: READY
-- evaluation harness scaffold: READY
-- custom CUDA runner: READY
-- placeholder custom kernel: READY
-- first end-to-end evaluation attempt: COMPLETE
-- first host-side GPU run: COMPLETE
-- CUTLASS baseline: COMPLETE
-- current best custom kernel: HOST BASELINE RECORDED
-- gap to CUTLASS: KNOWN
-- agent input handoff package: READY
+- run id: `20260418_111959_bf16_gemm_v1_host_v0`
+- run dir: `runs/20260418_111959_bf16_gemm_v1_host_v0`
+- correctness: `PASS`
+- median runtime: `802.842560 ms`
+- TFLOP/s: `0.905557 TFLOP/s`
+- latest run summary: `state/latest_run.json`
+- latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
-## Verified snapshot
+## Latest diagnosis state
 
-- configured and built successfully with `cmake -S . -B build` and `cmake --build build -j 4`
-- local dataset summary exists under `artifacts/datasets/fixed_bf16_gemm_v1/generation_summary.json`
-- total generated dataset size is `1452.1171875 MiB` across 3 cases
-- latest accepted host-side evaluation is `runs/20260418_111959_bf16_gemm_v1_host_v0`
-- correctness passed on all 3 configured cases under the current tolerance policy
-- the recorded performance result for `case_00_seed_3407` is `802.8425598 ms` median runtime, `796.2209229 ms` p10, `807.9350769 ms` p90, and `0.9055566534 TFLOP/s`
-- Nsight Compute completed successfully for the host-side run and wrote `ncu_profile.ncu-rep` plus `ncu_metrics.csv`
-- latest accepted CUTLASS baseline is `runs/20260418_115324_cutlass_ref_v0`
-- CUTLASS correctness passed on all 3 configured cases under the current tolerance policy
-- CUTLASS performance for `case_00_seed_3407` is recorded at `25.91788864 ms` median runtime, `25.30171776 ms` p10, `27.62199116 ms` p90, and `28.05087373 TFLOP/s`
-- the first CUTLASS Nsight Compute capture completed successfully and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
-- the current custom baseline is `776.92467116 ms` slower than CUTLASS on the metric-of-record case, which is a `30.97638743x` runtime ratio
-- the diagnosis handoff note now exists at `todo/agent_input_snapshot.md`
-- the machine-readable handoff manifest now exists at `todo/agent_input_manifest.json`
-- the earlier sandbox-only run at `runs/20260418_021152_bf16_gemm_v1` still serves as a historical note about environment visibility, not a project-level CUDA failure
+- diagnosis status: `awaiting_codex`
+- diagnosis id: `diagnosis_20260418_174143`
+- recommended direction: `None`
+- approved direction: `None`
+- dir_01: PENDING | bottleneck: PENDING
+- dir_02: PENDING | bottleneck: PENDING
+- dir_03: PENDING | bottleneck: PENDING
 
-## Iteration log
+## Active implementation direction
 
-### Iteration 0 - repository scaffold
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
-- established one fixed benchmark shape
-- decided to keep the execution path script-first
-- split the former `agent_b` into:
-  - diagnosis node
-  - implementation loop node
-- reserved branch-heavy exploration for `agent_d`
+## Benchmark snapshot
 
-### Iteration 1 - dataset + runner bring-up
-
-- implemented deterministic dataset generation and wrote local manifests/checksums
-- implemented `custom_runner` with:
-  - dataset loading
-  - correctness checking against `C_ref_fp32` and `C_ref_bf16`
-  - timed perf loop with cache flush and percentile summary
-- wired `scripts/eval_kernel.py` to the runner contract and run artifact layout
-- compiled the CUDA target successfully
-- executed the first end-to-end run from the Codex sandbox
-- observed a tooling-environment blocker instead of a kernel-level result:
-  - `cudaMalloc: no CUDA-capable device is detected`
-  - the failure came from sandbox GPU visibility, not from a confirmed host-side CUDA failure
-
-### Iteration 2 - first host GPU run
-
-- reran the existing `custom_runner` + `eval_kernel.py` pipeline on the host-visible RTX 3070 Laptop GPU
-- recorded the first accepted custom-kernel artifacts under `runs/20260418_111959_bf16_gemm_v1_host_v0`
-- correctness passed for:
-  - `case_00_seed_3407`
-  - `case_01_seed_9713`
-  - `case_02_seed_1729`
-- performance for `case_00_seed_3407` was recorded at `802.8425598 ms` median runtime and `0.9055566534 TFLOP/s`
-- Nsight Compute completed and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
-- quick NCU read for the placeholder kernel:
-  - `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active = 0`
-  - `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct = 57.07`
-  - `launch__occupancy_limit_registers = 6`
-  - this is consistent with a stable but very slow placeholder implementation rather than a Tensor Core path
-
-### Iteration 3 - CUTLASS baseline + first CUTLASS NCU
-
-- added a CUTLASS-specific wrapper path that now forwards `--ncu-bin` and related NCU arguments into `eval_kernel.py`
-- improved `eval_kernel.py` NCU CSV parsing so it can read the raw wide-table format produced by `ncu --csv --page raw`
-- recorded the first accepted CUTLASS baseline under `runs/20260418_115324_cutlass_ref_v0`
-- correctness passed for:
-  - `case_00_seed_3407`
-  - `case_01_seed_9713`
-  - `case_02_seed_1729`
-- performance for `case_00_seed_3407` was recorded at `25.91788864 ms` median runtime and `28.05087373 TFLOP/s`
-- Nsight Compute completed successfully for the CUTLASS baseline and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
-- quick NCU read for the CUTLASS reference path:
-  - `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active = 49.25`
-  - `sm__throughput.avg.pct_of_peak_sustained_elapsed = 49.39`
-  - `dram__throughput.avg.pct_of_peak_sustained_elapsed = 42.76`
-- `launch__occupancy_limit_registers = 2`
-- this confirms the reference path is exercising Tensor Core hardware and gives a concrete baseline target for the custom kernel
-
-### Iteration 4 - agent input package prepared
-
-- selected `runs/20260418_111959_bf16_gemm_v1_host_v0` as the latest successful custom run
-- selected `runs/20260418_115324_cutlass_ref_v0` as the latest successful CUTLASS baseline run
-- wrote `todo/agent_input_snapshot.md` with the metric-of-record comparison, six notable NCU deltas, and the exact next-agent question
-- wrote `todo/agent_input_manifest.json` so the next diagnosis node can open the structured files directly without reconstructing paths from terminal history
-- the direct comparison reinforces the current bottleneck belief:
-  - the custom kernel still shows `sm__pipe_tensor_cycles_active = 0`
-  - `smsp__warp_issue_stalled_mio_throttle = 57.07`
-  - active warps are already abundant, so the first rewrite should prioritize a real Tensor Core data path over occupancy chasing
-
-## Near-term next actions
-
-1. feed `todo/agent_input_snapshot.md` and `todo/agent_input_manifest.json` to the diagnosis node and request exactly three optimization directions
-2. choose one direction that introduces a Tensor Core-aware steady-state path
-3. re-run correctness, perf, and NCU on the same harness after that implementation
-4. update `state/human_review.md` once the diagnosis options are ranked
+- CUTLASS median runtime: `25.917889 ms`
+- current best custom gap: `776.924671 ms`, `30.976387x` slower than CUTLASS

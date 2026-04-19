@@ -1,42 +1,30 @@
 # Human review queue
 
-## Pending decisions
+## Current workflow gate
 
-### 1. Benchmark shape lock
+- next node: `node_b`
+- status: `node_b_context_ready`
+- round loop: `single-run` with `0` rounds remaining
 
-Proposed hero shape:
+## Direction approval policy
 
-- `m=6464, n=7776, k=7232`
+- explicit approval: `python scripts/graph.py approve --direction dir_02`
+- continue with recommended direction: `python scripts/graph.py use-recommended-direction`
+- node_c should implement exactly one selected direction
 
-Reason:
+## Latest diagnosis
 
-- large enough for stable timing,
-- all dimensions multiples of 32,
-- none are multiples of 128,
-- still practical for a single 3070 laptop-class GPU.
+- diagnosis id: `diagnosis_20260418_174143`
+- diagnosis status: `awaiting_codex`
+- recommended direction: `None`
+- approved direction: `None`
+- dir_01: PENDING | bottleneck: PENDING
+- dir_02: PENDING | bottleneck: PENDING
+- dir_03: PENDING | bottleneck: PENDING
 
-Status: IMPLEMENTED DEFAULT
+## Active direction
 
----
-
-### 2. Initial correctness tolerance policy
-
-Proposed starting policy:
-
-- compare promoted output against `C_ref_fp32`
-- start with `rtol=1e-2`, `atol=1.5e-1`
-- recalibrate after the first CUTLASS sanity run
-
-Status: IMPLEMENTED DEFAULT
-
----
-
-### 3. CUTLASS baseline cadence
-
-Proposed policy:
-
-- run once early,
-- refresh every ~10 non-improving rounds,
-- refresh after major kernel rewrites
-
-Status: PENDING AFTER FIRST VALID BASELINE
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

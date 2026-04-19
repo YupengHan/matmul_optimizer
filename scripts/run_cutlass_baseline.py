@@ -3,6 +3,8 @@
 Thin wrapper around eval_kernel.py for the CUTLASS reference runner.
 
 Usage example:
+    cmake -S . -B build -DENABLE_CUTLASS_RUNNER=ON -DCUTLASS_ROOT=/path/to/cutlass
+    cmake --build build -j 4 --target cutlass_runner
     python scripts/run_cutlass_baseline.py \
         --runner ./build/cutlass_runner \
         --kernel-tag cutlass_ref_v0

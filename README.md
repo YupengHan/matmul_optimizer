@@ -1,193 +1,328 @@
 # matmul_optimizer
 
-Shape-specialized, AI-assisted CUDA kernel optimization for a fixed BF16 GEMM on a single RTX 3070 Laptop GPU.
+Shape-specialized, script-first CUDA kernel optimization for one fixed BF16 GEMM on a single RTX 3070 Laptop GPU.
 
 ## Goal
 
-This repository is designed to demonstrate a practical workflow for:
+This repo is intentionally narrow:
 
-1. fixing one challenging BF16 GEMM shape,
-2. benchmarking a custom CUDA kernel against a stable local dataset,
-3. profiling with Nsight Compute,
-4. using AI + heuristics + human review to iterate on kernel changes,
-5. and trying to beat a CUTLASS baseline on **one fixed workload**.
+- benchmark one fixed BF16 GEMM shape
+- optimize a custom CUDA kernel for that exact shape
+- measure correctness, runtime, and Nsight Compute data locally
+- use Codex as a diagnosis / implementation agent inside a reproducible workflow
+- beat the local CUTLASS baseline on this fixed shape
 
-The repo is intentionally **script-first** for execution-critical steps. LLM/agent tokens are reserved for diagnosis, idea generation, and out-of-box exploration.
+The workflow is now a lightweight, LangGraph-inspired loop:
 
-## Benchmark target
+```text
+node_a -> node_b -> node_c -> node_a
+```
 
-Current fixed workload (`fixed_bf16_gemm_v1`):
+It borrows only the concepts of nodes, edges, and state. It does **not** depend on LangGraph, OpenAI API keys, or any cloud runtime.
 
-- `A[m, k] * B[k, n] = C[m, n]`
+## Fixed benchmark target
+
+`fixed_bf16_gemm_v1`
+
 - `m = 6464`
 - `n = 7776`
 - `k = 7232`
-- all dimensions are multiples of 32
-- all three dimensions are **not** multiples of 128
-- dtype: BF16 inputs, FP32 reference accumulation, BF16 output reference also stored
+- all dims are multiples of 32
+- none are multiples of 128
+- BF16 inputs
+- FP32 reference accumulation
+- BF16 output reference also stored
 
-Why this shape:
+## What is script-first vs agent-driven
 
-- big enough to produce stable kernel timings on a single mobile 3070-class GPU,
-- still safely inside typical 8 GB VRAM constraints,
-- large enough to make Tensor Core scheduling and memory movement matter,
-- slightly irregular versus common CTA tile shapes, which leaves room for shape-specialized optimization.
+Script-first:
+
+- dataset generation
+- configure / build
+- kernel evaluation
+- Nsight Compute capture
+- machine-readable state updates
+- lightweight state commits
+
+Codex-friendly agent nodes:
+
+- `node_b`: diagnose the latest measured run and output exactly three directions
+- `node_c`: implement one selected direction, prove the code still builds, then hand back to `node_a`
 
 ## Repository layout
 
 ```text
 matmul_optimizer/
+├── AGENTS.md
 ├── README.md
+├── CMakeLists.txt
 ├── .gitignore
 ├── .gitmessage
 ├── configs/
 │   ├── fixed_bf16_gemm_v1.json
 │   └── ncu_metrics_core.txt
 ├── docs/
-│   ├── benchmark_spec.md
-│   ├── pipeline_graph.md
+│   ├── commit_convention.md
 │   ├── heuristics.md
-│   └── commit_convention.md
+│   ├── node_b_protocol.md
+│   ├── node_c_protocol.md
+│   └── pipeline_graph.md
 ├── include/
-│   ├── kernel_api.h
-│   └── runner_contract.h
 ├── scripts/
-│   ├── generate_fixed_bf16_dataset.py
 │   ├── eval_kernel.py
-│   └── run_cutlass_baseline.py
+│   ├── generate_fixed_bf16_dataset.py
+│   ├── graph.py
+│   ├── run_cutlass_baseline.py
+│   └── state_lib.py
 ├── src/
 │   ├── kernels/
-│   │   └── bf16_gemm_v1.cu
 │   └── runner/
-│       └── main.cpp
 ├── state/
 │   ├── README.md
+│   ├── graph_state.json
+│   ├── latest_run.json
+│   ├── latest_ncu_summary.json
+│   ├── latest_diagnosis.json
+│   ├── active_direction.json
+│   ├── benchmark_state.json
+│   ├── latest_run.md
+│   ├── latest_ncu_summary.md
 │   ├── progress.md
 │   ├── current_focus.md
 │   ├── human_review.md
-│   └── benchmark_baselines.md
+│   ├── benchmark_baselines.md
+│   ├── node_b_context.md
+│   └── node_c_context.md
 ├── artifacts/
-│   └── README.md
 └── runs/
 ```
 
-## Current repository status
+## Main-loop commands
 
-As of `2026-04-18`, the repository is past the pure scaffold stage.
-
-What is already in place:
-
-- deterministic dataset generation via `scripts/generate_fixed_bf16_dataset.py`
-- a compilable CUDA runner target: `build/custom_runner`
-- a callable placeholder kernel in `src/kernels/bf16_gemm_v1.cu`
-- an evaluation orchestrator in `scripts/eval_kernel.py`
-- local state tracking under `state/`
-
-What has been verified in this workspace:
-
-- `cmake -S . -B build` succeeds
-- `cmake --build build -j 4` succeeds
-- the fixed dataset manifest and generation summary exist locally under `artifacts/datasets/fixed_bf16_gemm_v1/`
-- a sandbox-side evaluation attempt exists at `runs/20260418_021152_bf16_gemm_v1/`
-- a successful host-side evaluation exists at `runs/20260418_111959_bf16_gemm_v1_host_v0/`
-
-Current measurement status:
-
-- the sandbox-side run under `runs/20260418_021152_bf16_gemm_v1/` failed at `cudaMalloc` with `no CUDA-capable device is detected`
-- that failure reflects the sandbox runtime environment, not a project-level GPU bring-up failure on the host machine
-- the host-side run under `runs/20260418_111959_bf16_gemm_v1_host_v0/` passed correctness on all 3 configured cases with the current tolerance policy
-- the recorded performance result for `case_00_seed_3407` is `802.8425598 ms` median runtime and `0.9055566534 TFLOP/s`
-- Nsight Compute completed for the host-side run and wrote both `ncu_profile.ncu-rep` and `ncu_metrics.csv`
-- the repo now contains a valid recorded custom-kernel host run, but it still does **not** yet contain a CUTLASS baseline
-
-## Building the CUTLASS runner
-
-`cutlass_runner` is built as a separate CMake target and keeps the same CLI and JSON contract as `custom_runner`.
-
-Build options:
-
-- default behavior: `cmake -S . -B build && cmake --build build -j 4`
-- if `CUTLASS_ROOT` is not provided, CMake downloads CUTLASS `v3.5.1` from NVIDIA's official release tarball during configure
-- if you already have a local CUTLASS checkout, point CMake at it with `cmake -S . -B build -DCUTLASS_ROOT=/path/to/cutlass`
-
-Expected output binaries:
-
-- `build/custom_runner`
-- `build/cutlass_runner`
-
-## Source layout rules
-
-- `src/runner/main.cpp` is the stable runner entrypoint that future CMake targets should compile into `custom_runner`.
-- Versioned CUDA kernels live under `src/kernels/` and should follow `bf16_gemm_vN.cu`.
-- Public runner and kernel boundaries belong in `include/`; avoid putting shared contracts inside versioned `.cu` files.
-- `src/common/` is intentionally not created yet. The current shared surface is small enough that a second internal subtree would only add churn.
-
-## Workflow summary
-
-### 1. Create the fixed dataset once
+Generate the fixed dataset once:
 
 ```bash
 python scripts/generate_fixed_bf16_dataset.py
 ```
 
-This generates a deterministic local dataset under `artifacts/datasets/fixed_bf16_gemm_v1/`.
+Inspect workflow state:
 
-### 2. Evaluate a kernel candidate
+```bash
+python scripts/graph.py status
+```
 
-`eval_kernel.py` is the execution node that replaces the original `agent_a` idea.
+Run the current actionable node from `state/graph_state.json`:
 
-Responsibilities:
+```bash
+python scripts/graph.py cycle
+```
 
-- warm up the GPU,
-- run correctness checks,
-- run performance timing,
-- launch Nsight Compute,
-- write both raw artifacts (`.rep`, raw logs, CSV) and agent-readable summaries (`summary.json`, `summary.md`).
+Inspect or arm a multi-round loop:
 
-### 3. Diagnose the bottleneck
+```bash
+python scripts/graph.py rounds --status
+python scripts/graph.py rounds --count 5 --auto-use-recommended
+```
 
-An agent reads:
+Run the fully script-first measurement node:
 
-- the latest evaluation summary,
-- the NCU summary,
-- `docs/heuristics.md`,
-- the current progress state,
-- and relevant git history.
+```bash
+python scripts/graph.py node_a
+```
 
-It outputs **exactly three** optimization directions.
+Prepare node_b context:
 
-### 4. Implement one direction at a time
+```bash
+python scripts/graph.py node_b
+```
 
-A second agent (or Codex CLI loop) applies one direction, compiles, runs the evaluation script, and prepares a candidate change for human review.
+After Codex writes exactly three directions into `state/latest_diagnosis.json`, finalize node_b:
 
-### 5. Compare against CUTLASS
+```bash
+python scripts/graph.py node_b --finalize
+```
 
-`run_cutlass_baseline.py` is the script-oriented version of `agent_c`.  
-Run it periodically and especially after long plateaus.
+Select a direction:
 
-### 6. Do branch-only out-of-box exploration
+```bash
+python scripts/graph.py approve --direction dir_02
+```
 
-This is `agent_d` territory:
+or continue with the recommended direction:
 
-- read git history,
-- read old profiling artifacts,
-- compare with CUTLASS behavior,
-- try bolder hypotheses on a feature branch,
-- merge only if correctness and performance both improve.
+```bash
+python scripts/graph.py use-recommended-direction
+```
 
-## Notes
+Prepare node_c:
 
-- Generated datasets, run artifacts, NCU `.rep` files, and large binaries should **not** be committed to git.
-- Git is used as long-term memory for:
-  - performance-improving commits,
-  - experiment rationale,
-  - branch history,
-  - and human review decisions.
-- Public-facing narrative should always emphasize that this is a **shape-specialized optimization problem**, not a claim to beat CUTLASS on every GEMM.
+```bash
+python scripts/graph.py node_c
+```
 
-## Immediate next steps
+After editing code for exactly one direction, finalize node_c:
 
-1. add a CUTLASS reference runner and record the first baseline in `state/benchmark_baselines.md`,
-2. compare the accepted host-side custom-kernel run against CUTLASS on the same machine,
-3. use the Nsight Compute data from `runs/20260418_111959_bf16_gemm_v1_host_v0/` to choose the first optimization direction,
-4. start replacing the placeholder GEMM kernel with a Tensor Core-aware implementation.
+```bash
+python scripts/graph.py node_c --finalize
+```
+
+By default, node_c finalize auto-runs node_a, which closes the loop.
+
+## Multi-round workflow
+
+The repo now supports a round budget for Codex-driven optimization loops.
+
+Example:
+
+```bash
+python scripts/graph.py rounds --count 5 --auto-use-recommended
+```
+
+This means:
+
+- plan 5 rounds
+- each round is `node_b -> node_c -> node_a`
+- `--auto-use-recommended` is the explicit low-human-friction flag that allows the loop to keep moving with the rank-1 direction
+- each completed round is appended to `state/round_history.jsonl`
+- current loop status lives in `state/round_loop_state.json`
+- human-readable loop status lives in `state/rounds.md`
+
+The round-level performance record is written by the `node_a:` commit after the re-measurement step. That commit now carries:
+
+- the implementation idea / hypothesis
+- runtime delta vs the previous measured run
+- TFLOP/s delta
+- the run directory
+- the Nsight Compute summary path
+- the `.ncu-rep` path
+
+## Build behavior
+
+The main loop should not depend on CUTLASS.
+
+Main-loop configure/build:
+
+```bash
+cmake -S . -B build -DENABLE_CUTLASS_RUNNER=OFF
+cmake --build build -j 4 --target custom_runner
+```
+
+This keeps `node_a` and `node_c` from blocking on CUTLASS setup or network fetches.
+
+## CUTLASS baseline is a side node
+
+CUTLASS remains part of the repo, but it is intentionally off the main loop.
+
+To build the baseline runner:
+
+```bash
+cmake -S . -B build -DENABLE_CUTLASS_RUNNER=ON -DCUTLASS_ROOT=/path/to/cutlass
+cmake --build build -j 4 --target cutlass_runner
+```
+
+To record a CUTLASS baseline run:
+
+```bash
+python scripts/run_cutlass_baseline.py \
+  --runner ./build/cutlass_runner \
+  --kernel-tag cutlass_ref_v1
+```
+
+Use CUTLASS as:
+
+- the target to beat
+- a periodic refresh point after plateaus
+- a comparison source for NCU differences
+
+Do **not** let CUTLASS setup block the main custom-kernel loop.
+
+## Current workflow semantics
+
+### node_a
+
+- builds `custom_runner` when needed
+- runs `scripts/eval_kernel.py`
+- writes raw run artifacts under `runs/`
+- writes lightweight summaries under `state/`
+- updates graph state to point at `node_b`
+- creates a `node_a:` commit with state only
+
+### node_b
+
+- reads the latest lightweight summaries, heuristics, kernel, and state
+- outputs exactly 3 ranked directions
+- updates review state and graph state
+- creates a `node_b:` commit with state only
+- points the workflow at `node_c`
+
+### node_c
+
+- reads the selected direction
+- implements exactly one direction
+- proves the build still passes
+- creates a `node_c:` commit only after build success
+- auto-runs `node_a` by default
+
+## State model
+
+Machine-readable:
+
+- `state/graph_state.json`
+- `state/latest_run.json`
+- `state/latest_ncu_summary.json`
+- `state/latest_diagnosis.json`
+- `state/active_direction.json`
+- `state/benchmark_state.json`
+- `state/run_registry.jsonl`
+- `state/round_loop_state.json`
+- `state/round_history.jsonl`
+
+Human-readable:
+
+- `state/latest_run.md`
+- `state/latest_ncu_summary.md`
+- `state/progress.md`
+- `state/current_focus.md`
+- `state/human_review.md`
+- `state/benchmark_baselines.md`
+- `state/rounds.md`
+- `state/node_b_context.md`
+- `state/node_c_context.md`
+
+## Git and artifact policy
+
+Commit:
+
+- lightweight state
+- code changes
+- docs / protocol changes
+
+Do not commit:
+
+- `runs/`
+- `artifacts/` dataset binaries
+- `build/`
+- `*.ncu-rep`
+- raw NCU CSV/log files
+
+Commit categories:
+
+- `node_a:`
+- `node_b:`
+- `node_c:`
+
+See:
+
+- `AGENTS.md`
+- `docs/commit_convention.md`
+- `.gitmessage`
+
+## Where Codex should look first
+
+If you are operating this repo through Codex CLI, start with:
+
+1. `AGENTS.md`
+2. `python scripts/graph.py status`
+3. the protocol doc for the current node:
+   - `docs/node_b_protocol.md`
+   - `docs/node_c_protocol.md`

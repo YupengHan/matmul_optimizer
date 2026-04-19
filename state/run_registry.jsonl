@@ -1,0 +1,1 @@
+{"recorded_at":"2026-04-18T12:13:00-07:00","run_id":"20260418_111959_bf16_gemm_v1_host_v0","run_dir":"runs/20260418_111959_bf16_gemm_v1_host_v0","kernel_tag":"bf16_gemm_v1_host_v0","median_runtime_ms":802.8425598,"tflops":0.9055566534,"correctness_passed":true,"measured_commit":"9e20de18aa67dc6b5eb289d5e8e4c203dae37fa6"}

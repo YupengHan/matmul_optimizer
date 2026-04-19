@@ -1,0 +1,28 @@
+{
+  "dataset_id": "fixed_bf16_gemm_v1",
+  "metric_of_record": "median_runtime_ms",
+  "cutlass_baseline": {
+    "run_id": "20260418_115324_cutlass_ref_v0",
+    "run_dir": "runs/20260418_115324_cutlass_ref_v0",
+    "kernel_tag": "cutlass_ref_v0",
+    "median_runtime_ms": 25.91788864,
+    "tflops": 28.05087373,
+    "correctness_passed": true,
+    "summary_json": "runs/20260418_115324_cutlass_ref_v0/summary.json",
+    "ncu_summary_json": null,
+    "updated_at": "2026-04-18T12:13:00-07:00"
+  },
+  "best_custom": {
+    "run_id": "20260418_111959_bf16_gemm_v1_host_v0",
+    "run_dir": "runs/20260418_111959_bf16_gemm_v1_host_v0",
+    "kernel_tag": "bf16_gemm_v1_host_v0",
+    "median_runtime_ms": 802.8425598,
+    "tflops": 0.9055566534,
+    "correctness_passed": true,
+    "measured_commit": "9e20de18aa67dc6b5eb289d5e8e4c203dae37fa6",
+    "summary_json": "runs/20260418_111959_bf16_gemm_v1_host_v0/summary.json",
+    "ncu_summary_json": "state/latest_ncu_summary.json",
+    "updated_at": "2026-04-18T12:13:00-07:00"
+  },
+  "updated_at": "2026-04-18T12:13:00-07:00"
+}

@@ -1,0 +1,24 @@
+# Latest run
+
+- run id: `20260418_111959_bf16_gemm_v1_host_v0`
+- run dir: `runs/20260418_111959_bf16_gemm_v1_host_v0`
+- kernel tag: `bf16_gemm_v1_host_v0`
+- round label: `single-run`
+- runner: `build/custom_runner`
+- correctness: `PASS`
+- correctness cases: `3/3`
+- perf status: `PASS`
+- median runtime: `802.842560 ms`
+- p10 runtime: `796.220923 ms`
+- p90 runtime: `807.935077 ms`
+- TFLOP/s: `0.905557 TFLOP/s`
+- previous run id: `None`
+- runtime delta vs previous measured run: `N/A`
+- TFLOP/s delta vs previous measured run: `N/A`
+- perf verdict: `unknown`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- raw summary json: `runs/20260418_111959_bf16_gemm_v1_host_v0/summary.json`
+- measured commit: `9e20de18aa67dc6b5eb289d5e8e4c203dae37fa6`
+- new best custom: `yes`
+- generated at: `2026-04-18T12:13:00-07:00`

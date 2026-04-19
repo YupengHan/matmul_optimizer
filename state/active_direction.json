@@ -1,0 +1,10 @@
+{
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+}

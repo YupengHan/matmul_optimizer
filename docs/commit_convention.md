@@ -1,155 +1,88 @@
-# Commit and branch convention
+# Commit convention
 
-Git is the long-term memory system for this project.
+Git is the auditable memory for this workflow.
 
-A good performance commit must explain:
+The repo now uses node-specific commit prefixes:
 
-- what bottleneck was targeted,
-- why the code changed,
-- what the kernel idea was,
-- what evidence motivated it,
-- and what improvement was observed.
+- `node_a:` measured run state after a real evaluation
+- `node_b:` diagnosis state with exactly three directions
+- `node_c:` implementation commit after the build passes
+- `infra:` repo-level workflow or protocol changes outside a single node loop
 
-## Branch policy
+These prefixes are workflow roles, not generic code-style tags.
 
-## `main`
+## Rules
 
-`main` should stay readable and meaningful.
+### node_a
 
-Only merge to `main` when:
+- commit only lightweight state
+- never commit raw `runs/` artifacts
+- only claim performance that came from the real harness
+- when a round loop is active, include:
+  - round label
+  - implementation idea
+  - runtime delta
+  - TFLOP/s delta
+  - profile paths
 
-1. build passes,
-2. correctness passes,
-3. performance was re-measured,
-4. the change is documented,
-5. the claimed improvement is real.
+### node_b
 
-## Feature branches
+- commit only lightweight state
+- record the diagnosed source run
+- record the recommended direction
+- keep the three direction names searchable
 
-Use feature branches for:
+### node_c
 
-- out-of-box experiments,
-- aggressive rewrites,
-- anything likely to regress,
-- branch-only hypothesis testing.
+- commit code plus lightweight state
+- do not create a success commit unless the build passed
+- do not claim performance here; node_a must re-measure first
 
-Suggested pattern:
+## Message template
 
-- `feat/tile-retune`
-- `feat/cpasync-staging`
-- `feat/swizzle-layout`
-- `exp/outbox-hypothesis-01`
-
-## Commit message format
-
-Suggested prefix set:
-
-- `perf:` measured performance improvement
-- `fix:` correctness or build fix
-- `refactor:` structural cleanup with no intended perf claim
-- `infra:` scripts, docs, pipeline, or benchmark harness updates
-- `baseline:` CUTLASS or reference baseline updates
-- `wip:` temporary local work; avoid merging these
-
-## Strongly recommended format for perf commits
+`.gitmessage` mirrors this structure:
 
 ```text
-perf: +X.XX% on fixed_bf16_gemm_v1 by <short idea>
+node_x: <headline>
 
 Why:
-- what bottleneck was targeted
-- what evidence supported that belief
+- workflow reason for this node
+- why this step is happening now
 
 What changed:
-- code-level description
-- tile / pipeline / layout / launch changes
+- code or state surface that changed
+- direction or run being recorded
 
 Measurement:
-- previous median runtime: ...
-- new median runtime: ...
-- delta: ...
-- TFLOP/s delta: ...
-- correctness: PASS / FAIL
-- NCU headline changes: ...
+- node_a: runtime / TFLOP/s / correctness / key NCU metric
+- node_b: source run id / source runtime / recommended direction
+- node_c: build PASS and note that performance is pending node_a
 
 Risk / follow-up:
-- what may still be fragile
-- what should be tested next
+- what the next node must do
 ```
 
-## Tagging best results
+## Good examples
 
-When a new best kernel is confirmed, tag it.
+```text
+node_a: record run 20260418_111959_bf16_gemm_v1_host_v0 for bf16_gemm_v1_host_v0
+```
 
-Suggested tags:
+```text
+node_b: rank 3 directions from 20260418_111959_bf16_gemm_v1_host_v0
+```
 
-- `best-v0`
-- `best-v1`
-- `best-v2`
+```text
+node_c: implement dir_01 tensor-core multistage rewrite
+```
 
-Also update `state/benchmark_baselines.md`.
+## Bad examples
 
-## Minimum required evidence for a performance claim
-
-A measured improvement should include:
-
-- benchmark case ID,
-- runtime statistic used,
-- number of warmups,
-- number of timed iterations,
-- correctness status,
-- date,
-- branch or commit hash,
-- whether NCU was run.
-
-## Bad commit examples
-
-Avoid commits like:
+Avoid:
 
 - `update kernel`
-- `try something`
-- `fix`
+- `try idea`
+- `fix stuff`
 - `faster?`
 
-These destroy the memory value of git.
-
-## Good commit examples
-
-### Example 1
-
-```text
-perf: +4.8% on fixed_bf16_gemm_v1 by shrinking CTA tile
-
-Why:
-- tensor utilization was low and register-limited occupancy looked weak
-
-What changed:
-- reduced CTA tile from ...
-- reduced accumulator footprint
-- adjusted launch configuration
-
-Measurement:
-- previous median runtime: ...
-- new median runtime: ...
-- TFLOP/s delta: ...
-- correctness: PASS
-- NCU headline changes: more active warps, lower stall_long_scoreboard
-
-Risk / follow-up:
-- shared reuse may have weakened
-- compare against a deeper copy pipeline next
-```
-
-### Example 2
-
-```text
-baseline: refresh CUTLASS profile for fixed_bf16_gemm_v1
-
-Why:
-- 10 non-improving rounds since last baseline refresh
-
-What changed:
-- reran CUTLASS timing
-- collected new NCU rep and summary
-- updated state baseline file
-```
+Those lose the graph context and destroy auditability.

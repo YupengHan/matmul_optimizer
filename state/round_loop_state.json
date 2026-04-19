@@ -1,0 +1,15 @@
+{
+  "active": false,
+  "status": "idle",
+  "total_rounds": 0,
+  "completed_rounds": 0,
+  "remaining_rounds": 0,
+  "next_round_index": 1,
+  "current_round_index": null,
+  "auto_use_recommended": false,
+  "started_at": null,
+  "completed_at": null,
+  "last_completed_round": null,
+  "history_path": "state/round_history.jsonl",
+  "notes": "No multi-round loop is active. Start one with python scripts/graph.py rounds --count N."
+}
