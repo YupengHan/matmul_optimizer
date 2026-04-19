@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `f237679f9fc0bed9c49d1043495794c187d0aea4`
 - plateau counter: `3`
 - round loop: `round 4/5`
 - rounds remaining: `2`
-- notes: `Node A completed round 3/5. Run node_b to continue round 4/5.`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
@@ -28,12 +28,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_095729`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 4/5 diagnosis prepared from run 20260419_095653_bf16_gemm_v1_f237679. Evidence hierarchy: accepted base 16a98f7 at 37.285807 ms remains the reference; round-1 two-level B staging and round-2 phased 64x384 micro-panels both regressed badly; round-3 warp-specialized staging improved over those failed branches and cut mio_throttle sharply, but it still remained meaningfully slower than the accepted base, so it is treated as negative evidence for stacking forward. Ranking therefore pivots to base-oriented steady-state specialization, epilogue trimming, and only a bounded wait/barrier retune.`
+- dir_01: Peel a fixed-shape steady-state hot kernel for 6464x7776x7232 | bottleneck: Generic steady-state loop/control overhead diluting tensor issue on the fixed-shape hot path.
+- dir_02: Trim the c_shared epilogue/export path on the restored base | bottleneck: LSU/shared writeback pressure in the hot epilogue rather than feed-path or live-set shape.
+- dir_03: Apply a bounded cp.async wait/barrier retune to the restored single-skew base | bottleneck: Copy-pipeline wait/barrier scheduling in the accepted base rather than B layout or live-set shape.
 
 ## Active implementation direction
 
