@@ -9,7 +9,7 @@
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "recommended_direction_id": "dir_01",
-  "approved_direction_id": null,
+  "approved_direction_id": "dir_03",
   "directions": [
     {
       "direction_id": "dir_01",

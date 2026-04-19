@@ -762,6 +762,41 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
   ptx_wmma_accumulate_tile_set_384(acc_tiles, a_frag, b_tile);
 }
 
+template <typename TileConfig>
+__device__ __forceinline__ void advance_peeled_hot_stage_ptx(
+    PtxWmmaAccTileSet384& acc_tiles,
+    __nv_bfloat16 a_shared[][TileConfig::kASharedTileElems],
+    __nv_bfloat16 b_shared[][TileConfig::kBSharedTileElems],
+    const __nv_bfloat16* a_block,
+    const __nv_bfloat16* b_block,
+    int future_tile_k,
+    int warp_tile_m,
+    int warp_tile_n,
+    int& curr_stage,
+    int& next_stage) {
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  // Collapse the recycle barrier and consumer-ready barrier into one steady-state
+  // handoff: with only one pending group in flight here, we must fully wait for
+  // the consumer stage before the single CTA sync publishes it and guarantees
+  // the just-consumed stage is safe to refill.
+  cp_async_wait_group_0();
+  __syncthreads();
+
+  stage_a_shared_tile_async<TileConfig>(
+      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(
+      b_shared[curr_stage],
+      b_block + future_tile_k * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+
+  const int consumed_stage = curr_stage;
+  curr_stage = next_stage;
+  next_stage = consumed_stage;
+}
+
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
@@ -821,43 +856,29 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
     const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
 
-    accumulate_peeled_shared_stage_ptx<TileConfig>(
-        acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+    advance_peeled_hot_stage_ptx<TileConfig>(
+        acc_tiles,
+        a_shared,
+        b_shared,
+        a_block,
+        b_block,
+        first_future_tile_k,
+        warp_tile_m,
+        warp_tile_n,
+        curr_stage,
+        next_stage);
 
-    // Keep the restored CTA-wide stage recycle model intact while cutting the
-    // steady-state loop/index overhead in half.
-    __syncthreads();
-    stage_a_shared_tile_async<TileConfig>(
-        a_shared[curr_stage], a_block + first_future_tile_k, kFixedBenchmarkK);
-    stage_b_shared_tile_async<TileConfig>(
-        b_shared[curr_stage],
-        b_block + first_future_tile_k * kFixedBenchmarkN,
-        kFixedBenchmarkN);
-    cp_async_commit_group();
-
-    cp_async_wait_group_1();
-    __syncthreads();
-    const int consumed_stage = curr_stage;
-    curr_stage = next_stage;
-    next_stage = consumed_stage;
-
-    accumulate_peeled_shared_stage_ptx<TileConfig>(
-        acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-
-    __syncthreads();
-    stage_a_shared_tile_async<TileConfig>(
-        a_shared[curr_stage], a_block + second_future_tile_k, kFixedBenchmarkK);
-    stage_b_shared_tile_async<TileConfig>(
-        b_shared[curr_stage],
-        b_block + second_future_tile_k * kFixedBenchmarkN,
-        kFixedBenchmarkN);
-    cp_async_commit_group();
-
-    cp_async_wait_group_1();
-    __syncthreads();
-    const int second_consumed_stage = curr_stage;
-    curr_stage = next_stage;
-    next_stage = second_consumed_stage;
+    advance_peeled_hot_stage_ptx<TileConfig>(
+        acc_tiles,
+        a_shared,
+        b_shared,
+        a_block,
+        b_block,
+        second_future_tile_k,
+        warp_tile_m,
+        warp_tile_n,
+        curr_stage,
+        next_stage);
   }
 
   accumulate_peeled_shared_stage_ptx<TileConfig>(
