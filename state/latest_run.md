@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_125107_bf16_gemm_v1_52747c0`
-- run dir: `runs/20260419_125107_bf16_gemm_v1_52747c0`
-- kernel tag: `bf16_gemm_v1_52747c0`
-- round label: `round 4/5`
+- run id: `20260419_125734_bf16_gemm_v1_19f846e`
+- run dir: `runs/20260419_125734_bf16_gemm_v1_19f846e`
+- kernel tag: `bf16_gemm_v1_19f846e`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `491.896835 ms`
-- p10 runtime: `488.965994 ms`
-- p90 runtime: `494.815744 ms`
-- TFLOP/s: `1.477992 TFLOP/s`
-- previous run id: `20260419_124436_bf16_gemm_v1_05bac60`
-- runtime delta vs previous measured run: `+450.342323 ms`
-- TFLOP/s delta vs previous measured run: `-16.017567 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Use a warp-local consumer-side B load swizzle on the peeled 64x384 hot path`
-- implemented selection mode: `approved`
-- implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_125107_bf16_gemm_v1_52747c0/summary.json`
-- measured commit: `52747c0863292a8c9895c343897d9908c362c319`
+- median runtime: `36.371967 ms`
+- p10 runtime: `35.599993 ms`
+- p90 runtime: `37.377172 ms`
+- TFLOP/s: `19.988455 TFLOP/s`
+- previous run id: `20260419_125107_bf16_gemm_v1_52747c0`
+- runtime delta vs previous measured run: `-455.524868 ms`
+- TFLOP/s delta vs previous measured run: `+18.510463 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260419_125734_bf16_gemm_v1_19f846e/summary.json`
+- measured commit: `19f846e10ffc1ed9f0dae8a6c25be01b4420802e`
 - new best custom: `no`
-- generated at: `2026-04-19T12:51:43-07:00`
+- generated at: `2026-04-19T12:57:41-07:00`
