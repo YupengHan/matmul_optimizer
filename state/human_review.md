@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 1/5` with `5` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 2/5` with `4` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260419_130817`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- diagnosis notes: `This diagnosis intentionally keeps all three directions on the same human-directed 64x384 hot-band PTX microkernel branch. The 64x96 tail remains unchanged in every direction, and the round-18 sweep still anchors 64x384 as the right hot-band macro tile. Strong negative evidence from earlier warp specialization, producer straight-lining, and consumer-side B swizzle means the branch should not revert to generic WMMA cleanup or other old feed-path experiments; later rounds should refine the explicit PTX hot-band path instead.`
-- dir_01: PTX hot-band microkernel branch with unchanged 64x96 tail | bottleneck: The dominant limiter is the WMMA hot-band control surface itself: it constrains fragment lifetime and instruction ordering, which keeps tensor issue diluted by feed/orchestration overhead even though the macro tile and tail split are already well chosen.
-- dir_02: PTX phase 1 compute-core swap under current staging and tail split | bottleneck: Instruction selection and fragment scheduling inside the hot compute body, not the launch split and not the fixed 64x96 tail.
-- dir_03: PTX register-first export and overlap-budget follow-through | bottleneck: The hot-band export path and c_shared round-trip still consume shared-memory and LSU budget that could otherwise support more overlap once the PTX branch owns accumulator residency.
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
