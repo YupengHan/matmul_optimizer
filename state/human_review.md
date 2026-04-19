@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 5/5` with `1` rounds remaining
 
 ## Direction approval policy
@@ -14,16 +14,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260419_105254`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Diagnosed regressed run 20260419_105226_bf16_gemm_v1_edb3741 against the restored accepted best 8346b48. The latest single-level B skew retune is negative evidence: end-to-end runtime regressed from 34.655231 ms to 34.966097 ms, tensor active slipped from 35.06 to 34.56, mio_throttle stayed effectively unchanged at 35.83, and hot-kernel LSU wavefront pressure rose sharply. The ranking therefore excludes any further B-skew or mapping tweaks, and it also keeps the earlier named-barrier/subgroup handoff family excluded because that path already regressed much harder by inflating register pressure and collapsing active warps.`
+- dir_01: Specialize Tile384 cp.async producer assignment in the peeled hot path | bottleneck: Producer-side cp.async issue overhead and LSU address-generation pressure in the 64x384 peeled hot kernel, not occupancy or synchronization.
+- dir_02: Pair the Tile384 epilogue export across the existing two C-scratch stages | bottleneck: Hot-kernel epilogue LSU traffic and shared-memory export overhead after MMA completion, which can still contribute to the elevated mio_throttle.
+- dir_03: Add a fixed-K peeled 64x96 tail kernel | bottleneck: Residual generic-loop, barrier, and scoreboard overhead in the 64x96 tail kernel; the upside is capped because the tail is a small fraction of total time.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
