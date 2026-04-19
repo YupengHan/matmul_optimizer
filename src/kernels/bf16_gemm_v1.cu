@@ -53,12 +53,6 @@ __device__ __forceinline__ void cp_async_wait_group_0() {
 #endif
 }
 
-__device__ __forceinline__ void cp_async_wait_group_1() {
-#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
-  asm volatile("cp.async.wait_group 1;\n" ::);
-#endif
-}
-
 __device__ __forceinline__ void stage_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
@@ -151,6 +145,8 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   stage_shared_tile_async(a_shared[0], a_tile_0, k, kWmmaK, kASharedTileElems);
   stage_shared_tile_async(b_shared[0], b_tile_0, n, kTensorBlockN, kBSharedTileElems);
   cp_async_commit_group();
+  cp_async_wait_group_0();
+  __syncthreads();
 
   for (int tile_k = 0; tile_k < k; tile_k += kWmmaK) {
     const int next_tile_k = tile_k + kWmmaK;
@@ -166,11 +162,7 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
       stage_shared_tile_async(a_shared[next_stage], a_next_tile, k, kWmmaK, kASharedTileElems);
       stage_shared_tile_async(b_shared[next_stage], b_next_tile, n, kTensorBlockN, kBSharedTileElems);
       cp_async_commit_group();
-      cp_async_wait_group_1();
-    } else {
-      cp_async_wait_group_0();
     }
-    __syncthreads();
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
     const __nv_bfloat16* b_tile = b_shared[curr_stage] + warp_tile_n * kWmmaN;
@@ -178,6 +170,11 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     wmma::load_matrix_sync(b_frag, b_tile, kTensorBlockN);
     wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
+
+    if (next_tile_k < k) {
+      cp_async_wait_group_0();
+      __syncthreads();
+    }
   }
 
   float* warp_c_tile = c_shared + warp_id * kCSharedTileElemsPerWarp;
