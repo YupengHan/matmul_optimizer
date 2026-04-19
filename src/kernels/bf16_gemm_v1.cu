@@ -177,41 +177,41 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   const int warp_tile_n = warp_id % kWarpTilesN;
   const int row = block_row + warp_tile_m * kWmmaM;
   const int col = block_col + warp_tile_n * kWarpMmaTilesN * kWmmaN;
-  const int tiles_k = k / kWmmaK;
-  const int a_warp_tile_offset = warp_tile_m * kWmmaM * kWmmaK;
-  const int b_warp_tile_offset = b_shared_col_from_logical(warp_tile_n * kWarpGroupCols);
 
   wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> acc_frags[kWarpMmaTilesN];
   #pragma unroll
   for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
     wmma::fill_fragment(acc_frags[tile_n], 0.0f);
   }
-  wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
-  wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frags[kWarpMmaTilesN];
 
   const __nv_bfloat16* a_tile_0 = a + block_row * k;
   const __nv_bfloat16* b_tile_0 = b + block_col;
 
-  // Keep the double-buffered pipeline generic, but move the end-of-K handling
-  // out of the hot loop so the steady state always stages, computes, then waits.
   stage_a_shared_tile_async(a_shared[0], a_tile_0, k);
   stage_b_shared_tile_async(b_shared[0], b_tile_0, n);
   cp_async_commit_group();
   cp_async_wait_group_0();
   __syncthreads();
 
-  for (int tile_idx = 0; tile_idx < tiles_k - 1; ++tile_idx) {
-    const int curr_stage = tile_idx & 1;
+  for (int tile_k = 0; tile_k < k; tile_k += kWmmaK) {
+    const int next_tile_k = tile_k + kWmmaK;
+    const int curr_stage = (tile_k / kWmmaK) & 1;
     const int next_stage = curr_stage ^ 1;
-    const int next_tile_k = (tile_idx + 1) * kWmmaK;
-    const __nv_bfloat16* a_next_tile = a + block_row * k + next_tile_k;
-    const __nv_bfloat16* b_next_tile = b + next_tile_k * n + block_col;
-    stage_a_shared_tile_async(a_shared[next_stage], a_next_tile, k);
-    stage_b_shared_tile_async(b_shared[next_stage], b_next_tile, n);
-    cp_async_commit_group();
 
-    const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_warp_tile_offset;
-    const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_warp_tile_offset;
+    wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
+    wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frags[kWarpMmaTilesN];
+
+    if (next_tile_k < k) {
+      const __nv_bfloat16* a_next_tile = a + block_row * k + next_tile_k;
+      const __nv_bfloat16* b_next_tile = b + next_tile_k * n + block_col;
+      stage_a_shared_tile_async(a_shared[next_stage], a_next_tile, k);
+      stage_b_shared_tile_async(b_shared[next_stage], b_next_tile, n);
+      cp_async_commit_group();
+    }
+
+    const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] + b_shared_col_from_logical(warp_tile_n * kWarpGroupCols);
 
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     #pragma unroll
@@ -220,19 +220,10 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
       wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
     }
 
-    cp_async_wait_group_0();
-    __syncthreads();
-  }
-
-  const int drain_stage = (tiles_k - 1) & 1;
-  const __nv_bfloat16* a_tile = a_shared[drain_stage] + a_warp_tile_offset;
-  const __nv_bfloat16* b_tile = b_shared[drain_stage] + b_warp_tile_offset;
-
-  wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
-  #pragma unroll
-  for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
-    wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, kBSharedStride);
-    wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
+    if (next_tile_k < k) {
+      cp_async_wait_group_0();
+      __syncthreads();
+    }
   }
 
   float* warp_c_tile = c_shared + warp_id * kCSharedTileElemsPerWarp;
