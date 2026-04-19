@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260418_233315",
+  "status": "completed",
+  "created_at": "2026-04-18T23:33:15-07:00",
   "source_run_id": "20260418_233053_bf16_gemm_v1_6bee469",
   "source_run_dir": "runs/20260418_233053_bf16_gemm_v1_6bee469",
   "source_summary_json": "runs/20260418_233053_bf16_gemm_v1_6bee469/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Retile to a 64x96 CTA so each staged B tile feeds more MMA before the next sync",
+      "hypothesis": "Using docs/heuristics.md explicitly, this looks like a mixed global-memory and synchronization case rather than a tail-handling problem: DRAM is 85.34%, LSU issue is 83.65%, barrier stalls are 23.45%, mio throttle is 33.49%, and Tensor Core active time is only 26.40%. The current 32x96 / 4-warp CTA does too little tensor work for each 16x96 B slice and each CTA-wide barrier. Because the fixed shape is exactly divisible by 64x96x16, doubling the CTA along M to 8 compute warps should reuse the same B tile across more output rows, increase arithmetic intensity, and put more Tensor work between sync points.",
+      "expected_bottleneck": "Global-memory and LSU-heavy instruction mix starving Tensor Cores; the current shared-limited 7-block residency caps the kernel near 28 active warps/SM and still leaves too little math per staged K slice.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:20-46",
+        "src/kernels/bf16_gemm_v1.cu:163-225",
+        "src/kernels/bf16_gemm_v1.cu:288-291"
+      ],
+      "risk": "A larger CTA can push shared memory or accumulator pressure high enough to lose occupancy or force an accompanying epilogue rewrite, so the upside only lands if registers stay near the current 48/thread and the block still sustains strong residency on SM 8.6.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active (should move clearly above ~26%)",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed (should stop being the ceiling)",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active and launch__occupancy_limit_shared_mem"
+      ],
+      "stop_condition": "Stop if the retile drives registers materially above 48/thread or shared memory high enough that active warps do not beat the current ~28 warps/SM, or if the restored round-7 baseline does not improve meaningfully after the retile."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Remove the shared-memory epilogue scratch and recover occupancy plus LSU budget for the steady state",
+      "hypothesis": "The detailed CSV says the kernel is not only DRAM-heavy but also L1/LSU-heavy: L1TEX throughput is 83.88%, LSU wavefronts are 67.92%, LSU issue is 83.65%, and mio throttle is 33.49%. The 4 KB c_shared scratch raises per-block shared allocation to 13.824 KB, holds residency at the shared-memory limit of 7 blocks/SM on this 102400-byte SM, and adds extra shared-memory traffic plus syncwarp churn in the epilogue. Rewriting the epilogue so fragments reach C with less or no shared round-trip should both reduce LSU pressure and let the same 4-warp CTA run at materially higher occupancy.",
+      "expected_bottleneck": "Shared-memory footprint and epilogue LSU traffic are reinforcing the same MIO/LSU congestion seen in the profile and are blocking higher CTA residency even though registers are not the limiting resource.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:31-33",
+        "src/kernels/bf16_gemm_v1.cu:163-165",
+        "src/kernels/bf16_gemm_v1.cu:238-255"
+      ],
+      "risk": "WMMA store semantics, BF16 conversion, and global-store coalescing can regress if the warp-to-output mapping is rewritten carelessly, so this needs a clean output path rather than a piecemeal micro-optimization.",
+      "metrics_to_recheck": [
+        "launch__shared_mem_per_block_allocated and launch__occupancy_limit_shared_mem",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__throughput.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if shared allocation drops and occupancy rises but runtime moves by less than about 1 ms while DRAM, LSU, and Tensor metrics stay essentially flat; that would mean the epilogue is too cold to justify this as the main round-9 bet."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Replace the lockstep double buffer with a more overlapped producer-consumer cp.async pipeline",
+      "hypothesis": "The instruction mix says this kernel is badly balanced, not just 'memory bound': Tensor active is only 26.40% while issue active is 37.94%, barrier stalls are 23.45%, and mio throttle is 33.49%. Today every warp stages the next tile, then every warp waits, then every warp synchronizes for every 16-wide K slice. A warp-specialized or deeper multistage pipeline that lets some warps emphasize cp.async and LSU work while others stay on MMA could overlap Tensor Core work with CUDA-core/LSU/scalar work instead of serializing the phases behind CTA-wide barriers.",
+      "expected_bottleneck": "Synchronization and MIO throttle inside the steady-state K loop; the current double-buffered design still executes as a block-wide phase machine rather than a truly overlapped pipeline.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:56-110",
+        "src/kernels/bf16_gemm_v1.cu:163-225",
+        "src/kernels/bf16_gemm_v1.cu:195-224"
+      ],
+      "risk": "This is the most invasive option: correctness is easy to break, loader-compute warp balance is easy to get wrong, and the implementation may need named barriers or a broader warp remap before it shows a win.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__issue_active.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if barrier and MIO stalls fall but Tensor activity and end-to-end runtime stay flat, or if making the pipeline work cleanly requires coupling too many structural changes into one round."
+    }
+  ],
+  "notes": "Round 9 intentionally includes substantial human-in-loop guidance and a more exploratory, out-of-box diagnosis mindset. Using docs/heuristics.md explicitly, the current profile reads as a mixed global-memory plus synchronization plus instruction-mix imbalance, not a small tail or prologue-cleanup problem; at 56.87 ms, the kernel is still far from the ~20 ms long-horizon ceiling, so the ranking favors structural changes over another incremental K-loop prologue/steady-state/drain tweak. Round 9 node_c should restore to the round-7 measured commit before applying the selected direction."
 }
