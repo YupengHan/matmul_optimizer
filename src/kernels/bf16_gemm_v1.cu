@@ -27,10 +27,20 @@ constexpr int kTensorBlockN = kWarpTilesN * kWarpMmaTilesN * kWmmaN;
 constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
 constexpr int kBSharedTileElems = kWmmaK * kTensorBlockN;
 constexpr int kCSharedTileElemsPerWarp = kWarpMmaTilesN * kWmmaM * kWmmaN;
-constexpr int kAsyncCopyElems = 4;
+constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
+constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
+constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
+constexpr int kAAsyncCopiesPerTile = kASharedTileElems / kAsyncCopyElems;
+constexpr int kBAsyncCopiesPerTile = kBSharedTileElems / kAsyncCopyElems;
 
-__device__ __forceinline__ void cp_async_copy_8_bytes(
+static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
+static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
+static_assert((kTensorBlockN % kAsyncCopyElems) == 0, "B tile width must stay 16-byte aligned.");
+static_assert((kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
+static_assert((kBSharedTileElems % kAsyncCopyElems) == 0, "B tile must be divisible by async copy width.");
+
+__device__ __forceinline__ void cp_async_copy_16_bytes(
     __nv_bfloat16* dst,
     const __nv_bfloat16* src) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
@@ -55,17 +65,29 @@ __device__ __forceinline__ void cp_async_wait_group_0() {
 #endif
 }
 
-__device__ __forceinline__ void stage_shared_tile_async(
+__device__ __forceinline__ void stage_a_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
-    int global_stride,
-    int tile_cols,
-    int total_elems) {
-  for (int chunk = threadIdx.x; chunk < total_elems / kAsyncCopyElems; chunk += blockDim.x) {
-    const int elem = chunk * kAsyncCopyElems;
-    const int row = elem / tile_cols;
-    const int col = elem % tile_cols;
-    cp_async_copy_8_bytes(shared_tile + elem, global_tile + row * global_stride + col);
+    int global_stride) {
+  for (int copy_idx = threadIdx.x; copy_idx < kAAsyncCopiesPerTile; copy_idx += blockDim.x) {
+    const int row = copy_idx / kAAsyncCopiesPerRow;
+    const int col = (copy_idx % kAAsyncCopiesPerRow) * kAsyncCopyElems;
+    cp_async_copy_16_bytes(
+        shared_tile + row * kWmmaK + col,
+        global_tile + row * global_stride + col);
+  }
+}
+
+__device__ __forceinline__ void stage_b_shared_tile_async(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  for (int copy_idx = threadIdx.x; copy_idx < kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
+    const int row = copy_idx / kBAsyncCopiesPerRow;
+    const int col = (copy_idx % kBAsyncCopiesPerRow) * kAsyncCopyElems;
+    cp_async_copy_16_bytes(
+        shared_tile + row * kTensorBlockN + col,
+        global_tile + row * global_stride + col);
   }
 }
 
@@ -147,8 +169,8 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   const __nv_bfloat16* a_tile_0 = a + block_row * k;
   const __nv_bfloat16* b_tile_0 = b + block_col;
 
-  stage_shared_tile_async(a_shared[0], a_tile_0, k, kWmmaK, kASharedTileElems);
-  stage_shared_tile_async(b_shared[0], b_tile_0, n, kTensorBlockN, kBSharedTileElems);
+  stage_a_shared_tile_async(a_shared[0], a_tile_0, k);
+  stage_b_shared_tile_async(b_shared[0], b_tile_0, n);
   cp_async_commit_group();
   cp_async_wait_group_0();
   __syncthreads();
@@ -164,8 +186,8 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     if (next_tile_k < k) {
       const __nv_bfloat16* a_next_tile = a + block_row * k + next_tile_k;
       const __nv_bfloat16* b_next_tile = b + next_tile_k * n + block_col;
-      stage_shared_tile_async(a_shared[next_stage], a_next_tile, k, kWmmaK, kASharedTileElems);
-      stage_shared_tile_async(b_shared[next_stage], b_next_tile, n, kTensorBlockN, kBSharedTileElems);
+      stage_a_shared_tile_async(a_shared[next_stage], a_next_tile, k);
+      stage_b_shared_tile_async(b_shared[next_stage], b_next_tile, n);
       cp_async_commit_group();
     }
 
