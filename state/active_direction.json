@@ -1,33 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Register-first PTX export follow-through on the hot band",
-  "selection_mode": "approved",
-  "selected_at": "2026-04-19T14:03:49-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_140002",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Register-first PTX export follow-through on the hot band",
-    "hypothesis": "The PTX branch has now delivered three consecutive wins, and round 3 specifically showed that orchestration/barrier cleanup is paying off: runtime is down to 33.366 ms, barrier is 14.34, and mio is only 2.31. The hot 64x384 kernel still exits through the shared export surface at src/kernels/bf16_gemm_v1.cu:301-315, :405-439, and :894-896, which means the branch still materializes every accumulator tile through shared before BF16 packing. With control/orchestration already improved, the best next step is to make the hot-band PTX branch own export as well: retire accumulator tiles from registers more directly so shared LSU work, short scoreboard, and export-side live state all shrink while leaving the 64x96 tail untouched.",
-    "expected_bottleneck": "The remaining cost has shifted away from barrier and mio tax toward export-side shared/LSU work and residual register lifetime in the hot-band epilogue.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:212-229",
-      "src/kernels/bf16_gemm_v1.cu:301-315",
-      "src/kernels/bf16_gemm_v1.cu:405-439",
-      "src/kernels/bf16_gemm_v1.cu:813-817",
-      "src/kernels/bf16_gemm_v1.cu:894-896"
-    ],
-    "risk": "Direct register export changes accumulator-to-output mapping and BF16 packing at the same time, so correctness risk is real. It also may not flip occupancy_limit_registers by itself if the dominant register cost is still the 12-tile accumulator residency.",
-    "metrics_to_recheck": [
-      "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-      "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "launch__registers_per_thread",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if export-side shared/LSU pressure does not fall materially or if registers increase enough to offset any store-path gain."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

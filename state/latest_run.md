@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_135930_bf16_gemm_v1_1e399d8`
-- run dir: `runs/20260419_135930_bf16_gemm_v1_1e399d8`
-- kernel tag: `bf16_gemm_v1_1e399d8`
-- round label: `round 3/5`
+- run id: `20260419_140646_bf16_gemm_v1_c9d030a`
+- run dir: `runs/20260419_140646_bf16_gemm_v1_c9d030a`
+- kernel tag: `bf16_gemm_v1_c9d030a`
+- round label: `round 4/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `33.366047 ms`
-- p10 runtime: `32.732750 ms`
-- p90 runtime: `34.468148 ms`
-- TFLOP/s: `21.789199 TFLOP/s`
-- previous run id: `20260419_132725_bf16_gemm_v1_c2f2bec`
-- runtime delta vs previous measured run: `-0.868401 ms`
-- TFLOP/s delta vs previous measured run: `+0.552711 TFLOP/s`
+- median runtime: `32.001088 ms`
+- p10 runtime: `31.821852 ms`
+- p90 runtime: `34.513510 ms`
+- TFLOP/s: `22.718584 TFLOP/s`
+- previous run id: `20260419_135930_bf16_gemm_v1_1e399d8`
+- runtime delta vs previous measured run: `-1.364959 ms`
+- TFLOP/s delta vs previous measured run: `+0.929386 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `dir_03`
-- implemented direction name: `Fixed-K PTX orchestration retime inside the peeled hot loop`
+- implemented direction id: `dir_01`
+- implemented direction name: `Register-first PTX export follow-through on the hot band`
 - implemented selection mode: `approved`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_135930_bf16_gemm_v1_1e399d8/summary.json`
-- measured commit: `1e399d80f7b02720493e3275ecb2c6865cbe1e63`
+- raw summary json: `runs/20260419_140646_bf16_gemm_v1_c9d030a/summary.json`
+- measured commit: `c9d030a5022af8ce61bdcdb9b13e7ea85315ef52`
 - new best custom: `yes`
-- generated at: `2026-04-19T13:59:38-07:00`
+- generated at: `2026-04-19T14:06:53-07:00`
