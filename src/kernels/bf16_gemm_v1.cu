@@ -236,6 +236,21 @@ struct PtxWmmaAccFragment {
   float reg[8];
 };
 
+struct PtxWmmaAccTileSet384 {
+  PtxWmmaAccFragment tile0;
+  PtxWmmaAccFragment tile1;
+  PtxWmmaAccFragment tile2;
+  PtxWmmaAccFragment tile3;
+  PtxWmmaAccFragment tile4;
+  PtxWmmaAccFragment tile5;
+  PtxWmmaAccFragment tile6;
+  PtxWmmaAccFragment tile7;
+  PtxWmmaAccFragment tile8;
+  PtxWmmaAccFragment tile9;
+  PtxWmmaAccFragment tile10;
+  PtxWmmaAccFragment tile11;
+};
+
 __device__ __forceinline__ void ptx_wmma_fill_zero(PtxWmmaAccFragment& frag) {
   #pragma unroll
   for (int i = 0; i < 8; ++i) {
@@ -297,6 +312,131 @@ __device__ __forceinline__ void ptx_wmma_store_d_row_shared(
         "f"(frag.reg[0]), "f"(frag.reg[1]), "f"(frag.reg[2]), "f"(frag.reg[3]),
         "f"(frag.reg[4]), "f"(frag.reg[5]), "f"(frag.reg[6]), "f"(frag.reg[7]),
         "r"(leading_dim));
+}
+
+template <int TileIdx>
+__device__ __forceinline__ PtxWmmaAccFragment& ptx_wmma_acc_tile(PtxWmmaAccTileSet384& tiles) {
+  static_assert(TileIdx >= 0 && TileIdx < TensorCoreTile384::kWarpMmaTilesN,
+                "Tile384 PTX accumulator index out of range.");
+  if constexpr (TileIdx == 0) {
+    return tiles.tile0;
+  } else if constexpr (TileIdx == 1) {
+    return tiles.tile1;
+  } else if constexpr (TileIdx == 2) {
+    return tiles.tile2;
+  } else if constexpr (TileIdx == 3) {
+    return tiles.tile3;
+  } else if constexpr (TileIdx == 4) {
+    return tiles.tile4;
+  } else if constexpr (TileIdx == 5) {
+    return tiles.tile5;
+  } else if constexpr (TileIdx == 6) {
+    return tiles.tile6;
+  } else if constexpr (TileIdx == 7) {
+    return tiles.tile7;
+  } else if constexpr (TileIdx == 8) {
+    return tiles.tile8;
+  } else if constexpr (TileIdx == 9) {
+    return tiles.tile9;
+  } else if constexpr (TileIdx == 10) {
+    return tiles.tile10;
+  } else {
+    return tiles.tile11;
+  }
+}
+
+template <int TileIdx>
+__device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
+    const PtxWmmaAccTileSet384& tiles) {
+  static_assert(TileIdx >= 0 && TileIdx < TensorCoreTile384::kWarpMmaTilesN,
+                "Tile384 PTX accumulator index out of range.");
+  if constexpr (TileIdx == 0) {
+    return tiles.tile0;
+  } else if constexpr (TileIdx == 1) {
+    return tiles.tile1;
+  } else if constexpr (TileIdx == 2) {
+    return tiles.tile2;
+  } else if constexpr (TileIdx == 3) {
+    return tiles.tile3;
+  } else if constexpr (TileIdx == 4) {
+    return tiles.tile4;
+  } else if constexpr (TileIdx == 5) {
+    return tiles.tile5;
+  } else if constexpr (TileIdx == 6) {
+    return tiles.tile6;
+  } else if constexpr (TileIdx == 7) {
+    return tiles.tile7;
+  } else if constexpr (TileIdx == 8) {
+    return tiles.tile8;
+  } else if constexpr (TileIdx == 9) {
+    return tiles.tile9;
+  } else if constexpr (TileIdx == 10) {
+    return tiles.tile10;
+  } else {
+    return tiles.tile11;
+  }
+}
+
+template <int TileIdx = 0>
+__device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384& tiles) {
+  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
+    ptx_wmma_fill_zero(ptx_wmma_acc_tile<TileIdx>(tiles));
+    ptx_wmma_fill_zero_tile_set<TileIdx + 1>(tiles);
+  }
+}
+
+template <int TileIdx = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
+    PtxWmmaAccTileSet384& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag,
+    const __nv_bfloat16* b_tile) {
+  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
+    PtxWmmaBf16Fragment b_frag;
+    ptx_wmma_load_b_row(
+        b_frag,
+        b_tile + TileIdx * kWmmaN,
+        TensorCoreTile384::kBSharedStride);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
+    ptx_wmma_accumulate_tile_set_384<TileIdx + 1>(acc_tiles, a_frag, b_tile);
+  }
+}
+
+template <typename TileConfig, int TileIdx = 0>
+__device__ __forceinline__ void ptx_wmma_store_tile_set_384(
+    const PtxWmmaAccTileSet384& acc_tiles,
+    float* c_shared,
+    __nv_bfloat16* c_tile_base,
+    int warp_id,
+    int lane_id) {
+  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
+    constexpr int kCSharedStageStride =
+        TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
+    constexpr int kCSharedStageMask = TileConfig::kCSharedStageCount - 1;
+    float* warp_c_tile =
+        c_shared + (TileIdx & kCSharedStageMask) * kCSharedStageStride +
+        warp_id * TileConfig::kCSharedTileElemsPerWarp;
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile, ptx_wmma_acc_tile<TileIdx>(acc_tiles), kWmmaN);
+    __syncwarp();
+
+    const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
+    constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
+    constexpr int kQuadsPerTile = TileConfig::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
+
+    #pragma unroll
+    for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
+      const int local_row = quad_idx / kQuadsPerRow;
+      const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
+      store_bfloat164_quad(
+          c_tile_base + local_row * kFixedBenchmarkN + TileIdx * kWmmaN + local_col,
+          warp_c_tile_quads[quad_idx]);
+    }
+    if constexpr (TileConfig::kCSharedStageCount == 1) {
+      __syncwarp();
+    }
+    ptx_wmma_store_tile_set_384<TileConfig, TileIdx + 1>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 }
 
 template <typename TileConfig>
@@ -604,13 +744,14 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
 
 template <typename TileConfig>
 __device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
-    PtxWmmaAccFragment (&acc_frags)[TileConfig::kWarpMmaTilesN],
+    PtxWmmaAccTileSet384& acc_tiles,
     const __nv_bfloat16* a_stage,
     const __nv_bfloat16* b_stage,
     int warp_tile_m,
     int warp_tile_n) {
+  static_assert(TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN,
+                "The Tile384 PTX accumulator helper is only valid on the hot-band kernel.");
   PtxWmmaBf16Fragment a_frag;
-  PtxWmmaBf16Fragment b_frag;
 
   const __nv_bfloat16* a_tile =
       a_stage + warp_tile_m * kWmmaM * kWmmaK;
@@ -618,12 +759,7 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
       b_stage + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
 
   ptx_wmma_load_a_row(a_frag, a_tile, kWmmaK);
-  #pragma unroll
-  for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-    ptx_wmma_load_b_row(
-        b_frag, b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
-    ptx_wmma_mma_row_row(acc_frags[tile_n], a_frag, b_frag);
-  }
+  ptx_wmma_accumulate_tile_set_384(acc_tiles, a_frag, b_tile);
 }
 
 template <typename TileConfig, int FixedKTiles>
@@ -659,11 +795,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   const int row = block_row + warp_tile_m * kWmmaM;
   const int col = block_col + warp_tile_n * TileConfig::kWarpMmaTilesN * kWmmaN;
 
-  PtxWmmaAccFragment acc_frags[TileConfig::kWarpMmaTilesN];
-  #pragma unroll
-  for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-    ptx_wmma_fill_zero(acc_frags[tile_n]);
-  }
+  PtxWmmaAccTileSet384 acc_tiles;
+  ptx_wmma_fill_zero_tile_set(acc_tiles);
 
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
@@ -689,7 +822,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
 
     accumulate_peeled_shared_stage_ptx<TileConfig>(
-        acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+        acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
     // Keep the restored CTA-wide stage recycle model intact while cutting the
     // steady-state loop/index overhead in half.
@@ -709,7 +842,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     next_stage = consumed_stage;
 
     accumulate_peeled_shared_stage_ptx<TileConfig>(
-        acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+        acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
     __syncthreads();
     stage_a_shared_tile_async<TileConfig>(
@@ -728,45 +861,18 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   }
 
   accumulate_peeled_shared_stage_ptx<TileConfig>(
-      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   cp_async_wait_group_0();
   __syncthreads();
   curr_stage = next_stage;
 
   accumulate_peeled_shared_stage_ptx<TileConfig>(
-      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
-  constexpr int kCSharedStageStride =
-      TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
-  constexpr int kCSharedStageMask = TileConfig::kCSharedStageCount - 1;
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  #pragma unroll
-  for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-    float* warp_c_tile =
-        c_shared + (tile_n & kCSharedStageMask) * kCSharedStageStride +
-        warp_id * TileConfig::kCSharedTileElemsPerWarp;
-    // Keep the accepted shared-export epilogue, but materialize the hot-band
-    // accumulator tile through inline PTX instead of the C++ WMMA surface.
-    ptx_wmma_store_d_row_shared(warp_c_tile, acc_frags[tile_n], kWmmaN);
-    __syncwarp();
-
-    const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
-    constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
-    constexpr int kQuadsPerTile = TileConfig::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
-
-    #pragma unroll
-    for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
-      const int local_row = quad_idx / kQuadsPerRow;
-      const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
-      store_bfloat164_quad(
-          c_tile_base + local_row * kFixedBenchmarkN + tile_n * kWmmaN + local_col,
-          warp_c_tile_quads[quad_idx]);
-    }
-    if constexpr (TileConfig::kCSharedStageCount == 1) {
-      __syncwarp();
-    }
-  }
+  ptx_wmma_store_tile_set_384<TileConfig>(
+      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
 #else
   (void)a;
   (void)b;
