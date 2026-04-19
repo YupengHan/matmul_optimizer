@@ -17,9 +17,9 @@ constexpr int kWmmaM = 16;
 constexpr int kWmmaN = 16;
 constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
-constexpr int kWarpTilesM = 2;
-// Expand the CTA to a 2x2 warp layout so each staged K-slice feeds four warps
-// instead of two while preserving the existing per-warp MMA shape.
+// Expand the CTA along M to a fixed 4x2 warp layout so each staged K-slice
+// feeds eight warps while preserving the round-7 N-side organization.
+constexpr int kWarpTilesM = 4;
 constexpr int kWarpTilesN = 2;
 // Each warp still spans three adjacent 16x16 output tiles along N so it can
 // reuse the same A fragment across more MMA work per shared-memory feed.
@@ -46,6 +46,9 @@ constexpr int kAAsyncCopiesPerTile = kASharedTileElems / kAsyncCopyElems;
 constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
 
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
+static_assert(kTensorBlockM == 64, "Round 9 node_c expects a fixed 64x96 CTA tile.");
+static_assert(kTensorBlockN == 96, "Round 9 node_c expects a fixed 64x96 CTA tile.");
+static_assert(kWarpsPerBlock == 8, "Round 9 node_c expects an 8-warp CTA.");
 static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
 static_assert((kTensorBlockN % kAsyncCopyElems) == 0, "B tile width must stay 16-byte aligned.");
 static_assert((kWarpGroupCols % kAsyncCopyElems) == 0, "Each warp-group span must stay 16-byte aligned.");
