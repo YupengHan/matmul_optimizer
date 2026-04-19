@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_005301",
+  "status": "completed",
+  "created_at": "2026-04-19T00:53:01-07:00",
   "source_run_id": "20260419_005208_bf16_gemm_v1_8fbd2e5",
   "source_run_dir": "runs/20260419_005208_bf16_gemm_v1_8fbd2e5",
   "source_summary_json": "runs/20260419_005208_bf16_gemm_v1_8fbd2e5/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "64x160 main + 64x96 tail widened fixed split",
+      "hypothesis": "Round 15 proved that trimming per-warp N baggage can reduce MIO throttle, but the 32x128 retile cratered because it doubled down on CTA count and drove DRAM to 78.82% with a register occupancy cap of 6. Keep the round-14 vectorized epilogue and widen the fixed-shape main kernel to 64x160 across the first 7680 columns so the hot region drops from 60 CTAs to 48 CTAs per row while preserving the proven 64x96 tail.",
+      "expected_bottleneck": "Main-path operand movement and memory traffic from the too-narrow round-15 split; a 64x160 steady-state should improve reuse and reduce launch pressure without reopening generic tail overhead.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:28-79 add a 64x160 TileConfig alias and retune the fixed-shape main/tail constants for a 7680-column main region plus a 96-column tail",
+        "src/kernels/bf16_gemm_v1.cu:132-145 and 190-257 update B-stage copy counts, shared-stride math, and the tensor-core K-loop for the wider main-path specialization",
+        "src/kernels/bf16_gemm_v1.cu:265-287 and 320-339 keep the round-14 vectorized epilogue behavior, but launch a 48x101 64x160 main grid ahead of the existing 64x96 tail"
+      ],
+      "risk": "Moderate. The wider B tile raises shared footprint and live fragment count, but it is the cleanest widened-main follow-up because it reduces CTA count without introducing an extra middle cleanup stage.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the wider main tile still leaves DRAM near the round-15 level, or if register pressure materially worsens occupancy without a clear runtime win, because then 64x160 is not wide enough to justify the extra tile state."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "64x192 main + 64x128 middle + 64x96 tail hierarchy",
+      "hypothesis": "If the real regression source was excessive CTA traffic on the first 7680 columns, push farther than dir_01 by using 64x192 for the first 7296 columns, then hand the remaining 384 columns to three 64x128 middle CTAs before the final 64x96 tail. That keeps the round-14 epilogue path, collapses the hot-region CTA count harder than 64x160, and avoids forcing the awkward remainder through one oversized cleanup tile.",
+      "expected_bottleneck": "Hot-band CTA overpopulation and DRAM pressure on the first 7680 columns, with the middle 384-column strip isolated so the super-wide main kernel does not pay for remainder handling in its steady-state loop.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:28-79 add a 64x192 TileConfig alias and new fixed-shape split constants for a 7296-column main band, a 384-column 64x128 middle band, and a 96-column tail",
+        "src/kernels/bf16_gemm_v1.cu:132-145 and 190-257 specialize the B staging and fragment loop for 64x192 while reusing the existing 64x128 and 64x96 kernels for cleanup bands",
+        "src/kernels/bf16_gemm_v1.cu:320-339 expand launch_bf16_gemm_v1 to dispatch one 64x192 main launch, one 64x128 middle launch, and the existing 64x96 tail launch in fixed column order"
+      ],
+      "risk": "Medium-high. The mixed main/middle/tail launch logic is still manageable, but the 64x192 main tile may push register and shared usage harder than dir_01, and the extra middle launch adds glue that could dilute the CTA-count win.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the 64x192 main band drops active warps too far, or if the added 64x128 middle launch erases the CTA-count benefit and runtime stays flat versus dir_01-class widening."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "64x256 super-main with small cleanup launches",
+      "hypothesis": "Treat round 15 as evidence that the next useful experiment is not another narrower repartition but an explicit super-main kernel. Run a 64x256 kernel over the first 7680 columns, then leave only small cleanup work to the existing narrow paths. This is the hardest CTA-count collapse available on the fixed shape and tests whether a very wide main band can finally convert the round-14 epilogue win into better arithmetic intensity on the first 7680 columns.",
+      "expected_bottleneck": "The current hot path is probably paying too much per-CTA overhead and rereading too much B data for the fixed width; a 64x256 super-main is a deliberate attempt to trade much fewer CTAs for much higher per-CTA reuse, at the risk of turning register/shared pressure into the new limiter.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:28-79 add a 64x256 TileConfig alias plus fixed-shape split constants for a super-main band and small cleanup launches",
+        "src/kernels/bf16_gemm_v1.cu:132-145 and 190-257 retune B shared-stride, async-copy counts, and fragment arrays for the 64x256 specialization while preserving the round-14 epilogue write path",
+        "src/kernels/bf16_gemm_v1.cu:320-339 dispatch the super-main launch first and keep smaller cleanup launches only for the leftover fixed-shape columns rather than narrowing the whole hot region"
+      ],
+      "risk": "Highest. A 64x256 main tile can easily overrun the laptop 3070 register/shared budget, collapse occupancy, or complicate the cleanup partition enough that the main-path gain never materializes.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the super-main kernel forces a clear occupancy collapse, spikes registers/shared usage, or needs so much cleanup glue that the reduced CTA count does not translate into a measured runtime gain."
+    }
+  ],
+  "notes": "Aggressive widened-main follow-up informed by the round-14 human-in-loop signal and the round-15 retile failure."
 }
