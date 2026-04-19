@@ -19,7 +19,7 @@
   "ncu_csv_path": "runs/20260418_220017_bf16_gemm_v1_2e79574/ncu_metrics.csv",
   "ncu_summary_json": "state/latest_ncu_summary.json",
   "is_new_best_custom": false,
-  "measured_commit": "2e7957446666c995bbe40f3fe8017e706d7a4cfe",
+  "measured_commit": "6600aebb6478a2fafe0e75f1780e596a9706e1d1",
   "generated_at": "2026-04-18T22:00:28-07:00",
   "previous_run_id": "20260418_214233_bf16_gemm_v1_d47590a",
   "previous_median_runtime_ms": 129.4771271,

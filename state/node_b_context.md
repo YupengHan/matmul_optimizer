@@ -29,10 +29,10 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 
 ## Current source snapshot
 
-- round loop: `single-run`
-- rounds remaining after this one: `0`
+- round loop: `round 1/20`
+- rounds remaining after this one: `19`
 - latest run id: `20260418_220017_bf16_gemm_v1_2e79574`
 - median runtime: `91.601360 ms`
 - TFLOP/s: `7.936775 TFLOP/s`
-- measured commit: `2e7957446666c995bbe40f3fe8017e706d7a4cfe`
-- existing diagnosis status: `pending_generation`
+- measured commit: `6600aebb6478a2fafe0e75f1780e596a9706e1d1`
+- existing diagnosis status: `completed`

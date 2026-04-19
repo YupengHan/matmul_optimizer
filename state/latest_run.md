@@ -19,6 +19,6 @@
 - implemented direction id: `None`
 - implemented direction name: `None`
 - raw summary json: `runs/20260418_220017_bf16_gemm_v1_2e79574/summary.json`
-- measured commit: `2e7957446666c995bbe40f3fe8017e706d7a4cfe`
+- measured commit: `6600aebb6478a2fafe0e75f1780e596a9706e1d1`
 - new best custom: `no`
 - generated at: `2026-04-18T22:00:28-07:00`

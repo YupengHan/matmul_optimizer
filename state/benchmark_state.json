@@ -19,7 +19,7 @@
     "median_runtime_ms": 88.54310226,
     "tflops": 8.21090975,
     "correctness_passed": true,
-    "measured_commit": "4473555b78b0a2cfa211c4e9ca7c96dbd42353a8",
+    "measured_commit": "2b09dbc797bd4f015003dd457b8692fbf6a7103d",
     "summary_json": "runs/20260418_213511_bf16_gemm_v1_4473555/summary.json",
     "ncu_summary_json": "state/latest_ncu_summary.json",
     "updated_at": "2026-04-18T21:35:20-07:00"

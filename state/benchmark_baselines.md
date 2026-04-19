@@ -25,7 +25,7 @@
 - correctness: `PASS`
 - run dir: `runs/20260418_213511_bf16_gemm_v1_4473555`
 - summary json: `runs/20260418_213511_bf16_gemm_v1_4473555/summary.json`
-- measured commit: `4473555b78b0a2cfa211c4e9ca7c96dbd42353a8`
+- measured commit: `2b09dbc797bd4f015003dd457b8692fbf6a7103d`
 
 ## Gap
 
