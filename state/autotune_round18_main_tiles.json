@@ -1,0 +1,1461 @@
+{
+  "timestamp": "2026-04-19T08:28:48.993401+00:00",
+  "runner": "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+  "config": "/home/aice/Desktop/matmul_optimizer/configs/fixed_bf16_gemm_v1.json",
+  "dataset_dir": "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+  "workdir": "/home/aice/Desktop/matmul_optimizer",
+  "env_var": "MATMUL_FIXED_MAIN_TILE_N",
+  "default_split": "64x384 main over 7680 columns + 64x96 tail",
+  "override_split_template": "64x<TILE_N> main over 7680 columns + 64x96 tail",
+  "accepted_base_run_id": "20260419_011243_bf16_gemm_v1_33e1461",
+  "accepted_base_runtime_ms": 41.53497696,
+  "accepted_base_measured_commit": "33e1461e09c0f90b0896452a94c16277f2a251db",
+  "benchmark_case": "case_00_seed_3407",
+  "correctness_cases": [
+    "case_00_seed_3407",
+    "case_01_seed_9713",
+    "case_02_seed_1729"
+  ],
+  "warmup": 10,
+  "iters": 30,
+  "flush_cache_mb": 256,
+  "skip_correctness": false,
+  "candidates": [
+    32,
+    64,
+    96,
+    128,
+    160,
+    192,
+    256,
+    320,
+    384,
+    480
+  ],
+  "results": [
+    {
+      "tile_n": 32,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "32"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x32 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_32_uhrx1x8d/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_32_uhrx1x8d/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_32_uhrx1x8d/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 73.20727921,
+          "p10": 72.28999863,
+          "p90": 76.61998367
+        },
+        "tflops": 9.93097175,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_32_uhrx1x8d/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 73.20727921,
+      "p10_runtime_ms": 72.28999863,
+      "p90_runtime_ms": 76.61998367,
+      "tflops": 9.93097175,
+      "status": "ok"
+    },
+    {
+      "tile_n": 64,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "64"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x64 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_64_uzadzaov/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_64_uzadzaov/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_64_uzadzaov/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 53.61763191,
+          "p10": 52.56417427,
+          "p90": 56.28293037
+        },
+        "tflops": 13.55933479,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_64_uzadzaov/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 53.61763191,
+      "p10_runtime_ms": 52.56417427,
+      "p90_runtime_ms": 56.28293037,
+      "tflops": 13.55933479,
+      "status": "ok"
+    },
+    {
+      "tile_n": 96,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "96"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x96 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_96_zoasclc5/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_96_zoasclc5/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_96_zoasclc5/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 47.57759857,
+          "p10": 46.88916473,
+          "p90": 49.85240288
+        },
+        "tflops": 15.28070864,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_96_zoasclc5/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 47.57759857,
+      "p10_runtime_ms": 46.88916473,
+      "p90_runtime_ms": 49.85240288,
+      "tflops": 15.28070864,
+      "status": "ok"
+    },
+    {
+      "tile_n": 128,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "128"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x128 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_128_rg02am47/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_128_rg02am47/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_128_rg02am47/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 44.68172836,
+          "p10": 43.88229141,
+          "p90": 46.55594711
+        },
+        "tflops": 16.27106758,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_128_rg02am47/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 44.68172836,
+      "p10_runtime_ms": 43.88229141,
+      "p90_runtime_ms": 46.55594711,
+      "tflops": 16.27106758,
+      "status": "ok"
+    },
+    {
+      "tile_n": 160,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "160"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x160 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_160_amuhx4cu/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_160_amuhx4cu/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_160_amuhx4cu/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 43.25427246,
+          "p10": 42.71493378,
+          "p90": 44.11699142
+        },
+        "tflops": 16.80803723,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_160_amuhx4cu/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 43.25427246,
+      "p10_runtime_ms": 42.71493378,
+      "p90_runtime_ms": 44.11699142,
+      "tflops": 16.80803723,
+      "status": "ok"
+    },
+    {
+      "tile_n": 192,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "192"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x192 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_192_n6p1ixx9/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_192_n6p1ixx9/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_192_n6p1ixx9/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 41.98348618,
+          "p10": 41.37523346,
+          "p90": 42.98342133
+        },
+        "tflops": 17.31679496,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_192_n6p1ixx9/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 41.98348618,
+      "p10_runtime_ms": 41.37523346,
+      "p90_runtime_ms": 42.98342133,
+      "tflops": 17.31679496,
+      "status": "ok"
+    },
+    {
+      "tile_n": 256,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "256"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x256 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_256_rqo_yn42/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_256_rqo_yn42/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_256_rqo_yn42/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 40.65945625,
+          "p10": 40.19230423,
+          "p90": 41.13223801
+        },
+        "tflops": 17.8806971,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_256_rqo_yn42/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 40.65945625,
+      "p10_runtime_ms": 40.19230423,
+      "p90_runtime_ms": 41.13223801,
+      "tflops": 17.8806971,
+      "status": "ok"
+    },
+    {
+      "tile_n": 320,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "320"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x320 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_320_z7fzf9xu/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_320_z7fzf9xu/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_320_z7fzf9xu/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 42.41771317,
+          "p10": 41.72943306,
+          "p90": 43.42476692
+        },
+        "tflops": 17.13952421,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_320_z7fzf9xu/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 42.41771317,
+      "p10_runtime_ms": 41.72943306,
+      "p90_runtime_ms": 43.42476692,
+      "tflops": 17.13952421,
+      "status": "ok"
+    },
+    {
+      "tile_n": 384,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "384"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x384 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_384_yksth3o7/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_384_yksth3o7/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_384_yksth3o7/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 38.67801666,
+          "p10": 38.13918724,
+          "p90": 39.56817932
+        },
+        "tflops": 18.79670894,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_384_yksth3o7/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 38.67801666,
+      "p10_runtime_ms": 38.13918724,
+      "p90_runtime_ms": 39.56817932,
+      "tflops": 18.79670894,
+      "status": "ok"
+    },
+    {
+      "tile_n": 480,
+      "env": {
+        "MATMUL_FIXED_MAIN_TILE_N": "480"
+      },
+      "hot_band_columns": 7680,
+      "tail_columns": 96,
+      "split_description": "64x480 main over first 7680 columns plus 64x96 tail",
+      "correctness_runs": [
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4992828369,
+            "max_rel_err": 76,
+            "mean_abs_err": 0.03184060796,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_00_seed_3407",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_00_seed_3407",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_480_nfpc31m4/correctness_case_00_seed_3407.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4958648682,
+            "max_rel_err": 317,
+            "mean_abs_err": 0.03184652826,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_01_seed_9713",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_01_seed_9713",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_480_nfpc31m4/correctness_case_01_seed_9713.json"
+          ]
+        },
+        {
+          "mode": "correctness",
+          "passed": true,
+          "correctness": {
+            "max_abs_err": 0.4996948242,
+            "max_rel_err": 297,
+            "mean_abs_err": 0.03184197641,
+            "bf16_exact_match": false,
+            "atol": 0.15,
+            "rtol": 0.01
+          },
+          "case_id": "case_02_seed_1729",
+          "command": [
+            "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+            "--dataset-dir",
+            "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+            "--case-id",
+            "case_02_seed_1729",
+            "--mode",
+            "correctness",
+            "--warmup",
+            "0",
+            "--iters",
+            "1",
+            "--flush-cache-mb",
+            "256",
+            "--json-out",
+            "/tmp/fixed_main_tile_480_nfpc31m4/correctness_case_02_seed_1729.json"
+          ]
+        }
+      ],
+      "correctness_passed": true,
+      "perf_run": {
+        "mode": "perf",
+        "passed": true,
+        "runtime_ms": {
+          "median": 43.57734489,
+          "p10": 43.06002045,
+          "p90": 44.22137451
+        },
+        "tflops": 16.6834263,
+        "case_id": "case_00_seed_3407",
+        "command": [
+          "/home/aice/Desktop/matmul_optimizer/build/custom_runner",
+          "--dataset-dir",
+          "/home/aice/Desktop/matmul_optimizer/artifacts/datasets/fixed_bf16_gemm_v1",
+          "--case-id",
+          "case_00_seed_3407",
+          "--mode",
+          "perf",
+          "--warmup",
+          "10",
+          "--iters",
+          "30",
+          "--flush-cache-mb",
+          "256",
+          "--json-out",
+          "/tmp/fixed_main_tile_480_nfpc31m4/perf_case_00_seed_3407.json"
+        ]
+      },
+      "perf_passed": true,
+      "median_runtime_ms": 43.57734489,
+      "p10_runtime_ms": 43.06002045,
+      "p90_runtime_ms": 44.22137451,
+      "tflops": 16.6834263,
+      "status": "ok"
+    }
+  ],
+  "best_tile_n": 384,
+  "best_median_runtime_ms": 38.67801666,
+  "best_tflops": 18.79670894,
+  "best_delta_vs_accepted_base_ms": -2.8569603,
+  "best_delta_vs_accepted_base_tflops": 1.29292117,
+  "promotion_recommendation": "Promote 64x384 main over 7680 columns plus 64x96 tail to the default fixed-shape path for round 18 node_a validation.",
+  "insights": [
+    "The fixed hot-band sweep is not monotonic: runtime improves steadily from 32 to 256, regresses at 320, reaches a clear minimum at 384, then collapses again at 480.",
+    "The best sweep candidate is 64x384 over 7680 columns plus the 64x96 tail at 38.67801666 ms, which is 2.8569603 ms faster than the accepted round-17 base of 41.53497696 ms.",
+    "A simple 64x192 over the whole 7680-column hot band lands at 41.98348618 ms, so the old 64x192 + 64x128 + 64x96 default is still better than a flat 192 override, but clearly worse than the 256 and 384 hot-band variants.",
+    "The 64x384 result suggests CTA-count reduction is still paying off up to roughly twenty hot-band CTAs per row, while 64x480 likely crosses into a new pressure regime that erases the launch-count win."
+  ],
+  "ranked_tiles_by_median_runtime_ms": [
+    {
+      "tile_n": 384,
+      "median_runtime_ms": 38.67801666,
+      "tflops": 18.79670894
+    },
+    {
+      "tile_n": 256,
+      "median_runtime_ms": 40.65945625,
+      "tflops": 17.8806971
+    },
+    {
+      "tile_n": 192,
+      "median_runtime_ms": 41.98348618,
+      "tflops": 17.31679496
+    },
+    {
+      "tile_n": 320,
+      "median_runtime_ms": 42.41771317,
+      "tflops": 17.13952421
+    },
+    {
+      "tile_n": 160,
+      "median_runtime_ms": 43.25427246,
+      "tflops": 16.80803723
+    },
+    {
+      "tile_n": 480,
+      "median_runtime_ms": 43.57734489,
+      "tflops": 16.6834263
+    },
+    {
+      "tile_n": 128,
+      "median_runtime_ms": 44.68172836,
+      "tflops": 16.27106758
+    },
+    {
+      "tile_n": 96,
+      "median_runtime_ms": 47.57759857,
+      "tflops": 15.28070864
+    },
+    {
+      "tile_n": 64,
+      "median_runtime_ms": 53.61763191,
+      "tflops": 13.55933479
+    },
+    {
+      "tile_n": 32,
+      "median_runtime_ms": 73.20727921,
+      "tflops": 9.93097175
+    }
+  ]
+}

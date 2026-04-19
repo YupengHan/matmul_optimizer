@@ -62,12 +62,15 @@ ROUNDS_MD_PATH = STATE_DIR / 'rounds.md'
 NODE_A_BUILD_LOG_PATH = STATE_DIR / 'node_a_last_build.log'
 NODE_C_BUILD_LOG_PATH = STATE_DIR / 'node_c_last_build.log'
 SUPERVISOR_CONTEXT_MD_PATH = STATE_DIR / 'supervisor_context.md'
+SWEEP_FIXED_MAIN_TILES_PATH = REPO_ROOT / 'scripts' / 'sweep_fixed_main_tiles.py'
 
 ALLOWED_NODE_C_PATHS = [
     REPO_ROOT / 'src' / 'kernels',
     REPO_ROOT / 'src' / 'runner' / 'main.cpp',
     REPO_ROOT / 'include',
     REPO_ROOT / 'CMakeLists.txt',
+    REPO_ROOT / 'scripts' / 'graph.py',
+    SWEEP_FIXED_MAIN_TILES_PATH,
 ]
 
 
@@ -746,6 +749,14 @@ def render_node_b_context(
     diagnosis: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
+    autotune_paths = sorted(
+        path for path in STATE_DIR.glob('autotune_*_main_tiles.*')
+        if path.suffix in {'.json', '.md'}
+    )
+    autotune_lines = ''
+    if autotune_paths:
+        formatted = '\n'.join(f'- `{repo_rel(path)}`' for path in autotune_paths)
+        autotune_lines = f'\n{formatted}\n'
     return textwrap.dedent(
         f'''\
         # Node B context
@@ -765,8 +776,10 @@ def render_node_b_context(
         - `{ncu_summary.get('raw_csv_path', 'N/A')}`
         - `{ncu_summary.get('raw_details_csv_path', 'N/A')}`
         - `{ncu_summary.get('raw_rep_path', 'N/A')}`
+{autotune_lines if autotune_lines else ''}
 
         Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
+        Use the autotune sweep summaries when present to anchor direction ranking in measured tile-width data instead of only one run snapshot.
 
         ## Output contract
 
@@ -826,6 +839,7 @@ def render_node_c_context(
     lines.append('- `src/runner/main.cpp` when the direction requires runner glue')
     lines.append('- `include/*` when a stable interface change is required')
     lines.append('- `CMakeLists.txt` only if the build path genuinely needs it')
+    lines.append('- `scripts/graph.py` or `scripts/sweep_fixed_main_tiles.py` only when the direction requires minimal workflow glue')
     lines.append('')
     lines.append('## Required commands')
     lines.append('')
@@ -1358,6 +1372,14 @@ def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = No
     return paths
 
 
+def existing_node_c_support_paths() -> List[Path]:
+    extra_paths: List[Path] = [REPO_ROOT / 'scripts' / 'graph.py']
+    if SWEEP_FIXED_MAIN_TILES_PATH.exists():
+        extra_paths.append(SWEEP_FIXED_MAIN_TILES_PATH)
+    extra_paths.extend(sorted(path for path in STATE_DIR.glob('autotune_*_main_tiles.*') if path.is_file()))
+    return extra_paths
+
+
 def update_failure_state(node_name: str, message: str) -> None:
     graph_state = load_graph_state()
     graph_state['current_node'] = node_name
@@ -1826,6 +1848,7 @@ def run_node_c(args: argparse.Namespace) -> int:
             REPO_ROOT / 'src' / 'kernels',
             REPO_ROOT / 'include',
             REPO_ROOT / 'CMakeLists.txt',
+            *existing_node_c_support_paths(),
         ]
     )
     if not args.skip_commit:

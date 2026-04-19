@@ -1,15 +1,69 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_011317",
+  "status": "completed",
+  "created_at": "2026-04-19T01:13:17-07:00",
   "source_run_id": "20260419_011243_bf16_gemm_v1_33e1461",
   "source_run_dir": "runs/20260419_011243_bf16_gemm_v1_33e1461",
   "source_summary_json": "runs/20260419_011243_bf16_gemm_v1_33e1461/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
-  "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_direction_id": "dir_01",
+  "approved_direction_id": "dir_01",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea: autotune fixed-shape main tiling across 10+ candidates",
+      "hypothesis": "The current optimization loop can jump to a new tiling family, but it lacks a fast empirical map of which fixed-shape main widths actually help on this GPU. Before another diagnosis round, compile support for a broad set of candidate main tile widths, run at least 10 concrete tiling sizes on the fixed 7680-column hot band, and use the measured timing curve to identify where the widened-main trend stops helping.",
+      "expected_bottleneck": "Search-space blindness rather than a single micro-bottleneck: we need real timing data for multiple tile widths to understand the trade between CTA count, DRAM pressure, MIO throttle, and register pressure.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: add host-side fixed-shape dispatch support for multiple main tile widths",
+        "src/runner/main.cpp or scripts/*: add a sweep path that can run the benchmark repeatedly under different fixed-shape tile selections",
+        "state/*: persist the tile sweep results and distilled insights for later node_b consumption"
+      ],
+      "risk": "Medium. The sweep infrastructure widens code surface and compile time, and very large tile widths may compile but launch poorly or fail resource checks.",
+      "metrics_to_recheck": [
+        "median runtime for each tested tile width",
+        "best-performing tile width and delta versus the current 41.53497696 ms baseline",
+        "trend between tile width and runtime",
+        "any build or launch failures encountered during the sweep"
+      ],
+      "stop_condition": "Stop once at least 10 distinct tile widths have been compiled and measured, the results are summarized in persistent state files, and one concrete best-width hypothesis is chosen for the default fixed-shape path.",
+      "idea_origin": "human-idea"
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Fallback: keep the current 64x192 main + 64x128 middle + 64x96 tail",
+      "hypothesis": "If the sweep proves inconclusive or exposes only noisy differences, keep the current accepted widened-main hierarchy as the stable baseline.",
+      "expected_bottleneck": "No new hypothesis; this is a stability fallback while preserving the current best measured result.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: keep the current fixed-shape split unchanged"
+      ],
+      "risk": "Low upside. This direction mainly preserves continuity if the sweep does not yield a decisive winner.",
+      "metrics_to_recheck": [
+        "runtime stability relative to the current 41.53497696 ms accepted base"
+      ],
+      "stop_condition": "Use only if the autotune sweep fails to produce a clearly better fixed-shape main tile."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Follow-up after sweep: promote a super-main width if the timing curve keeps improving",
+      "hypothesis": "If the sweep shows the widened-main family is still improving beyond 192, use that result to justify a later super-main implementation round.",
+      "expected_bottleneck": "Potential remaining CTA-count overhead in the hot band if the timing curve continues improving as width grows.",
+      "code_locations": [
+        "state/autotune_* results",
+        "src/kernels/bf16_gemm_v1.cu fixed-shape dispatch for the winning wide tile"
+      ],
+      "risk": "High if applied without clear sweep evidence.",
+      "metrics_to_recheck": [
+        "winning width from the sweep",
+        "runtime delta versus 192 and versus the current best run"
+      ],
+      "stop_condition": "Only use if the sweep data shows a wider width than the current baseline is consistently faster."
+    }
+  ],
+  "notes": "Human-in-loop round: skip node_b diagnosis and run a fixed-shape tiling autotune sweep over 10+ candidate main widths, then preserve the results for later node_b use."
 }
