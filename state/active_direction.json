@@ -1,10 +1,32 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Increase per-warp output tile reuse",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-18T21:31:15-07:00",
+  "source_diagnosis_id": "diagnosis_20260418_212651",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Increase per-warp output tile reuse",
+    "hypothesis": "The restored warm-up fixed correctness and recovered a few milliseconds, but the kernel still does only one 16x16x16 MMA per warp for each staged K slice while paying shared loads, commit/wait, and barrier overhead every iteration. Expanding the warp or CTA tile so each warp accumulates multiple output fragments should raise arithmetic intensity, amortize the shared-memory traffic, and lift the still-low 13.64% tensor-pipe activity without revisiting the rejected round-2 wait reorder.",
+    "expected_bottleneck": "Tensor Core under-utilization driven by too little MMA work per staged tile, currently surfacing as low `sm__pipe_tensor_cycles_active` with persistent `smsp__warp_issue_stalled_mio_throttle`.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:20-29 (tile-shape constants and derived CTA dimensions)",
+      "src/kernels/bf16_gemm_v1.cu:132-137 (warp-to-output-tile mapping)",
+      "src/kernels/bf16_gemm_v1.cu:156-172 (fragment load and MMA sequence)",
+      "src/kernels/bf16_gemm_v1.cu:221-224 (tensor-core launch geometry)"
+    ],
+    "risk": "Moderate. A larger warp tile or extra accumulator fragments will increase register and possibly shared-memory footprint, so it can hurt occupancy or complicate the per-lane fragment mapping if pushed too far.",
+    "metrics_to_recheck": [
+      "median runtime_ms",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "launch__registers_per_thread",
+      "sm__warps_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop if a first larger-tile prototype drives `launch__registers_per_thread` high enough to materially cut active warps from the current ~91% without a clear rise in tensor-pipe activity or runtime."
+  },
+  "notes": "Node C may now implement this one direction."
 }

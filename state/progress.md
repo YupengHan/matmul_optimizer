@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `8138da55448e546af314940addc89fd3cadc56ff`
 - plateau counter: `0`
 - round loop: `round 4/5`
 - rounds remaining: `2`
-- notes: `Node A completed round 3/5. Run node_b to continue round 4/5.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 4/5.`
 
 ## Latest measured custom run
 
@@ -29,18 +29,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_212651`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Increase per-warp output tile reuse | bottleneck: Tensor Core under-utilization driven by too little MMA work per staged tile, currently surfacing as low `sm__pipe_tensor_cycles_active` with persistent `smsp__warp_issue_stalled_mio_throttle`.
+- dir_02: Pad or swizzle shared A/B tiles for WMMA loads | bottleneck: Shared-memory / MIO pressure around `wmma::load_matrix_sync`, likely caused by conflict-prone staging layout rather than global-memory bandwidth saturation.
+- dir_03: Specialize a 2x K macro-stage pipeline | bottleneck: Synchronization overhead from the current one-barrier-per-`kWmmaK` steady-state loop.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 

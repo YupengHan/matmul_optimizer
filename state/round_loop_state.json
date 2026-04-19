@@ -1,11 +1,11 @@
 {
   "active": true,
-  "status": "running",
+  "status": "round_in_progress",
   "total_rounds": 5,
   "completed_rounds": 3,
   "remaining_rounds": 2,
   "next_round_index": 4,
-  "current_round_index": null,
+  "current_round_index": 4,
   "auto_use_recommended": true,
   "started_at": "2026-04-18T21:03:35-07:00",
   "completed_at": null,
@@ -29,5 +29,5 @@
     "ncu_rep_path": "runs/20260418_212627_bf16_gemm_v1_8138da5/ncu_profile.ncu-rep"
   },
   "history_path": "state/round_history.jsonl",
-  "notes": "Completed round 3/5. Continue with node_b for round 4/5."
+  "notes": "Executing round 4/5."
 }

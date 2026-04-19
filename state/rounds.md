@@ -1,7 +1,7 @@
 # Round loop
 
 - active: `yes`
-- status: `running`
+- status: `round_in_progress`
 - total rounds: `5`
 - completed rounds: `3`
 - remaining rounds: `2`
@@ -10,7 +10,7 @@
 - started at: `2026-04-18T21:03:35-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Completed round 3/5. Continue with node_b for round 4/5.`
+- notes: `Executing round 4/5.`
 
 ## Last completed round
 
