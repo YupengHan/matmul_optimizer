@@ -1,15 +1,84 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_125849",
+  "status": "completed",
+  "created_at": "2026-04-19T12:58:49-07:00",
   "source_run_id": "20260419_125734_bf16_gemm_v1_19f846e",
   "source_run_dir": "runs/20260419_125734_bf16_gemm_v1_19f846e",
   "source_summary_json": "runs/20260419_125734_bf16_gemm_v1_19f846e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "idea_origin": "human-idea",
+      "name": "Tile384 epilogue budget for overlap",
+      "hypothesis": "Keep the measured 64x384 hot band, but treat the c_shared epilogue/export path as the easiest budget source for the main loop rather than as a standalone store path. On the restored base, the hot peeled kernel still allocates 46.592 KB shared per block and spends a float c_shared round-trip at src/kernels/bf16_gemm_v1.cu:570-574 and :668-699 while headline tensor active stays only 35.06 and mio throttle stays 35.64. Compressing or lightening that c_shared path should be pursued only if the saved shared-memory budget can be reinvested into a deeper A/B prefetch window or otherwise wider hot-path overlap at :599-666. The success condition is not merely fewer export stores; it is buying overlap budget back for the tensor loop.",
+      "expected_bottleneck": "The limiting factor is overlap budget inside the 64x384 peeled kernel: shared-memory allocation and epilogue round-trip pressure leave the hot loop underfed, which shows up as persistent mio throttle and only middling tensor activity despite low DRAM pressure.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:41-60",
+        "src/kernels/bf16_gemm_v1.cu:570-574",
+        "src/kernels/bf16_gemm_v1.cu:599-666",
+        "src/kernels/bf16_gemm_v1.cu:668-699"
+      ],
+      "risk": "If the c_shared savings are too small to fund a real overlap change, this devolves into epilogue-only churn with low upside. Additional CTA-wide B repacks, producer splits, or extra synchronization would violate the evidence from rounds 1, 3, and 4 and should stay out of scope.",
+      "metrics_to_recheck": [
+        "launch__shared_mem_per_block_allocated",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if shared memory per block does not drop materially, or if the resulting overlap retune fails to raise tensor active and beat the 36.371967 ms baseline."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Retimed two-stage recycle in the peeled hot loop",
+      "hypothesis": "Preserve the existing 64x384 tile, the two-stage A/B shared allocation, and the current B mapping, but retime the fixed-K hot loop so more MMA work sits between cp.async commit, wait, and stage swap. The steady-state section at src/kernels/bf16_gemm_v1.cu:615-656 still performs two recycle sequences per unrolled chunk, each with CTA sync, refill, commit, wait, and another CTA sync before the stage handoff. A bounded fixed-shape reschedule here is still attractive because the current baseline shows barrier 15.13 and mio throttle 35.64 with only 33.14 active warps, while the failed producer-family experiments proved that collapsing occupancy is worse than living with the existing CTA-wide schedule.",
+      "expected_bottleneck": "Barrier and issue-slot dilution inside the fixed peeled steady-state loop, not global memory bandwidth and not the macro tile width.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:599-609",
+        "src/kernels/bf16_gemm_v1.cu:611-656",
+        "src/kernels/bf16_gemm_v1.cu:658-666"
+      ],
+      "risk": "With only a two-stage ping-pong, a retime can just move waits around instead of hiding them. It also must not drift back into named barriers, producer straight-lining, or warp-specialized staging, all of which already produced strong negative evidence.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__shared_mem_per_block_allocated",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if the retime does not reduce barrier and mio together versus the current base, or if it needs more shared memory or extra CTA synchronization to stay correct."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Fixed-shape peel and export cleanup for the 64x96 tail",
+      "hypothesis": "Leave the hot 64x384 band untouched and instead remove generic overhead from the 64x96 tail path. The launch split at src/kernels/bf16_gemm_v1.cu:728-760 still sends the last 96 columns through the generic TensorCoreTile96 kernel and its older float2 export loop at :492-523, even though the benchmark shape is fixed. A small fixed-tail peel or export cleanup here is materially different from the failed hot-path rewrites and offers a bounded way to reduce remaining control/store overhead without disturbing the validated 64x384 sweet spot from the autotune sweep.",
+      "expected_bottleneck": "Residual fixed-shape overhead in the generic tail kernel, especially generic control flow and narrower export/store handling rather than hot-band feed mechanics.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:319-365",
+        "src/kernels/bf16_gemm_v1.cu:415-523",
+        "src/kernels/bf16_gemm_v1.cu:728-760"
+      ],
+      "risk": "The 64x96 tail covers a small slice of N, so upside is capped. It also risks adding maintenance surface if the specialization leaks complexity back into the hot path.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "hot-kernel vs tail-kernel duration split in ncu_details.csv"
+      ],
+      "stop_condition": "Stop if the tail-only specialization does not move end-to-end runtime beyond measurement noise, or if it forces changes back into the hot 64x384 kernel."
+    }
+  ],
+  "notes": "Ranking is against the restored 19f846e baseline at 36.371967 ms. Round 1 warp specialization, round 3 producer straight-lining, and round 4 consumer-side B swizzle remain strong negative evidence and rule out further B-feed or occupancy-collapsing follow-ons. The round-18 autotune sweep still anchors 64x384 as the correct macro tile, so dir_01 is framed explicitly as epilogue budget for overlap: reduce c_shared/export cost only insofar as the saved bytes can buy more useful A/B overlap on the hot peeled kernel."
 }
