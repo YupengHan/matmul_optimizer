@@ -22,6 +22,6 @@
   },
   "raw_csv_path": "runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_metrics.csv",
   "raw_rep_path": "runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_profile.ncu-rep",
-  "raw_details_csv_path": "ncu_details.csv",
+  "raw_details_csv_path": "runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_details.csv",
   "generated_at": "2026-04-18T22:44:30-07:00"
 }

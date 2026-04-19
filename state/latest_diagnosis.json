@@ -1,15 +1,83 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260418_224925",
+  "status": "completed",
+  "created_at": "2026-04-18T22:49:25-07:00",
   "source_run_id": "20260418_224421_bf16_gemm_v1_f5de2e9",
   "source_run_dir": "runs/20260418_224421_bf16_gemm_v1_f5de2e9",
   "source_summary_json": "runs/20260418_224421_bf16_gemm_v1_f5de2e9/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Reuse one 16x16 epilogue scratch tile per warp with warp-synchronous pair stores",
+      "idea_origin": "human-idea",
+      "hypothesis": "Round 3 reduced the B-side bank pressure, but active warps still sit around 33% and the kernel still reserves 12.8 KB of shared memory per block, with most of the non-staging footprint coming from the three-tile-per-warp float `c_shared` epilogue buffer. Reusing a single 16x16 scratch tile per warp, then writing each MMA tile back immediately with warp-synchronous coordination, should lower the shared-memory footprint and the post-MMA shared round-trip without changing the main tensor-core loop.",
+      "expected_bottleneck": "Shared-memory footprint and epilogue traffic are still constraining residency and keeping tensor utilization low after the B-tile skew fix. The current `c_shared` design stores all three output tiles per warp at once even though they are consumed strictly one tile at a time.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:29-33 (`kCSharedTileElemsPerWarp` and related shared-memory sizing constants)",
+        "src/kernels/bf16_gemm_v1.cu:152 (`c_shared` declaration)",
+        "src/kernels/bf16_gemm_v1.cu:216-233 (warp epilogue store and BF16 writeback loop)"
+      ],
+      "risk": "Moderate. The epilogue becomes more serialized per warp, so a smaller scratch footprint must more than offset any extra loop overhead. Correctness also depends on preserving the existing WMMA store layout while rewriting the writeback loop.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "launch__shared_mem_per_block_allocated",
+        "launch__occupancy_limit_shared_mem",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "correctness cases"
+      ],
+      "stop_condition": "Stop if the smaller epilogue scratch does not improve runtime or occupancy, or if the more serialized writeback path causes correctness or throughput regressions."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Prototype a shuffle-assisted BF16 pair-packing epilogue after each WMMA store",
+      "idea_origin": "human-idea",
+      "hypothesis": "After storing one MMA tile to shared memory, a tighter lane mapping with warp-level cooperation can reduce the amount of scalar writeback work each lane performs and keep the output path closer to warp-local coordination instead of a larger shared scratch. This would test whether the epilogue overhead is more about per-lane scalar traffic than about the total shared-memory footprint alone.",
+      "expected_bottleneck": "The current epilogue converts and stores each output element as a scalar BF16 write after a shared-memory round-trip, which may be amplifying short scoreboard and writeback pressure even after the main tensor loop improved.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:216-233 (epilogue writeback loop)",
+        "src/kernels/bf16_gemm_v1.cu:159-170 (warp-local accumulator ownership)"
+      ],
+      "risk": "High. The lane-to-output mapping becomes harder to reason about, and a shuffle-heavy writeback path can get fragile without a measured win.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__mio2rf_writeback_active.avg.pct_of_peak_sustained_elapsed",
+        "correctness cases"
+      ],
+      "stop_condition": "Stop if the shuffle-assisted writeback makes the epilogue materially harder to verify or does not beat the simpler one-scratch-tile approach."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Investigate a fragment-unpack path that bypasses `c_shared` entirely",
+      "idea_origin": "human-idea",
+      "hypothesis": "If the shared-memory epilogue remains the main non-tensor cost center, the long-term fix may be to unpack accumulator fragments directly into output values and avoid the shared scratch altogether. This is the most aggressive warp-intrinsic direction because it pushes cooperation and value routing into warp scope instead of leaning on shared memory.",
+      "expected_bottleneck": "The `c_shared` round-trip may be fundamentally unnecessary overhead once the tensor loop itself is healthy, but the current WMMA abstraction makes a direct path difficult.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:159-170 (accumulator fragment ownership)",
+        "src/kernels/bf16_gemm_v1.cu:216-233 (current shared-memory epilogue)"
+      ],
+      "risk": "Very high. The WMMA fragment layout is not trivial to map manually, so this direction risks a large correctness burden for uncertain gain.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "launch__shared_mem_per_block_allocated",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "correctness cases"
+      ],
+      "stop_condition": "Stop unless the simpler one-scratch-tile experiment shows that epilogue shared-memory footprint is clearly still the limiter."
+    }
+  ],
+  "notes": "Human-directed round 4: use tighter warp-synchronous coordination to reduce shared-memory dependence in the epilogue path."
 }

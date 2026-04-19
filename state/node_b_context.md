@@ -13,7 +13,7 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 - `src/kernels/bf16_gemm_v1.cu`
 - `runs/20260418_224421_bf16_gemm_v1_f5de2e9/summary.json`
 - `runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_metrics.csv`
-- `ncu_details.csv`
+- `runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_details.csv`
 - `runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_profile.ncu-rep`
 
 Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
@@ -39,4 +39,4 @@ Use the raw detailed CSV when the headline summary is too shallow to explain pip
 - median runtime: `65.617920 ms`
 - TFLOP/s: `11.079587 TFLOP/s`
 - measured commit: `f5de2e9ce546b72f0e2b1ecde0fbe5a766a31e42`
-- existing diagnosis status: `pending_generation`
+- existing diagnosis status: `completed`
