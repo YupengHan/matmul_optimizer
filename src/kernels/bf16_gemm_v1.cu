@@ -385,31 +385,20 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384
   }
 }
 
-template <int TileBase>
-__device__ __forceinline__ void ptx_wmma_issue_tile_pair_384(
-    PtxWmmaAccFragment& first_acc,
-    PtxWmmaAccFragment& second_acc,
+template <int TileIdx = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
+    PtxWmmaAccTileSet384& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag,
     const __nv_bfloat16* b_tile) {
-  static_assert(TileBase >= 0, "Tile384 tile-pair base must be non-negative.");
-  static_assert((TileBase + 1) < TensorCoreTile384::kWarpMmaTilesN,
-                "Tile384 tile-pair issue must stay within the 12-tile full-width path.");
-  PtxWmmaBf16Fragment first_b_frag;
-  PtxWmmaBf16Fragment second_b_frag;
-  ptx_wmma_load_b_row(
-      first_b_frag,
-      b_tile + TileBase * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-  ptx_wmma_load_b_row(
-      second_b_frag,
-      b_tile + (TileBase + 1) * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-
-  // Keep the full-width PTX math surface intact, but issue B fragments in
-  // adjacent pairs so each helper only carries two B fragments and two
-  // accumulator references at a time.
-  ptx_wmma_mma_row_row(first_acc, a_frag, first_b_frag);
-  ptx_wmma_mma_row_row(second_acc, a_frag, second_b_frag);
+  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
+    PtxWmmaBf16Fragment b_frag;
+    ptx_wmma_load_b_row(
+        b_frag,
+        b_tile + TileIdx * kWmmaN,
+        TensorCoreTile384::kBSharedStride);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
+    ptx_wmma_accumulate_tile_set_384<TileIdx + 1>(acc_tiles, a_frag, b_tile);
+  }
 }
 
 template <typename TileConfig, int TileIdx = 0>
@@ -826,18 +815,7 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
       b_stage + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
 
   ptx_wmma_load_a_row(a_frag, a_tile, kWmmaK);
-  ptx_wmma_issue_tile_pair_384<0>(
-      acc_tiles.tile0, acc_tiles.tile1, a_frag, b_tile);
-  ptx_wmma_issue_tile_pair_384<2>(
-      acc_tiles.tile2, acc_tiles.tile3, a_frag, b_tile);
-  ptx_wmma_issue_tile_pair_384<4>(
-      acc_tiles.tile4, acc_tiles.tile5, a_frag, b_tile);
-  ptx_wmma_issue_tile_pair_384<6>(
-      acc_tiles.tile6, acc_tiles.tile7, a_frag, b_tile);
-  ptx_wmma_issue_tile_pair_384<8>(
-      acc_tiles.tile8, acc_tiles.tile9, a_frag, b_tile);
-  ptx_wmma_issue_tile_pair_384<10>(
-      acc_tiles.tile10, acc_tiles.tile11, a_frag, b_tile);
+  ptx_wmma_accumulate_tile_set_384(acc_tiles, a_frag, b_tile);
 }
 
 template <typename TileConfig>
