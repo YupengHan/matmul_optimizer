@@ -35,4 +35,4 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 - median runtime: `101.374962 ms`
 - TFLOP/s: `7.171588 TFLOP/s`
 - measured commit: `aee3c09b51fbf78ad79f4ce5f68841449bab54a1`
-- existing diagnosis status: `pending_generation`
+- existing diagnosis status: `completed`
