@@ -439,6 +439,62 @@ __device__ __forceinline__ void ptx_wmma_store_tile_set_384(
   }
 }
 
+template <int TileIdx>
+__device__ __forceinline__ void ptx_export_shared_tile_quads_384(
+    const float* warp_c_tile,
+    __nv_bfloat16* c_tile_base,
+    int lane_id) {
+  static_assert(TileIdx >= 0 && TileIdx < TensorCoreTile384::kWarpMmaTilesN,
+                "Tile384 export tile index out of range.");
+  const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
+  constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
+  constexpr int kQuadsPerTile = TensorCoreTile384::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
+
+  #pragma unroll
+  for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
+    const int local_row = quad_idx / kQuadsPerRow;
+    const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
+    store_bfloat164_quad(
+        c_tile_base + local_row * kFixedBenchmarkN + TileIdx * kWmmaN + local_col,
+        warp_c_tile_quads[quad_idx]);
+  }
+}
+
+template <typename TileConfig, int TilePairBase = 0>
+__device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
+    const PtxWmmaAccTileSet384& acc_tiles,
+    float* c_shared,
+    __nv_bfloat16* c_tile_base,
+    int warp_id,
+    int lane_id) {
+  static_assert(TileConfig::kCSharedStageCount == 2,
+                "Tile pair export batching requires the two-stage Tile384 c_shared scratch.");
+  if constexpr (TilePairBase < TensorCoreTile384::kWarpMmaTilesN) {
+    constexpr int kCSharedStageStride =
+        TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
+    float* warp_c_tile_stage0 =
+        c_shared + warp_id * TileConfig::kCSharedTileElemsPerWarp;
+    float* warp_c_tile_stage1 =
+        c_shared + kCSharedStageStride + warp_id * TileConfig::kCSharedTileElemsPerWarp;
+
+    // Fill both c_shared stages before synchronizing so the two scratch tiles
+    // are used as an actual pair instead of a per-tile ping-pong.
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage0, ptx_wmma_acc_tile<TilePairBase>(acc_tiles), kWmmaN);
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage1, ptx_wmma_acc_tile<TilePairBase + 1>(acc_tiles), kWmmaN);
+    __syncwarp();
+
+    ptx_export_shared_tile_quads_384<TilePairBase>(
+        warp_c_tile_stage0, c_tile_base, lane_id);
+    ptx_export_shared_tile_quads_384<TilePairBase + 1>(
+        warp_c_tile_stage1, c_tile_base, lane_id);
+
+    ptx_wmma_store_tile_pairs_384<TileConfig, TilePairBase + 2>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
+}
+
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
@@ -892,8 +948,13 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
       acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_store_tile_set_384<TileConfig>(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  if constexpr (TileConfig::kCSharedStageCount == 2) {
+    ptx_wmma_store_tile_pairs_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  } else {
+    ptx_wmma_store_tile_set_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 #else
   (void)a;
   (void)b;

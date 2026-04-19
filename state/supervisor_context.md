@@ -4,33 +4,29 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Current dispatch
 
-- dispatch node: `node_c`
-- dispatch mode: `sub_agent`
-- graph status: `awaiting_direction_selection_for_node_c`
+- dispatch node: `node_a`
+- dispatch mode: `direct_script`
+- graph status: `ready_for_node_a`
 - round label: `round 4/5`
 - round loop active: `yes`
 - rounds remaining: `2`
 - latest run id: `20260419_135930_bf16_gemm_v1_1e399d8`
 - latest runtime: `33.366047 ms`
 - recommended direction: `dir_01`
-- active direction: `None`
+- active direction: `dir_01`
 
 ## Supervisor protocol
 
 - read `docs/supervisor_protocol.md` first
-- node-specific protocol: `docs/node_c_protocol.md`
-- node context file: `state/node_c_context.md`
-- prepare command: `python scripts/graph.py node_c`
-- selection command: `python scripts/graph.py approve --direction dir_0X`
-- finalize command: `python scripts/graph.py node_c --finalize`
-- current dispatch requires direct GPU access: `no`
+- node-specific protocol: `AGENTS.md`
+- prepare command: `python scripts/graph.py node_a`
+- current dispatch requires direct GPU access: `yes`
 
 ## Dispatch rule
 
-- main agent stays responsible for graph state, commits, and loop control
-- spawn exactly one sub-agent for the current node
-- after the sub-agent returns, run the finalize command from the main agent
-- then re-read `state/supervisor_task.json` before dispatching the next node
+- run the script-first node directly from the main agent
+- do not spawn a sub-agent for node_a
+- after node_a finishes, re-read `state/supervisor_task.json` and continue
 
 ## Multi-round loop
 
@@ -40,4 +36,4 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Notes
 
-- `Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.`
+- `Run node_a directly from the main Codex agent outside the sandbox, then re-read graph state.`

@@ -1,11 +1,11 @@
 {
   "active": true,
-  "status": "running",
+  "status": "awaiting_measurement",
   "total_rounds": 5,
   "completed_rounds": 3,
   "remaining_rounds": 2,
   "next_round_index": 4,
-  "current_round_index": null,
+  "current_round_index": 4,
   "auto_use_recommended": false,
   "started_at": "2026-04-19T13:08:11-07:00",
   "completed_at": null,
@@ -35,5 +35,5 @@
   "accepted_base_measured_commit": "1e399d80f7b02720493e3275ecb2c6865cbe1e63",
   "accepted_base_runtime_ms": 33.36604691,
   "history_path": "state/round_history.jsonl",
-  "notes": "Completed round 3/5. Continue with node_b for round 4/5. Accepted base: 20260419_135930_bf16_gemm_v1_1e399d8 at 33.366047 ms."
+  "notes": "Build passed for round 4/5. Node A will measure the result next."
 }
