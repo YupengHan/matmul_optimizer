@@ -1,6 +1,6 @@
 {
   "active": true,
-  "status": "round_in_progress",
+  "status": "awaiting_measurement",
   "total_rounds": 5,
   "completed_rounds": 4,
   "remaining_rounds": 1,
@@ -29,5 +29,5 @@
     "ncu_rep_path": "runs/20260418_213511_bf16_gemm_v1_4473555/ncu_profile.ncu-rep"
   },
   "history_path": "state/round_history.jsonl",
-  "notes": "Executing round 5/5."
+  "notes": "Build passed for round 5/5. Node A will measure the result next."
 }
