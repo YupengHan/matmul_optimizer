@@ -158,6 +158,22 @@ def run_command(
     )
 
 
+def running_inside_codex_sandbox() -> bool:
+    try:
+        init_cmdline = (Path('/proc/1/cmdline').read_bytes().replace(b'\x00', b' ')).decode('utf-8', errors='ignore')
+    except OSError:
+        return False
+    return 'codex-linux-sandbox' in init_cmdline
+
+
+def ensure_node_a_can_access_gpu() -> None:
+    if running_inside_codex_sandbox():
+        raise RuntimeError(
+            'node_a must run outside the Codex sandbox because it requires direct CUDA / Nsight Compute access; '
+            'rerun `python scripts/graph.py node_a` with escalated permissions.'
+        )
+
+
 def git_output(args: Sequence[str]) -> str:
     proc = run_command(['git', *args], capture=True)
     if proc.returncode != 0:
@@ -1059,6 +1075,7 @@ def update_failure_state(node_name: str, message: str) -> None:
 
 
 def run_node_a(args: argparse.Namespace) -> int:
+    ensure_node_a_can_access_gpu()
     ensure_machine_state()
     graph_state = load_graph_state()
     previous_run = load_latest_run()

@@ -50,6 +50,7 @@ The fully script-first measurement node.
 
 Responsibilities:
 
+- run outside the Codex sandbox so CUDA benchmarking and Nsight Compute can reach the GPU
 - build `custom_runner` if needed
 - run `scripts/eval_kernel.py`
 - record correctness / performance / Nsight Compute

@@ -56,7 +56,7 @@ python scripts/run_cutlass_baseline.py --runner ./build/cutlass_runner --kernel-
 
 When the user says `开始运行 node_a`:
 
-1. run `python scripts/graph.py node_a`
+1. run `python scripts/graph.py node_a` outside the Codex sandbox, with direct CUDA access
 2. read `state/latest_run.json`, `state/latest_ncu_summary.json`, and `state/graph_state.json`
 3. report the real measured outcome only after the script finishes
 
@@ -106,6 +106,7 @@ When the user says `开始运行5圈`:
 Role:
 
 - script-first measurement node
+- must run outside the Codex sandbox because the benchmark and NCU profiling require direct CUDA device access
 
 Must:
 
