@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `awaiting_direction_selection_for_node_c`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - round loop: `round 4/5` with `2` rounds remaining
 
 ## Direction approval policy
@@ -25,7 +25,7 @@
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
