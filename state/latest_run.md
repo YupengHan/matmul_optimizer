@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_095653_bf16_gemm_v1_f237679`
-- run dir: `runs/20260419_095653_bf16_gemm_v1_f237679`
-- kernel tag: `bf16_gemm_v1_f237679`
-- round label: `round 3/5`
+- run id: `20260419_100457_bf16_gemm_v1_6dd39ad`
+- run dir: `runs/20260419_100457_bf16_gemm_v1_6dd39ad`
+- kernel tag: `bf16_gemm_v1_6dd39ad`
+- round label: `round 4/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `40.935423 ms`
-- p10 runtime: `40.400384 ms`
-- p90 runtime: `41.620472 ms`
-- TFLOP/s: `17.760154 TFLOP/s`
-- previous run id: `20260419_094829_bf16_gemm_v1_fe097e9`
-- runtime delta vs previous measured run: `-1.738209 ms`
-- TFLOP/s delta vs previous measured run: `+0.723418 TFLOP/s`
+- median runtime: `37.373951 ms`
+- p10 runtime: `37.116415 ms`
+- p90 runtime: `37.864651 ms`
+- TFLOP/s: `19.452571 TFLOP/s`
+- previous run id: `20260419_095653_bf16_gemm_v1_f237679`
+- runtime delta vs previous measured run: `-3.561472 ms`
+- TFLOP/s delta vs previous measured run: `+1.692416 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Warp-specialize the 64x384 copy/compute pipeline on the restored base`
+- implemented direction name: `Peel a fixed-shape steady-state hot kernel for 6464x7776x7232`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_095653_bf16_gemm_v1_f237679/summary.json`
-- measured commit: `f237679f9fc0bed9c49d1043495794c187d0aea4`
+- raw summary json: `runs/20260419_100457_bf16_gemm_v1_6dd39ad/summary.json`
+- measured commit: `6dd39ad50b8e36dd035ae435800103257053f6a2`
 - new best custom: `no`
-- generated at: `2026-04-19T09:57:03-07:00`
+- generated at: `2026-04-19T10:05:06-07:00`

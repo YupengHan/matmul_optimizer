@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `f237679f9fc0bed9c49d1043495794c187d0aea4`
-- plateau counter: `3`
-- round loop: `round 4/5`
-- rounds remaining: `2`
-- notes: `Node C build succeeded for round 4/5. Node A will now measure the new code path.`
+- latest measured commit: `6dd39ad50b8e36dd035ae435800103257053f6a2`
+- plateau counter: `4`
+- round loop: `round 5/5`
+- rounds remaining: `1`
+- notes: `Node A completed round 4/5. Run node_b to continue round 5/5.`
 
 ## Latest measured custom run
 
-- run id: `20260419_095653_bf16_gemm_v1_f237679`
-- run dir: `runs/20260419_095653_bf16_gemm_v1_f237679`
+- run id: `20260419_100457_bf16_gemm_v1_6dd39ad`
+- run dir: `runs/20260419_100457_bf16_gemm_v1_6dd39ad`
 - correctness: `PASS`
-- median runtime: `40.935423 ms`
-- TFLOP/s: `17.760154 TFLOP/s`
+- median runtime: `37.373951 ms`
+- TFLOP/s: `19.452571 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_095729`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 4/5 diagnosis prepared from run 20260419_095653_bf16_gemm_v1_f237679. Evidence hierarchy: accepted base 16a98f7 at 37.285807 ms remains the reference; round-1 two-level B staging and round-2 phased 64x384 micro-panels both regressed badly; round-3 warp-specialized staging improved over those failed branches and cut mio_throttle sharply, but it still remained meaningfully slower than the accepted base, so it is treated as negative evidence for stacking forward. Ranking therefore pivots to base-oriented steady-state specialization, epilogue trimming, and only a bounded wait/barrier retune.`
-- dir_01: Peel a fixed-shape steady-state hot kernel for 6464x7776x7232 | bottleneck: Generic steady-state loop/control overhead diluting tensor issue on the fixed-shape hot path.
-- dir_02: Trim the c_shared epilogue/export path on the restored base | bottleneck: LSU/shared writeback pressure in the hot epilogue rather than feed-path or live-set shape.
-- dir_03: Apply a bounded cp.async wait/barrier retune to the restored single-skew base | bottleneck: Copy-pipeline wait/barrier scheduling in the accepted base rather than B layout or live-set shape.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
