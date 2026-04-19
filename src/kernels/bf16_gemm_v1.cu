@@ -46,9 +46,12 @@ struct TensorCoreTileConfig {
   static constexpr int kASharedBytes = 2 * kASharedTileElems * sizeof(__nv_bfloat16);
   static constexpr int kCSharedTileBytesPerWarp = kCSharedTileElemsPerWarp * sizeof(float);
   static constexpr int kWarpGroupCols = kWarpMmaTilesN * kWmmaN;
-  // Keep the B tile row-major for WMMA, but place a single 16-byte skew
-  // between the two warp groups so each warp still reads a local slice.
-  static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
+  // Keep the B tile row-major for WMMA, but place a single skew between the
+  // two warp groups so each warp still reads a local slice. The 64x384 hot
+  // path keeps the same single-level layout but widens that skew to 32 bytes.
+  static constexpr int kBSharedGroupSkewElems =
+      (WarpMmaTilesNValue == 12) ? 2 * kAsyncCopyElems : kAsyncCopyElems;
+  static constexpr int kBSharedStride = kTensorBlockN + kBSharedGroupSkewElems;
   static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
   static constexpr int kBSharedBytes = 2 * kBSharedTileElems * sizeof(__nv_bfloat16);
   // Two scratch stages let the hot epilogue reuse the alternate tile and skip
@@ -230,7 +233,8 @@ __device__ __forceinline__ void store_bfloat164_quad(
 
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
-  return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
+  return logical_col +
+         (logical_col / TileConfig::kWarpGroupCols) * TileConfig::kBSharedGroupSkewElems;
 }
 
 template <typename TileConfig>
