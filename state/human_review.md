@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 1/5` with `5` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 2/5` with `4` rounds remaining
 
 ## Direction approval policy
 
@@ -14,17 +14,15 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260418_210351`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- dir_01: Async double-buffered K pipeline | bottleneck: Global-memory latency plus CTA-wide synchronization between K-slices, visible as long scoreboard stalls and barrier stalls in the steady-state loop.
-- dir_02: Swizzle shared-memory staging for WMMA loads | bottleneck: Shared-memory communication pressure around fragment loads, showing up as MIO throttle and lingering scoreboard stalls even though DRAM is not saturated.
-- dir_03: Retile CTA and warp partitioning | bottleneck: Synchronization overhead and low tensor-issue density from the current CTA/warp shape, not raw DRAM bandwidth.
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

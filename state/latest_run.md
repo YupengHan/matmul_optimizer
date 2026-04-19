@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_201228_bf16_gemm_v1_af155a5`
-- run dir: `runs/20260418_201228_bf16_gemm_v1_af155a5`
-- kernel tag: `bf16_gemm_v1_af155a5`
-- round label: `single-run`
+- run id: `20260418_210900_bf16_gemm_v1_aee3c09`
+- run dir: `runs/20260418_210900_bf16_gemm_v1_aee3c09`
+- kernel tag: `bf16_gemm_v1_aee3c09`
+- round label: `round 1/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `145.344559 ms`
-- p10 runtime: `144.536232 ms`
-- p90 runtime: `146.377028 ms`
-- TFLOP/s: `5.002041 TFLOP/s`
-- previous run id: `20260418_195405_bf16_gemm_v1_a4966f5`
-- runtime delta vs previous measured run: `-152.750565 ms`
-- TFLOP/s delta vs previous measured run: `+2.563157 TFLOP/s`
+- median runtime: `101.374962 ms`
+- p10 runtime: `100.403029 ms`
+- p90 runtime: `105.198390 ms`
+- TFLOP/s: `7.171588 TFLOP/s`
+- previous run id: `20260418_201228_bf16_gemm_v1_af155a5`
+- runtime delta vs previous measured run: `-43.969597 ms`
+- TFLOP/s delta vs previous measured run: `+2.169547 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Add CTA-level shared-memory staging for WMMA tiles`
-- raw summary json: `runs/20260418_201228_bf16_gemm_v1_af155a5/summary.json`
-- measured commit: `af155a5bdaa475a7edba5ed1957b25a46454536e`
+- implemented direction name: `Async double-buffered K pipeline`
+- raw summary json: `runs/20260418_210900_bf16_gemm_v1_aee3c09/summary.json`
+- measured commit: `aee3c09b51fbf78ad79f4ce5f68841449bab54a1`
 - new best custom: `yes`
-- generated at: `2026-04-18T20:12:43-07:00`
+- generated at: `2026-04-18T21:09:11-07:00`
