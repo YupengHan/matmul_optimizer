@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_101657",
+  "status": "completed",
+  "created_at": "2026-04-19T10:16:57-07:00",
   "source_run_id": "20260419_101256_bf16_gemm_v1_5ab5302",
   "source_run_dir": "runs/20260419_101256_bf16_gemm_v1_5ab5302",
   "source_summary_json": "runs/20260419_101256_bf16_gemm_v1_5ab5302/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Deepen single-skew cp.async overlap in the fixed peeled 64x384 hot kernel",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "The current best result already confirms the right foundation: peeled fixed-shape hot loop plus trimmed export path. Relative to the older accepted base, tensor active is up at 34.53% and barrier stall is down at 6.39%, so the remaining gap is no longer control-heavy. What still stands out is 14.23% short-scoreboard, 30.42% mio_throttle, about 41.77% DRAM throughput, and about 82.75% LSU request pressure on the hot peeled kernel. The best next move is therefore a bounded overlap retune inside the existing single-skew peeled loop: keep the 64x384 tile and current layout, but rework commit/wait timing, prefill placement, or stage usage so more of the peeled loop runs against in-flight copies instead of exposed latency.",
+      "expected_bottleneck": "Copy-latency exposure and in-loop feed overlap in the peeled 64x384 hot kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:41-58 (current shared-memory budget and stage-count constraints)",
+        "src/kernels/bf16_gemm_v1.cu:189-199 (cp.async commit and wait helpers)",
+        "src/kernels/bf16_gemm_v1.cu:567-605 (peeled hot-loop prefill, next-stage issue, and wait/barrier sequence)"
+      ],
+      "risk": "The current kernel is already a new best, so overlap retuning can easily move the pipeline the wrong way and give back the peeled-hot-path win without a large enough upside.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if short-scoreboard and mio_throttle do not fall on top of the current peeled kernel, or if runtime regresses while barrier stall stays low."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Peel and specialize the fixed 64x96 tail kernel to match the hot path",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "The hot 64x384 path is now fixed-shape peeled, but the 64x96 tail still falls back to the generic tensor-core kernel and launch path. That tail is only one CTA column wide, so it is not the dominant cost, but it is now the most obviously un-specialized part of the fixed benchmark pipeline. Its own profile is still generic-path flavored, with about 19.73% barrier stall and 15.36% short-scoreboard. A peeled fixed-K tail kernel with the same fixed-shape assumptions and quad export style as the hot kernel is a coherent next move because it complements the winning direction rather than reopening the failed B-feed or live-set rewrites.",
+      "expected_bottleneck": "Residual fixed-shape tail overhead from using the generic 64x96 tensor-core kernel on the last 96 columns.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:409-526 (current generic tensor-core kernel that still serves the 64x96 tail)",
+        "src/kernels/bf16_gemm_v1.cu:528-666 (fixed peeled hot-kernel template that the tail can mirror in smaller form)",
+        "src/kernels/bf16_gemm_v1.cu:689-722 (fixed-shape dispatch that currently launches the generic TensorCoreTile96 tail)"
+      ],
+      "risk": "The payoff is bounded because the tail covers only 96 of 7776 columns, so even a clean tail specialization may save less time than hot-kernel work.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread",
+        "runtime_ms"
+      ],
+      "stop_condition": "Stop if the specialized tail does not show a measurable end-to-end runtime gain or if the tail-only improvement is below noise."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Try a bounded single-skew B-stride retune on the peeled hot kernel",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "Recent history rules out broad feed-path rewrites: the two-level B repack regressed badly, and warp-specialized staging also lost badly even when it improved one symptom. Still, the new best peeled kernel continues to show high DRAM and LSU pressure with the same single-skew B layout. That leaves one narrowly bounded feed-side follow-up worth keeping in the set: preserve the row-major single-skew semantics and the peeled hot loop, but probe whether a modest stride/skew adjustment can shave residual B-side pressure without reopening the failed producer-layout redesign family.",
+      "expected_bottleneck": "Residual B-side staging pressure inside the current single-skew peeled hot kernel, not a full feed-path redesign.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:47-52 (current single-skew B shared stride and tile sizing)",
+        "src/kernels/bf16_gemm_v1.cu:207-239 (logical-to-shared B mapping and staging path)",
+        "src/kernels/bf16_gemm_v1.cu:592-600 (peeled hot-kernel B fragment loads from the staged layout)"
+      ],
+      "risk": "This sits near a recently failed family, so the chance of regressing the new best base is high unless the change stays tightly bounded.",
+      "metrics_to_recheck": [
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if DRAM / LSU pressure does not improve quickly or if the bounded stride retune loses the current best runtime."
+    }
+  ],
+  "notes": "Round 1/5 diagnosis prepared from the current best custom run 20260419_101256_bf16_gemm_v1_5ab5302 at 36.517889 ms. Recent history is applied explicitly: broad B-feed rewrites and phased live-set rewrites regressed, while the winning move was peeled hot-kernel specialization plus trimmed export. Ranking therefore builds on the current peeled 64x384 kernel and favors complementary overlap, tail specialization, and only a tightly bounded single-skew B follow-up."
 }
