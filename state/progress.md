@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `77f95870d9eaf181f0be8556393e50ed38d1dd72`
 - plateau counter: `10`
-- round loop: `single-run`
-- rounds remaining: `0`
-- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
+- round loop: `round 1/5`
+- rounds remaining: `5`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
@@ -28,12 +28,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_130817`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `This diagnosis intentionally keeps all three directions on the same human-directed 64x384 hot-band PTX microkernel branch. The 64x96 tail remains unchanged in every direction, and the round-18 sweep still anchors 64x384 as the right hot-band macro tile. Strong negative evidence from earlier warp specialization, producer straight-lining, and consumer-side B swizzle means the branch should not revert to generic WMMA cleanup or other old feed-path experiments; later rounds should refine the explicit PTX hot-band path instead.`
+- dir_01: PTX hot-band microkernel branch with unchanged 64x96 tail | bottleneck: The dominant limiter is the WMMA hot-band control surface itself: it constrains fragment lifetime and instruction ordering, which keeps tensor issue diluted by feed/orchestration overhead even though the macro tile and tail split are already well chosen.
+- dir_02: PTX phase 1 compute-core swap under current staging and tail split | bottleneck: Instruction selection and fragment scheduling inside the hot compute body, not the launch split and not the fixed 64x96 tail.
+- dir_03: PTX register-first export and overlap-budget follow-through | bottleneck: The hot-band export path and c_shared round-trip still consume shared-memory and LSU budget that could otherwise support more overlap once the PTX branch owns accumulator residency.
 
 ## Active implementation direction
 

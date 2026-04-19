@@ -1,15 +1,86 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_130817",
+  "status": "completed",
+  "created_at": "2026-04-19T13:08:17-07:00",
   "source_run_id": "20260419_130737_bf16_gemm_v1_77f9587",
   "source_run_dir": "runs/20260419_130737_bf16_gemm_v1_77f9587",
   "source_summary_json": "runs/20260419_130737_bf16_gemm_v1_77f9587/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "idea_origin": "human-idea",
+      "name": "PTX hot-band microkernel branch with unchanged 64x96 tail",
+      "hypothesis": "The accepted 64x384 base still shows only middling tensor activity at 34.81 with mio throttle at 35.62 and DRAM throughput only 28.98, so the hot band still looks feed/orchestration limited rather than bandwidth limited. The current hot kernel is still routed through the WMMA control surface at src/kernels/bf16_gemm_v1.cu:534-699, which hides fragment residency, load order, lane mapping, and export choices behind wmma::load_matrix_sync, wmma::mma_sync, and wmma::store_matrix_sync. Open an independent 64x384-only branch that keeps the 64x96 tail path untouched but extracts the hot band into an explicit PTX microkernel using ldmatrix, mma.sync, and a controllable register/export path so later rounds can refine the same microkernel instead of continuing WMMA micro-tunes.",
+      "expected_bottleneck": "The dominant limiter is the WMMA hot-band control surface itself: it constrains fragment lifetime and instruction ordering, which keeps tensor issue diluted by feed/orchestration overhead even though the macro tile and tail split are already well chosen.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:231-263",
+        "src/kernels/bf16_gemm_v1.cu:278-282",
+        "src/kernels/bf16_gemm_v1.cu:319-365",
+        "src/kernels/bf16_gemm_v1.cu:534-699",
+        "src/kernels/bf16_gemm_v1.cu:728-760"
+      ],
+      "risk": "This is the largest implementation step in the branch: explicit lane mapping, ldmatrix addressing, and mma.sync accumulator layout can break correctness or push registers above the current 128/thread budget. If the first PTX cut expands live state too aggressively, occupancy can collapse the same way earlier high-complexity feed rewrites did.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the first PTX hot-band branch does not preserve correctness, or if registers/thread and occupancy regress materially without a compensating gain in tensor active or runtime."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "PTX phase 1 compute-core swap under current staging and tail split",
+      "hypothesis": "Use the same branch direction as dir_01, but make the first implementation narrower: keep the current cp.async A/B staging, the two-stage shared allocation, the existing B shared layout, and the current c_shared export path, then replace only the hot-band WMMA compute body with PTX wrappers. Concretely, the first phase would target accumulate_peeled_shared_stage() and the hot fixed loop at src/kernels/bf16_gemm_v1.cu:534-666 so the experiment isolates whether explicit ldmatrix plus mma.sync improves tensor issue before changing export or pipeline shape. That keeps the 64x96 tail and launch split intact while still starting the PTX microkernel line.",
+      "expected_bottleneck": "Instruction selection and fragment scheduling inside the hot compute body, not the launch split and not the fixed 64x96 tail.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:231-263",
+        "src/kernels/bf16_gemm_v1.cu:534-557",
+        "src/kernels/bf16_gemm_v1.cu:599-666",
+        "src/kernels/bf16_gemm_v1.cu:728-760"
+      ],
+      "risk": "The upside may be capped if the current c_shared export and shared-stage recycle remain the true limiter, and the PTX wrapper layer can still increase register pressure if fragment packing is naive. This is deliberately bounded, but it may prove only that the branch needs the later export/pipeline follow-through.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the PTX compute-core swap leaves tensor active and mio effectively unchanged versus 77f9587, because that means the branch must move immediately to export/pipeline control rather than iterating on a pure compute-body drop-in."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "PTX register-first export and overlap-budget follow-through",
+      "hypothesis": "Stay on the same 64x384 PTX hot-band branch, but make the second refinement target explicit register export instead of stopping at PTX mma instructions. Once the hot band owns its accumulator layout directly, replace the WMMA float scratch/export path at src/kernels/bf16_gemm_v1.cu:668-699 with a narrower register-first pack/store path so the branch can claw back shared-memory and LSU budget for deeper A/B overlap later. This keeps the 64x96 tail untouched and turns the PTX branch into an end-to-end hot-band control surface rather than a compute-only rewrite.",
+      "expected_bottleneck": "The hot-band export path and c_shared round-trip still consume shared-memory and LSU budget that could otherwise support more overlap once the PTX branch owns accumulator residency.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:41-60",
+        "src/kernels/bf16_gemm_v1.cu:559-699",
+        "src/kernels/bf16_gemm_v1.cu:728-760"
+      ],
+      "risk": "This is the highest-risk variant inside the PTX branch because accumulator packing, rounding, and per-lane store mapping must all stay correct while reducing shared scratch. If the saved budget is not large enough to fund a real overlap improvement, the branch can end up trading a known path for a harder-to-debug export bottleneck.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__shared_mem_per_block_allocated",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the register-first export path does not lower shared/LSU pressure or free enough budget to improve runtime, because then the PTX branch should stay focused on compute/load-order control before revisiting export."
+    }
+  ],
+  "notes": "This diagnosis intentionally keeps all three directions on the same human-directed 64x384 hot-band PTX microkernel branch. The 64x96 tail remains unchanged in every direction, and the round-18 sweep still anchors 64x384 as the right hot-band macro tile. Strong negative evidence from earlier warp specialization, producer straight-lining, and consumer-side B swizzle means the branch should not revert to generic WMMA cleanup or other old feed-path experiments; later rounds should refine the explicit PTX hot-band path instead."
 }
