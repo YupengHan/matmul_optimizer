@@ -17,6 +17,7 @@ constexpr int kWmmaM = 16;
 constexpr int kWmmaN = 16;
 constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
+constexpr int kEpilogueVecElems = 2;
 // Expand the CTA along M to a fixed 4x2 warp layout so each staged K-slice
 // feeds eight warps while preserving the round-7 N-side organization.
 constexpr int kTensorWarpTilesM = 4;
@@ -76,6 +77,7 @@ static_assert((TensorCoreTile96::kBSharedTileElems % kAsyncCopyElems) == 0, "Tai
 static_assert((TensorCoreTile128::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
 static_assert((kFixedMainRegionN % TensorCoreTile128::kTensorBlockN) == 0, "Fixed-shape main region must be an even count of 64x128 CTAs.");
 static_assert(kFixedMainRegionN + kFixedTailRegionN == kFixedBenchmarkN, "Main/tail split must cover the fixed benchmark width exactly.");
+static_assert((kWmmaN % kEpilogueVecElems) == 0, "Epilogue vector stores require adjacent column pairs.");
 
 __device__ __forceinline__ void cp_async_copy_16_bytes(
     __nv_bfloat16* dst,
@@ -100,6 +102,12 @@ __device__ __forceinline__ void cp_async_wait_group_0() {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
   asm volatile("cp.async.wait_group 0;\n" ::);
 #endif
+}
+
+__device__ __forceinline__ void store_bfloat162_pair(
+    __nv_bfloat16* dst,
+    const float2 values) {
+  *reinterpret_cast<__nv_bfloat162*>(dst) = __float22bfloat162_rn(values);
 }
 
 template <typename TileConfig>
@@ -264,12 +272,17 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
         wmma::mem_row_major);
     __syncwarp();
 
+    const float2* warp_c_tile_pairs = reinterpret_cast<const float2*>(warp_c_tile);
+    constexpr int kPairsPerRow = kWmmaN / kEpilogueVecElems;
+    constexpr int kPairsPerTile = TileConfig::kCSharedTileElemsPerWarp / kEpilogueVecElems;
+
     #pragma unroll
-    for (int tile_elem = lane_id; tile_elem < TileConfig::kCSharedTileElemsPerWarp; tile_elem += kWarpSize) {
-      const int local_row = tile_elem / kWmmaN;
-      const int local_col = tile_elem % kWmmaN;
-      c[(row + local_row) * n + col + tile_n * kWmmaN + local_col] =
-          __float2bfloat16(warp_c_tile[tile_elem]);
+    for (int pair_idx = lane_id; pair_idx < kPairsPerTile; pair_idx += kWarpSize) {
+      const int local_row = pair_idx / kPairsPerRow;
+      const int local_col = (pair_idx % kPairsPerRow) * kEpilogueVecElems;
+      store_bfloat162_pair(
+          c + (row + local_row) * n + col + tile_n * kWmmaN + local_col,
+          warp_c_tile_pairs[pair_idx]);
     }
     __syncwarp();
   }
