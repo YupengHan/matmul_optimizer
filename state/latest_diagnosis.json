@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_123925",
+  "status": "completed",
+  "created_at": "2026-04-19T12:39:25-07:00",
   "source_run_id": "20260419_123851_bf16_gemm_v1_98fdc11",
   "source_run_dir": "runs/20260419_123851_bf16_gemm_v1_98fdc11",
   "source_summary_json": "runs/20260419_123851_bf16_gemm_v1_98fdc11/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Straight-line the Tile384 cp.async producer schedule on the restored base",
+      "hypothesis": "The restored 15d63b2 base still pays fully generic `for (copy_idx = threadIdx.x; ...)` ownership loops for A and B staging even though the hot path uses one fixed 64x384 tile and one fixed K depth. Round 1 showed that warp specialization is the wrong way to attack that overhead because it exploded the hot kernel to 219 registers/thread and collapsed active warps to 16.60. Round 2 showed that lowering barrier and mio in a broader phase split did not automatically produce a win. The best next move is a narrower hot-path simplification: keep all warps symmetric, keep the single-skew 64x384 layout, and replace the generic producer loops with a Tile384-specific cp.async schedule that removes loop and address overhead without changing macro shape or warp roles.",
+      "expected_bottleneck": "Producer-side cp.async issue and LSU address-generation overhead in the 64x384 hot kernel, while preserving the accepted 128-register, 2-block occupancy behavior.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:236-263",
+        "src/kernels/bf16_gemm_v1.cu:599-607",
+        "src/kernels/bf16_gemm_v1.cu:625-649"
+      ],
+      "risk": "A bad straight-line mapping can hurt global-to-shared coalescing or increase code size without lowering stalls. It also must not drift back into asymmetric producer/consumer warp roles.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if LSU or mio pressure does not improve on the restored base, or if register growth threatens the accepted 2-block occupancy limit."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Pair Tile384 epilogue export across the existing two C-scratch stages",
+      "hypothesis": "The 64x384 hot kernel still drains 12 accumulator tiles one tile at a time through `c_shared`, with one warp sync and one quad-export loop per `tile_n`. That serial export path remains a plausible contributor to the restored base's 35.53 mio throttle, and it is more surgical than continuing the round-2 phase-split family. Since Tile384 already has `kCSharedStageCount = 2`, export two accumulator tiles at a time through the two existing scratch stages so shared-export setup and synchronization are amortized without changing the macro tile or staging model.",
+      "expected_bottleneck": "Hot-kernel shared export and LSU traffic after MMA completion, which can still dilute tensor issue even when occupancy is healthy.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:54-61",
+        "src/kernels/bf16_gemm_v1.cu:668-699"
+      ],
+      "risk": "The epilogue is correctness-sensitive, and the upside may be smaller than the producer-side work if export is only a secondary source of LSU pressure.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "gpu__time_duration.sum",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if hot-kernel duration and LSU indicators do not move together, or if the paired export needs extra synchronization beyond the current two-stage scratch scheme."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Peel only the fixed final-drain path instead of the whole hot-loop schedule",
+      "hypothesis": "Round 2 is mixed evidence, not a clean failure: it improved over round 1 and lowered barrier stall and mio relative to the restored base, but it also lost runtime and drove short scoreboard sharply higher. The conservative reading is that there may still be a small fixed-shape opportunity, but not in a broad prologue/steady-state/epilogue rewrite. A bounded follow-up is to leave the restored steady-state loop intact and specialize only the final drain of the known last two K tiles, where the current kernel still pays generic `cp_async_wait_group_0`, `curr_stage` rotation, and terminal accumulate sequencing.",
+      "expected_bottleneck": "Terminal stage-drain control overhead in the hot kernel, with risk that a fixed-shape rewrite simply trades barrier/mio improvements for more scoreboard stalls again.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:611-666"
+      ],
+      "risk": "Mixed evidence means this should stay tightly bounded. If the rewrite grows beyond the last drain or starts reworking the whole steady-state schedule again, it is repeating a family that already failed to beat the base.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if short-scoreboard stall rises again without a compensating tensor-active or runtime gain, or if the change spills over into a broader steady-state phase rewrite."
+    }
+  ],
+  "notes": "Diagnosed round-2 run 20260419_123851_bf16_gemm_v1_98fdc11 while ranking against the restored accepted base 15d63b2 at 35.725824 ms. Round 1 warp specialization remains strong negative evidence because it pushed the hot kernel to 219 registers/thread, occupancy_limit_registers to 1, and active warps to 16.60. Round 2 phase splitting is mixed evidence: it improved over round 1 and lowered barrier and mio versus the accepted base, but it still regressed to 36.462511 ms and raised hot-kernel short-scoreboard stall from 0.54 to 4.50. The ranking therefore avoids the warp-specialized family entirely and stays conservative about phase-split follow-ons."
 }
