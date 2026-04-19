@@ -576,6 +576,9 @@ def render_rounds_md(round_loop: Dict[str, Any]) -> str:
     lines.append(f"- remaining rounds: `{round_loop.get('remaining_rounds', 0)}`")
     lines.append(f"- current round label: `{round_label(round_loop)}`")
     lines.append(f"- auto use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
+    lines.append(f"- accepted base run id: `{round_loop.get('accepted_base_run_id', 'N/A')}`")
+    lines.append(f"- accepted base measured commit: `{round_loop.get('accepted_base_measured_commit', 'N/A')}`")
+    lines.append(f"- accepted base runtime: `{fmt_runtime(round_loop.get('accepted_base_runtime_ms'))}`")
     lines.append(f"- started at: `{round_loop.get('started_at', 'N/A')}`")
     lines.append(f"- completed at: `{round_loop.get('completed_at', 'N/A')}`")
     lines.append(f"- history path: `{round_loop.get('history_path', repo_rel(ROUND_HISTORY_PATH))}`")
@@ -1055,6 +1058,7 @@ def refresh_node_c_context() -> None:
 
 
 def start_round_loop(count: int, *, auto_use_recommended: bool) -> Dict[str, Any]:
+    latest_run = load_latest_run()
     round_loop = default_round_loop_state()
     round_loop.update(
         {
@@ -1069,6 +1073,9 @@ def start_round_loop(count: int, *, auto_use_recommended: bool) -> Dict[str, Any
             'started_at': now_local_iso(),
             'completed_at': None,
             'last_completed_round': None,
+            'accepted_base_run_id': latest_run.get('run_id'),
+            'accepted_base_measured_commit': latest_run.get('measured_commit'),
+            'accepted_base_runtime_ms': latest_run.get('median_runtime_ms'),
             'notes': (
                 f'Started a {count}-round loop. '
                 + ('Recommended directions will auto-select.' if auto_use_recommended else 'Direction approval remains manual.')
@@ -1093,6 +1100,17 @@ def mark_round_started_if_needed(round_loop: Dict[str, Any]) -> Dict[str, Any]:
 def complete_round(round_loop: Dict[str, Any], round_entry: Dict[str, Any]) -> Dict[str, Any]:
     if not round_loop.get('active'):
         return round_loop
+    accepted_runtime = round_loop.get('accepted_base_runtime_ms')
+    candidate_runtime = round_entry.get('median_runtime_ms')
+    candidate_ok = bool(round_entry.get('correctness_passed'))
+    if (
+        candidate_ok
+        and candidate_runtime is not None
+        and (accepted_runtime is None or float(candidate_runtime) < float(accepted_runtime))
+    ):
+        round_loop['accepted_base_run_id'] = round_entry.get('run_id')
+        round_loop['accepted_base_measured_commit'] = round_entry.get('measured_commit')
+        round_loop['accepted_base_runtime_ms'] = candidate_runtime
     round_loop['completed_rounds'] = int(round_loop.get('completed_rounds', 0)) + 1
     round_loop['remaining_rounds'] = max(int(round_loop.get('total_rounds', 0)) - int(round_loop.get('completed_rounds', 0)), 0)
     round_loop['next_round_index'] = int(round_loop.get('completed_rounds', 0)) + 1
@@ -1106,7 +1124,12 @@ def complete_round(round_loop: Dict[str, Any], round_entry: Dict[str, Any]) -> D
         round_loop['notes'] = f"Completed {round_loop.get('total_rounds', 0)} planned rounds."
     else:
         round_loop['status'] = 'running'
-        round_loop['notes'] = f"Completed round {round_entry.get('round_index')}/{round_entry.get('total_rounds')}. Continue with node_b for round {round_loop.get('next_round_index')}/{round_loop.get('total_rounds')}."
+        round_loop['notes'] = (
+            f"Completed round {round_entry.get('round_index')}/{round_entry.get('total_rounds')}. "
+            f"Continue with node_b for round {round_loop.get('next_round_index')}/{round_loop.get('total_rounds')}. "
+            f"Accepted base: {round_loop.get('accepted_base_run_id') or 'N/A'} at "
+            f"{fmt_runtime(round_loop.get('accepted_base_runtime_ms'))}."
+        )
     write_json(ROUND_LOOP_STATE_PATH, round_loop)
     return round_loop
 
@@ -1459,6 +1482,8 @@ def run_node_a(args: argparse.Namespace) -> int:
             'tflops': latest_run.get('tflops'),
             'tflops_delta': tflops_delta,
             'perf_verdict': verdict,
+            'correctness_passed': latest_run.get('correctness_passed'),
+            'measured_commit': latest_run.get('measured_commit'),
             'ncu_summary_json': latest_run.get('ncu_summary_json'),
             'ncu_rep_path': latest_run.get('ncu_rep_path'),
         }

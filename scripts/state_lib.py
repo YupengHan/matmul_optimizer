@@ -190,6 +190,9 @@ def default_round_loop_state() -> Dict[str, Any]:
         'started_at': None,
         'completed_at': None,
         'last_completed_round': None,
+        'accepted_base_run_id': None,
+        'accepted_base_measured_commit': None,
+        'accepted_base_runtime_ms': None,
         'history_path': repo_rel(ROUND_HISTORY_PATH),
         'notes': 'No multi-round loop is active. Start one with python scripts/graph.py rounds --count N.',
     }
