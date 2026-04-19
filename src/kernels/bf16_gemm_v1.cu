@@ -19,8 +19,9 @@ constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
 constexpr int kWarpTilesM = 2;
 constexpr int kWarpTilesN = 1;
-// Each warp spans two adjacent 16x16 output tiles along N.
-constexpr int kWarpMmaTilesN = 2;
+// Each warp spans three adjacent 16x16 output tiles along N so it can reuse
+// the same A fragment across more MMA work per shared-memory feed.
+constexpr int kWarpMmaTilesN = 3;
 constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
 constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
 constexpr int kTensorBlockN = kWarpTilesN * kWarpMmaTilesN * kWmmaN;
