@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_013222",
-  "status": "completed",
-  "created_at": "2026-04-19T01:32:22-07:00",
-  "source_run_id": "20260419_013130_bf16_gemm_v1_ea27d5a",
-  "source_run_dir": "runs/20260419_013130_bf16_gemm_v1_ea27d5a",
-  "source_summary_json": "runs/20260419_013130_bf16_gemm_v1_ea27d5a/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_014521_bf16_gemm_v1_4113319",
+  "source_run_dir": "runs/20260419_014521_bf16_gemm_v1_4113319",
+  "source_summary_json": "runs/20260419_014521_bf16_gemm_v1_4113319/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep 64x384, but rework the hot-kernel shared/L1 feed path",
-      "hypothesis": "Round 18 autotune is strong evidence that the correct macro choice on this RTX 3070 Laptop GPU (sm86) is 64x384 over the first 7680 columns plus the 64x96 tail; node_a already validated that path at 38.47372818 ms. The remaining gap is inside the 64x384 hot kernel itself: raw NCU details show 126 registers/thread, 38.4 KB shared/block, 77.865532% LSU instruction issue, 48.590499% LSU wavefront activity, 31.42% MIO throttle, and only 32.130750% tensor active. The current B staging scheme only inserts a coarse 16-byte skew between warp groups, so a stronger B-tile swizzle/padding layout and corresponding load-path cleanup should let the same 64x384 CTA spend fewer cycles servicing shared/L1 traffic and more cycles issuing Tensor Core MMA.",
-      "expected_bottleneck": "Shared-memory and LSU feed pressure in the 64x384 hot band is throttling Tensor Core issue; the problem is now on-chip instruction mix and staging efficiency, not the macro tile width.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:195-225",
-        "src/kernels/bf16_gemm_v1.cu:374-375",
-        "src/kernels/bf16_gemm_v1.cu:423-431"
-      ],
-      "risk": "Moderate. Shared-layout and fragment-load changes are localized to the hot path and fit the autotune evidence, but a bad swizzle can silently hurt correctness or just move pressure around without lowering MIO throttle.",
-      "metrics_to_recheck": [
-        "main-kernel smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "main-kernel l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "median_runtime_ms"
-      ],
-      "stop_condition": "Stop if the new layout does not materially reduce MIO/LSU pressure on the 64x384 kernel or if correctness becomes fragile, because then the extra staging complexity is not buying more Tensor Core work."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim hot-kernel epilogue and other non-tensor writeback work",
-      "hypothesis": "This round explicitly incorporates the human instruction-mix guidance: the goal is not to widen tiles again, but to shift more useful work onto Tensor Cores while shrinking scalar and LSU-only work that does not improve overlap. In the hot 64x384 kernel, every warp currently writes each 16x16 accumulator tile through shared float scratch, executes two __syncwarp calls per tile, then runs a lane-strided BF16 conversion/store loop. That epilogue path is a plausible contributor to the very high LSU instruction share even after the 64x384 promotion, so simplifying writeback or reducing shared scratch traffic should improve instruction mix without changing the validated macro split.",
-      "expected_bottleneck": "Instruction mix and epilogue-side LSU/synchronization work are diluting Tensor Core utilization inside the main kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:189-193",
-        "src/kernels/bf16_gemm_v1.cu:376",
-        "src/kernels/bf16_gemm_v1.cu:440-462"
-      ],
-      "risk": "Moderate to high. WMMA accumulator export paths are awkward, and an epilogue rewrite can easily trade one class of LSU work for another or introduce subtle correctness bugs in BF16 packing.",
-      "metrics_to_recheck": [
-        "main-kernel sm__inst_executed.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel sm__inst_executed_pipe_uniform.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "median_runtime_ms"
-      ],
-      "stop_condition": "Stop if the writeback simplification fails to move runtime outside measurement noise or if the implementation needs enough glue that it no longer looks like a lean instruction-mix cleanup."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Keep the 64x384 macro tile, but shrink per-warp fragment footprint",
-      "hypothesis": "The autotune sweep settled the macro tile question, but it did not prove that the current 8-warp realization of 64x384 is the best micro-schedule. Today each warp carries 12 accumulator fragments and 12 B fragments, which is a major reason the hot kernel sits at 126 registers/thread and only 33.060642% active warps with registers limiting occupancy to 2 blocks/SM. Repartitioning the same 384 columns into smaller per-warp N groups or a tighter inner serial-N schedule could preserve the macro CTA-count win while lowering live-register pressure enough to improve latency hiding and Tensor Core issue rate.",
-      "expected_bottleneck": "Register-limited occupancy and low ready-warp count inside the 64x384 hot kernel are preventing the widened main tile from fully converting into higher tensor activity.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:18-49",
-        "src/kernels/bf16_gemm_v1.cu:392-395",
-        "src/kernels/bf16_gemm_v1.cu:407-431"
-      ],
-      "risk": "High. This is the most invasive follow-up because it changes the micro-schedule rather than only the layout or epilogue; extra inner-loop control can erase any occupancy gain if the fragment reduction is too small.",
-      "metrics_to_recheck": [
-        "main-kernel launch__registers_per_thread",
-        "main-kernel launch__occupancy_limit_registers",
-        "main-kernel sm__warps_active.avg.pct_of_peak_sustained_active",
-        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "main-kernel sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "median_runtime_ms"
-      ],
-      "stop_condition": "Stop if the per-thread register count does not come down meaningfully or if the extra micro-scheduling overhead keeps runtime flat, because then the 64x384 macro win is better pursued through layout or epilogue cleanup instead."
-    }
-  ],
-  "notes": "Round 19/20 diagnosis uses many human-in-loop inspirations explicitly. The round-18 autotune sweep is treated as strong evidence that 64x384 main over 7680 columns plus the 64x96 tail is the right macro split on this machine, so the ranked directions focus on the dominant TensorCoreTileConfig<12> hot kernel rather than the ~0.93 time-unit tail kernel. Raw ncu_details.csv was used to go beyond the shallow headline summary: main-kernel 64x384 runs with 126 registers/thread, 38.4 KB shared/block, 77.865532% LSU instruction issue, 48.590499% LSU wavefront activity, 30.726069% DRAM cycles active, 31.42% MIO throttle, and only 32.130750% tensor active. The recommendation is therefore to shift work more intelligently toward Tensor Cores by reducing shared/L1/LSU overhead inside the proven 64x384 path, not by blindly widening tiles again."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

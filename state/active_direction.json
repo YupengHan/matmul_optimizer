@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Keep 64x384, but rework the hot-kernel shared/L1 feed path",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T01:39:06-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_013222",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Keep 64x384, but rework the hot-kernel shared/L1 feed path",
-    "hypothesis": "Round 18 autotune is strong evidence that the correct macro choice on this RTX 3070 Laptop GPU (sm86) is 64x384 over the first 7680 columns plus the 64x96 tail; node_a already validated that path at 38.47372818 ms. The remaining gap is inside the 64x384 hot kernel itself: raw NCU details show 126 registers/thread, 38.4 KB shared/block, 77.865532% LSU instruction issue, 48.590499% LSU wavefront activity, 31.42% MIO throttle, and only 32.130750% tensor active. The current B staging scheme only inserts a coarse 16-byte skew between warp groups, so a stronger B-tile swizzle/padding layout and corresponding load-path cleanup should let the same 64x384 CTA spend fewer cycles servicing shared/L1 traffic and more cycles issuing Tensor Core MMA.",
-    "expected_bottleneck": "Shared-memory and LSU feed pressure in the 64x384 hot band is throttling Tensor Core issue; the problem is now on-chip instruction mix and staging efficiency, not the macro tile width.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:195-225",
-      "src/kernels/bf16_gemm_v1.cu:374-375",
-      "src/kernels/bf16_gemm_v1.cu:423-431"
-    ],
-    "risk": "Moderate. Shared-layout and fragment-load changes are localized to the hot path and fit the autotune evidence, but a bad swizzle can silently hurt correctness or just move pressure around without lowering MIO throttle.",
-    "metrics_to_recheck": [
-      "main-kernel smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "main-kernel l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-      "main-kernel l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-      "main-kernel sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-      "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-      "median_runtime_ms"
-    ],
-    "stop_condition": "Stop if the new layout does not materially reduce MIO/LSU pressure on the 64x384 kernel or if correctness becomes fragile, because then the extra staging complexity is not buying more Tensor Core work."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
