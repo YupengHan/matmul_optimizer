@@ -242,6 +242,41 @@ def commit_paths(paths: Sequence[Path | str], message: str) -> Optional[str]:
     return git_output(['rev-parse', 'HEAD'])
 
 
+def list_tracked_paths(ref: Optional[str], scope_paths: Sequence[Path | str]) -> List[str]:
+    rels = relative_paths(scope_paths)
+    if ref is None:
+        proc = run_command(['git', 'ls-files', '--', *rels], capture=True)
+    else:
+        proc = run_command(['git', 'ls-tree', '-r', '--name-only', ref, '--', *rels], capture=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or 'failed to list tracked paths')
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def restore_paths_from_commit(source_commit: str, scope_paths: Sequence[Path | str]) -> List[Path]:
+    current_paths = set(list_tracked_paths(None, scope_paths))
+    source_paths = set(list_tracked_paths(source_commit, scope_paths))
+    changed: List[Path] = []
+
+    for rel_path in sorted(current_paths | source_paths):
+        target_path = REPO_ROOT / rel_path
+        if rel_path in source_paths:
+            show = run_command(['git', 'show', f'{source_commit}:{rel_path}'], capture=True)
+            if show.returncode != 0:
+                raise RuntimeError(show.stderr.strip() or f'failed to read {rel_path} from {source_commit}')
+            new_text = show.stdout
+            old_text = target_path.read_text(encoding='utf-8') if target_path.exists() else None
+            if old_text != new_text:
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.write_text(new_text, encoding='utf-8')
+                changed.append(target_path)
+        elif target_path.exists():
+            target_path.unlink()
+            changed.append(target_path)
+
+    return changed
+
+
 def candidate_build_inputs() -> List[Path]:
     watched: List[Path] = [REPO_ROOT / 'CMakeLists.txt']
     watched.extend(sorted((REPO_ROOT / 'include').glob('**/*')))
@@ -1205,6 +1240,26 @@ def node_c_commit_message(active_direction: Dict[str, Any], direction: Dict[str,
     )
 
 
+def infra_restore_commit_message(source_commit: str, reason: str) -> str:
+    return textwrap.dedent(
+        f'''\
+        infra: restore implementation surface from {source_commit}
+
+        Why:
+        - recover a known measured implementation baseline without erasing later history
+        - keep regressed node_c/node_a attempts in git for later summary and comparison
+
+        What changed:
+        - restored the allowed implementation surface from measured commit {source_commit}
+        - limited the restore to node_c-owned code paths
+        - left lightweight state and run history intact
+
+        Risk / follow-up:
+        - {reason}
+        '''
+    )
+
+
 def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = None) -> List[Path | str]:
     paths: List[Path | str] = [
         GRAPH_STATE_PATH,
@@ -1245,6 +1300,48 @@ def update_failure_state(node_name: str, message: str) -> None:
         round_loop['notes'] = f'Paused {round_label(round_loop)} because {node_name} failed: {message}'
         write_json(ROUND_LOOP_STATE_PATH, round_loop)
     refresh_all_views()
+
+
+def run_restore_implementation(args: argparse.Namespace) -> int:
+    ensure_machine_state()
+    source_commit = args.source_commit.strip()
+    if not source_commit:
+        raise RuntimeError('restore-implementation requires --source-commit <sha>')
+
+    tracked_non_state = [
+        path for path in tracked_dirty_paths()
+        if not path.startswith('state/')
+    ]
+    unrelated_dirty = [
+        path for path in tracked_non_state
+        if not path_is_allowed(path, ALLOWED_NODE_C_PATHS)
+    ]
+    if unrelated_dirty:
+        raise RuntimeError(
+            'refusing restore because unrelated tracked changes are present: '
+            + ', '.join(unrelated_dirty)
+        )
+
+    changed_paths = restore_paths_from_commit(source_commit, ALLOWED_NODE_C_PATHS)
+    refresh_node_c_context()
+
+    if not changed_paths:
+        print_step(f'implementation surface already matches {source_commit}')
+        return 0
+
+    if not args.skip_commit:
+        commit_paths(
+            changed_paths,
+            infra_restore_commit_message(
+                source_commit,
+                args.reason or 're-measure or continue the next round from the restored baseline',
+            ),
+        )
+
+    print_step(
+        f'restored {len(changed_paths)} implementation path(s) from {source_commit}'
+    )
+    return 0
 
 
 def run_node_a(args: argparse.Namespace) -> int:
@@ -1836,6 +1933,15 @@ def build_parser() -> argparse.ArgumentParser:
     cycle.add_argument('--skip-commit', action='store_true')
     cycle.add_argument('--dry-run', action='store_true')
     cycle.set_defaults(func=run_cycle)
+
+    restore = subparsers.add_parser(
+        'restore-implementation',
+        help='Restore the node_c-owned implementation surface from a measured commit while preserving later history',
+    )
+    restore.add_argument('--source-commit', required=True)
+    restore.add_argument('--reason', default=None)
+    restore.add_argument('--skip-commit', action='store_true')
+    restore.set_defaults(func=run_restore_implementation)
 
     status = subparsers.add_parser('status', help='Print the current graph state')
     status.set_defaults(func=run_status)

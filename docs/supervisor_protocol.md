@@ -101,6 +101,28 @@ node_b -> node_c -> node_a
 
 The round-level measurement record is the `node_a:` commit after the real re-measurement step.
 
+## Regression recovery rule
+
+When a multi-round experiment wants to preserve every failed attempt in git history but avoid building the next round on top of a regressed implementation:
+
+1. let `node_a` finish and record the regressed run normally,
+2. keep the `node_c:` and `node_a:` commits in history,
+3. restore the node_c-owned code surface from the previous accepted measured commit before the next `node_b`.
+
+Use:
+
+```bash
+python scripts/graph.py restore-implementation --source-commit <measured_commit_sha>
+```
+
+This command restores only the implementation surface (`src/kernels/*`, `src/runner/main.cpp`, `include/*`, `CMakeLists.txt`) and leaves the recorded lightweight state and run history intact.
+
+Applied policy for monotonic experiments:
+
+- if round `i` is worse than round `i-1`, keep round `i` recorded,
+- then start round `i+1` from the code of round `i-1`,
+- do not stack round `i+1` on top of the regressed code from round `i`.
+
 ## Audit rule
 
 Use git commits as the durable audit log:
