@@ -6,43 +6,40 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `4473555b78b0a2cfa211c4e9ca7c96dbd42353a8`
-- plateau counter: `0`
-- round loop: `round 5/5`
-- rounds remaining: `1`
-- notes: `Node C build succeeded for round 5/5. Node A will now measure the new code path.`
+- latest measured commit: `d47590ae36c32c2afdf4a26e2202abe1cfb2161e`
+- plateau counter: `1`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Node A completed the final planned round. Review the results before starting another loop.`
 
 ## Latest measured custom run
 
-- run id: `20260418_213511_bf16_gemm_v1_4473555`
-- run dir: `runs/20260418_213511_bf16_gemm_v1_4473555`
+- run id: `20260418_214233_bf16_gemm_v1_d47590a`
+- run dir: `runs/20260418_214233_bf16_gemm_v1_d47590a`
 - correctness: `PASS`
-- median runtime: `88.543102 ms`
-- TFLOP/s: `8.210910 TFLOP/s`
+- median runtime: `129.477127 ms`
+- TFLOP/s: `5.615041 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
-- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260418_213538`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- dir_01: Rebalance the warp tile split to recover active warps | bottleneck: Occupancy and latency hiding from register-limited resident warps, now exposed as low sm__warps_active together with elevated long_scoreboard and mio_throttle stalls.
-- dir_02: Swizzle or pad shared tiles to reduce WMMA load MIO pressure | bottleneck: Shared-memory and fragment-load efficiency, expressed as high smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct despite only moderate DRAM and L2 throughput.
-- dir_03: Deepen the async copy pipeline for the 2-warp CTA | bottleneck: Copy-to-compute overlap and long scoreboard stalls from a pipeline that is now too shallow for only two resident warps per CTA.
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

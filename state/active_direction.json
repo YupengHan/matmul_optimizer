@@ -1,35 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Rebalance the warp tile split to recover active warps",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-18T21:39:59-07:00",
-  "source_diagnosis_id": "diagnosis_20260418_213538",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Rebalance the warp tile split to recover active warps",
-    "hypothesis": "The new 2-warp CTA improved runtime by cutting barrier stalls from 21.86% to 8.89% and raising tensor activity from 13.64% to 15.07%, but it also doubled the register occupancy limit from 12 to 24 and dropped active warps to 45.70%. Retuning the CTA and warp tile split so each warp holds less output state while keeping some of the new per-warp reuse should recover latency hiding without fully giving back the reuse win.",
-    "expected_bottleneck": "Occupancy and latency hiding from register-limited resident warps, now exposed as low sm__warps_active together with elevated long_scoreboard and mio_throttle stalls.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:kWarpTilesM",
-      "src/kernels/bf16_gemm_v1.cu:kWarpTilesN",
-      "src/kernels/bf16_gemm_v1.cu:kWarpMmaTilesN",
-      "src/kernels/bf16_gemm_v1.cu:kWarpsPerBlock",
-      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_kernel"
-    ],
-    "risk": "Changing the warp-to-output mapping can easily reintroduce the barrier overhead that the current best run just removed, so a full rollback to the older 4-warp shape is not automatically a win.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "launch__occupancy_limit_registers",
-      "launch__block_size"
-    ],
-    "stop_condition": "Stop if active warps recover materially but runtime does not beat 88.543102 ms, or if barrier stalls climb back into the high-teens or ~20% range."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
