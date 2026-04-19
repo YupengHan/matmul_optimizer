@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_010436",
+  "status": "completed",
+  "created_at": "2026-04-19T01:04:36-07:00",
   "source_run_id": "20260419_010405_bf16_gemm_v1_79cdb43",
   "source_run_dir": "runs/20260419_010405_bf16_gemm_v1_79cdb43",
   "source_summary_json": "runs/20260419_010405_bf16_gemm_v1_79cdb43/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "64x192 main + 64x128 middle + 64x96 tail fixed split",
+      "hypothesis": "Build directly on the successful widened-main result by replacing the current 64x160 hot band with a 64x192 main launch over the first 7296 columns, then a 64x128 middle launch over the next 384 columns, and finally the existing 64x96 tail over the last 96 columns. That reduces dominant-region CTA count from 48 to 38 while keeping cleanup on already shape-friendly tiles, which should improve tensor issue density and trim barrier/MIO overhead without pushing DRAM much past the current 51.22%.",
+      "expected_bottleneck": "The main bottleneck should remain tensor-core under-utilization in the dominant hot band, with barrier and MIO throttle caused by too many medium-width CTAs rather than raw DRAM bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:52-81 (add a TensorCoreTile192 alias plus fixed-shape split constants/static_assert coverage for 7296 + 384 + 96 columns)",
+        "src/kernels/bf16_gemm_v1.cu:133-157 (reuse the async-copy staging helpers with the widened B-tile geometry and validate 16-byte alignment assumptions)",
+        "src/kernels/bf16_gemm_v1.cu:322-335 (rewrite the fixed-shape launch branch to issue 64x192 main, 64x128 middle, then 64x96 tail)"
+      ],
+      "risk": "A 64x192 tile increases the B tile footprint and per-CTA fragment pressure. If register/shared usage climbs enough to cut active warps materially below the current 65.67% or amplify barrier stalls, the fewer CTAs will not offset the heavier block.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus 42.56455994 ms",
+        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "main-kernel sm__warps_active.avg.pct_of_peak_sustained_active",
+        "main-kernel smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "main-kernel smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "main-kernel launch__registers_per_thread and launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if the widened 64x192 hot band drops occupancy/active warps materially, introduces spills or a large shared-memory jump, or fails to beat the 42.56455994 ms round-16 baseline."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "64x256 super-main over 7680 columns with minimal cleanup launches",
+      "hypothesis": "Stay on the widened-main axis but test the most aggressive variant: cover the first 7680 columns with a 64x256 super-main launch so the dominant region falls to 30 CTAs across N, then use the smallest cleanup launch or launches needed for the remaining 96 columns. If the current 64x160 design is still paying too much per-CTA scheduling cost, this should squeeze more useful MMA work out of each block and further reduce hot-band launch/barrier overhead.",
+      "expected_bottleneck": "The likely limiter shifts from launch granularity to occupancy and register/shared pressure: the super-main tile may improve tensor utilization only if its larger block does not push the kernel into a lower-latency-hiding regime.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:52-81 (introduce a TensorCoreTile256 alias and fixed-shape constants/static_asserts for a 7680-column super-main region)",
+        "src/kernels/bf16_gemm_v1.cu:186-298 (instantiate bf16_gemm_v1_tensor_core_kernel with the wider fragment count and confirm epilogue/shared-tile indexing still scales cleanly)",
+        "src/kernels/bf16_gemm_v1.cu:322-335 (replace the current 64x160/64x96 split with a 64x256 super-main plus minimal cleanup launch sequence)"
+      ],
+      "risk": "This is the highest-upside but highest-risk widened-main follow-up. A 64x256 CTA can easily overrun the RTX 3070 Laptop register/shared budget, cut active warps, worsen barrier pressure, or trigger spills that erase any launch-count reduction.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime and variance",
+        "super-main launch__registers_per_thread and launch__shared_mem_per_block_allocated",
+        "super-main sm__warps_active.avg.pct_of_peak_sustained_active",
+        "super-main sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "super-main smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "super-main smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the 64x256 variant reduces active warps or occupancy enough to push runtime backward, or if build-time resource usage suggests the super-main tile is too large for this GPU."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep 64x160 main and collapse the fixed-shape cleanup path",
+      "hypothesis": "Hold the accepted 64x160 main band exactly as-is and attack only the fixed-shape glue around it: simplify or collapse the cleanup dispatch so the widened hot band still covers the first 7680 columns, but the extra tail launch path pays less branching, pointer adjustment, and cold-path overhead. This is the lowest-risk way to stay on the widened-main family while trimming the non-hot-band work that still sits beside the dominant launch.",
+      "expected_bottleneck": "The hot band remains limited by the same tensor/barrier/MIO behavior as round 16, but the target here is residual fixed-shape cleanup overhead from the separate 64x96 tail path rather than a new tile-level compute schedule.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:56-81 (keep the 64x160 + 64x96 fixed-shape constants but simplify how the split is expressed for the fixed benchmark)",
+        "src/kernels/bf16_gemm_v1.cu:303-345 (collapse or streamline the fixed-shape launch branch so the 64x160 hot band stays intact and cleanup glue becomes cheaper)",
+        "src/kernels/bf16_gemm_v1.cu:239-298 (only if needed, tighten tail-specific epilogue/store handling so the cleanup launch carries less extra work)"
+      ],
+      "risk": "The upside is smaller because the current tail launch is already only a small fraction of total time. If most remaining cost is still inside the 64x160 main kernel, cleanup simplification alone may land inside measurement noise.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime and p10/p90 spread",
+        "tail-launch gpu__time_duration.sum relative to the current ~0.934 ms",
+        "tail-launch sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "tail-launch sm__warps_active.avg.pct_of_peak_sustained_active",
+        "main-launch metrics to confirm the 64x160 hot band stayed unchanged",
+        "overall correctness after any fixed-shape dispatch simplification"
+      ],
+      "stop_condition": "Stop if the cleanup-path change does not produce a runtime move outside noise, or if it perturbs the proven 64x160 hot-band behavior instead of purely reducing glue overhead."
+    }
+  ],
+  "notes": "This diagnosis builds directly on the successful round-16 widened-main 64x160 + 64x96 result at 42.56455994 ms."
 }
