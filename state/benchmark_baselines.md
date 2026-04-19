@@ -19,15 +19,15 @@
 ## Best custom kernel
 
 - status: RECORDED
-- kernel tag: `bf16_gemm_v1_8346b48`
-- runtime: `34.655231 ms`
-- TFLOP/s: `20.978634 TFLOP/s`
+- kernel tag: `bf16_gemm_v1_c2f2bec`
+- runtime: `34.234447 ms`
+- TFLOP/s: `21.236488 TFLOP/s`
 - correctness: `PASS`
-- run dir: `runs/20260419_104631_bf16_gemm_v1_8346b48`
-- summary json: `runs/20260419_104631_bf16_gemm_v1_8346b48/summary.json`
-- measured commit: `8346b48ca5272beb86282fa09eb346dc73ab9f68`
+- run dir: `runs/20260419_132725_bf16_gemm_v1_c2f2bec`
+- summary json: `runs/20260419_132725_bf16_gemm_v1_c2f2bec/summary.json`
+- measured commit: `c2f2bec47c9cba44f35cf7d260893f0416a4d251`
 
 ## Gap
 
-- absolute runtime gap: `8.737343 ms`
-- runtime ratio: `1.337116x` slower than CUTLASS
+- absolute runtime gap: `8.316559 ms`
+- runtime ratio: `1.320881x` slower than CUTLASS

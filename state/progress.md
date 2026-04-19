@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `4ad2ee7d36377ef1e9439df15b623c6617384aba`
-- plateau counter: `11`
-- round loop: `round 2/5`
-- rounds remaining: `4`
-- notes: `Node C build succeeded for round 2/5. Node A will now measure the new code path.`
+- latest measured commit: `c2f2bec47c9cba44f35cf7d260893f0416a4d251`
+- plateau counter: `0`
+- round loop: `round 3/5`
+- rounds remaining: `3`
+- notes: `Node A completed round 2/5. Run node_b to continue round 3/5.`
 
 ## Latest measured custom run
 
-- run id: `20260419_131756_bf16_gemm_v1_4ad2ee7`
-- run dir: `runs/20260419_131756_bf16_gemm_v1_4ad2ee7`
+- run id: `20260419_132725_bf16_gemm_v1_c2f2bec`
+- run dir: `runs/20260419_132725_bf16_gemm_v1_c2f2bec`
 - correctness: `PASS`
-- median runtime: `35.417503 ms`
-- TFLOP/s: `20.527122 TFLOP/s`
+- median runtime: `34.234447 ms`
+- TFLOP/s: `21.236488 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_131829`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- diagnosis notes: `All three directions stay inside the 64x384 hot-band PTX microkernel branch. The 64x96 tail remains unchanged. Ranking is anchored on the current accepted PTX base 4ad2ee7: runtime improved materially over the WMMA base, mio dropped to 5.53, but the hot kernel now runs at 172 registers/thread with occupancy_limit_registers=1 and only 16.47 active warps. That makes occupancy and live-state recovery the main guardrail for round 2, while still pushing deeper into explicit PTX fragment/load/export control rather than reverting to generic WMMA tuning.`
-- dir_01: Explicit ldmatrix PTX microkernel with smaller hot-band live set | bottleneck: Register footprint and live-fragment residency inside the current PTX hot-band compute body are limiting occupancy and latency hiding; explicit fragment control is needed to lower that footprint without abandoning the PTX branch.
-- dir_02: Wrapper-level PTX accumulator phasing before full ldmatrix rewrite | bottleneck: The dominant cost is accumulator live-set size, not the cp.async path and not the tail kernel, so reducing simultaneously resident PTX accumulator tiles should help occupancy first.
-- dir_03: Register-first PTX export path after compute-body control | bottleneck: The hot-band export path is still consuming shared/LSU budget and can become the next limiter once mio has already been cut; taking control of export is the natural PTX-branch follow-on after compute-body control.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `8.737343 ms`, `1.337116x` slower than CUTLASS
+- current best custom gap: `8.316559 ms`, `1.320881x` slower than CUTLASS
