@@ -1,15 +1,86 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_140002",
+  "status": "completed",
+  "created_at": "2026-04-19T14:00:02-07:00",
   "source_run_id": "20260419_135930_bf16_gemm_v1_1e399d8",
   "source_run_dir": "runs/20260419_135930_bf16_gemm_v1_1e399d8",
   "source_summary_json": "runs/20260419_135930_bf16_gemm_v1_1e399d8/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Register-first PTX export follow-through on the hot band",
+      "hypothesis": "The PTX branch has now delivered three consecutive wins, and round 3 specifically showed that orchestration/barrier cleanup is paying off: runtime is down to 33.366 ms, barrier is 14.34, and mio is only 2.31. The hot 64x384 kernel still exits through the shared export surface at src/kernels/bf16_gemm_v1.cu:301-315, :405-439, and :894-896, which means the branch still materializes every accumulator tile through shared before BF16 packing. With control/orchestration already improved, the best next step is to make the hot-band PTX branch own export as well: retire accumulator tiles from registers more directly so shared LSU work, short scoreboard, and export-side live state all shrink while leaving the 64x96 tail untouched.",
+      "expected_bottleneck": "The remaining cost has shifted away from barrier and mio tax toward export-side shared/LSU work and residual register lifetime in the hot-band epilogue.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:212-229",
+        "src/kernels/bf16_gemm_v1.cu:301-315",
+        "src/kernels/bf16_gemm_v1.cu:405-439",
+        "src/kernels/bf16_gemm_v1.cu:813-817",
+        "src/kernels/bf16_gemm_v1.cu:894-896"
+      ],
+      "risk": "Direct register export changes accumulator-to-output mapping and BF16 packing at the same time, so correctness risk is real. It also may not flip occupancy_limit_registers by itself if the dominant register cost is still the 12-tile accumulator residency.",
+      "metrics_to_recheck": [
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if export-side shared/LSU pressure does not fall materially or if registers increase enough to offset any store-path gain."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Full-width explicit PTX load-order control without the regressed half-panel path",
+      "hypothesis": "The hot-band PTX kernel still uses PTX wrappers around wmma.load and wmma.mma at src/kernels/bf16_gemm_v1.cu:261-299 and :746-763. A coherent next step inside the same branch is to move to more explicit compute/load-order control for the full 64x384 tile set, but not by reopening the prechecked explicit mma.sync half-panel subpath that already regressed. The safer variant is a full-width PTX dataflow follow-through: keep the 12-tile hot band intact, keep the 64x96 tail unchanged, and use more explicit fragment load order to attack the now-rising memory/latency side of the kernel as compute-memory and DRAM throughput have climbed into the mid-50% range.",
+      "expected_bottleneck": "With barrier and mio now low, residual long-scoreboard and feed latency inside the PTX compute body are a more plausible limiter than orchestration tax.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:261-299",
+        "src/kernels/bf16_gemm_v1.cu:388-402",
+        "src/kernels/bf16_gemm_v1.cu:746-763",
+        "src/kernels/bf16_gemm_v1.cu:824-892"
+      ],
+      "risk": "Explicit fragment load control is a larger rewrite and can easily recreate the wrong lessons from the rejected half-panel mma.sync precheck if it starts splitting the output tile the same way. It can also raise registers or instruction count if the full-width mapping is not disciplined.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "launch__registers_per_thread",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if the implementation starts collapsing into the old half-panel explicit mma.sync experiment or if long-scoreboard and runtime do not improve together."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "PTX helper and lifetime compaction for the 12-tile accumulator set",
+      "hypothesis": "Round 2's switch to named accumulator tiles clearly helped, but the branch is still at 167 registers/thread and one block/SM. A narrower next step inside the same PTX line is to keep the current arithmetic path and tail unchanged while compacting helper structure and lifetime: reduce recursion and oversized helper scope in ptx_wmma_acc_tile(), ptx_wmma_accumulate_tile_set_384(), and ptx_wmma_store_tile_set_384() so the compiler has a better chance of tightening live ranges around the 12-tile hot set without reopening the rejected half-panel compute split.",
+      "expected_bottleneck": "Compiler-visible live-range inflation around the named 12-tile PTX helper surface is still contributing to the occupancy guardrail even after orchestration improvements.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:317-377",
+        "src/kernels/bf16_gemm_v1.cu:380-402",
+        "src/kernels/bf16_gemm_v1.cu:405-439",
+        "src/kernels/bf16_gemm_v1.cu:833-896"
+      ],
+      "risk": "This is the lowest-ceiling option: it may shave a few registers but not enough to change occupancy_limit_registers, and it could accidentally undo the favorable compile-time scheduling that made round 2 and round 3 work.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if helper/lifetime compaction does not move registers or active warps at all, because then the branch should stay focused on export or full-width PTX dataflow instead."
+    }
+  ],
+  "notes": "All three directions stay strictly inside the 64x384 hot-band PTX microkernel branch and keep the 64x96 tail unchanged. Ranking uses the new fact that round 3 pushed runtime down again to 33.366 ms while barrier and mio both dropped materially, so the branch should not change lines now. The remaining guardrail is still occupancy_limit_registers=1 with active warps stuck near 16.6, but the profile also shows compute-memory and DRAM throughput already much higher than before. That shifts ranking toward end-to-end PTX follow-through on export and full-width dataflow control, while explicitly avoiding the previously rejected explicit mma.sync half-panel subpath."
 }
