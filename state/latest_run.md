@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_101256_bf16_gemm_v1_5ab5302`
-- run dir: `runs/20260419_101256_bf16_gemm_v1_5ab5302`
-- kernel tag: `bf16_gemm_v1_5ab5302`
-- round label: `round 5/5`
+- run id: `20260419_102608_bf16_gemm_v1_2872f92`
+- run dir: `runs/20260419_102608_bf16_gemm_v1_2872f92`
+- kernel tag: `bf16_gemm_v1_2872f92`
+- round label: `round 1/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `36.517889 ms`
-- p10 runtime: `36.269873 ms`
-- p90 runtime: `37.354353 ms`
-- TFLOP/s: `19.908583 TFLOP/s`
-- previous run id: `20260419_100457_bf16_gemm_v1_6dd39ad`
-- runtime delta vs previous measured run: `-0.856062 ms`
-- TFLOP/s delta vs previous measured run: `+0.456012 TFLOP/s`
+- median runtime: `35.677088 ms`
+- p10 runtime: `35.527577 ms`
+- p90 runtime: `37.394272 ms`
+- TFLOP/s: `20.377768 TFLOP/s`
+- previous run id: `20260419_101256_bf16_gemm_v1_5ab5302`
+- runtime delta vs previous measured run: `-0.840801 ms`
+- TFLOP/s delta vs previous measured run: `+0.469185 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-land the peeled hot kernel and trim the c_shared export path`
+- implemented direction name: `Deepen single-skew cp.async overlap in the fixed peeled 64x384 hot kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_101256_bf16_gemm_v1_5ab5302/summary.json`
-- measured commit: `5ab5302bd23e8cd1ff2fcd97dbfd5a35b1701ca9`
+- raw summary json: `runs/20260419_102608_bf16_gemm_v1_2872f92/summary.json`
+- measured commit: `2872f92585773d6f6a38c911cb76d010d4209366`
 - new best custom: `yes`
-- generated at: `2026-04-19T10:13:04-07:00`
+- generated at: `2026-04-19T10:26:16-07:00`

@@ -13,16 +13,16 @@
     "updated_at": "2026-04-18T12:13:00-07:00"
   },
   "best_custom": {
-    "run_id": "20260419_101256_bf16_gemm_v1_5ab5302",
-    "run_dir": "runs/20260419_101256_bf16_gemm_v1_5ab5302",
-    "kernel_tag": "bf16_gemm_v1_5ab5302",
-    "median_runtime_ms": 36.51788902,
-    "tflops": 19.90858292,
+    "run_id": "20260419_102608_bf16_gemm_v1_2872f92",
+    "run_dir": "runs/20260419_102608_bf16_gemm_v1_2872f92",
+    "kernel_tag": "bf16_gemm_v1_2872f92",
+    "median_runtime_ms": 35.67708778,
+    "tflops": 20.37776811,
     "correctness_passed": true,
-    "measured_commit": "5ab5302bd23e8cd1ff2fcd97dbfd5a35b1701ca9",
-    "summary_json": "runs/20260419_101256_bf16_gemm_v1_5ab5302/summary.json",
+    "measured_commit": "2872f92585773d6f6a38c911cb76d010d4209366",
+    "summary_json": "runs/20260419_102608_bf16_gemm_v1_2872f92/summary.json",
     "ncu_summary_json": "state/latest_ncu_summary.json",
-    "updated_at": "2026-04-19T10:13:04-07:00"
+    "updated_at": "2026-04-19T10:26:16-07:00"
   },
-  "updated_at": "2026-04-19T10:13:04-07:00"
+  "updated_at": "2026-04-19T10:26:16-07:00"
 }

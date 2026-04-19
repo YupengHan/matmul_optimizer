@@ -1,20 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `5`
-- completed rounds: `0`
-- remaining rounds: `5`
-- current round label: `round 1/5`
+- completed rounds: `1`
+- remaining rounds: `4`
+- current round label: `round 2/5`
 - auto use recommended: `yes`
-- accepted base run id: `20260419_101256_bf16_gemm_v1_5ab5302`
-- accepted base measured commit: `5ab5302bd23e8cd1ff2fcd97dbfd5a35b1701ca9`
-- accepted base runtime: `36.517889 ms`
+- accepted base run id: `20260419_102608_bf16_gemm_v1_2872f92`
+- accepted base measured commit: `2872f92585773d6f6a38c911cb76d010d4209366`
+- accepted base runtime: `35.677088 ms`
 - started at: `2026-04-19T10:16:39-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 1/5. Node A will measure the result next.`
+- notes: `Completed round 1/5. Continue with node_b for round 2/5. Accepted base: 20260419_102608_bf16_gemm_v1_2872f92 at 35.677088 ms.`
 
 ## Last completed round
 
-- no completed round recorded yet
+- round: `1/5`
+- direction: `dir_01`
+- direction name: `Deepen single-skew cp.async overlap in the fixed peeled 64x384 hot kernel`
+- verdict: `improved`
+- runtime delta: `-0.840801 ms`
+- TFLOP/s delta: `+0.469185 TFLOP/s`
+- run dir: `runs/20260419_102608_bf16_gemm_v1_2872f92`
+- ncu rep path: `runs/20260419_102608_bf16_gemm_v1_2872f92/ncu_profile.ncu-rep`
