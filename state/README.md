@@ -101,6 +101,10 @@ Contains:
 
 Append-only one-line summary for each completed round.
 
+## `diagnosis_history.jsonl`
+
+Append-only snapshot of every finalized node_b diagnosis, including all three directions and the recommended choice.
+
 ## `supervisor_task.json`
 
 Machine-readable dispatch contract for the main Codex supervisor.

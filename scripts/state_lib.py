@@ -22,6 +22,7 @@ BENCHMARK_STATE_PATH = STATE_DIR / 'benchmark_state.json'
 RUN_REGISTRY_PATH = STATE_DIR / 'run_registry.jsonl'
 ROUND_LOOP_STATE_PATH = STATE_DIR / 'round_loop_state.json'
 ROUND_HISTORY_PATH = STATE_DIR / 'round_history.jsonl'
+DIAGNOSIS_HISTORY_PATH = STATE_DIR / 'diagnosis_history.jsonl'
 SUPERVISOR_TASK_PATH = STATE_DIR / 'supervisor_task.json'
 
 

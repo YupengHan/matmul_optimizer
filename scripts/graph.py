@@ -14,6 +14,7 @@ import eval_kernel
 from state_lib import (
     ACTIVE_DIRECTION_PATH,
     BENCHMARK_STATE_PATH,
+    DIAGNOSIS_HISTORY_PATH,
     DOCS_DIR,
     GRAPH_STATE_PATH,
     LATEST_DIAGNOSIS_PATH,
@@ -1238,6 +1239,21 @@ def node_b_commit_message(diagnosis: Dict[str, Any], latest_run: Dict[str, Any],
     )
 
 
+def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any], round_loop: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'recorded_at': now_local_iso(),
+        'round_label': round_label(round_loop),
+        'source_run_id': latest_run.get('run_id'),
+        'source_run_dir': latest_run.get('run_dir'),
+        'source_measured_commit': latest_run.get('measured_commit'),
+        'diagnosis_id': diagnosis.get('diagnosis_id'),
+        'recommended_direction_id': diagnosis.get('recommended_direction_id'),
+        'approved_direction_id': diagnosis.get('approved_direction_id'),
+        'current_kernel_path': diagnosis.get('current_kernel_path'),
+        'directions': diagnosis.get('directions', []),
+    }
+
+
 def node_c_commit_message(active_direction: Dict[str, Any], direction: Dict[str, Any], round_loop: Dict[str, Any]) -> str:
     return textwrap.dedent(
         f'''\
@@ -1299,6 +1315,7 @@ def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = No
         BENCHMARK_STATE_PATH,
         ROUND_LOOP_STATE_PATH,
         ROUND_HISTORY_PATH,
+        DIAGNOSIS_HISTORY_PATH,
         RUN_REGISTRY_PATH,
         ROUNDS_MD_PATH,
         PROGRESS_MD_PATH,
@@ -1625,6 +1642,10 @@ def run_node_b(args: argparse.Namespace) -> int:
         graph_state['notes'] = 'Node B completed. Approve a direction or explicitly use the recommended direction before node_c.'
         write_json(GRAPH_STATE_PATH, graph_state)
         write_json(ACTIVE_DIRECTION_PATH, default_active_direction())
+        append_jsonl(
+            DIAGNOSIS_HISTORY_PATH,
+            diagnosis_history_entry(diagnosis, latest_run, round_loop),
+        )
         if round_loop.get('active') and round_loop.get('auto_use_recommended'):
             select_direction(diagnosis.get('recommended_direction_id'), 'recommended')
             round_loop = load_round_loop_state()
