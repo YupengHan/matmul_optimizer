@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_230727_bf16_gemm_v1_2a86c71`
-- run dir: `runs/20260418_230727_bf16_gemm_v1_2a86c71`
-- kernel tag: `bf16_gemm_v1_2a86c71`
-- round label: `round 6/20`
+- run id: `20260418_232047_bf16_gemm_v1_5603894`
+- run dir: `runs/20260418_232047_bf16_gemm_v1_5603894`
+- kernel tag: `bf16_gemm_v1_5603894`
+- round label: `round 7/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `57.120176 ms`
-- p10 runtime: `56.703691 ms`
-- p90 runtime: `61.815400 ms`
-- TFLOP/s: `12.727892 TFLOP/s`
-- previous run id: `20260418_225901_bf16_gemm_v1_91e446e`
-- runtime delta vs previous measured run: `+2.983265 ms`
-- TFLOP/s delta vs previous measured run: `-0.701382 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `54.193089 ms`
+- p10 runtime: `54.145742 ms`
+- p90 runtime: `58.301645 ms`
+- TFLOP/s: `13.415353 TFLOP/s`
+- previous run id: `20260418_230727_bf16_gemm_v1_2a86c71`
+- runtime delta vs previous measured run: `-2.927088 ms`
+- TFLOP/s delta vs previous measured run: `+0.687461 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Replace the simple B-row skew with a warp-friendly shared-memory B swizzle`
+- implemented direction name: `Restore the low-footprint wide B slab and keep any new swizzle occupancy-neutral`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260418_230727_bf16_gemm_v1_2a86c71/summary.json`
-- measured commit: `2a86c71387e520f89bd133d824161d17428f4242`
+- raw summary json: `runs/20260418_232047_bf16_gemm_v1_5603894/summary.json`
+- measured commit: `56038948d7d255701cbdaf6c5969d0fbc56b4aa7`
 - new best custom: `no`
-- generated at: `2026-04-18T23:07:35-07:00`
+- generated at: `2026-04-18T23:20:55-07:00`

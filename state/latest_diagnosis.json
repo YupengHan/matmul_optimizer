@@ -1,87 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_231124",
-  "status": "completed",
-  "created_at": "2026-04-18T23:11:24-07:00",
-  "source_run_id": "20260418_230727_bf16_gemm_v1_2a86c71",
-  "source_run_dir": "runs/20260418_230727_bf16_gemm_v1_2a86c71",
-  "source_summary_json": "runs/20260418_230727_bf16_gemm_v1_2a86c71/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_232047_bf16_gemm_v1_5603894",
+  "source_run_dir": "runs/20260418_232047_bf16_gemm_v1_5603894",
+  "source_summary_json": "runs/20260418_232047_bf16_gemm_v1_5603894/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the low-footprint wide B slab and keep any new swizzle occupancy-neutral",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "This regression tracks the B shared-memory relayout more than any improvement in the steady-state feed path. Compared with the accepted base run, the 16x16 subtile layout raised static shared memory from 12.800 KB/block to 15.360 KB/block, dropped `launch__occupancy_limit_shared_mem` from 7 to 6 CTAs per SM, and reduced `sm__warps_active.avg.pct_of_peak_sustained_active` from 58.03% to 49.78%. At the same time, `l1tex__data_bank_reads` rose from 13.55% to 15.16% and `l1tex__data_pipe_lsu_wavefronts` rose from 66.09% to 72.79%, so the subtile scheme paid both a residency cost and a shared-load cost. The next implementation round should restore the accepted wide 16x96 B slab first, then only try B-side swizzles or padding that keep the accepted shared-memory footprint intact.",
-      "expected_bottleneck": "Shared-memory footprint and B-fragment load efficiency are cutting block residency and leaving the tensor loop underfed.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:36-49 (B shared-layout constants and per-tile footprint math)",
-        "src/kernels/bf16_gemm_v1.cu:98-111 (`stage_b_shared_tile_async` packing into shared memory)",
-        "src/kernels/bf16_gemm_v1.cu:164-166 and 216-220 (`b_shared` allocation and B fragment load addresses)"
-      ],
-      "risk": "Low to moderate. Restoring the accepted base is known-good, but any follow-on swizzle still has to preserve 16-byte `cp.async` alignment and WMMA row-major fragment semantics without reintroducing the same shared-memory footprint increase.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "launch__shared_mem_per_block_allocated",
-        "launch__occupancy_limit_shared_mem",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness_passed"
-      ],
-      "stop_condition": "Stop if the restored or reworked B layout still allocates more than the accepted 13.824 KB/block or if active warps fail to recover toward the prior ~58% level, because then the layout is still spending a residency slot per SM."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Retune the CTA and per-warp N tile so B-side experiments do not burn residency",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "This kernel is now clearly sensitive to one block of residency headroom: losing one CTA per SM coincided with an 8.25-point drop in active warps and a 2.98 ms slowdown. After restoring the accepted base, a second family of fixes is to retune `kWarpTilesN`, `kWarpMmaTilesN`, and the resulting `kTensorBlockN` so each CTA carries less B-side state while still keeping enough reuse to feed Tensor Cores. A slightly narrower CTA or a different warp-to-N mapping may create occupancy headroom for future shared-memory tuning without needing another complex B layout.",
-      "expected_bottleneck": "Occupancy and latency hiding are constrained by the current CTA tile shape and its shared-memory budget.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:20-30 (warp tiling and CTA tile-shape constants)",
-        "src/kernels/bf16_gemm_v1.cu:40-49 (B tile size, async-copy counts, and shared-footprint consequences)",
-        "src/kernels/bf16_gemm_v1.cu:175-180 and 279-282 (warp-to-output mapping and launch geometry)"
-      ],
-      "risk": "Moderate. Shrinking the N span or changing the warp mapping can recover occupancy, but it can also reduce arithmetic intensity, increase global traffic, or create more CTA scheduling overhead if the tile gets too small.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "launch__shared_mem_per_block_allocated",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if a narrower CTA recovers occupancy but pushes DRAM/L2 throughput up while tensor activity and runtime stay flat or worsen, because that means reuse was traded away faster than latency hiding improved."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Specialize the fixed-shape mainloop so the async pipeline pays less per-step control and sync overhead",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "Even before the regression, the accepted base still carried non-trivial synchronization cost, with barrier stall around 23% and tensor activity only in the mid-20s. Because this benchmark shape is fixed and exactly divisible by the tensor tile sizes, the kernel can afford a more specialized prologue/steady-state/drain schedule: peel the first and last K steps, remove the per-iteration `if (next_tile_k < k)` bookkeeping from the hot path, and only keep the synchronization pattern the steady-state loop actually needs. This does not explain the current regression as directly as the B-layout footprint jump, but it is the next distinct path for improving the accepted base once residency is restored.",
-      "expected_bottleneck": "Synchronization and fixed-shape control overhead in the steady-state async-copy and MMA loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:73-82 (`cp_async_wait_group_0` and related pipeline helpers)",
-        "src/kernels/bf16_gemm_v1.cu:191-225 (pipeline warmup and the steady-state K-loop wait/sync sequence)",
-        "src/kernels/bf16_gemm_v1.cu:279-286 (fixed-shape launch gate and fallback split)"
-      ],
-      "risk": "Moderate to high. The potential upside is smaller than the occupancy loss from the regressed B layout, and over-specializing the pipeline can make the kernel harder to maintain or accidentally raise code size without moving the real bottleneck.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__issue_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if barrier stall remains near the current low-20% range and runtime only moves at noise level after the loop specialization, because then the remaining overhead is not in the per-step control flow."
-    }
-  ],
-  "notes": "Auto-analysis diagnosis for round 7/20 from the regressed 16x16 B-subtile experiment. The next implementation round should restore the accepted base before testing one new direction."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
