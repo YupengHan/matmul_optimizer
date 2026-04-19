@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Pairwise unroll the peeled 64x384 hot loop without changing the handoff model",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T10:41:39-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_103511",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Pairwise unroll the peeled 64x384 hot loop without changing the handoff model",
+    "hypothesis": "The restored 2872f92 winner already proved that deeper single-skew overlap inside the peeled 64x384 hot kernel is useful, but it still only reaches 33.64% tensor active with 15.46% barrier stall and 29.92% mio_throttle. The 3eeb098 named-barrier/subgroup stage-handoff retune is strong negative evidence for adding more handoff state because it dropped the hot kernel to one register-limited block per SM at 167 registers/thread. The best bounded follow-up is to keep the accepted cp.async plus CTA barrier recycle model and process two fixed K tiles per steady-state iteration so the hot loop pays less loop/index overhead per MMA issue.",
+    "expected_bottleneck": "Tensor issue underfill and loop/control overhead inside the fixed 64x384 hot kernel, with register growth as the main guardrail.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:573-583",
+      "src/kernels/bf16_gemm_v1.cu:588-625",
+      "src/kernels/bf16_gemm_v1.cu:627-667"
+    ],
+    "risk": "A 2x steady-state unroll can recreate the recent register blow-up; if the hot kernel climbs well above the accepted 128 registers/thread, occupancy will collapse back to the failure mode seen at 3eeb098.",
+    "metrics_to_recheck": [
+      "launch__registers_per_thread",
+      "launch__occupancy_limit_registers",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+    ],
+    "stop_condition": "Stop if the hot kernel falls back to one register-limited block per SM, or if tensor active fails to improve while end-to-end runtime stays flat or regresses."
+  },
+  "notes": "Node C may now implement this one direction."
 }
