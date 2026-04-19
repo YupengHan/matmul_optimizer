@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_102608_bf16_gemm_v1_2872f92`
-- run dir: `runs/20260419_102608_bf16_gemm_v1_2872f92`
-- kernel tag: `bf16_gemm_v1_2872f92`
-- round label: `round 1/5`
+- run id: `20260419_103438_bf16_gemm_v1_3eeb098`
+- run dir: `runs/20260419_103438_bf16_gemm_v1_3eeb098`
+- kernel tag: `bf16_gemm_v1_3eeb098`
+- round label: `round 2/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `35.677088 ms`
-- p10 runtime: `35.527577 ms`
-- p90 runtime: `37.394272 ms`
-- TFLOP/s: `20.377768 TFLOP/s`
-- previous run id: `20260419_101256_bf16_gemm_v1_5ab5302`
-- runtime delta vs previous measured run: `-0.840801 ms`
-- TFLOP/s delta vs previous measured run: `+0.469185 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `41.745407 ms`
+- p10 runtime: `41.641369 ms`
+- p90 runtime: `42.207522 ms`
+- TFLOP/s: `17.415555 TFLOP/s`
+- previous run id: `20260419_102608_bf16_gemm_v1_2872f92`
+- runtime delta vs previous measured run: `+6.068319 ms`
+- TFLOP/s delta vs previous measured run: `-2.962213 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Deepen single-skew cp.async overlap in the fixed peeled 64x384 hot kernel`
+- implemented direction name: `Reduce stage-recycle barriers in the peeled 64x384 hot loop`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_102608_bf16_gemm_v1_2872f92/summary.json`
-- measured commit: `2872f92585773d6f6a38c911cb76d010d4209366`
-- new best custom: `yes`
-- generated at: `2026-04-19T10:26:16-07:00`
+- raw summary json: `runs/20260419_103438_bf16_gemm_v1_3eeb098/summary.json`
+- measured commit: `3eeb098209be61266f0448e163821fbc4f819003`
+- new best custom: `no`
+- generated at: `2026-04-19T10:34:46-07:00`

@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Reduce stage-recycle barriers in the peeled 64x384 hot loop",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T10:28:49-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_102638",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Reduce stage-recycle barriers in the peeled 64x384 hot loop",
-    "idea_origin": "auto-analysis",
-    "hypothesis": "The current best base confirms the right family: peeled fixed-shape hot kernel plus trimmed export, with deeper single-skew overlap improving again to 35.677088 ms. The residual tradeoff is now clear in the hot kernel profile: short scoreboard collapsed to 0.39% and DRAM dropped to 27.32%, but barrier stall climbed to 15.46% while tensor active slipped slightly versus the previous base. That makes the best next move a bounded refinement of the peeled overlap schedule itself: keep the same single-skew feed path and 64x384 tile, but reduce the number or scope of full-CTA stage-recycle barriers so the overlap gain survives without paying as much synchronization cost.",
-    "expected_bottleneck": "CTA-wide synchronization and stage handoff overhead inside the peeled 64x384 steady-state loop.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:189-199 (cp.async commit and wait helpers)",
-      "src/kernels/bf16_gemm_v1.cu:567-607 (peeled hot-loop prefill, future-tile refill, wait_group_1, and full-CTA barriers)",
-      "src/kernels/bf16_gemm_v1.cu:538-542 (two-stage shared buffers whose reuse currently forces the recycle synchronization)"
-    ],
-    "risk": "The current kernel is already the best custom result, so reducing barriers can easily re-expose short-scoreboard or create stage-reuse races if the synchronization boundary moves too far.",
-    "metrics_to_recheck": [
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-    ],
-    "stop_condition": "Stop if barrier stall does not fall on top of the current base, or if reducing synchronization causes short-scoreboard or runtime to regress."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

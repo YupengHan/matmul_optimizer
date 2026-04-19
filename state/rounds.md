@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `5`
-- completed rounds: `1`
-- remaining rounds: `4`
-- current round label: `round 2/5`
+- completed rounds: `2`
+- remaining rounds: `3`
+- current round label: `round 3/5`
 - auto use recommended: `yes`
 - accepted base run id: `20260419_102608_bf16_gemm_v1_2872f92`
 - accepted base measured commit: `2872f92585773d6f6a38c911cb76d010d4209366`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T10:16:39-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 2/5. Node A will measure the result next.`
+- notes: `Completed round 2/5. Continue with node_b for round 3/5. Accepted base: 20260419_102608_bf16_gemm_v1_2872f92 at 35.677088 ms.`
 
 ## Last completed round
 
-- round: `1/5`
+- round: `2/5`
 - direction: `dir_01`
-- direction name: `Deepen single-skew cp.async overlap in the fixed peeled 64x384 hot kernel`
-- verdict: `improved`
-- runtime delta: `-0.840801 ms`
-- TFLOP/s delta: `+0.469185 TFLOP/s`
-- run dir: `runs/20260419_102608_bf16_gemm_v1_2872f92`
-- ncu rep path: `runs/20260419_102608_bf16_gemm_v1_2872f92/ncu_profile.ncu-rep`
+- direction name: `Reduce stage-recycle barriers in the peeled 64x384 hot loop`
+- verdict: `regressed`
+- runtime delta: `+6.068319 ms`
+- TFLOP/s delta: `-2.962213 TFLOP/s`
+- run dir: `runs/20260419_103438_bf16_gemm_v1_3eeb098`
+- ncu rep path: `runs/20260419_103438_bf16_gemm_v1_3eeb098/ncu_profile.ncu-rep`
