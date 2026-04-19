@@ -51,6 +51,24 @@ struct TensorCoreTileConfig {
 using TensorCoreTile96 = TensorCoreTileConfig<3>;
 using TensorCoreTile128 = TensorCoreTileConfig<4>;
 
+template <typename TileConfig>
+struct AsyncLoadPolicy {
+  static constexpr int kALoaderWarpStart = 0;
+  static constexpr int kALoaderWarpCount = TileConfig::kWarpsPerBlock;
+  static constexpr int kBLoaderWarpStart = 0;
+  static constexpr int kBLoaderWarpCount = TileConfig::kWarpsPerBlock;
+};
+
+// Keep the 64x96 tail path simple, but bias the hot 64x128 path toward a
+// producer/consumer split so most MMA warps stop issuing async copies.
+template <>
+struct AsyncLoadPolicy<TensorCoreTile128> {
+  static constexpr int kALoaderWarpStart = 0;
+  static constexpr int kALoaderWarpCount = 1;
+  static constexpr int kBLoaderWarpStart = 1;
+  static constexpr int kBLoaderWarpCount = 2;
+};
+
 constexpr int kFixedBenchmarkM = 6464;
 constexpr int kFixedBenchmarkN = 7776;
 constexpr int kFixedBenchmarkK = 7232;
@@ -76,6 +94,14 @@ static_assert((TensorCoreTile96::kBSharedTileElems % kAsyncCopyElems) == 0, "Tai
 static_assert((TensorCoreTile128::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
 static_assert((kFixedMainRegionN % TensorCoreTile128::kTensorBlockN) == 0, "Fixed-shape main region must be an even count of 64x128 CTAs.");
 static_assert(kFixedMainRegionN + kFixedTailRegionN == kFixedBenchmarkN, "Main/tail split must cover the fixed benchmark width exactly.");
+static_assert(
+    AsyncLoadPolicy<TensorCoreTile128>::kALoaderWarpStart + AsyncLoadPolicy<TensorCoreTile128>::kALoaderWarpCount <=
+        TensorCoreTile128::kWarpsPerBlock,
+    "Main-tile A loader warps must fit within the CTA.");
+static_assert(
+    AsyncLoadPolicy<TensorCoreTile128>::kBLoaderWarpStart + AsyncLoadPolicy<TensorCoreTile128>::kBLoaderWarpCount <=
+        TensorCoreTile128::kWarpsPerBlock,
+    "Main-tile B loader warps must fit within the CTA.");
 
 __device__ __forceinline__ void cp_async_copy_16_bytes(
     __nv_bfloat16* dst,
@@ -108,11 +134,40 @@ __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_co
 }
 
 template <typename TileConfig>
+__device__ __forceinline__ bool warp_in_loader_range(int warp_id, int warp_start, int warp_count) {
+  return warp_id >= warp_start && warp_id < (warp_start + warp_count);
+}
+
+template <typename TileConfig>
+__device__ __forceinline__ bool is_copy_loader_thread(int warp_id) {
+  return warp_in_loader_range<TileConfig>(
+             warp_id,
+             AsyncLoadPolicy<TileConfig>::kALoaderWarpStart,
+             AsyncLoadPolicy<TileConfig>::kALoaderWarpCount) ||
+         warp_in_loader_range<TileConfig>(
+             warp_id,
+             AsyncLoadPolicy<TileConfig>::kBLoaderWarpStart,
+             AsyncLoadPolicy<TileConfig>::kBLoaderWarpCount);
+}
+
+template <typename TileConfig>
 __device__ __forceinline__ void stage_a_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
-    int global_stride) {
-  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kAAsyncCopiesPerTile; copy_idx += blockDim.x) {
+    int global_stride,
+    int warp_id,
+    int lane_id) {
+  if (!warp_in_loader_range<TileConfig>(
+          warp_id,
+          AsyncLoadPolicy<TileConfig>::kALoaderWarpStart,
+          AsyncLoadPolicy<TileConfig>::kALoaderWarpCount)) {
+    return;
+  }
+
+  const int loader_warp_start = AsyncLoadPolicy<TileConfig>::kALoaderWarpStart;
+  const int loader_threads = AsyncLoadPolicy<TileConfig>::kALoaderWarpCount * kWarpSize;
+  const int loader_thread_idx = (warp_id - loader_warp_start) * kWarpSize + lane_id;
+  for (int copy_idx = loader_thread_idx; copy_idx < TileConfig::kAAsyncCopiesPerTile; copy_idx += loader_threads) {
     const int row = copy_idx / TileConfig::kAAsyncCopiesPerRow;
     const int col = (copy_idx % TileConfig::kAAsyncCopiesPerRow) * kAsyncCopyElems;
     cp_async_copy_16_bytes(
@@ -125,8 +180,20 @@ template <typename TileConfig>
 __device__ __forceinline__ void stage_b_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
-    int global_stride) {
-  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
+    int global_stride,
+    int warp_id,
+    int lane_id) {
+  if (!warp_in_loader_range<TileConfig>(
+          warp_id,
+          AsyncLoadPolicy<TileConfig>::kBLoaderWarpStart,
+          AsyncLoadPolicy<TileConfig>::kBLoaderWarpCount)) {
+    return;
+  }
+
+  const int loader_warp_start = AsyncLoadPolicy<TileConfig>::kBLoaderWarpStart;
+  const int loader_threads = AsyncLoadPolicy<TileConfig>::kBLoaderWarpCount * kWarpSize;
+  const int loader_thread_idx = (warp_id - loader_warp_start) * kWarpSize + lane_id;
+  for (int copy_idx = loader_thread_idx; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += loader_threads) {
     const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
     const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
     const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
@@ -215,10 +282,12 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   const __nv_bfloat16* a_tile_0 = a + block_row * k;
   const __nv_bfloat16* b_tile_0 = b + block_col;
 
-  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_tile_0, k);
-  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_tile_0, n);
-  cp_async_commit_group();
-  cp_async_wait_group_0();
+  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_tile_0, k, warp_id, lane_id);
+  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_tile_0, n, warp_id, lane_id);
+  if (is_copy_loader_thread<TileConfig>(warp_id)) {
+    cp_async_commit_group();
+    cp_async_wait_group_0();
+  }
   __syncthreads();
 
   for (int tile_k = 0; tile_k < k; tile_k += kWmmaK) {
@@ -232,9 +301,11 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     if (next_tile_k < k) {
       const __nv_bfloat16* a_next_tile = a + block_row * k + next_tile_k;
       const __nv_bfloat16* b_next_tile = b + next_tile_k * n + block_col;
-      stage_a_shared_tile_async<TileConfig>(a_shared[next_stage], a_next_tile, k);
-      stage_b_shared_tile_async<TileConfig>(b_shared[next_stage], b_next_tile, n);
-      cp_async_commit_group();
+      stage_a_shared_tile_async<TileConfig>(a_shared[next_stage], a_next_tile, k, warp_id, lane_id);
+      stage_b_shared_tile_async<TileConfig>(b_shared[next_stage], b_next_tile, n, warp_id, lane_id);
+      if (is_copy_loader_thread<TileConfig>(warp_id)) {
+        cp_async_commit_group();
+      }
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
@@ -249,7 +320,9 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     if (next_tile_k < k) {
-      cp_async_wait_group_0();
+      if (is_copy_loader_thread<TileConfig>(warp_id)) {
+        cp_async_wait_group_0();
+      }
       __syncthreads();
     }
   }
