@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `6eaca8ea3a675237521dd743b9e744b57167933f`
 - plateau counter: `4`
 - round loop: `round 15/20`
 - rounds remaining: `6`
-- notes: `Node C is ready to implement dir_01 via recommended selection for round 15/20.`
+- notes: `Node C build succeeded for round 15/20. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -31,7 +31,7 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - diagnosis status: `completed`
 - diagnosis id: `diagnosis_20260419_004022`
 - recommended direction: `dir_01`
-- approved direction: `None`
+- approved direction: `dir_02`
 - diagnosis notes: `This diagnosis incorporates the round-14 human-in-loop signal and avoids barrier/shared-B retry.`
 - dir_01: Main-path explicit ldmatrix/mma.sync feed rewrite | bottleneck: Main-path operand delivery and instruction mix before tensor issue, especially the WMMA fragment-load path feeding the 64x128 CTA kernel and showing persistent smsp__warp_issue_stalled_mio_throttle_per_warp_active pressure.
 - dir_02: Retile CTA and warp partition to trim per-warp N baggage | bottleneck: Per-warp fragment baggage and B-side staging pressure caused by the current CTA/warp partition, reflected in MIO throttle and possibly excess register footprint from carrying multiple N-side fragments per warp.
@@ -39,10 +39,10 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- direction id: `dir_02`
+- selection mode: `approved`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 

@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - round loop: `round 15/20` with `6` rounds remaining
 
 ## Direction approval policy
@@ -17,7 +17,7 @@
 - diagnosis id: `diagnosis_20260419_004022`
 - diagnosis status: `completed`
 - recommended direction: `dir_01`
-- approved direction: `None`
+- approved direction: `dir_02`
 - diagnosis notes: `This diagnosis incorporates the round-14 human-in-loop signal and avoids barrier/shared-B retry.`
 - dir_01: Main-path explicit ldmatrix/mma.sync feed rewrite | bottleneck: Main-path operand delivery and instruction mix before tensor issue, especially the WMMA fragment-load path feeding the 64x128 CTA kernel and showing persistent smsp__warp_issue_stalled_mio_throttle_per_warp_active pressure.
 - dir_02: Retile CTA and warp partition to trim per-warp N baggage | bottleneck: Per-warp fragment baggage and B-side staging pressure caused by the current CTA/warp partition, reflected in MIO throttle and possibly excess register footprint from carrying multiple N-side fragments per warp.
@@ -25,7 +25,7 @@
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- selected direction: `dir_02`
+- selection mode: `approved`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`

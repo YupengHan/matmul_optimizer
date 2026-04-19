@@ -1,14 +1,14 @@
 {
-  "current_node": "node_c",
-  "previous_node": "node_b",
-  "status": "ready_for_node_c",
+  "current_node": "node_a",
+  "previous_node": "node_c",
+  "status": "ready_for_node_a",
   "latest_run_dir": "runs/20260419_003937_bf16_gemm_v1_6eaca8e",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
   "latest_commit": "6eaca8ea3a675237521dd743b9e744b57167933f",
-  "approved_direction_id": null,
+  "approved_direction_id": "dir_02",
   "recommended_direction_id": "dir_01",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "plateau_counter": 4,
-  "notes": "Node C is ready to implement dir_01 via recommended selection for round 15/20."
+  "notes": "Node C build succeeded for round 15/20. Node A will now measure the new code path."
 }

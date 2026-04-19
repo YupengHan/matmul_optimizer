@@ -18,17 +18,13 @@ constexpr int kWmmaN = 16;
 constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
 constexpr int kEpilogueVecElems = 2;
-// Expand the CTA along M to a fixed 4x2 warp layout so each staged K-slice
-// feeds eight warps while preserving the round-7 N-side organization.
-constexpr int kTensorWarpTilesM = 4;
-constexpr int kTensorWarpTilesN = 2;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
 
-template <int WarpMmaTilesNValue>
+template <int WarpTilesMValue, int WarpTilesNValue, int WarpMmaTilesNValue>
 struct TensorCoreTileConfig {
-  static constexpr int kWarpTilesM = kTensorWarpTilesM;
-  static constexpr int kWarpTilesN = kTensorWarpTilesN;
+  static constexpr int kWarpTilesM = WarpTilesMValue;
+  static constexpr int kWarpTilesN = WarpTilesNValue;
   static constexpr int kWarpMmaTilesN = WarpMmaTilesNValue;
   static constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
   static constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
@@ -38,9 +34,10 @@ struct TensorCoreTileConfig {
   // materializing all N tiles in shared memory at once.
   static constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
   static constexpr int kWarpGroupCols = kWarpMmaTilesN * kWmmaN;
-  // Keep the B tile row-major for WMMA, but place a single 16-byte skew
-  // between the two warp groups so each warp still reads a local slice.
-  static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
+  // Keep the B tile row-major for WMMA, but place one 16-byte skew between
+  // adjacent warp groups so each group keeps a local slice without overlap.
+  static constexpr int kBSharedSkewGaps = kWarpTilesN - 1;
+  static constexpr int kBSharedStride = kTensorBlockN + kBSharedSkewGaps * kAsyncCopyElems;
   static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
   static constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
   static constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
@@ -49,8 +46,10 @@ struct TensorCoreTileConfig {
   static constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
 };
 
-using TensorCoreTile96 = TensorCoreTileConfig<3>;
-using TensorCoreTile128 = TensorCoreTileConfig<4>;
+// Keep the accepted 64x96 tail specialization intact while retiling the hot
+// 128-wide main path to a 2x4 warp layout with fewer N fragments per warp.
+using TensorCoreTile96 = TensorCoreTileConfig<4, 2, 3>;
+using TensorCoreTile128 = TensorCoreTileConfig<2, 4, 2>;
 
 constexpr int kFixedBenchmarkM = 6464;
 constexpr int kFixedBenchmarkN = 7776;
@@ -59,11 +58,13 @@ constexpr int kFixedTailRegionN = TensorCoreTile96::kTensorBlockN;
 constexpr int kFixedMainRegionN = kFixedBenchmarkN - kFixedTailRegionN;
 
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
+static_assert(TensorCoreTile96::kWarpTilesM == 4 && TensorCoreTile96::kWarpTilesN == 2, "Tail path keeps the established 4x2 warp layout.");
 static_assert(TensorCoreTile96::kTensorBlockM == 64, "Tail path expects a fixed 64x96 CTA tile.");
 static_assert(TensorCoreTile96::kTensorBlockN == 96, "Tail path expects a fixed 64x96 CTA tile.");
 static_assert(TensorCoreTile96::kWarpsPerBlock == 8, "Tail path expects an 8-warp CTA.");
-static_assert(TensorCoreTile128::kTensorBlockM == 64, "Main path expects a fixed 64x128 CTA tile.");
-static_assert(TensorCoreTile128::kTensorBlockN == 128, "Main path expects a fixed 64x128 CTA tile.");
+static_assert(TensorCoreTile128::kWarpTilesM == 2 && TensorCoreTile128::kWarpTilesN == 4, "Main path expects the retiled 2x4 warp layout.");
+static_assert(TensorCoreTile128::kTensorBlockM == 32, "Main path expects a fixed 32x128 CTA tile.");
+static_assert(TensorCoreTile128::kTensorBlockN == 128, "Main path expects a fixed 32x128 CTA tile.");
 static_assert(TensorCoreTile128::kWarpsPerBlock == 8, "Main path expects an 8-warp CTA.");
 static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
 static_assert((TensorCoreTile96::kTensorBlockN % kAsyncCopyElems) == 0, "Tail B tile width must stay 16-byte aligned.");
@@ -75,7 +76,9 @@ static_assert((TensorCoreTile128::kBSharedStride % kAsyncCopyElems) == 0, "Main 
 static_assert((TensorCoreTile96::kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
 static_assert((TensorCoreTile96::kBSharedTileElems % kAsyncCopyElems) == 0, "Tail B tile must be divisible by async copy width.");
 static_assert((TensorCoreTile128::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
-static_assert((kFixedMainRegionN % TensorCoreTile128::kTensorBlockN) == 0, "Fixed-shape main region must be an even count of 64x128 CTAs.");
+static_assert((kFixedBenchmarkM % TensorCoreTile96::kTensorBlockM) == 0, "Fixed benchmark rows must fit the 64x96 tail CTA height.");
+static_assert((kFixedBenchmarkM % TensorCoreTile128::kTensorBlockM) == 0, "Fixed benchmark rows must fit the 32x128 main CTA height.");
+static_assert((kFixedMainRegionN % TensorCoreTile128::kTensorBlockN) == 0, "Fixed-shape main region must be an even count of 32x128 CTAs.");
 static_assert(kFixedMainRegionN + kFixedTailRegionN == kFixedBenchmarkN, "Main/tail split must cover the fixed benchmark width exactly.");
 static_assert((kWmmaN % kEpilogueVecElems) == 0, "Epilogue vector stores require adjacent column pairs.");
 
