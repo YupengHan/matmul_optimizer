@@ -238,6 +238,61 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   }
 }
 
+template <typename TileConfig, int ProducerWarps>
+__device__ __forceinline__ void stage_a_shared_tile_async_warp_specialized(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride,
+    int warp_id,
+    int lane_id) {
+  static_assert(ProducerWarps > 0, "Warp-specialized staging needs at least one producer warp.");
+  static_assert(ProducerWarps <= TileConfig::kWarpsPerBlock,
+                "Producer warp count must fit within the CTA warp count.");
+
+  if (warp_id >= ProducerWarps) {
+    return;
+  }
+
+  constexpr int kProducerThreads = ProducerWarps * kWarpSize;
+  const int producer_thread_idx = warp_id * kWarpSize + lane_id;
+  for (int copy_idx = producer_thread_idx; copy_idx < TileConfig::kAAsyncCopiesPerTile;
+       copy_idx += kProducerThreads) {
+    const int row = copy_idx / TileConfig::kAAsyncCopiesPerRow;
+    const int col = (copy_idx % TileConfig::kAAsyncCopiesPerRow) * kAsyncCopyElems;
+    cp_async_copy_16_bytes(
+        shared_tile + row * kWmmaK + col,
+        global_tile + row * global_stride + col);
+  }
+}
+
+template <typename TileConfig, int ProducerWarps>
+__device__ __forceinline__ void stage_b_shared_tile_async_warp_specialized(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride,
+    int warp_id,
+    int lane_id) {
+  static_assert(ProducerWarps > 0, "Warp-specialized staging needs at least one producer warp.");
+  static_assert(ProducerWarps <= TileConfig::kWarpsPerBlock,
+                "Producer warp count must fit within the CTA warp count.");
+
+  if (warp_id >= ProducerWarps) {
+    return;
+  }
+
+  constexpr int kProducerThreads = ProducerWarps * kWarpSize;
+  const int producer_thread_idx = warp_id * kWarpSize + lane_id;
+  for (int copy_idx = producer_thread_idx; copy_idx < TileConfig::kBAsyncCopiesPerTile;
+       copy_idx += kProducerThreads) {
+    const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
+    const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
+    const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
+    cp_async_copy_16_bytes(
+        shared_tile + row * TileConfig::kBSharedStride + shared_col,
+        global_tile + row * global_stride + logical_col);
+  }
+}
+
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
 }
@@ -383,6 +438,12 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     int n,
     int k) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
+  constexpr bool kUseHot384WarpSpecializedStaging =
+      (TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN) &&
+      (TileConfig::kWarpMmaTilesN == TensorCoreTile384::kWarpMmaTilesN);
+  constexpr int kHot384AProducerWarps = 2;
+  constexpr int kHot384BProducerWarps = 4;
+  constexpr int kHot384CopyProducerWarps = kHot384BProducerWarps;
   __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
   __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
   __shared__ __align__(16)
@@ -412,10 +473,21 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   const __nv_bfloat16* a_tile_0 = a + block_row * k;
   const __nv_bfloat16* b_tile_0 = b + block_col;
 
-  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_tile_0, k);
-  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_tile_0, n);
-  cp_async_commit_group();
-  cp_async_wait_group_0();
+  if constexpr (kUseHot384WarpSpecializedStaging) {
+    stage_a_shared_tile_async_warp_specialized<TileConfig, kHot384AProducerWarps>(
+        a_shared[0], a_tile_0, k, warp_id, lane_id);
+    stage_b_shared_tile_async_warp_specialized<TileConfig, kHot384BProducerWarps>(
+        b_shared[0], b_tile_0, n, warp_id, lane_id);
+    if (warp_id < kHot384CopyProducerWarps) {
+      cp_async_commit_group();
+      cp_async_wait_group_0();
+    }
+  } else {
+    stage_a_shared_tile_async<TileConfig>(a_shared[0], a_tile_0, k);
+    stage_b_shared_tile_async<TileConfig>(b_shared[0], b_tile_0, n);
+    cp_async_commit_group();
+    cp_async_wait_group_0();
+  }
   __syncthreads();
 
   for (int tile_k = 0; tile_k < k; tile_k += kWmmaK) {
@@ -429,9 +501,19 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     if (next_tile_k < k) {
       const __nv_bfloat16* a_next_tile = a + block_row * k + next_tile_k;
       const __nv_bfloat16* b_next_tile = b + next_tile_k * n + block_col;
-      stage_a_shared_tile_async<TileConfig>(a_shared[next_stage], a_next_tile, k);
-      stage_b_shared_tile_async<TileConfig>(b_shared[next_stage], b_next_tile, n);
-      cp_async_commit_group();
+      if constexpr (kUseHot384WarpSpecializedStaging) {
+        stage_a_shared_tile_async_warp_specialized<TileConfig, kHot384AProducerWarps>(
+            a_shared[next_stage], a_next_tile, k, warp_id, lane_id);
+        stage_b_shared_tile_async_warp_specialized<TileConfig, kHot384BProducerWarps>(
+            b_shared[next_stage], b_next_tile, n, warp_id, lane_id);
+        if (warp_id < kHot384CopyProducerWarps) {
+          cp_async_commit_group();
+        }
+      } else {
+        stage_a_shared_tile_async<TileConfig>(a_shared[next_stage], a_next_tile, k);
+        stage_b_shared_tile_async<TileConfig>(b_shared[next_stage], b_next_tile, n);
+        cp_async_commit_group();
+      }
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
@@ -446,7 +528,13 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     if (next_tile_k < k) {
-      cp_async_wait_group_0();
+      if constexpr (kUseHot384WarpSpecializedStaging) {
+        if (warp_id < kHot384CopyProducerWarps) {
+          cp_async_wait_group_0();
+        }
+      } else {
+        cp_async_wait_group_0();
+      }
       __syncthreads();
     }
   }
