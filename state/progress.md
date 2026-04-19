@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `deeb9765cb3ed49aa93e1d9cefc6b3beacd950f5`
 - plateau counter: `1`
 - round loop: `round 3/5`
 - rounds remaining: `3`
-- notes: `Node A completed round 2/5. Run node_b to continue round 3/5.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 3/5.`
 
 ## Latest measured custom run
 
@@ -28,18 +28,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_212050`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Restore explicit cp.async warm-up and consume ordering | bottleneck: Correctness-breaking cp.async producer/consumer hazard in the ping-pong pipeline; after recovery, the remaining limit is still CTA synchronization and MIO throttle rather than DRAM saturation.
+- dir_02: Fall back to a correctness-first single-stage staging path | bottleneck: Synchronization and MIO throttle overhead from an over-complicated copy pipeline, not raw memory bandwidth. The current profile already shows barrier stalls rising to 23.82% and MIO throttle to 39.04% while performance regresses.
+- dir_03: Amortize sync with a two-slice K macro-stage | bottleneck: Barrier and MIO throttle from too-frequent 16-wide stage turnover, which leaves tensor utilization low at 13.46% even though active warps stay high.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
