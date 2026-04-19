@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `6dd39ad50b8e36dd035ae435800103257053f6a2`
-- plateau counter: `4`
-- round loop: `round 5/5`
-- rounds remaining: `1`
-- notes: `Node C build succeeded for round 5/5. Node A will now measure the new code path.`
+- latest measured commit: `5ab5302bd23e8cd1ff2fcd97dbfd5a35b1701ca9`
+- plateau counter: `0`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Node A completed the final planned round. Review the results before starting another loop.`
 
 ## Latest measured custom run
 
-- run id: `20260419_100457_bf16_gemm_v1_6dd39ad`
-- run dir: `runs/20260419_100457_bf16_gemm_v1_6dd39ad`
+- run id: `20260419_101256_bf16_gemm_v1_5ab5302`
+- run dir: `runs/20260419_101256_bf16_gemm_v1_5ab5302`
 - correctness: `PASS`
-- median runtime: `37.373951 ms`
-- TFLOP/s: `19.452571 TFLOP/s`
+- median runtime: `36.517889 ms`
+- TFLOP/s: `19.908583 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_100543`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 5/5 diagnosis prepared from near-hit run 20260419_100457_bf16_gemm_v1_6dd39ad. Evidence hierarchy: accepted base 16a98f7 remains nominally best at 37.285807 ms; round 1 two-level B staging regressed badly; round 2 phased 64x384 micro-panels regressed badly; round 3 warp-specialized staging improved one symptom but stayed much slower; round 4 fixed-shape peeled hot kernel nearly matched the base at 37.373951 ms while raising tensor active and lowering barrier stall. Final-round ranking therefore treats the peeled hot path as the most credible basis and prioritizes complementary one-round changes over reopening the clearly failed rewrite families.`
-- dir_01: Re-land the peeled hot kernel and trim the c_shared export path | bottleneck: Epilogue-side shared/export traffic after the peeled steady-state loop improves control overhead.
-- dir_02: Re-land the peeled hot kernel and deepen single-skew cp.async overlap | bottleneck: Copy-latency / short-scoreboard exposure in the peeled steady-state loop.
-- dir_03: Re-land the peeled hot kernel with a bounded single-skew B stride retune | bottleneck: Residual B-side staging inefficiency in the current single-skew layout, not a full feed-path redesign.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `11.367918 ms`, `1.438613x` slower than CUTLASS
+- current best custom gap: `10.600000 ms`, `1.408984x` slower than CUTLASS

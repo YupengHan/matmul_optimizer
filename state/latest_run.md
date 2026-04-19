@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_100457_bf16_gemm_v1_6dd39ad`
-- run dir: `runs/20260419_100457_bf16_gemm_v1_6dd39ad`
-- kernel tag: `bf16_gemm_v1_6dd39ad`
-- round label: `round 4/5`
+- run id: `20260419_101256_bf16_gemm_v1_5ab5302`
+- run dir: `runs/20260419_101256_bf16_gemm_v1_5ab5302`
+- kernel tag: `bf16_gemm_v1_5ab5302`
+- round label: `round 5/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `37.373951 ms`
-- p10 runtime: `37.116415 ms`
-- p90 runtime: `37.864651 ms`
-- TFLOP/s: `19.452571 TFLOP/s`
-- previous run id: `20260419_095653_bf16_gemm_v1_f237679`
-- runtime delta vs previous measured run: `-3.561472 ms`
-- TFLOP/s delta vs previous measured run: `+1.692416 TFLOP/s`
+- median runtime: `36.517889 ms`
+- p10 runtime: `36.269873 ms`
+- p90 runtime: `37.354353 ms`
+- TFLOP/s: `19.908583 TFLOP/s`
+- previous run id: `20260419_100457_bf16_gemm_v1_6dd39ad`
+- runtime delta vs previous measured run: `-0.856062 ms`
+- TFLOP/s delta vs previous measured run: `+0.456012 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Peel a fixed-shape steady-state hot kernel for 6464x7776x7232`
+- implemented direction name: `Re-land the peeled hot kernel and trim the c_shared export path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_100457_bf16_gemm_v1_6dd39ad/summary.json`
-- measured commit: `6dd39ad50b8e36dd035ae435800103257053f6a2`
-- new best custom: `no`
-- generated at: `2026-04-19T10:05:06-07:00`
+- raw summary json: `runs/20260419_101256_bf16_gemm_v1_5ab5302/summary.json`
+- measured commit: `5ab5302bd23e8cd1ff2fcd97dbfd5a35b1701ca9`
+- new best custom: `yes`
+- generated at: `2026-04-19T10:13:04-07:00`
