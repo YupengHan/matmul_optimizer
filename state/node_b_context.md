@@ -11,8 +11,8 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 - `state/current_focus.md`
 - `state/human_review.md`
 - `src/kernels/bf16_gemm_v1.cu`
-- `runs/20260418_220017_bf16_gemm_v1_2e79574/summary.json`
-- `runs/20260418_220017_bf16_gemm_v1_2e79574/ncu_metrics.csv`
+- `runs/20260418_221951_bf16_gemm_v1_eecbb72/summary.json`
+- `runs/20260418_221951_bf16_gemm_v1_eecbb72/ncu_metrics.csv`
 
 ## Output contract
 
@@ -29,10 +29,10 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 
 ## Current source snapshot
 
-- round loop: `round 1/20`
-- rounds remaining after this one: `19`
-- latest run id: `20260418_220017_bf16_gemm_v1_2e79574`
-- median runtime: `91.601360 ms`
-- TFLOP/s: `7.936775 TFLOP/s`
-- measured commit: `6600aebb6478a2fafe0e75f1780e596a9706e1d1`
-- existing diagnosis status: `completed`
+- round loop: `round 2/20`
+- rounds remaining after this one: `18`
+- latest run id: `20260418_221951_bf16_gemm_v1_eecbb72`
+- median runtime: `82.266624 ms`
+- TFLOP/s: `8.837356 TFLOP/s`
+- measured commit: `eecbb72cf2ce923b80d7eab679b5355a3873fc88`
+- existing diagnosis status: `pending_generation`

@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_220017_bf16_gemm_v1_2e79574`
-- run dir: `runs/20260418_220017_bf16_gemm_v1_2e79574`
-- kernel tag: `bf16_gemm_v1_2e79574`
-- round label: `single-run`
+- run id: `20260418_221951_bf16_gemm_v1_eecbb72`
+- run dir: `runs/20260418_221951_bf16_gemm_v1_eecbb72`
+- kernel tag: `bf16_gemm_v1_eecbb72`
+- round label: `round 1/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `91.601360 ms`
-- p10 runtime: `90.689943 ms`
-- p90 runtime: `94.588517 ms`
-- TFLOP/s: `7.936775 TFLOP/s`
-- previous run id: `20260418_214233_bf16_gemm_v1_d47590a`
-- runtime delta vs previous measured run: `-37.875767 ms`
-- TFLOP/s delta vs previous measured run: `+2.321734 TFLOP/s`
+- median runtime: `82.266624 ms`
+- p10 runtime: `80.802815 ms`
+- p90 runtime: `84.994763 ms`
+- TFLOP/s: `8.837356 TFLOP/s`
+- previous run id: `20260418_220017_bf16_gemm_v1_2e79574`
+- runtime delta vs previous measured run: `-9.334736 ms`
+- TFLOP/s delta vs previous measured run: `+0.900580 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `None`
-- implemented direction name: `None`
-- raw summary json: `runs/20260418_220017_bf16_gemm_v1_2e79574/summary.json`
-- measured commit: `6600aebb6478a2fafe0e75f1780e596a9706e1d1`
-- new best custom: `no`
-- generated at: `2026-04-18T22:00:28-07:00`
+- implemented direction id: `dir_01`
+- implemented direction name: `Widen the async staging path to 16-byte fixed-tile copies`
+- raw summary json: `runs/20260418_221951_bf16_gemm_v1_eecbb72/summary.json`
+- measured commit: `eecbb72cf2ce923b80d7eab679b5355a3873fc88`
+- new best custom: `yes`
+- generated at: `2026-04-18T22:20:01-07:00`
