@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_010405_bf16_gemm_v1_79cdb43`
-- run dir: `runs/20260419_010405_bf16_gemm_v1_79cdb43`
-- kernel tag: `bf16_gemm_v1_79cdb43`
-- round label: `round 16/20`
+- run id: `20260419_011243_bf16_gemm_v1_33e1461`
+- run dir: `runs/20260419_011243_bf16_gemm_v1_33e1461`
+- kernel tag: `bf16_gemm_v1_33e1461`
+- round label: `round 17/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `42.564560 ms`
-- p10 runtime: `42.102419 ms`
-- p90 runtime: `43.451392 ms`
-- TFLOP/s: `17.080393 TFLOP/s`
-- previous run id: `20260419_005208_bf16_gemm_v1_8fbd2e5`
-- runtime delta vs previous measured run: `-15.640608 ms`
-- TFLOP/s delta vs previous measured run: `+4.589760 TFLOP/s`
+- median runtime: `41.534977 ms`
+- p10 runtime: `40.915764 ms`
+- p90 runtime: `42.246347 ms`
+- TFLOP/s: `17.503788 TFLOP/s`
+- previous run id: `20260419_010405_bf16_gemm_v1_79cdb43`
+- runtime delta vs previous measured run: `-1.029583 ms`
+- TFLOP/s delta vs previous measured run: `+0.423395 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `64x160 main + 64x96 tail widened fixed split`
+- implemented direction name: `64x192 main + 64x128 middle + 64x96 tail fixed split`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_010405_bf16_gemm_v1_79cdb43/summary.json`
-- measured commit: `79cdb4341e0f3a30327d811f49424bb324cbbf43`
+- raw summary json: `runs/20260419_011243_bf16_gemm_v1_33e1461/summary.json`
+- measured commit: `33e1461e09c0f90b0896452a94c16277f2a251db`
 - new best custom: `yes`
-- generated at: `2026-04-19T01:04:15-07:00`
+- generated at: `2026-04-19T01:12:52-07:00`

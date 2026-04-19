@@ -1,27 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `16`
-- remaining rounds: `4`
-- current round label: `round 17/20`
+- completed rounds: `17`
+- remaining rounds: `3`
+- current round label: `round 18/20`
 - auto use recommended: `yes`
-- accepted base run id: `20260419_010405_bf16_gemm_v1_79cdb43`
-- accepted base measured commit: `79cdb4341e0f3a30327d811f49424bb324cbbf43`
-- accepted base runtime: `42.564560 ms`
+- accepted base run id: `20260419_011243_bf16_gemm_v1_33e1461`
+- accepted base measured commit: `33e1461e09c0f90b0896452a94c16277f2a251db`
+- accepted base runtime: `41.534977 ms`
 - started at: `2026-04-18T22:03:53-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 17/20. Node A will measure the result next.`
+- notes: `Completed round 17/20. Continue with node_b for round 18/20. Accepted base: 20260419_011243_bf16_gemm_v1_33e1461 at 41.534977 ms.`
 
 ## Last completed round
 
-- round: `16/20`
+- round: `17/20`
 - direction: `dir_01`
-- direction name: `64x160 main + 64x96 tail widened fixed split`
+- direction name: `64x192 main + 64x128 middle + 64x96 tail fixed split`
 - verdict: `improved`
-- runtime delta: `-15.640608 ms`
-- TFLOP/s delta: `+4.589760 TFLOP/s`
-- run dir: `runs/20260419_010405_bf16_gemm_v1_79cdb43`
-- ncu rep path: `runs/20260419_010405_bf16_gemm_v1_79cdb43/ncu_profile.ncu-rep`
+- runtime delta: `-1.029583 ms`
+- TFLOP/s delta: `+0.423395 TFLOP/s`
+- run dir: `runs/20260419_011243_bf16_gemm_v1_33e1461`
+- ncu rep path: `runs/20260419_011243_bf16_gemm_v1_33e1461/ncu_profile.ncu-rep`
