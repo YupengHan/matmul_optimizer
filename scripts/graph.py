@@ -654,6 +654,7 @@ def render_progress_md(
     lines.append(f"- diagnosis id: `{diagnosis.get('diagnosis_id', 'N/A')}`")
     lines.append(f"- recommended direction: `{diagnosis.get('recommended_direction_id', 'N/A')}`")
     lines.append(f"- approved direction: `{diagnosis.get('approved_direction_id', 'N/A')}`")
+    lines.append(f"- diagnosis notes: `{diagnosis.get('notes', 'N/A')}`")
     if diagnosis.get('directions'):
         for direction in diagnosis.get('directions', []):
             lines.append(f"- {direction_summary_line(direction)}")
@@ -722,6 +723,7 @@ def render_human_review_md(
     lines.append(f"- diagnosis status: `{diagnosis.get('status', 'pending_generation')}`")
     lines.append(f"- recommended direction: `{diagnosis.get('recommended_direction_id', 'N/A')}`")
     lines.append(f"- approved direction: `{diagnosis.get('approved_direction_id', 'N/A')}`")
+    lines.append(f"- diagnosis notes: `{diagnosis.get('notes', 'N/A')}`")
     if diagnosis.get('directions'):
         for direction in diagnosis.get('directions', []):
             lines.append(f"- {direction_summary_line(direction)}")
@@ -1267,6 +1269,7 @@ def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any
         'source_run_dir': latest_run.get('run_dir'),
         'source_measured_commit': latest_run.get('measured_commit'),
         'diagnosis_id': diagnosis.get('diagnosis_id'),
+        'notes': diagnosis.get('notes'),
         'recommended_direction_id': diagnosis.get('recommended_direction_id'),
         'recommended_idea_origin': recommended.get('idea_origin', 'auto-analysis') if recommended else 'auto-analysis',
         'approved_direction_id': diagnosis.get('approved_direction_id'),

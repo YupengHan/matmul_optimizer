@@ -108,7 +108,7 @@ Round entries record the selected direction, selection mode, and idea origin so 
 
 ## `diagnosis_history.jsonl`
 
-Append-only snapshot of every finalized node_b diagnosis, including all three directions and the recommended choice.
+Append-only snapshot of every finalized node_b diagnosis, including all three directions, the recommended choice, and any round-specific diagnosis notes.
 
 Directions may also carry an `idea_origin` field such as `human-idea` when a round is explicitly driven by user input rather than node_b analysis.
 
