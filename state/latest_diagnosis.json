@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_094909",
+  "status": "completed",
+  "created_at": "2026-04-19T09:49:09-07:00",
   "source_run_id": "20260419_094829_bf16_gemm_v1_fe097e9",
   "source_run_dir": "runs/20260419_094829_bf16_gemm_v1_fe097e9",
   "source_summary_json": "runs/20260419_094829_bf16_gemm_v1_fe097e9/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Warp-specialize the 64x384 copy/compute pipeline on the restored base",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "Both recent human-guided families are negative evidence on top of the accepted 16a98f7 base: the two-level B repack regressed to 42.341888 ms and the phased 64x384 micro-panels regressed further to 42.673632 ms versus the accepted 37.285807 ms run. The round-2 profile did lower the hot-kernel register footprint to 80/thread and lift the register occupancy cap to 3, but barrier stall jumped to 17.31% and DRAM throughput rose to 43.78%, which points to orchestration and feed overlap rather than another B-layout or live-set rewrite. On the restored accepted base, keep the single-skew 64x384 tile and instead reduce all-warp staging overhead with a producer/consumer warp split or another lighter copy/compute overlap scheme.",
+      "expected_bottleneck": "CTA-wide synchronization and hot-loop feed orchestration in the 64x384 K-loop.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:53-60 (stage-count choice tied to shared-memory budget)",
+        "src/kernels/bf16_gemm_v1.cu:213-239 (A/B async staging helpers currently run by all warps)",
+        "src/kernels/bf16_gemm_v1.cu:392-450 (warp mapping, cp.async commit/wait sequence, and CTA barriers in the hot loop)"
+      ],
+      "risk": "Warp-specialized staging is more invasive than a simple schedule tweak and can starve MMA if producer warps do not hide latency cleanly.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if barrier stall and mio_throttle do not fall on the restored base, or if tensor active stays flat while runtime regresses."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Peel a fixed-shape steady-state hot kernel for 6464x7776x7232",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "Because both broader B-feed and live-set experiments already lost badly, the next bounded move should exploit the repository's fixed-shape advantage instead of changing the 64x384 macro schedule again. The current hot kernel still carries a generic `for (tile_k < k)` loop with a per-iteration `next_tile_k < k` branch and runtime launch plumbing even on the fixed benchmark path. Split the hot kernel into explicit prologue, steady-state, and epilogue structure for the known 452 K-tiles and fixed 64x384-over-7680 plus 64x96 tail decomposition so the steady-state path is leaner without revisiting the two failed human-idea families.",
+      "expected_bottleneck": "Generic control-flow and stage-transition overhead diluting tensor issue in the fixed-shape hot loop.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:421-450 (current generic K-loop with per-iteration next-stage branch and waits)",
+        "src/kernels/bf16_gemm_v1.cu:517-550 (fixed benchmark launch path that can dispatch a more specialized hot kernel)",
+        "src/kernels/bf16_gemm_v1.cu:32-39 (tile-config shape parameters that the fixed-shape specialization should preserve)"
+      ],
+      "risk": "This adds code duplication and specialized control flow, so the benefit may be modest if the dominant cost is still memory/feed pressure rather than loop overhead.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the fixed-shape specialization does not reduce barrier/control overhead or if runtime remains within noise of the restored accepted base."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Trim the c_shared epilogue/export path on the restored base",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "After discarding both heavier B repacking and phased micro-panels, the remaining bounded lever is the export path that still routes every accumulator tile through `c_shared` and then through BF16 pair stores. The restored accepted base already improved writeback once, but the hot kernel still allocates per-warp export scratch and performs a shared-memory round-trip for every `acc_frag`. Revisit that path before touching feed layout or live-set shape again: reduce shared export staging, simplify warp sync usage, or otherwise make the epilogue cheaper while preserving the accepted 64x384 compute core.",
+      "expected_bottleneck": "LSU/shared writeback pressure in the hot epilogue rather than another B-feed or live-set bottleneck family.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:41-46 (per-warp c_shared scratch sizing in TileConfig)",
+        "src/kernels/bf16_gemm_v1.cu:201-205 (BF16 pair store helper)",
+        "src/kernels/bf16_gemm_v1.cu:454-485 (store_matrix_sync plus shared export and BF16 writeback loop)"
+      ],
+      "risk": "The epilogue is correctness-sensitive, and bypassing or compressing the shared export step can introduce layout bugs or more conversion overhead than it removes.",
+      "metrics_to_recheck": [
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if LSU/shared-write metrics do not improve or if the export rewrite causes correctness drift without a measurable runtime win."
+    }
+  ],
+  "notes": "Round 3/5 diagnosis prepared after the round-2 phased-64x384 experiment regressed to 42.673632 ms. Both recent human-guided families are treated as negative evidence on top of the restored accepted base 16a98f7 (37.285807 ms): round-1 two-level B staging regressed to 42.341888 ms and round-2 phased micro-panels regressed to 42.673632 ms. Ranking therefore pivots to other levers on the restored accepted base."
 }
