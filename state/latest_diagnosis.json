@@ -1,15 +1,89 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260418_235617",
+  "status": "completed",
+  "created_at": "2026-04-18T23:56:17-07:00",
   "source_run_id": "20260418_235548_bf16_gemm_v1_01d0040",
   "source_run_dir": "runs/20260418_235548_bf16_gemm_v1_01d0040",
   "source_summary_json": "runs/20260418_235548_bf16_gemm_v1_01d0040/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Main-kernel producer/consumer cp.async pipeline",
+      "hypothesis": "Using the heuristics' copy-pipeline and register-pressure lenses, the round-10 main/tail split appears to have already bought the easy barrier win, but the hot 64x128 main kernel is now dominated by feed-side instruction pressure: the main kernel carries essentially all runtime, sits at 55 registers/thread with a 4-block register limit, and shows 41.76% MIO throttle with L1TEX/LSU request rates near 82.8%. Converting the current all-warps-do-copy ping-pong into a producer/consumer cp.async pipeline for the 64x128 path should move copy issue pressure off the MMA warps, keep the larger math-per-barrier shape, and raise tensor activity without giving back the round-10 gain.",
+      "expected_bottleneck": "Main-path MIO/LSU issue saturation in the 64x128 feed pipeline, with residual CTA-wide handoff cost as a secondary limiter.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:27-48 (TileConfig staging geometry, warp-group sizing, and async-copy work split)",
+        "src/kernels/bf16_gemm_v1.cu:111-137 (stage_a_shared_tile_async and stage_b_shared_tile_async)",
+        "src/kernels/bf16_gemm_v1.cu:191-255 (current all-warps cp.async preload, ping-pong loop, and CTA-wide waits)"
+      ],
+      "risk": "High: on Ampere, a producer/consumer pipeline can easily underfill Tensor Cores if too many warps become loaders, and the extra staging state may further raise registers or shared memory before it helps.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "launch__registers_per_thread",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the pipeline still leaves MIO throttle above roughly 35% or if loader/consumer partitioning drops active warps or tensor-active enough to erase the round-10 runtime gain."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Scratch-free or vectorized BF16 epilogue for the 64x128 main path",
+      "hypothesis": "Using the heuristics' register/shared-pressure and fixed-shape cleanup guidance, the current epilogue still round-trips every warp's accumulator tile through c_shared and then emits scalar BF16 stores from shared scratch. Now that barrier cost has fallen, that scratch path is a plausible remaining source of the new feed/epilogue MIO wall. Replacing the shared scratch with a scratch-free path, or at minimum a register-packed/vectorized bf16x2 writeback path, should lower LSU/MIO pressure without disturbing the successful main/tail launch split.",
+      "expected_bottleneck": "Epilogue-side MIO and shared-memory round-trip pressure layered on top of an already LSU-saturated main kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:36-38 (per-warp c_shared scratch assumption)",
+        "src/kernels/bf16_gemm_v1.cu:191-193 (c_shared allocation in the tensor-core kernel)",
+        "src/kernels/bf16_gemm_v1.cu:257-275 (wmma store to c_shared followed by scalar BF16 global stores)"
+      ],
+      "risk": "High: WMMA accumulator fragments do not expose an easy scratch-free BF16 store path, so the experiment may require manual fragment unpacking or inline PTX and can fail on correctness long before it helps runtime.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime",
+        "correctness max_abs_err / mean_abs_err"
+      ],
+      "stop_condition": "Stop if the rewrite only trims writeback-side counters but yields less than about 0.5 ms runtime improvement, or if the fragment-packing complexity starts threatening correctness stability."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retile the hot main kernel to cut live B-fragment and accumulator pressure",
+      "hypothesis": "Using the heuristics' tile-shape and occupancy guidance, the present 64x128 main kernel asks each warp to keep four N-side accumulator tiles and four B fragments live, which matches the new 55-register footprint and 4-block occupancy ceiling. A narrower feed organization for the main path, such as a 64x96 or 64x64 specialization or an equivalent warp-layout rewrite with fewer live N fragments, should reduce per-iteration MIO demand and improve latency hiding even if it gives back some of the larger-tile math-per-barrier advantage.",
+      "expected_bottleneck": "Register-limited occupancy and per-K-step B-feed MIO pressure caused by the four-fragment 64x128 warp organization.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:20-48 (warp tile layout, warp-group columns, and B shared geometry)",
+        "src/kernels/bf16_gemm_v1.cu:51-58 (64x96 and 64x128 fixed-shape split assumptions)",
+        "src/kernels/bf16_gemm_v1.cu:209-248 (live accumulator/B-fragment set inside the inner loop)",
+        "src/kernels/bf16_gemm_v1.cu:307-320 (fixed-shape main/tail launch partition)"
+      ],
+      "risk": "Medium-high: reducing the live N footprint can relieve registers and MIO, but it may also undo the round-10 barrier improvement by increasing CTA count, shared-load overhead, or DRAM traffic.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the retile lowers registers but pushes barrier stalls back into the high-20s or 30s, or if runtime gives back the 43.70 ms round-10 win despite cleaner occupancy counters."
+    }
+  ],
+  "notes": "Rounds 10-14 are intentionally biased toward more aggressive experiments. This round is chasing the new bottleneck from a first-principles instruction-mix perspective: the 43.70 ms round-10 win increased math per barrier and dropped barrier stalls, but the hot 64x128 main kernel is now the clear frontier with MIO throttle at 41.76%, register-limited occupancy at 4 blocks/SM, and L1TEX/LSU request pressure near 82.8%. The three directions therefore favor structural feed and epilogue changes over small parameter nudges."
 }
