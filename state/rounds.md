@@ -1,27 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `4`
-- remaining rounds: `16`
-- current round label: `round 5/20`
+- completed rounds: `5`
+- remaining rounds: `15`
+- current round label: `round 6/20`
 - auto use recommended: `yes`
-- accepted base run id: `20260418_225011_bf16_gemm_v1_3265675`
-- accepted base measured commit: `3265675318dd0108296bfc9c83879cc130bb6351`
-- accepted base runtime: `63.126495 ms`
+- accepted base run id: `20260418_225901_bf16_gemm_v1_91e446e`
+- accepted base measured commit: `91e446eea2cf2de912e81e21c45653dcd227d591`
+- accepted base runtime: `54.136911 ms`
 - started at: `2026-04-18T22:03:53-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 5/20. Node A will measure the result next.`
+- notes: `Completed round 5/20. Continue with node_b for round 6/20. Accepted base: 20260418_225901_bf16_gemm_v1_91e446e at 54.136911 ms.`
 
 ## Last completed round
 
-- round: `4/20`
+- round: `5/20`
 - direction: `dir_01`
-- direction name: `Reuse one 16x16 epilogue scratch tile per warp with warp-synchronous pair stores`
+- direction name: `Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps`
 - verdict: `improved`
-- runtime delta: `-2.491425 ms`
-- TFLOP/s delta: `+0.437280 TFLOP/s`
-- run dir: `runs/20260418_225011_bf16_gemm_v1_3265675`
-- ncu rep path: `runs/20260418_225011_bf16_gemm_v1_3265675/ncu_profile.ncu-rep`
+- runtime delta: `-8.989584 ms`
+- TFLOP/s delta: `+1.912408 TFLOP/s`
+- run dir: `runs/20260418_225901_bf16_gemm_v1_91e446e`
+- ncu rep path: `runs/20260418_225901_bf16_gemm_v1_91e446e/ncu_profile.ncu-rep`

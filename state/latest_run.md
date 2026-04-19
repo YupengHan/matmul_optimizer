@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_225011_bf16_gemm_v1_3265675`
-- run dir: `runs/20260418_225011_bf16_gemm_v1_3265675`
-- kernel tag: `bf16_gemm_v1_3265675`
-- round label: `round 4/20`
+- run id: `20260418_225901_bf16_gemm_v1_91e446e`
+- run dir: `runs/20260418_225901_bf16_gemm_v1_91e446e`
+- kernel tag: `bf16_gemm_v1_91e446e`
+- round label: `round 5/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `63.126495 ms`
-- p10 runtime: `62.722765 ms`
-- p90 runtime: `67.207371 ms`
-- TFLOP/s: `11.516867 TFLOP/s`
-- previous run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
-- runtime delta vs previous measured run: `-2.491425 ms`
-- TFLOP/s delta vs previous measured run: `+0.437280 TFLOP/s`
+- median runtime: `54.136911 ms`
+- p10 runtime: `54.022860 ms`
+- p90 runtime: `57.542648 ms`
+- TFLOP/s: `13.429274 TFLOP/s`
+- previous run id: `20260418_225011_bf16_gemm_v1_3265675`
+- runtime delta vs previous measured run: `-8.989584 ms`
+- TFLOP/s delta vs previous measured run: `+1.912408 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reuse one 16x16 epilogue scratch tile per warp with warp-synchronous pair stores`
-- implemented selection mode: `human_idea`
-- implemented idea origin: `human-idea`
-- raw summary json: `runs/20260418_225011_bf16_gemm_v1_3265675/summary.json`
-- measured commit: `3265675318dd0108296bfc9c83879cc130bb6351`
+- implemented direction name: `Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps`
+- implemented selection mode: `recommended`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260418_225901_bf16_gemm_v1_91e446e/summary.json`
+- measured commit: `91e446eea2cf2de912e81e21c45653dcd227d591`
 - new best custom: `yes`
-- generated at: `2026-04-18T22:50:19-07:00`
+- generated at: `2026-04-18T22:59:09-07:00`

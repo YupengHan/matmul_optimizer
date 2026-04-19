@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_225054",
-  "status": "completed",
-  "created_at": "2026-04-18T22:50:54-07:00",
-  "source_run_id": "20260418_225011_bf16_gemm_v1_3265675",
-  "source_run_dir": "runs/20260418_225011_bf16_gemm_v1_3265675",
-  "source_summary_json": "runs/20260418_225011_bf16_gemm_v1_3265675/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_225901_bf16_gemm_v1_91e446e",
+  "source_run_dir": "runs/20260418_225901_bf16_gemm_v1_91e446e",
+  "source_summary_json": "runs/20260418_225901_bf16_gemm_v1_91e446e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps",
-      "hypothesis": "The fixed shape hits the tensor path exactly, so the low tensor active 23.25% is not tail overhead. The current 2-warp 32x48 CTA only allows about 22 resident warps per SM (45.63% active, 48 registers/thread, 8.704 KB shared/block) and does very little math between full-block sync points, which matches the 19.10% barrier stall and leaves Tensor Cores underfed. Moving to a shape such as a 4-warp CTA that increases MMA work per staged tile should improve latency hiding and amortize the per-iteration barrier cost.",
-      "expected_bottleneck": "Occupancy ceiling and synchronization-limited tensor-core utilization in the steady-state mainloop",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:20-42",
-        "src/kernels/bf16_gemm_v1.cu:164-215",
-        "src/kernels/bf16_gemm_v1.cu:268-271"
-      ],
-      "risk": "A larger CTA can increase B staging, accumulator, or epilogue state enough to raise registers/shared memory and keep the warp ceiling unchanged or worse. Tile choices that improve barrier amortization can still lose if they make the B path or store path materially heavier.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Stop if the retile prototype still tops out around the current 22 resident warps or leaves barrier stall near 19% without a clear runtime win."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Replace the simple B-row skew with a stronger shared-memory swizzle for WMMA loads",
-      "hypothesis": "The +8-element skew helped, but the profiler still shows a shared/L1-heavy steady state: MIO throttle 31.27%, short scoreboard 8.34%, L1/LSU wavefronts 73.60%, and L1 data-bank reads 12.98%. Each iteration loads three B fragments per warp from shared memory, so a more WMMA-friendly permuted B layout or lane-mapped staging scheme is likely the next place to cut load-side MIO pressure.",
-      "expected_bottleneck": "Shared-memory/L1 bank and MIO pressure on B fragment loads",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:34-42",
-        "src/kernels/bf16_gemm_v1.cu:89-99",
-        "src/kernels/bf16_gemm_v1.cu:203-209"
-      ],
-      "risk": "B-layout changes are correctness-sensitive because cp.async alignment, shared stride math, and WMMA row-major load semantics all have to agree. A swizzle that helps one access pattern can also make the staging path more expensive or misaligned.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the new B layout does not lower MIO throttle and short-scoreboard pressure in a measurable way or if it breaks correctness on the fixed shape."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Remove the shared scratch epilogue and emit BF16 stores from registers with wider vectors",
-      "hypothesis": "The per-warp scratch tile is smaller now, but the epilogue still does a shared store, two warp syncs, a shared reread, and many scalar BF16 global stores for every 16x16 tile. That pattern still fits the remaining MIO-heavy profile: MIO throttle 31.27%, MIO writeback active 14.06%, L1 data-bank writes 9.71%, and LSU issue pressure at 77.69%. A register-resident conversion and wider global store path should reduce epilogue-side shared and LSU traffic.",
-      "expected_bottleneck": "Epilogue LSU/MIO pressure from shared scratch traffic and scalar BF16 stores",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:29-31",
-        "src/kernels/bf16_gemm_v1.cu:155",
-        "src/kernels/bf16_gemm_v1.cu:218-236"
-      ],
-      "risk": "Unpacking accumulator fragments into per-thread register tiles and repacking BF16 vectors can easily raise register pressure beyond the current 48/thread budget. The conversion path is also easy to get subtly wrong on layout or store ordering.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__mio2rf_writeback_active.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the scratch-free epilogue raises registers materially above the current budget or leaves MIO/LSU metrics flat without a runtime improvement."
-    }
-  ],
-  "notes": "Run node_b to produce exactly three ranked directions."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
