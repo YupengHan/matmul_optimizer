@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_232047_bf16_gemm_v1_5603894`
-- run dir: `runs/20260418_232047_bf16_gemm_v1_5603894`
-- kernel tag: `bf16_gemm_v1_5603894`
-- round label: `round 7/20`
+- run id: `20260418_233053_bf16_gemm_v1_6bee469`
+- run dir: `runs/20260418_233053_bf16_gemm_v1_6bee469`
+- kernel tag: `bf16_gemm_v1_6bee469`
+- round label: `round 8/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `54.193089 ms`
-- p10 runtime: `54.145742 ms`
-- p90 runtime: `58.301645 ms`
-- TFLOP/s: `13.415353 TFLOP/s`
-- previous run id: `20260418_230727_bf16_gemm_v1_2a86c71`
-- runtime delta vs previous measured run: `-2.927088 ms`
-- TFLOP/s delta vs previous measured run: `+0.687461 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `56.870047 ms`
+- p10 runtime: `56.210843 ms`
+- p90 runtime: `58.095308 ms`
+- TFLOP/s: `12.783872 TFLOP/s`
+- previous run id: `20260418_232047_bf16_gemm_v1_5603894`
+- runtime delta vs previous measured run: `+2.676958 ms`
+- TFLOP/s delta vs previous measured run: `-0.631481 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the low-footprint wide B slab and keep any new swizzle occupancy-neutral`
+- implemented direction name: `Specialize the fixed-shape K loop so the 4-warp CTA spends less time in barrier and control overhead`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260418_232047_bf16_gemm_v1_5603894/summary.json`
-- measured commit: `56038948d7d255701cbdaf6c5969d0fbc56b4aa7`
+- raw summary json: `runs/20260418_233053_bf16_gemm_v1_6bee469/summary.json`
+- measured commit: `6bee469ece2906ab9efdd498b44f9b8d05b6e1bc`
 - new best custom: `no`
-- generated at: `2026-04-18T23:20:55-07:00`
+- generated at: `2026-04-18T23:31:02-07:00`

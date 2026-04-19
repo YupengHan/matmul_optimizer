@@ -1,88 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_232136",
-  "status": "completed",
-  "created_at": "2026-04-18T23:21:36-07:00",
-  "source_run_id": "20260418_232047_bf16_gemm_v1_5603894",
-  "source_run_dir": "runs/20260418_232047_bf16_gemm_v1_5603894",
-  "source_summary_json": "runs/20260418_232047_bf16_gemm_v1_5603894/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_233053_bf16_gemm_v1_6bee469",
+  "source_run_dir": "runs/20260418_233053_bf16_gemm_v1_6bee469",
+  "source_summary_json": "runs/20260418_233053_bf16_gemm_v1_6bee469/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Specialize the fixed-shape K loop so the 4-warp CTA spends less time in barrier and control overhead",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "The occupancy-neutral B-gap restore already brought the kernel back to the accepted 13.824 KB/block footprint and 58.03% active-warps level, so the residual gap is no longer explained by lost residency. The current profile is instead dominated by per-step control costs inside the tensor mainloop: barrier stall is still 22.82%, MIO throttle is 31.63%, long-scoreboard is only 2.33%, and the detailed CSV still shows 12.00% uniform-pipe issue activity. Because this benchmark shape is exactly divisible by the 32x96x16 tensor tile, the `tile_k` loop can be peeled into prologue, branch-free steady state, and drain so the hot path stops rechecking `next_tile_k < k` and carries less wait/sync bookkeeping around every MMA step.",
-      "expected_bottleneck": "Synchronization and hot-path control overhead in the double-buffered async-copy pipeline",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:69-78 (`cp_async_commit_group` / `cp_async_wait_group_0` helpers)",
-        "src/kernels/bf16_gemm_v1.cu:187-225 (pipeline warmup plus the per-K-step wait/sync sequence)",
-        "src/kernels/bf16_gemm_v1.cu:279-282 (exact-shape tensor launch gate)"
-      ],
-      "risk": "Low to moderate. The likely upside is incremental, and changing the steady-state stage ordering can silently break overlap or introduce off-by-one drain bugs even when the fixed shape still passes correctness.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__inst_executed_pipe_uniform.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness_passed"
-      ],
-      "stop_condition": "Stop if peeling the loop does not produce a measurable drop in barrier or uniform-issue pressure, or if runtime stays within noise around the current 54.193 ms result."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Refine the same-footprint B shared layout so three `matrix_b` loads hit a friendlier per-warp pattern",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "Round 7 fixed the round 6 regression by restoring the wide 16x96 B slab and keeping the internal gap occupancy-neutral, but the recovered kernel is still overwhelmingly MIO-limited: `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct` is 31.63% while long-scoreboard is only 2.33%. That still points at the shared B fragment feed rather than at DRAM latency. The current `b_shared_col_from_logical()` scheme only inserts a single +8-element gap between the two 48-column warp groups, so each warp still issues three `wmma::load_matrix_sync` calls from a mostly row-major tile. A stronger per-16x16 B permutation or swizzle that preserves the current 16x104 footprint is the next direct way to reduce shared-load issue pressure without giving back the recovered occupancy.",
-      "expected_bottleneck": "Shared-memory B fragment load pressure and MIO saturation in the steady-state tensor loop",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:36-54 (B shared-layout constants, stride math, and footprint guards)",
-        "src/kernels/bf16_gemm_v1.cu:81-109 (`b_shared_col_from_logical` and `stage_b_shared_tile_async`)",
-        "src/kernels/bf16_gemm_v1.cu:212-220 (B shared pointer setup and `wmma::load_matrix_sync` for `b_frags`)"
-      ],
-      "risk": "Moderate. The previous swizzle experiment already showed that B-layout ideas can trade feed-path relief for worse residency, so any candidate that grows the shared allocation past the current 13.824 KB/block budget is likely self-defeating.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "launch__shared_mem_per_block_allocated",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness_passed"
-      ],
-      "stop_condition": "Stop if the revised B layout no longer fits the 13.824 KB/block allocation envelope or if MIO throttle and tensor activity remain essentially flat after measurement."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Attack the `c_shared` epilogue so the kernel sheds shared-memory footprint and MIO-heavy writeback work",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "The epilogue still writes every accumulator tile into `c_shared`, synchronizes the warp, rereads float values from shared, converts them to BF16, and emits scalar global stores. That keeps static shared memory at 12.800 KB and total allocated shared memory at 13.824 KB/block, which is just high enough to cap the kernel at 7 CTAs per SM, while the detailed CSV still shows substantial MIO-side activity (`sm__mio_pq_read_cycles_active` 13.21%, `sm__mio_pq_write_cycles_active` 13.21%, `sm__mio2rf_writeback_active` 15.85%). A register-first or narrower-scratch epilogue could reduce the shared round-trip and, if it drops the allocation far enough, reopen an eighth resident CTA per SM.",
-      "expected_bottleneck": "Epilogue LSU/MIO pressure and shared-memory residency headroom lost to `c_shared`",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:31-33 (`kCSharedTileElemsPerWarp` and epilogue scratch sizing)",
-        "src/kernels/bf16_gemm_v1.cu:165 (`c_shared` allocation)",
-        "src/kernels/bf16_gemm_v1.cu:229-246 (WMMA store, warp syncs, shared reread, and BF16 writeback)"
-      ],
-      "risk": "High. WMMA accumulator unpacking is brittle, and a scratch-free path can easily raise registers above the current 48/thread budget or make the final stores less coherent than the existing path.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "launch__shared_mem_per_block_allocated",
-        "launch__occupancy_limit_shared_mem",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__mio2rf_writeback_active.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread",
-        "correctness_passed"
-      ],
-      "stop_condition": "Stop if the epilogue work cannot lower the shared allocation toward an 8-CTA budget or if it raises registers materially above 48/thread without a clear runtime gain."
-    }
-  ],
-  "notes": "Round 8 node_b diagnosis recorded via auto-analysis for run 20260418_232047_bf16_gemm_v1_5603894."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

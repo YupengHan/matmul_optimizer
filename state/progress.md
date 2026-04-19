@@ -6,42 +6,40 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `56038948d7d255701cbdaf6c5969d0fbc56b4aa7`
-- plateau counter: `2`
-- round loop: `round 8/20`
-- rounds remaining: `13`
-- notes: `Node C build succeeded for round 8/20. Node A will now measure the new code path.`
+- latest measured commit: `6bee469ece2906ab9efdd498b44f9b8d05b6e1bc`
+- plateau counter: `3`
+- round loop: `round 9/20`
+- rounds remaining: `12`
+- notes: `Node A completed round 8/20. Run node_b to continue round 9/20.`
 
 ## Latest measured custom run
 
-- run id: `20260418_232047_bf16_gemm_v1_5603894`
-- run dir: `runs/20260418_232047_bf16_gemm_v1_5603894`
+- run id: `20260418_233053_bf16_gemm_v1_6bee469`
+- run dir: `runs/20260418_233053_bf16_gemm_v1_6bee469`
 - correctness: `PASS`
-- median runtime: `54.193089 ms`
-- TFLOP/s: `13.415353 TFLOP/s`
+- median runtime: `56.870047 ms`
+- TFLOP/s: `12.783872 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260418_232136`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- dir_01: Specialize the fixed-shape K loop so the 4-warp CTA spends less time in barrier and control overhead | bottleneck: Synchronization and hot-path control overhead in the double-buffered async-copy pipeline
-- dir_02: Refine the same-footprint B shared layout so three `matrix_b` loads hit a friendlier per-warp pattern | bottleneck: Shared-memory B fragment load pressure and MIO saturation in the steady-state tensor loop
-- dir_03: Attack the `c_shared` epilogue so the kernel sheds shared-memory footprint and MIO-heavy writeback work | bottleneck: Epilogue LSU/MIO pressure and shared-memory residency headroom lost to `c_shared`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
