@@ -33,8 +33,10 @@ constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
 constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
-// Keep the B tile row-major for WMMA, but add one 16-byte chunk of skew per row
-// so adjacent rows no longer alias the same shared-memory bank pattern.
+constexpr int kWarpGroupCols = kWarpMmaTilesN * kWmmaN;
+// Keep the B tile row-major for WMMA, but route the single 16-byte skew
+// between the two 48-column warp groups so each warp reads a more local slice
+// without increasing the accepted 16x104 shared-memory footprint.
 constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
 constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
 constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
@@ -46,6 +48,7 @@ constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
 static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
 static_assert((kTensorBlockN % kAsyncCopyElems) == 0, "B tile width must stay 16-byte aligned.");
+static_assert((kWarpGroupCols % kAsyncCopyElems) == 0, "Each warp-group span must stay 16-byte aligned.");
 static_assert((kBSharedStride % kAsyncCopyElems) == 0, "B shared stride must stay 16-byte aligned.");
 static_assert((kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
 static_assert((kBSharedTileElems % kAsyncCopyElems) == 0, "B tile must be divisible by async copy width.");
@@ -75,6 +78,10 @@ __device__ __forceinline__ void cp_async_wait_group_0() {
 #endif
 }
 
+__host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
+  return logical_col + (logical_col / kWarpGroupCols) * kAsyncCopyElems;
+}
+
 __device__ __forceinline__ void stage_a_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
@@ -94,10 +101,11 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
     int global_stride) {
   for (int copy_idx = threadIdx.x; copy_idx < kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
     const int row = copy_idx / kBAsyncCopiesPerRow;
-    const int col = (copy_idx % kBAsyncCopiesPerRow) * kAsyncCopyElems;
+    const int logical_col = (copy_idx % kBAsyncCopiesPerRow) * kAsyncCopyElems;
+    const int shared_col = b_shared_col_from_logical(logical_col);
     cp_async_copy_16_bytes(
-        shared_tile + row * kBSharedStride + col,
-        global_tile + row * global_stride + col);
+        shared_tile + row * kBSharedStride + shared_col,
+        global_tile + row * global_stride + logical_col);
   }
 }
 
@@ -202,7 +210,8 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
-    const __nv_bfloat16* b_tile = b_shared[curr_stage] + warp_tile_n * kWarpMmaTilesN * kWmmaN;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] + b_shared_col_from_logical(warp_tile_n * kWarpGroupCols);
 
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     #pragma unroll

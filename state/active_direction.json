@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-18T23:17:26-07:00",
   "source_diagnosis_id": "diagnosis_20260418_231124",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -30,5 +30,5 @@
     ],
     "stop_condition": "Stop if the restored or reworked B layout still allocates more than the accepted 13.824 KB/block or if active warps fail to recover toward the prior ~58% level, because then the layout is still spending a residency slot per SM."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
