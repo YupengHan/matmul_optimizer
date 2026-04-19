@@ -556,118 +556,6 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage(
   }
 }
 
-template <typename TileConfig>
-__device__ __forceinline__ void stage_peeled_hot_prologue(
-    __nv_bfloat16 (&a_shared)[2][TileConfig::kASharedTileElems],
-    __nv_bfloat16 (&b_shared)[2][TileConfig::kBSharedTileElems],
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block) {
-  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
-  cp_async_commit_group();
-  stage_a_shared_tile_async<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(
-      b_shared[1],
-      b_block + kWmmaK * kFixedBenchmarkN,
-      kFixedBenchmarkN);
-  cp_async_commit_group();
-  cp_async_wait_group_1();
-  __syncthreads();
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void advance_peeled_hot_stage(
-    wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> (&acc_frags)[TileConfig::kWarpMmaTilesN],
-    __nv_bfloat16 (&a_shared)[2][TileConfig::kASharedTileElems],
-    __nv_bfloat16 (&b_shared)[2][TileConfig::kBSharedTileElems],
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    int future_tile_k,
-    int& curr_stage,
-    int& next_stage,
-    int warp_tile_m,
-    int warp_tile_n) {
-  accumulate_peeled_shared_stage<TileConfig>(
-      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-
-  __syncthreads();
-  stage_a_shared_tile_async<TileConfig>(
-      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(
-      b_shared[curr_stage],
-      b_block + future_tile_k * kFixedBenchmarkN,
-      kFixedBenchmarkN);
-  cp_async_commit_group();
-
-  cp_async_wait_group_1();
-  __syncthreads();
-  const int consumed_stage = curr_stage;
-  curr_stage = next_stage;
-  next_stage = consumed_stage;
-}
-
-template <typename TileConfig, int PairCount>
-__device__ __forceinline__ void run_peeled_steady_state_batch(
-    wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> (&acc_frags)[TileConfig::kWarpMmaTilesN],
-    __nv_bfloat16 (&a_shared)[2][TileConfig::kASharedTileElems],
-    __nv_bfloat16 (&b_shared)[2][TileConfig::kBSharedTileElems],
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    int& future_tile_k,
-    int& curr_stage,
-    int& next_stage,
-    int warp_tile_m,
-    int warp_tile_n) {
-  #pragma unroll
-  for (int pair_idx = 0; pair_idx < PairCount; ++pair_idx) {
-    advance_peeled_hot_stage<TileConfig>(
-        acc_frags,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        future_tile_k,
-        curr_stage,
-        next_stage,
-        warp_tile_m,
-        warp_tile_n);
-    future_tile_k += kWmmaK;
-
-    advance_peeled_hot_stage<TileConfig>(
-        acc_frags,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        future_tile_k,
-        curr_stage,
-        next_stage,
-        warp_tile_m,
-        warp_tile_n);
-    future_tile_k += kWmmaK;
-  }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void drain_peeled_hot_epilogue(
-    wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> (&acc_frags)[TileConfig::kWarpMmaTilesN],
-    __nv_bfloat16 (&a_shared)[2][TileConfig::kASharedTileElems],
-    __nv_bfloat16 (&b_shared)[2][TileConfig::kBSharedTileElems],
-    int& curr_stage,
-    int& next_stage,
-    int warp_tile_m,
-    int warp_tile_n) {
-  accumulate_peeled_shared_stage<TileConfig>(
-      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-
-  cp_async_wait_group_0();
-  __syncthreads();
-  curr_stage = next_stage;
-
-  accumulate_peeled_shared_stage<TileConfig>(
-      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-}
-
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
@@ -708,50 +596,74 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  constexpr int kSteadyStatePairIterations = (FixedKTiles - 2) / 2;
-  constexpr int kSteadyStateBatchPairs = 2;
-  constexpr int kFullSteadyStateBatchCount =
-      kSteadyStatePairIterations / kSteadyStateBatchPairs;
-  constexpr int kSteadyStateRemainderPairs =
-      kSteadyStatePairIterations % kSteadyStateBatchPairs;
-
-  stage_peeled_hot_prologue<TileConfig>(a_shared, b_shared, a_block, b_block);
+  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
+  cp_async_commit_group();
+  stage_a_shared_tile_async<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(
+      b_shared[1],
+      b_block + kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+  cp_async_wait_group_1();
+  __syncthreads();
 
   int curr_stage = 0;
   int next_stage = 1;
-  int future_tile_k = 2 * kWmmaK;
 
   #pragma unroll 1
-  for (int batch_idx = 0; batch_idx < kFullSteadyStateBatchCount; ++batch_idx) {
-    run_peeled_steady_state_batch<TileConfig, kSteadyStateBatchPairs>(
-        acc_frags,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        future_tile_k,
-        curr_stage,
-        next_stage,
-        warp_tile_m,
-        warp_tile_n);
+  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; tile_idx += 2) {
+    const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
+    const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
+
+    accumulate_peeled_shared_stage<TileConfig>(
+        acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+    // Keep the restored CTA-wide stage recycle model intact while cutting the
+    // steady-state loop/index overhead in half.
+    __syncthreads();
+    stage_a_shared_tile_async<TileConfig>(
+        a_shared[curr_stage], a_block + first_future_tile_k, kFixedBenchmarkK);
+    stage_b_shared_tile_async<TileConfig>(
+        b_shared[curr_stage],
+        b_block + first_future_tile_k * kFixedBenchmarkN,
+        kFixedBenchmarkN);
+    cp_async_commit_group();
+
+    cp_async_wait_group_1();
+    __syncthreads();
+    const int consumed_stage = curr_stage;
+    curr_stage = next_stage;
+    next_stage = consumed_stage;
+
+    accumulate_peeled_shared_stage<TileConfig>(
+        acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+    __syncthreads();
+    stage_a_shared_tile_async<TileConfig>(
+        a_shared[curr_stage], a_block + second_future_tile_k, kFixedBenchmarkK);
+    stage_b_shared_tile_async<TileConfig>(
+        b_shared[curr_stage],
+        b_block + second_future_tile_k * kFixedBenchmarkN,
+        kFixedBenchmarkN);
+    cp_async_commit_group();
+
+    cp_async_wait_group_1();
+    __syncthreads();
+    const int second_consumed_stage = curr_stage;
+    curr_stage = next_stage;
+    next_stage = second_consumed_stage;
   }
 
-  if constexpr (kSteadyStateRemainderPairs != 0) {
-    run_peeled_steady_state_batch<TileConfig, kSteadyStateRemainderPairs>(
-        acc_frags,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        future_tile_k,
-        curr_stage,
-        next_stage,
-        warp_tile_m,
-        warp_tile_n);
-  }
+  accumulate_peeled_shared_stage<TileConfig>(
+      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
-  drain_peeled_hot_epilogue<TileConfig>(
-      acc_frags, a_shared, b_shared, curr_stage, next_stage, warp_tile_m, warp_tile_n);
+  cp_async_wait_group_0();
+  __syncthreads();
+  curr_stage = next_stage;
+
+  accumulate_peeled_shared_stage<TileConfig>(
+      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   constexpr int kCSharedStageStride =
       TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
