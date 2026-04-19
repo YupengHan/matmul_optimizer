@@ -26,7 +26,9 @@ constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
 constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
 constexpr int kTensorBlockN = kWarpTilesN * kWarpMmaTilesN * kWmmaN;
 constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
-constexpr int kCSharedTileElemsPerWarp = kWarpMmaTilesN * kWmmaM * kWmmaN;
+// Reuse a single 16x16 scratch tile per warp during the epilogue instead of
+// materializing all N tiles in shared memory at once.
+constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
 // Keep the B tile row-major for WMMA, but add one 16-byte chunk of skew per row
@@ -217,21 +219,20 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   #pragma unroll
   for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
     wmma::store_matrix_sync(
-        warp_c_tile + tile_n * kWmmaM * kWmmaN,
+        warp_c_tile,
         acc_frags[tile_n],
         kWmmaN,
         wmma::mem_row_major);
-  }
-  __syncwarp();
+    __syncwarp();
 
-  #pragma unroll
-  for (int idx = lane_id; idx < kCSharedTileElemsPerWarp; idx += kWarpSize) {
-    const int tile_n = idx / (kWmmaM * kWmmaN);
-    const int tile_elem = idx % (kWmmaM * kWmmaN);
-    const int local_row = tile_elem / kWmmaN;
-    const int local_col = tile_elem % kWmmaN;
-    c[(row + local_row) * n + col + tile_n * kWmmaN + local_col] =
-        __float2bfloat16(warp_c_tile[idx]);
+    #pragma unroll
+    for (int tile_elem = lane_id; tile_elem < kCSharedTileElemsPerWarp; tile_elem += kWarpSize) {
+      const int local_row = tile_elem / kWmmaN;
+      const int local_col = tile_elem % kWmmaN;
+      c[(row + local_row) * n + col + tile_n * kWmmaN + local_col] =
+          __float2bfloat16(warp_c_tile[tile_elem]);
+    }
+    __syncwarp();
   }
 #else
   (void)a;

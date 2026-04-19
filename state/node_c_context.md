@@ -6,7 +6,7 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 - direction id: `dir_01`
 - direction name: `Reuse one 16x16 epilogue scratch tile per warp with warp-synchronous pair stores`
-- selection mode: `recommended`
+- selection mode: `human_idea`
 - source diagnosis id: `diagnosis_20260418_224925`
 - round loop: `round 4/20`
 - hypothesis: `Round 3 reduced the B-side bank pressure, but active warps still sit around 33% and the kernel still reserves 12.8 KB of shared memory per block, with most of the non-staging footprint coming from the three-tile-per-warp float `c_shared` epilogue buffer. Reusing a single 16x16 scratch tile per warp, then writing each MMA tile back immediately with warp-synchronous coordination, should lower the shared-memory footprint and the post-MMA shared round-trip without changing the main tensor-core loop.`
@@ -30,4 +30,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `src/kernels/bf16_gemm_v1.cu`
