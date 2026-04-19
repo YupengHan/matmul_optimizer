@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_140646_bf16_gemm_v1_c9d030a`
-- run dir: `runs/20260419_140646_bf16_gemm_v1_c9d030a`
-- kernel tag: `bf16_gemm_v1_c9d030a`
-- round label: `round 4/5`
+- run id: `20260419_141843_bf16_gemm_v1_bd7984e`
+- run dir: `runs/20260419_141843_bf16_gemm_v1_bd7984e`
+- kernel tag: `bf16_gemm_v1_bd7984e`
+- round label: `round 5/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `32.001088 ms`
-- p10 runtime: `31.821852 ms`
-- p90 runtime: `34.513510 ms`
-- TFLOP/s: `22.718584 TFLOP/s`
-- previous run id: `20260419_135930_bf16_gemm_v1_1e399d8`
-- runtime delta vs previous measured run: `-1.364959 ms`
-- TFLOP/s delta vs previous measured run: `+0.929386 TFLOP/s`
-- perf verdict: `improved`
-- implemented direction id: `dir_01`
-- implemented direction name: `Register-first PTX export follow-through on the hot band`
+- median runtime: `33.317888 ms`
+- p10 runtime: `33.136024 ms`
+- p90 runtime: `34.563128 ms`
+- TFLOP/s: `21.820693 TFLOP/s`
+- previous run id: `20260419_140646_bf16_gemm_v1_c9d030a`
+- runtime delta vs previous measured run: `+1.316800 ms`
+- TFLOP/s delta vs previous measured run: `-0.897891 TFLOP/s`
+- perf verdict: `regressed`
+- implemented direction id: `dir_02`
+- implemented direction name: `Full-width explicit PTX load-order follow-through without half-panel compute`
 - implemented selection mode: `approved`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_140646_bf16_gemm_v1_c9d030a/summary.json`
-- measured commit: `c9d030a5022af8ce61bdcdb9b13e7ea85315ef52`
-- new best custom: `yes`
-- generated at: `2026-04-19T14:06:53-07:00`
+- raw summary json: `runs/20260419_141843_bf16_gemm_v1_bd7984e/summary.json`
+- measured commit: `bd7984e372e425002a9f8d421533d9b8f086e595`
+- new best custom: `no`
+- generated at: `2026-04-19T14:18:51-07:00`

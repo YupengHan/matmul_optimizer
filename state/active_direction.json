@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_02",
-  "name": "Full-width explicit PTX load-order follow-through without half-panel compute",
-  "selection_mode": "approved",
-  "selected_at": "2026-04-19T14:15:01-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_140716",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_02",
-    "rank": 2,
-    "name": "Full-width explicit PTX load-order follow-through without half-panel compute",
-    "hypothesis": "With barrier at 14.15 and mio at 2.32, the branch no longer looks primarily orchestration-bound. Long scoreboard is now the larger visible stall and compute-memory/DRAM throughput are already in the mid-50% range. A coherent next step inside the same 64x384 PTX branch is to push compute/load control further by replacing the remaining wrapper-style wmma.load/wmma.mma surface with a full-width explicit PTX dataflow, while explicitly avoiding the prechecked explicit mma.sync half-panel subpath that regressed. The point is to improve load order and fragment residency on the intact 12-tile hot band, not to split the tile into a separate 192-column compute path.",
-    "expected_bottleneck": "Residual load-to-use latency and fragment feed ordering inside the PTX compute body, now that barrier and mio overhead are largely under control.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:261-299",
-      "src/kernels/bf16_gemm_v1.cu:388-402",
-      "src/kernels/bf16_gemm_v1.cu:801-818",
-      "src/kernels/bf16_gemm_v1.cu:915-948"
-    ],
-    "risk": "This has more upside than dir_01 but is materially riskier in the last round. If the load-order rewrite drifts toward the old half-panel explicit mma.sync experiment, it can easily give back the steady progress from the last two rounds.",
-    "metrics_to_recheck": [
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-      "launch__registers_per_thread",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if the implementation starts serializing the hot band into the already-rejected half-panel path, or if long-scoreboard and runtime do not improve together."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

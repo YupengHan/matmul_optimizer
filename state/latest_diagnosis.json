@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_140716",
-  "status": "completed",
-  "created_at": "2026-04-19T14:07:16-07:00",
-  "source_run_id": "20260419_140646_bf16_gemm_v1_c9d030a",
-  "source_run_dir": "runs/20260419_140646_bf16_gemm_v1_c9d030a",
-  "source_summary_json": "runs/20260419_140646_bf16_gemm_v1_c9d030a/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_141843_bf16_gemm_v1_bd7984e",
+  "source_run_dir": "runs/20260419_141843_bf16_gemm_v1_bd7984e",
+  "source_summary_json": "runs/20260419_141843_bf16_gemm_v1_bd7984e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "approved_direction_id": "dir_02",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Tile-pair PTX state compaction around the paired export path",
-      "hypothesis": "The PTX branch has now won four rounds in a row, and round 4's paired export proved that aligning work to the two c_shared stages produces real runtime gains. The remaining hard guardrail is still 167 registers/thread and occupancy_limit_registers=1, not barrier or mio. The best final-round move is therefore a conservative PTX-local compaction step: keep the full 64x384 hot-band compute schedule and unchanged 64x96 tail, but reshape the hot-band state and helpers around six tile-pairs instead of one 12-tile accumulator object so the compiler can shorten lifetimes around the already-successful paired export path. This explicitly does not reopen the regressed half-panel compute split; it only matches persistent state to the pairwise export structure that already won.",
-      "expected_bottleneck": "Register pressure and live-range inflation around the 12-tile PTX helper surface are keeping occupancy at one block/SM even after control and export overhead were reduced.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:239-252",
-        "src/kernels/bf16_gemm_v1.cu:317-402",
-        "src/kernels/bf16_gemm_v1.cu:463-495",
-        "src/kernels/bf16_gemm_v1.cu:889-957"
-      ],
-      "risk": "This is the safest path, but it may only shave a few registers rather than crossing the occupancy threshold. It also risks perturbing the good codegen from the named-tile PTX path if the new pair abstraction is over-engineered.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the tile-pair compaction leaves registers and active warps effectively unchanged, because then the branch needs a more structural dataflow change rather than helper/lifetime cleanup."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Full-width explicit PTX load-order follow-through without half-panel compute",
-      "hypothesis": "With barrier at 14.15 and mio at 2.32, the branch no longer looks primarily orchestration-bound. Long scoreboard is now the larger visible stall and compute-memory/DRAM throughput are already in the mid-50% range. A coherent next step inside the same 64x384 PTX branch is to push compute/load control further by replacing the remaining wrapper-style wmma.load/wmma.mma surface with a full-width explicit PTX dataflow, while explicitly avoiding the prechecked explicit mma.sync half-panel subpath that regressed. The point is to improve load order and fragment residency on the intact 12-tile hot band, not to split the tile into a separate 192-column compute path.",
-      "expected_bottleneck": "Residual load-to-use latency and fragment feed ordering inside the PTX compute body, now that barrier and mio overhead are largely under control.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:261-299",
-        "src/kernels/bf16_gemm_v1.cu:388-402",
-        "src/kernels/bf16_gemm_v1.cu:801-818",
-        "src/kernels/bf16_gemm_v1.cu:915-948"
-      ],
-      "risk": "This has more upside than dir_01 but is materially riskier in the last round. If the load-order rewrite drifts toward the old half-panel explicit mma.sync experiment, it can easily give back the steady progress from the last two rounds.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the implementation starts serializing the hot band into the already-rejected half-panel path, or if long-scoreboard and runtime do not improve together."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Direct register-packed pair export beyond shared float scratch",
-      "hypothesis": "Round 4 already showed that pairing the export tiles was worthwhile, but the hot-band kernel still materializes each pair through shared float scratch before BF16 packing. A more aggressive follow-through on the same line is to keep the 64x384 PTX compute body and unchanged tail, but bypass more of the float c_shared round-trip by packing output from registers at the pair level and emitting global stores more directly. This keeps the direction squarely in the hot-band PTX branch and extends the export logic that just produced a real win.",
-      "expected_bottleneck": "Export-side shared/LSU work and short-scoreboard pressure, which remain visible even after the paired export cut a layer of the old path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:212-229",
-        "src/kernels/bf16_gemm_v1.cu:301-315",
-        "src/kernels/bf16_gemm_v1.cu:442-495",
-        "src/kernels/bf16_gemm_v1.cu:950-956"
-      ],
-      "risk": "This is the highest-risk option for the final round because it changes export correctness, packing, and likely register behavior simultaneously. It may reduce shared work while still leaving the occupancy guardrail untouched.",
-      "metrics_to_recheck": [
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the more direct export path increases registers or correctness risk without a clear reduction in shared/LSU pressure."
-    }
-  ],
-  "notes": "All three directions remain strictly inside the 64x384 hot-band PTX microkernel branch and keep the 64x96 tail unchanged. Ranking is anchored on the new accepted base c9d030a: the PTX branch has now produced four consecutive real runtime improvements, and round 3 plus round 4 already knocked barrier and mio down to secondary concerns. The remaining guardrail is still one-block occupancy at 167 registers/thread with active warps stuck near 16.6. Because this is the final round, the recommendation favors a safer PTX-local state/lifetime compaction that builds directly on the successful paired export path, while still keeping one higher-upside full-width load-order direction and one more aggressive direct-export follow-through in reserve. Explicit mma.sync half-panel compute is intentionally excluded because that subpath has already shown negative evidence."
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
