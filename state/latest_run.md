@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_014521_bf16_gemm_v1_4113319`
-- run dir: `runs/20260419_014521_bf16_gemm_v1_4113319`
-- kernel tag: `bf16_gemm_v1_4113319`
-- round label: `round 19/20`
+- run id: `20260419_015554_bf16_gemm_v1_16a98f7`
+- run dir: `runs/20260419_015554_bf16_gemm_v1_16a98f7`
+- kernel tag: `bf16_gemm_v1_16a98f7`
+- round label: `round 20/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `39.300608 ms`
-- p10 runtime: `39.138000 ms`
-- p90 runtime: `40.467045 ms`
-- TFLOP/s: `18.498936 TFLOP/s`
-- previous run id: `20260419_013130_bf16_gemm_v1_ea27d5a`
-- runtime delta vs previous measured run: `+0.826879 ms`
-- TFLOP/s delta vs previous measured run: `-0.397580 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `37.285807 ms`
+- p10 runtime: `36.993023 ms`
+- p90 runtime: `38.057678 ms`
+- TFLOP/s: `19.498557 TFLOP/s`
+- previous run id: `20260419_014521_bf16_gemm_v1_4113319`
+- runtime delta vs previous measured run: `-2.014801 ms`
+- TFLOP/s delta vs previous measured run: `+0.999621 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep 64x384, but rework the hot-kernel shared/L1 feed path`
+- implemented direction name: `Reduce hot-kernel epilogue and writeback work on the accepted 64x384 base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_014521_bf16_gemm_v1_4113319/summary.json`
-- measured commit: `41133192865421fd6532def2c4ac8bed70c17e9d`
-- new best custom: `no`
-- generated at: `2026-04-19T01:45:29-07:00`
+- raw summary json: `runs/20260419_015554_bf16_gemm_v1_16a98f7/summary.json`
+- measured commit: `16a98f7af190c1b90503973135cbf4b754cdad0a`
+- new best custom: `yes`
+- generated at: `2026-04-19T01:56:01-07:00`

@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `41133192865421fd6532def2c4ac8bed70c17e9d`
-- plateau counter: `1`
-- round loop: `round 20/20`
-- rounds remaining: `1`
-- notes: `Node C build succeeded for round 20/20. Node A will now measure the new code path.`
+- latest measured commit: `16a98f7af190c1b90503973135cbf4b754cdad0a`
+- plateau counter: `0`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Node A completed the final planned round. Review the results before starting another loop.`
 
 ## Latest measured custom run
 
-- run id: `20260419_014521_bf16_gemm_v1_4113319`
-- run dir: `runs/20260419_014521_bf16_gemm_v1_4113319`
+- run id: `20260419_015554_bf16_gemm_v1_16a98f7`
+- run dir: `runs/20260419_015554_bf16_gemm_v1_16a98f7`
 - correctness: `PASS`
-- median runtime: `39.300608 ms`
-- TFLOP/s: `18.498936 TFLOP/s`
+- median runtime: `37.285807 ms`
+- TFLOP/s: `19.498557 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_014602`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 20 diagnosis is intentionally framed for implementation on the accepted round-18 base commit ea27d5a906ceb46b0a4ec429d6d53f4a457620d6 at 38.47372818 ms, not on the regressed round-19 code. Round 19 is treated as negative evidence: the localized 64x384 B-fragment shared-layout rewrite regressed to 39.30060768 ms while MIO throttle rose from 31.42 to 36.14, LSU wavefront activity rose from 48.590499 to 68.567113, and tensor active fell from 32.130750 to 29.184802.`
-- dir_01: Reduce hot-kernel epilogue and writeback work on the accepted 64x384 base | bottleneck: Non-tensor epilogue work and shared-scratch writeback are diluting Tensor Core issue inside the proven 64x384 hot kernel.
-- dir_02: Pivot away from B-layout rewrites and peel the fixed 452-step steady state | bottleneck: Steady-state control, address-generation, and wait/sync bookkeeping on the accepted round-18 path are wasting issue bandwidth that should go to Tensor Core work.
-- dir_03: Keep the 64x384 macro split, but cut per-warp fragment footprint | bottleneck: Register-limited occupancy and low ready-warp count are capping Tensor Core utilization on the accepted 64x384 base.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `12.555840 ms`, `1.484447x` slower than CUTLASS
+- current best custom gap: `11.367918 ms`, `1.438613x` slower than CUTLASS
