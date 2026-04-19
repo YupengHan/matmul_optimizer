@@ -45,47 +45,24 @@ struct TensorCoreTileConfig {
   static constexpr int kASharedBytes = 2 * kASharedTileElems * sizeof(__nv_bfloat16);
   static constexpr int kCSharedTileBytesPerWarp = kCSharedTileElemsPerWarp * sizeof(float);
   static constexpr int kWarpGroupCols = kWarpMmaTilesN * kWmmaN;
-  static constexpr bool kUseTwoLevelBStaging = (kWarpMmaTilesN == 12);
-  static constexpr int kBProducerStride =
-      kUseTwoLevelBStaging ? kTensorBlockN : (kTensorBlockN + kAsyncCopyElems);
-  static constexpr int kBProducerTileElems = kWmmaK * kBProducerStride;
-  static constexpr int kBConsumerFragmentElems = kWmmaK * kWmmaN;
-  // The 64x384 hot path stages B into a raw contiguous tile first, then
-  // repacks it into independent 16x16 WMMA fragments so producer and consumer
-  // layouts can diverge without widening the outer tile or launch split.
-  static constexpr int kBSharedStride =
-      kUseTwoLevelBStaging ? kWmmaN : (kTensorBlockN + kAsyncCopyElems);
-  static constexpr int kBSharedTileElems =
-      kUseTwoLevelBStaging
-          ? (kWarpTilesN * kWarpMmaTilesN * kBConsumerFragmentElems)
-          : (kWmmaK * kBSharedStride);
-  static constexpr int kBConsumerStorageElems =
-      kUseTwoLevelBStaging ? kBSharedTileElems : 1;
-  static constexpr int kBSharedBytes =
-      (kUseTwoLevelBStaging
-           ? (2 * kBProducerTileElems + kBSharedTileElems)
-           : (2 * kBSharedTileElems)) * sizeof(__nv_bfloat16);
+  // Keep the B tile row-major for WMMA, but place a single 16-byte skew
+  // between the two warp groups so each warp still reads a local slice.
+  static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
+  static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
+  static constexpr int kBSharedBytes = 2 * kBSharedTileElems * sizeof(__nv_bfloat16);
   // Two scratch stages let the hot epilogue reuse the alternate tile and skip
   // the extra warp sync that only protects the next store from clobbering the
   // current tile's shared export buffer.
   static constexpr int kCSharedStageCount =
-      kUseTwoLevelBStaging
-          ? 1
-          : ((kASharedBytes + kBSharedBytes +
-              2 * kWarpsPerBlock * kCSharedTileBytesPerWarp <= kStaticSharedByteBudget)
-                 ? 2
-                 : 1);
+      (kASharedBytes + kBSharedBytes +
+       2 * kWarpsPerBlock * kCSharedTileBytesPerWarp <= kStaticSharedByteBudget)
+          ? 2
+          : 1;
   static constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
   static constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
   static constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
   static constexpr int kAAsyncCopiesPerTile = kASharedTileElems / kAsyncCopyElems;
   static constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
-  static constexpr int kStaticSharedBytes =
-      kASharedBytes + kBSharedBytes +
-      kCSharedStageCount * kWarpsPerBlock * kCSharedTileBytesPerWarp;
-
-  static_assert(kStaticSharedBytes <= kStaticSharedByteBudget,
-                "Tile configuration must fit within the static shared-memory budget.");
 };
 
 using TensorCoreTile32 = TensorCoreTileConfig<1>;
@@ -227,25 +204,9 @@ __device__ __forceinline__ void store_bfloat162_pair(
   *reinterpret_cast<__nv_bfloat162*>(dst) = __float22bfloat162_rn(values);
 }
 
-__device__ __forceinline__ void copy_16_bytes_shared_to_shared(
-    __nv_bfloat16* dst,
-    const __nv_bfloat16* src) {
-  *reinterpret_cast<int4*>(dst) = *reinterpret_cast<const int4*>(src);
-}
-
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
-  if constexpr (TileConfig::kUseTwoLevelBStaging) {
-    return logical_col;
-  }
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
-}
-
-template <typename TileConfig>
-__host__ __device__ __forceinline__ int b_consumer_fragment_slot(
-    int warp_group,
-    int mma_tile_n) {
-  return mma_tile_n * TileConfig::kWarpTilesN + warp_group;
 }
 
 template <typename TileConfig>
@@ -272,50 +233,9 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
     const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
     const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
     cp_async_copy_16_bytes(
-        shared_tile + row * TileConfig::kBProducerStride + shared_col,
+        shared_tile + row * TileConfig::kBSharedStride + shared_col,
         global_tile + row * global_stride + logical_col);
   }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void repack_b_shared_tile(
-    __nv_bfloat16* consumer_tile,
-    const __nv_bfloat16* producer_tile) {
-  if constexpr (!TileConfig::kUseTwoLevelBStaging) {
-    (void)consumer_tile;
-    (void)producer_tile;
-    return;
-  }
-
-  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
-    const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
-    const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int warp_group = logical_col / TileConfig::kWarpGroupCols;
-    const int group_col = logical_col % TileConfig::kWarpGroupCols;
-    const int mma_tile_n = group_col / kWmmaN;
-    const int col_in_fragment = group_col % kWmmaN;
-    const int fragment_slot = b_consumer_fragment_slot<TileConfig>(warp_group, mma_tile_n);
-    copy_16_bytes_shared_to_shared(
-        consumer_tile + fragment_slot * TileConfig::kBConsumerFragmentElems +
-            row * kWmmaN + col_in_fragment,
-        producer_tile + row * TileConfig::kBProducerStride + logical_col);
-  }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ const __nv_bfloat16* b_consumer_fragment_ptr(
-    const __nv_bfloat16* producer_tile,
-    const __nv_bfloat16* consumer_tile,
-    int warp_group,
-    int mma_tile_n) {
-  if constexpr (TileConfig::kUseTwoLevelBStaging) {
-    return consumer_tile +
-           b_consumer_fragment_slot<TileConfig>(warp_group, mma_tile_n) *
-               TileConfig::kBConsumerFragmentElems;
-  }
-  return producer_tile +
-         b_shared_col_from_logical<TileConfig>(
-             warp_group * TileConfig::kWarpGroupCols + mma_tile_n * kWmmaN);
 }
 
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
@@ -464,9 +384,7 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     int k) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
   __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
-  __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBProducerTileElems];
-  __shared__ __align__(16)
-      __nv_bfloat16 b_consumer_shared[TileConfig::kBConsumerStorageElems];
+  __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
   __shared__ __align__(16)
       float c_shared[TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
                      TileConfig::kCSharedTileElemsPerWarp];
@@ -499,10 +417,6 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   cp_async_commit_group();
   cp_async_wait_group_0();
   __syncthreads();
-  if constexpr (TileConfig::kUseTwoLevelBStaging) {
-    repack_b_shared_tile<TileConfig>(b_consumer_shared, b_shared[0]);
-    __syncthreads();
-  }
 
   for (int tile_k = 0; tile_k < k; tile_k += kWmmaK) {
     const int next_tile_k = tile_k + kWmmaK;
@@ -521,28 +435,19 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
 
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     #pragma unroll
     for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-      wmma::load_matrix_sync(
-          b_frags[tile_n],
-          b_consumer_fragment_ptr<TileConfig>(
-              b_shared[curr_stage],
-              b_consumer_shared,
-              warp_tile_n,
-              tile_n),
-          TileConfig::kBSharedStride);
+      wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
       wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
     }
 
     if (next_tile_k < k) {
       cp_async_wait_group_0();
       __syncthreads();
-      if constexpr (TileConfig::kUseTwoLevelBStaging) {
-        repack_b_shared_tile<TileConfig>(b_consumer_shared, b_shared[next_stage]);
-        __syncthreads();
-      }
     }
   }
 
