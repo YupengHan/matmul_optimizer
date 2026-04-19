@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_234449",
-  "status": "completed",
-  "created_at": "2026-04-18T23:44:49-07:00",
-  "source_run_id": "20260418_234153_bf16_gemm_v1_da19f01",
-  "source_run_dir": "runs/20260418_234153_bf16_gemm_v1_da19f01",
-  "source_summary_json": "runs/20260418_234153_bf16_gemm_v1_da19f01/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_235548_bf16_gemm_v1_01d0040",
+  "source_run_dir": "runs/20260418_235548_bf16_gemm_v1_01d0040",
+  "source_summary_json": "runs/20260418_235548_bf16_gemm_v1_01d0040/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Split the fixed shape into a 64x128 main kernel plus a 64x96 tail kernel",
-      "hypothesis": "Using docs/heuristics.md explicitly, the current 64x96 result now reads as a class-1 plus class-5 problem rather than a plain DRAM ceiling: tensor active is only 28.78%, barrier stall is 29.48%, MIO throttle is 34.18%, long scoreboard is just 0.75%, and DRAM is only 47.58%. Because the fixed N dimension is exactly 7776 = 60 * 128 + 96, most CTAs can run a wider 64x128 main path while a separate 64x96 tail kernel handles the remainder. That should make each staged A/B slice pay for four N fragments per warp on 60 of 81 CTAs, materially increasing math per barrier and per fragment-load episode.",
-      "expected_bottleneck": "Barrier and fragment-feed overhead in the steady-state K loop; the current CTA already improved residency, so the next step is to amortize `cp.async`, `__syncthreads()`, and `wmma::load_matrix_sync` across more MMA before the next handoff.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:22-57 (tile-shape constants, B-stage footprint, and static guards)",
-        "src/kernels/bf16_gemm_v1.cu:158-249 (tensor-core kernel warp mapping, K-loop, and MMA/feed structure)",
-        "src/kernels/bf16_gemm_v1.cu:263-289 (launch dispatch that would need a fixed-shape 64x128 main path plus 64x96 tail split)"
-      ],
-      "risk": "Moderate to high. The extra accumulator fragment and wider B slab can push the kernel above the current 48 registers/thread and 19.968 KB/block envelope, and the split launch must keep the 96-column tail path simple enough that the main-path gain is not diluted.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Stop if the 64x128 main path materially raises registers above 48/thread or shared memory above the current ~20 KB/block without a clear runtime win, or if tensor activity and barrier stall stay essentially flat versus the current 64x96 kernel."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Turn the lockstep cp.async loop into a warp-specialized producer-consumer pipeline",
-      "hypothesis": "Using docs/heuristics.md explicitly, this is the most direct class-5 synchronization experiment. Today all 8 warps participate in staging, then all 8 wait, then all 8 compute, so the CTA still behaves like a phase machine. With barrier stall at 29.48%, MIO throttle at 34.18%, issue active only 36.93%, and long scoreboard just 0.75%, the bottleneck looks like who issues staging instructions and when, not missing data from DRAM. Repartitioning some warps toward producer roles and using subset barriers or a deeper ring buffer could keep compute warps on MMA while loader warps feed the next tile.",
-      "expected_bottleneck": "CTA-wide serialization of staging and compute work, plus MIO saturation from making every warp execute copy/setup work on every 16-wide K step.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:59-113 (cp.async helpers plus A/B staging helpers that currently involve the whole CTA)",
-        "src/kernels/bf16_gemm_v1.cu:166-183 (warp-id mapping and per-CTA role definition)",
-        "src/kernels/bf16_gemm_v1.cu:193-229 (pipeline warmup, wait/commit sequence, and the steady-state K-loop)"
-      ],
-      "risk": "High. On Ampere this needs careful barrier semantics and warp-role balance; it is easy to lose more compute throughput than the overlap saves, and deadlock or correctness bugs are much easier to introduce than with a pure retile.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__issue_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if the producer-consumer version still requires effectively whole-CTA sync points, or if giving up compute warps drops tensor activity or runtime even when barrier stall falls."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Remove the `c_shared` round-trip and emit a register-first BF16 epilogue",
-      "hypothesis": "The 64x96 retile fixed a large chunk of the mainloop problem, but the kernel still ends each CTA with `wmma::store_matrix_sync` into `c_shared`, warp syncs, shared rereads, BF16 conversions, and scalar writes. The detailed CSV still shows LSU issue at 83.94%, `sm__mio2rf_writeback_active` at 17.35%, and both `sm__mio_pq_read_cycles_active` and `sm__mio_pq_write_cycles_active` around 14.46%. A scratch-free or much narrower-scratch epilogue that packs BF16 pairs or vectors directly from registers would test whether the current endgame is still polluting the instruction mix enough to matter after the larger CTA retile.",
-      "expected_bottleneck": "Epilogue-side MIO and LSU pressure from the `c_shared` store-reread-convert-write sequence, which adds non-tensor instructions after the main MMA loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:31-33 (epilogue scratch sizing via `kCSharedTileElemsPerWarp`)",
-        "src/kernels/bf16_gemm_v1.cu:168 (the `c_shared` allocation itself)",
-        "src/kernels/bf16_gemm_v1.cu:232-249 (WMMA store, warp syncs, shared reread, BF16 conversion, and global writeback)"
-      ],
-      "risk": "High. WMMA accumulator layout is awkward to unpack safely, and a register-first output path can easily trade shared-memory traffic for a register explosion, mis-coalesced stores, or subtle correctness issues.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "sm__mio2rf_writeback_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread",
-        "correctness_passed"
-      ],
-      "stop_condition": "Stop if registers rise materially above 48/thread or if MIO/LSU counters remain effectively flat after the scratch-free epilogue, because then the endgame is too cold to justify the added complexity."
-    }
-  ],
-  "notes": "Using docs/heuristics.md explicitly, the current 64x96 kernel is no longer a simple DRAM-bound case; it is a mixed class-1 tensor under-utilization, class-3 shared/LSU feed pressure, and class-5 synchronization problem. Tensor active is 28.78%, warps active is already 82.91%, barrier stall is 29.48%, MIO throttle is 34.18%, LSU issue is 83.94%, and DRAM is only 47.58%, so rounds 10-14 are intentionally biased toward more aggressive experiments that materially change instruction mix rather than another small steady-state cleanup tweak, because the project is still far from the long-horizon ~20 ms target."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_234153_bf16_gemm_v1_da19f01`
-- run dir: `runs/20260418_234153_bf16_gemm_v1_da19f01`
-- kernel tag: `bf16_gemm_v1_da19f01`
-- round label: `round 9/20`
+- run id: `20260418_235548_bf16_gemm_v1_01d0040`
+- run dir: `runs/20260418_235548_bf16_gemm_v1_01d0040`
+- kernel tag: `bf16_gemm_v1_01d0040`
+- round label: `round 10/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.771713 ms`
-- p10 runtime: `46.113280 ms`
-- p90 runtime: `49.381163 ms`
-- TFLOP/s: `15.543998 TFLOP/s`
-- previous run id: `20260418_233053_bf16_gemm_v1_6bee469`
-- runtime delta vs previous measured run: `-10.098333 ms`
-- TFLOP/s delta vs previous measured run: `+2.760126 TFLOP/s`
+- median runtime: `43.697664 ms`
+- p10 runtime: `43.081524 ms`
+- p90 runtime: `44.604108 ms`
+- TFLOP/s: `16.637489 TFLOP/s`
+- previous run id: `20260418_234153_bf16_gemm_v1_da19f01`
+- runtime delta vs previous measured run: `-3.074049 ms`
+- TFLOP/s delta vs previous measured run: `+1.093491 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retile to a 64x96 CTA so each staged B tile feeds more MMA before the next sync`
+- implemented direction name: `Split the fixed shape into a 64x128 main kernel plus a 64x96 tail kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260418_234153_bf16_gemm_v1_da19f01/summary.json`
-- measured commit: `da19f01bfb3793b3cca3cc67fd521b0fe4fcf2b7`
+- raw summary json: `runs/20260418_235548_bf16_gemm_v1_01d0040/summary.json`
+- measured commit: `01d00409efc03fdf555fef3ea7cc4efd403a720a`
 - new best custom: `yes`
-- generated at: `2026-04-18T23:42:02-07:00`
+- generated at: `2026-04-18T23:55:56-07:00`
