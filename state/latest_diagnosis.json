@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_000749",
-  "status": "completed",
-  "created_at": "2026-04-19T00:07:49-07:00",
-  "source_run_id": "20260419_000651_bf16_gemm_v1_662a03b",
-  "source_run_dir": "runs/20260419_000651_bf16_gemm_v1_662a03b",
-  "source_summary_json": "runs/20260419_000651_bf16_gemm_v1_662a03b/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_002116_bf16_gemm_v1_134df29",
+  "source_run_dir": "runs/20260419_002116_bf16_gemm_v1_134df29",
+  "source_summary_json": "runs/20260419_002116_bf16_gemm_v1_134df29/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Stage 32-wide K macro-tiles so each sync feeds two MMA slices",
-      "hypothesis": "This fixed shape is exactly divisible by 32 along K, but the current hot path still pays cp.async commit/wait, shared-fragment setup, and CTA handoff overhead every 16-wide K step. Reblocking the main loop so one staged epoch covers two 16x16x16 MMA slices should increase tensor work per scalar/LSU episode, reduce barrier frequency, and raise tensor issue without repeating the round-11 producer/consumer register blow-up.",
-      "expected_bottleneck": "Tensor-core underfeed from too little MMA per staging/synchronization episode in the fixed-shape main loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:27-48",
-        "src/kernels/bf16_gemm_v1.cu:191-255",
-        "src/kernels/bf16_gemm_v1.cu:307-320"
-      ],
-      "risk": "High. A 32-wide macro-step can raise shared-memory footprint and live fragment state enough to erase the gain if registers or residency move the wrong way.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Stop if tensor activity does not move clearly upward or if the wider K stage materially increases registers/shared memory without beating the restored 43.697664 ms base."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Replace the WMMA row-major feed path with ldmatrix/mma.sync plus a tensor-core swizzle",
-      "hypothesis": "The profile still looks instruction-mix bound rather than DRAM-bound: tensor activity is low while LSU and MIO pressure stay high, which implies the current WMMA row-major fragment path and B-gap addressing are spending too many issue slots on scalar/shared setup instead of Tensor Core work. Dropping to ldmatrix plus mma.sync with a purpose-built shared-memory swizzle is the most direct first-principles way to move work from CUDA-core side plumbing into the tensor path itself.",
-      "expected_bottleneck": "Hot-path instruction mix and shared-fragment feed overhead that underfeeds tensor issue even when data is resident.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:27-48",
-        "src/kernels/bf16_gemm_v1.cu:105-137",
-        "src/kernels/bf16_gemm_v1.cu:229-248"
-      ],
-      "risk": "Very high. This is a near-rewrite of the tensor mainloop and can easily trade one bottleneck for correctness bugs, bank conflicts, or worse register pressure.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__issue_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_uniform.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the lower-level path does not materially reduce LSU/uniform issue pressure or if correctness and register growth dominate before runtime improves."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Split or eliminate the c_shared epilogue round-trip",
-      "hypothesis": "Each CTA still stores accumulators into c_shared, rereads them, converts to BF16, and emits scalar output stores. That keeps non-tensor LSU/MIO work in the same kernel that is already underfeeding tensor issue. A register-first packed BF16 path, or a deliberate split that pushes conversion/writeback out of the tensor kernel, would test whether the current epilogue is still stealing too much issue bandwidth from the useful math path.",
-      "expected_bottleneck": "Epilogue-side scalar, shared-memory, and MIO work polluting the tensor kernel's instruction mix.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:36-43",
-        "src/kernels/bf16_gemm_v1.cu:191-193",
-        "src/kernels/bf16_gemm_v1.cu:257-275"
-      ],
-      "risk": "High. Register-first BF16 writeback is awkward with WMMA accumulators, and a split epilogue can add enough extra traffic or complexity to cancel the benefit.",
-      "metrics_to_recheck": [
-        "median_runtime_ms",
-        "sm__mio2rf_writeback_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread",
-        "correctness_passed"
-      ],
-      "stop_condition": "Stop if writeback-side counters improve but end-to-end runtime stays flat, or if the epilogue rewrite materially increases registers or correctness risk without a clear win."
-    }
-  ],
-  "notes": "Aggressive exploration round 12/20 with human-in-loop guidance: do not recycle the round-11 producer/consumer cp.async path unchanged; prefer the recommended structural pivot from restored base 01d0040 unless a human explicitly approves a higher-risk alternative."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
