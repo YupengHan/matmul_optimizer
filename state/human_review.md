@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 2/5` with `4` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 3/5` with `3` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260419_093742`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- diagnosis notes: `Round 2/5 diagnosis prepared from regressed run 20260419_093633_bf16_gemm_v1_d90a873. Round-1 two-level B staging is treated as negative evidence; recommendation pivots to the human phased-64x384 idea on the restored accepted base surface.`
-- dir_01: Phased 64x384 micro-panels to shrink the live set | bottleneck: Register-limited occupancy and weak latency hiding from the 12-fragment live set in the hot 64x384 loop.
-- dir_02: Simplify the 64x384 K-loop pipeline instead of repacking B | bottleneck: CTA-wide synchronization and copy-pipeline issue pressure in the hot loop.
-- dir_03: Trim the 64x384 epilogue export path on the restored single-skew base | bottleneck: LSU/shared writeback pressure and epilogue-side shared-memory traffic after the main MMA loop.
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `human_idea`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

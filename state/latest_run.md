@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_093633_bf16_gemm_v1_d90a873`
-- run dir: `runs/20260419_093633_bf16_gemm_v1_d90a873`
-- kernel tag: `bf16_gemm_v1_d90a873`
-- round label: `round 1/5`
+- run id: `20260419_094829_bf16_gemm_v1_fe097e9`
+- run dir: `runs/20260419_094829_bf16_gemm_v1_fe097e9`
+- kernel tag: `bf16_gemm_v1_fe097e9`
+- round label: `round 2/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `42.341888 ms`
-- p10 runtime: `42.018918 ms`
-- p90 runtime: `43.311515 ms`
-- TFLOP/s: `17.170217 TFLOP/s`
-- previous run id: `20260419_015554_bf16_gemm_v1_16a98f7`
-- runtime delta vs previous measured run: `+5.056082 ms`
-- TFLOP/s delta vs previous measured run: `-2.328340 TFLOP/s`
+- median runtime: `42.673632 ms`
+- p10 runtime: `42.315571 ms`
+- p90 runtime: `43.144909 ms`
+- TFLOP/s: `17.036737 TFLOP/s`
+- previous run id: `20260419_093633_bf16_gemm_v1_d90a873`
+- runtime delta vs previous measured run: `+0.331743 ms`
+- TFLOP/s delta vs previous measured run: `-0.133481 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Two-level B staging for the 64x384 hot band`
+- implemented direction name: `Phased 64x384 micro-panels to shrink the live set`
 - implemented selection mode: `human_idea`
 - implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_093633_bf16_gemm_v1_d90a873/summary.json`
-- measured commit: `d90a8731b2f67bd39feb4960efeb9b70068ce838`
+- raw summary json: `runs/20260419_094829_bf16_gemm_v1_fe097e9/summary.json`
+- measured commit: `fe097e98f5e51da7e72c909a85c76f35a8c9508a`
 - new best custom: `no`
-- generated at: `2026-04-19T09:36:43-07:00`
+- generated at: `2026-04-19T09:48:37-07:00`

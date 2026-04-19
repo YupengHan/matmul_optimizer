@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_093742",
-  "status": "completed",
-  "created_at": "2026-04-19T09:37:42-07:00",
-  "source_run_id": "20260419_093633_bf16_gemm_v1_d90a873",
-  "source_run_dir": "runs/20260419_093633_bf16_gemm_v1_d90a873",
-  "source_summary_json": "runs/20260419_093633_bf16_gemm_v1_d90a873/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_094829_bf16_gemm_v1_fe097e9",
+  "source_run_dir": "runs/20260419_094829_bf16_gemm_v1_fe097e9",
+  "source_summary_json": "runs/20260419_094829_bf16_gemm_v1_fe097e9/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "approved_direction_id": "dir_01",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Phased 64x384 micro-panels to shrink the live set",
-      "idea_origin": "human-idea",
-      "hypothesis": "Keep the autotune-selected 64x384 outer CTA, but stop carrying the full 12-wide B and accumulator live set through the hot loop. The latest regressed run still sits at 126 registers/thread, occupancy limit 2, and only 32.95% active warps with tensor active down at 28.22%, so the best next move on the restored accepted base is to serialize the 384-wide work into smaller internal micro-panels such as 2x192 or 3x128 while preserving the 384-wide CTA-count advantage.",
-      "expected_bottleneck": "Register-limited occupancy and weak latency hiding from the 12-fragment live set in the hot 64x384 loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:32-39 (TileConfig shape parameters, especially kWarpMmaTilesN and kTensorBlockN)",
-        "src/kernels/bf16_gemm_v1.cu:399-445 (warp tile mapping plus accumulator and B-fragment residency in the hot loop)",
-        "src/kernels/bf16_gemm_v1.cu:517-550 (fixed-shape launch path that should keep the 64x384 outer tile and 64x96 tail split)"
-      ],
-      "risk": "Serial micro-panels can give back some of the 64x384 CTA-count win if extra panel boundaries, reloads, or control flow add too much instruction overhead.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if registers/thread stays near 126 and occupancy remains capped at 2 resident CTAs, or if runtime regresses without a clear rise in active warps and tensor activity."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Simplify the 64x384 K-loop pipeline instead of repacking B",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "Round 1 is explicit negative evidence against a heavier two-level B repack: runtime regressed from the accepted 37.285807 ms result to 42.341888 ms while tensor active fell and both mio_throttle and barrier stall worsened. With the implementation surface restored to the accepted single-skew base, the next distinct lever is to reduce K-loop orchestration cost by simplifying stage management, copy participation, or wait/barrier placement rather than adding more B-layout machinery.",
-      "expected_bottleneck": "CTA-wide synchronization and copy-pipeline issue pressure in the hot loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:53-60 (current stage-count decision coupled to shared-memory budget)",
-        "src/kernels/bf16_gemm_v1.cu:415-450 (cp.async prefill, commit/wait sequence, and CTA barriers in the hot loop)",
-        "src/kernels/bf16_gemm_v1.cu:392-404 (warp-role derivation that could support a lighter producer/consumer schedule)"
-      ],
-      "risk": "Reducing or specializing the pipeline can underfeed MMA if overlap gets worse, and warp-role changes can increase implementation complexity quickly.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if barrier stall and mio_throttle stay roughly flat after the pipeline change, or if reduced synchronization comes with lower tensor activity and no runtime gain."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Trim the 64x384 epilogue export path on the restored single-skew base",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "Since the heavier B repack already failed, the remaining non-repacking pressure point is the export path after MMA. The hot kernel still allocates about 50 KB of shared memory per block and routes every 16x16 accumulator tile through c_shared before BF16 vector stores, while L1/LSU utilization remains high in the regressed run. Revisit the c_shared staging and warp export pattern to remove shared round-trips or cheaper conversion/store sequencing without touching the accepted single-skew B layout.",
-      "expected_bottleneck": "LSU/shared writeback pressure and epilogue-side shared-memory traffic after the main MMA loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:41-46 (per-warp c_shared scratch sizing inside TileConfig)",
-        "src/kernels/bf16_gemm_v1.cu:388-390 (shared allocation for the epilogue export buffer)",
-        "src/kernels/bf16_gemm_v1.cu:201-205 (BF16 pair store helper) and src/kernels/bf16_gemm_v1.cu:454-485 (store_matrix_sync plus BF16 export loop)"
-      ],
-      "risk": "The epilogue path is correctness-sensitive and any attempt to bypass or compress the shared export step can introduce layout bugs or erase the benefit with extra conversion logic.",
-      "metrics_to_recheck": [
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Stop if LSU/shared-write metrics do not fall or if the export rewrite increases runtime or causes correctness drift while the hot-loop bottlenecks remain unchanged."
-    }
-  ],
-  "notes": "Round 2/5 diagnosis prepared from regressed run 20260419_093633_bf16_gemm_v1_d90a873. Round-1 two-level B staging is treated as negative evidence; recommendation pivots to the human phased-64x384 idea on the restored accepted base surface."
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

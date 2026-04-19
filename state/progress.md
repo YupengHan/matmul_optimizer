@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `d90a8731b2f67bd39feb4960efeb9b70068ce838`
-- plateau counter: `1`
-- round loop: `round 2/5`
-- rounds remaining: `4`
-- notes: `Node C build succeeded for round 2/5. Node A will now measure the new code path.`
+- latest measured commit: `fe097e98f5e51da7e72c909a85c76f35a8c9508a`
+- plateau counter: `2`
+- round loop: `round 3/5`
+- rounds remaining: `3`
+- notes: `Node A completed round 2/5. Run node_b to continue round 3/5.`
 
 ## Latest measured custom run
 
-- run id: `20260419_093633_bf16_gemm_v1_d90a873`
-- run dir: `runs/20260419_093633_bf16_gemm_v1_d90a873`
+- run id: `20260419_094829_bf16_gemm_v1_fe097e9`
+- run dir: `runs/20260419_094829_bf16_gemm_v1_fe097e9`
 - correctness: `PASS`
-- median runtime: `42.341888 ms`
-- TFLOP/s: `17.170217 TFLOP/s`
+- median runtime: `42.673632 ms`
+- TFLOP/s: `17.036737 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_093742`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- diagnosis notes: `Round 2/5 diagnosis prepared from regressed run 20260419_093633_bf16_gemm_v1_d90a873. Round-1 two-level B staging is treated as negative evidence; recommendation pivots to the human phased-64x384 idea on the restored accepted base surface.`
-- dir_01: Phased 64x384 micro-panels to shrink the live set | bottleneck: Register-limited occupancy and weak latency hiding from the 12-fragment live set in the hot 64x384 loop.
-- dir_02: Simplify the 64x384 K-loop pipeline instead of repacking B | bottleneck: CTA-wide synchronization and copy-pipeline issue pressure in the hot loop.
-- dir_03: Trim the 64x384 epilogue export path on the restored single-skew base | bottleneck: LSU/shared writeback pressure and epilogue-side shared-memory traffic after the main MMA loop.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `human_idea`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
