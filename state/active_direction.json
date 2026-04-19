@@ -1,10 +1,33 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Split the fixed 64x384 hot path into explicit prologue, steady-state, and epilogue phases",
+  "selection_mode": "approved",
+  "selected_at": "2026-04-19T12:35:40-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_123318",
+  "status": "implemented_pending_measurement",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "idea_origin": "human-idea",
+    "name": "Split the fixed 64x384 hot path into explicit prologue, steady-state, and epilogue phases",
+    "hypothesis": "On the restored 15d63b2 base, the hot kernel is already fixed-shape but still pays generic inner-loop control each pair of K tiles: `tile_idx` induction, `first_future_tile_k` and `second_future_tile_k` arithmetic, `curr_stage` and `next_stage` swapping, repeated wait and barrier sequencing, and a generic final drain path. Since the benchmark shape is fixed at 6464 x 7776 x 7232 with exactly 452 K tiles and a fixed 64x384 hot band plus 64x96 tail, split the peeled kernel into explicit prologue, compile-time steady-state batches, and epilogue logic so the steady-state body is just the known stage-advance sequence rather than a generic loop. This targets control-flow and stage-transition overhead without changing the macro shape or memory volume.",
+    "expected_bottleneck": "Fixed-shape hot-loop control and stage-transition overhead in the restored 64x384 peeled kernel, where tensor activity is still only 34.86 despite stable 2-block occupancy.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:559-567",
+      "src/kernels/bf16_gemm_v1.cu:599-609",
+      "src/kernels/bf16_gemm_v1.cu:611-666",
+      "src/kernels/bf16_gemm_v1.cu:728-761"
+    ],
+    "risk": "The ceiling is lower than the failed warp-specialization path, and over-unrolling the steady-state schedule could still bloat registers if the phase split is too aggressive. The implementation needs to preserve the current 128-register, 2-block occupancy behavior.",
+    "metrics_to_recheck": [
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "launch__occupancy_limit_registers",
+      "median runtime"
+    ],
+    "stop_condition": "Stop if tensor active does not improve on the restored base, or if register growth threatens the accepted 2-block occupancy limit."
+  },
+  "notes": "Build passed. Node A must measure this implementation next."
 }
