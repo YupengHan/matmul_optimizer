@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `56038948d7d255701cbdaf6c5969d0fbc56b4aa7`
 - plateau counter: `2`
 - round loop: `round 8/20`
 - rounds remaining: `13`
-- notes: `Node A completed round 7/20. Run node_b to continue round 8/20.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 8/20.`
 
 ## Latest measured custom run
 
@@ -28,18 +28,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_232136`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Specialize the fixed-shape K loop so the 4-warp CTA spends less time in barrier and control overhead | bottleneck: Synchronization and hot-path control overhead in the double-buffered async-copy pipeline
+- dir_02: Refine the same-footprint B shared layout so three `matrix_b` loads hit a friendlier per-warp pattern | bottleneck: Shared-memory B fragment load pressure and MIO saturation in the steady-state tensor loop
+- dir_03: Attack the `c_shared` epilogue so the kernel sheds shared-memory footprint and MIO-heavy writeback work | bottleneck: Epilogue LSU/MIO pressure and shared-memory residency headroom lost to `c_shared`
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
