@@ -1,10 +1,10 @@
 {
   "direction_id": "dir_01",
   "name": "Skew the B shared tile with a bank-conflict-avoidance swizzle",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-18T22:41:31-07:00",
+  "selection_mode": "human_idea",
+  "selected_at": "2026-04-18T22:41:36-07:00",
   "source_diagnosis_id": "diagnosis_20260418_222704",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -31,5 +31,5 @@
     ],
     "stop_condition": "Stop if the skewed layout fails correctness, or if `mio_throttle` stays in the same mid-20% range without a runtime win versus 66.354687 ms."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

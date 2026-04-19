@@ -6,7 +6,7 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 - direction id: `dir_01`
 - direction name: `Skew the B shared tile with a bank-conflict-avoidance swizzle`
-- selection mode: `recommended`
+- selection mode: `human_idea`
 - source diagnosis id: `diagnosis_20260418_222704`
 - round loop: `round 3/20`
 - hypothesis: `The accepted 16x48 BF16 B tile is still loaded through `wmma::load_matrix_sync` with a 48-element shared stride, so each row advances by 96 bytes and repeatedly aliases the same shared-memory banks during the three adjacent matrix_b fragment loads. Adding a per-row skew to the staged B tile, while preserving 16-byte async-copy granularity, should cut the remaining `mio_throttle` and short-scoreboard pressure without undoing the 3xN reuse win from round 2.`
@@ -30,4 +30,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `src/kernels/bf16_gemm_v1.cu`

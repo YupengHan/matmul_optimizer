@@ -26,18 +26,23 @@ constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
 constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
 constexpr int kTensorBlockN = kWarpTilesN * kWarpMmaTilesN * kWmmaN;
 constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
-constexpr int kBSharedTileElems = kWmmaK * kTensorBlockN;
 constexpr int kCSharedTileElemsPerWarp = kWarpMmaTilesN * kWmmaM * kWmmaN;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
+// Keep the B tile row-major for WMMA, but add one 16-byte chunk of skew per row
+// so adjacent rows no longer alias the same shared-memory bank pattern.
+constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
+constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
+constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
 constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
 constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
 constexpr int kAAsyncCopiesPerTile = kASharedTileElems / kAsyncCopyElems;
-constexpr int kBAsyncCopiesPerTile = kBSharedTileElems / kAsyncCopyElems;
+constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
 
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
 static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
 static_assert((kTensorBlockN % kAsyncCopyElems) == 0, "B tile width must stay 16-byte aligned.");
+static_assert((kBSharedStride % kAsyncCopyElems) == 0, "B shared stride must stay 16-byte aligned.");
 static_assert((kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
 static_assert((kBSharedTileElems % kAsyncCopyElems) == 0, "B tile must be divisible by async copy width.");
 
@@ -87,7 +92,7 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
     const int row = copy_idx / kBAsyncCopiesPerRow;
     const int col = (copy_idx % kBAsyncCopiesPerRow) * kAsyncCopyElems;
     cp_async_copy_16_bytes(
-        shared_tile + row * kTensorBlockN + col,
+        shared_tile + row * kBSharedStride + col,
         global_tile + row * global_stride + col);
   }
 }
@@ -198,7 +203,7 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     #pragma unroll
     for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
-      wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, kTensorBlockN);
+      wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, kBSharedStride);
       wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
     }
 
