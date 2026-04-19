@@ -1,16 +1,16 @@
 # Round loop
 
-- active: `no`
-- status: `idle`
-- total rounds: `0`
+- active: `yes`
+- status: `round_in_progress`
+- total rounds: `5`
 - completed rounds: `0`
-- remaining rounds: `0`
-- current round label: `single-run`
-- auto use recommended: `no`
-- started at: `None`
+- remaining rounds: `5`
+- current round label: `round 1/5`
+- auto use recommended: `yes`
+- started at: `2026-04-18T21:03:35-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `No multi-round loop is active. Start one with python scripts/graph.py rounds --count N.`
+- notes: `Executing round 1/5.`
 
 ## Last completed round
 

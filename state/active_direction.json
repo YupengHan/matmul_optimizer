@@ -1,10 +1,29 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Async double-buffered K pipeline",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-18T21:05:58-07:00",
+  "source_diagnosis_id": "diagnosis_20260418_210351",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Async double-buffered K pipeline",
+    "hypothesis": "The kernel copies one K-slice, synchronizes, then computes, so the tensor cores spend too much time waiting on load completion. A pipelined prefetch path with double buffering should overlap global-memory latency with MMA work and cut the long-scoreboard stalls that dominate the current profile.",
+    "expected_bottleneck": "Global-memory latency plus CTA-wide synchronization between K-slices, visible as long scoreboard stalls and barrier stalls in the steady-state loop.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "risk": "Medium. The structure is still local to the current kernel, but async staging adds ordering complexity and can regress if the pipeline depth or buffer handoff is wrong.",
+    "metrics_to_recheck": [
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "median runtime",
+      "TFLOP/s"
+    ],
+    "stop_condition": "If one implementation pass does not materially reduce long-scoreboard time while increasing tensor-pipe activity, stop this line and move to a structural kernel change."
+  },
+  "notes": "Node C may now implement this one direction."
 }

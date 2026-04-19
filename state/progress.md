@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `af155a5bdaa475a7edba5ed1957b25a46454536e`
 - plateau counter: `0`
-- round loop: `single-run`
-- rounds remaining: `0`
-- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
+- round loop: `round 1/5`
+- rounds remaining: `5`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 1/5.`
 
 ## Latest measured custom run
 
@@ -29,18 +29,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_210351`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Async double-buffered K pipeline | bottleneck: Global-memory latency plus CTA-wide synchronization between K-slices, visible as long scoreboard stalls and barrier stalls in the steady-state loop.
+- dir_02: Swizzle shared-memory staging for WMMA loads | bottleneck: Shared-memory communication pressure around fragment loads, showing up as MIO throttle and lingering scoreboard stalls even though DRAM is not saturated.
+- dir_03: Retile CTA and warp partitioning | bottleneck: Synchronization overhead and low tensor-issue density from the current CTA/warp shape, not raw DRAM bandwidth.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 

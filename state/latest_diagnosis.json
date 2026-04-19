@@ -1,15 +1,76 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260418_210351",
+  "status": "completed",
+  "created_at": "2026-04-18T21:03:51-07:00",
   "source_run_id": "20260418_201228_bf16_gemm_v1_af155a5",
   "source_run_dir": "runs/20260418_201228_bf16_gemm_v1_af155a5",
   "source_summary_json": "runs/20260418_201228_bf16_gemm_v1_af155a5/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Async double-buffered K pipeline",
+      "hypothesis": "The kernel copies one K-slice, synchronizes, then computes, so the tensor cores spend too much time waiting on load completion. A pipelined prefetch path with double buffering should overlap global-memory latency with MMA work and cut the long-scoreboard stalls that dominate the current profile.",
+      "expected_bottleneck": "Global-memory latency plus CTA-wide synchronization between K-slices, visible as long scoreboard stalls and barrier stalls in the steady-state loop.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "risk": "Medium. The structure is still local to the current kernel, but async staging adds ordering complexity and can regress if the pipeline depth or buffer handoff is wrong.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime",
+        "TFLOP/s"
+      ],
+      "stop_condition": "If one implementation pass does not materially reduce long-scoreboard time while increasing tensor-pipe activity, stop this line and move to a structural kernel change."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Swizzle shared-memory staging for WMMA loads",
+      "hypothesis": "The current shared tiles are laid out in a simple row-major form for `wmma::load_matrix_sync`, which can leave the fragment-load path exposed to bank conflicts or serialized shared-memory access. A padded or swizzled shared layout should reduce fragment-load stalls without changing the mathematical work.",
+      "expected_bottleneck": "Shared-memory communication pressure around fragment loads, showing up as MIO throttle and lingering scoreboard stalls even though DRAM is not saturated.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "risk": "Medium-low. This is a narrower change than a full pipeline rewrite, but the win depends on whether the current layout is actually the dominant source of shared-memory delay.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if the shared-memory stall markers do not move down after the layout change or if the added indirection hurts tensor utilization."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retile CTA and warp partitioning",
+      "hypothesis": "The current 32x32 CTA with four warps may be too small and synchronization-heavy for this fixed GEMM shape, so each warp does too little useful MMA work per barrier. A larger or differently partitioned tile can raise math density, amortize coordination overhead, and give the tensor cores more continuous work.",
+      "expected_bottleneck": "Synchronization overhead and low tensor-issue density from the current CTA/warp shape, not raw DRAM bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu",
+        "src/runner/main.cpp"
+      ],
+      "risk": "High. Tile-shape changes can improve compute density, but they can also raise register pressure or shared-memory usage enough to cancel the gain.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "median runtime",
+        "TFLOP/s"
+      ],
+      "stop_condition": "Stop if the new tile shape increases register or shared-memory pressure without a clear rise in tensor activity and end-to-end throughput."
+    }
+  ],
+  "notes": "Run node_b to produce exactly three ranked directions."
 }
