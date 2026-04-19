@@ -4,7 +4,7 @@
 
 - next node: `node_b`
 - status: `ready_for_node_b`
-- round loop: `single-run` with `0` rounds remaining
+- round loop: `single-run` with `20` rounds remaining
 
 ## Direction approval policy
 
