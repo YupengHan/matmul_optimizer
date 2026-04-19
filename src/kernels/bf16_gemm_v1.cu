@@ -17,11 +17,10 @@ constexpr int kWmmaM = 16;
 constexpr int kWmmaN = 16;
 constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
-// Keep the lower-barrier 2-warp CTA from round 4, but split those warps across
-// N so each warp carries one 16x16 accumulator tile instead of two.
-constexpr int kWarpTilesM = 1;
-constexpr int kWarpTilesN = 2;
-constexpr int kWarpMmaTilesN = 1;
+constexpr int kWarpTilesM = 2;
+constexpr int kWarpTilesN = 1;
+// Each warp spans two adjacent 16x16 output tiles along N.
+constexpr int kWarpMmaTilesN = 2;
 constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
 constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
 constexpr int kTensorBlockN = kWarpTilesN * kWarpMmaTilesN * kWmmaN;
