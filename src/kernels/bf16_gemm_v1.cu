@@ -549,15 +549,7 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage(
 
   wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
   #pragma unroll
-  for (int load_slot = 0; load_slot < TileConfig::kWarpMmaTilesN; ++load_slot) {
-    int tile_n = load_slot;
-    if constexpr (TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN) {
-      static_assert((TileConfig::kWarpMmaTilesN % 2) == 0,
-                    "Tile384 peeled hot-path swizzle expects an even WMMA tile count.");
-      constexpr int kHalfTiles = TileConfig::kWarpMmaTilesN / 2;
-      const int swizzle_half = (load_slot & 1) ^ (warp_tile_m & 1);
-      tile_n = (load_slot >> 1) + swizzle_half * kHalfTiles;
-    }
+  for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
     wmma::load_matrix_sync(
         b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
     wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
