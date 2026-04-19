@@ -18,6 +18,8 @@
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
 - implemented direction name: `Retune the tensor tile so each warp does more MMA work per shared-memory feed`
+- implemented selection mode: `N/A`
+- implemented idea origin: `N/A`
 - raw summary json: `runs/20260418_222639_bf16_gemm_v1_95056ed/summary.json`
 - measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
 - new best custom: `yes`

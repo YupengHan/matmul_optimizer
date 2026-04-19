@@ -21,6 +21,7 @@
     "launch__occupancy_limit_registers": "20"
   },
   "raw_csv_path": "runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_metrics.csv",
+  "raw_details_csv_path": "runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_details.csv",
   "raw_rep_path": "runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_profile.ncu-rep",
   "generated_at": "2026-04-18T22:26:49-07:00"
 }

@@ -13,6 +13,10 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 - `src/kernels/bf16_gemm_v1.cu`
 - `runs/20260418_222639_bf16_gemm_v1_95056ed/summary.json`
 - `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_metrics.csv`
+- `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_details.csv`
+- `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_profile.ncu-rep`
+
+Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
 
 ## Output contract
 
@@ -35,4 +39,4 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 - median runtime: `66.354687 ms`
 - TFLOP/s: `10.956565 TFLOP/s`
 - measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
-- existing diagnosis status: `pending_generation`
+- existing diagnosis status: `completed`

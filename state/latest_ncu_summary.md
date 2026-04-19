@@ -10,6 +10,7 @@
 - shared mem / block allocated: `None`
 - raw csv path: `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_metrics.csv`
 - raw rep path: `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_profile.ncu-rep`
+- raw detailed csv path: `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_details.csv`
 
 ## Headline metrics
 
