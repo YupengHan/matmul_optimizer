@@ -1,15 +1,85 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260418_222017",
+  "status": "completed",
+  "created_at": "2026-04-18T22:20:17-07:00",
   "source_run_id": "20260418_221951_bf16_gemm_v1_eecbb72",
   "source_run_dir": "runs/20260418_221951_bf16_gemm_v1_eecbb72",
   "source_summary_json": "runs/20260418_221951_bf16_gemm_v1_eecbb72/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Retune the tensor tile so each warp does more MMA work per shared-memory feed",
+      "hypothesis": "The 32x32 CTA uses only 2 warps and each warp consumes 1 A fragment plus 2 B fragments for just 2 MMA ops per K-slice. After the 16-byte async-copy change, global delivery improved, but the kernel is still dominated by shared-memory issue pressure (`smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct = 42.83`) and weak residency (`sm__warps_active.avg.pct_of_peak_sustained_active = 45.70`). A tile retune that increases math per warp, starting with a wider N footprint and only then adding more warps if registers stay reasonable, should convert the faster staging path into higher tensor utilization.",
+      "expected_bottleneck": "Shared-memory / fragment-load issue pressure with too little MMA work per warp and too few ready warps to hide it.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:16-35",
+        "src/kernels/bf16_gemm_v1.cu:149-228",
+        "src/kernels/bf16_gemm_v1.cu:261-264"
+      ],
+      "risk": "Moderate. More output tiles per warp or a larger CTA can raise accumulator pressure, registers, and shared-memory footprint enough to erase the gain if occupancy collapses or the store path becomes awkward.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if the first tile variant pushes registers or shared memory high enough that active warps stay near 45.7% and runtime does not improve, or if `mio_throttle` remains roughly flat while occupancy gets worse."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Rewrite the A/B shared-memory layout for lower-friction WMMA fragment loads",
+      "hypothesis": "Scoreboard stalls are low (`long_scoreboard = 5.51`, `short_scoreboard = 4.47`) while `mio_throttle` is extremely high, which points to the issue path for shared-memory fragment traffic rather than missing data from DRAM. The current row-major shared layouts for both A and B may be making `wmma::load_matrix_sync` pay unnecessary bank/port pressure. Repacking B first, and A if needed, into an `ldmatrix`-friendlier swizzled, padded, or transposed shared layout could reduce replay/queue pressure without changing the outer GEMM schedule.",
+      "expected_bottleneck": "Shared-memory layout inefficiency on the WMMA load path, especially the B-fragment feed, causing excessive MIO throttling before Tensor Cores can be kept busy.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:68-91",
+        "src/kernels/bf16_gemm_v1.cu:145-147",
+        "src/kernels/bf16_gemm_v1.cu:194-201"
+      ],
+      "risk": "Moderate to high. Layout changes are correctness-sensitive, and any swizzle or transpose must stay compatible with the async-copy alignment assumptions and the fixed shape.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the first layout rewrite does not materially cut `mio_throttle` or if it introduces correctness risk / extra scoreboarding without a runtime win."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune the async pipeline handoff to reduce per-K synchronization bubbles",
+      "hypothesis": "The new copy width improved runtime by about 9.33 ms, but barrier stalls also rose to 11.63%, and the kernel still does `cp.async.wait_group 0` plus `__syncthreads()` on every 16-wide K step. With only 2 warps per CTA, that handoff is visible. A deeper or more carefully peeled pipeline, such as a 3-stage steady state with separated prologue/epilogue, could reduce the synchronization tax and keep more warps issuing between stage transitions.",
+      "expected_bottleneck": "Stage-transition overhead from the double-buffered `cp.async` pipeline, where full-CTA waits and barriers are now a secondary limiter after global-load widening.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:43-65",
+        "src/kernels/bf16_gemm_v1.cu:145-146",
+        "src/kernels/bf16_gemm_v1.cu:169-206"
+      ],
+      "risk": "Moderate. Extra stages consume more shared memory and complicate correctness; if the real limiter is fragment-load pressure rather than the handoff itself, a deeper pipeline can increase complexity without reducing runtime.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "TFLOP/s",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if barrier stalls stay near 11.6% or rise further after the pipeline retune, or if shared-memory growth reduces occupancy enough that runtime regresses."
+    }
+  ],
+  "notes": "Run node_b to produce exactly three ranked directions."
 }
