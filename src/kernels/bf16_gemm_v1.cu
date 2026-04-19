@@ -18,9 +18,11 @@ constexpr int kWmmaN = 16;
 constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
 constexpr int kWarpTilesM = 2;
-constexpr int kWarpTilesN = 1;
-// Each warp spans three adjacent 16x16 output tiles along N so it can reuse
-// the same A fragment across more MMA work per shared-memory feed.
+// Expand the CTA to a 2x2 warp layout so each staged K-slice feeds four warps
+// instead of two while preserving the existing per-warp MMA shape.
+constexpr int kWarpTilesN = 2;
+// Each warp still spans three adjacent 16x16 output tiles along N so it can
+// reuse the same A fragment across more MMA work per shared-memory feed.
 constexpr int kWarpMmaTilesN = 3;
 constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
 constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
