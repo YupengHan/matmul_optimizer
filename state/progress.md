@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `91e446eea2cf2de912e81e21c45653dcd227d591`
 - plateau counter: `0`
 - round loop: `round 6/20`
 - rounds remaining: `15`
-- notes: `Node A completed round 5/20. Run node_b to continue round 6/20.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 6/20.`
 
 ## Latest measured custom run
 
@@ -29,18 +29,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_225935`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Replace the simple B-row skew with a warp-friendly shared-memory B swizzle | bottleneck: Shared-memory and MIO pressure on the B fragment load path inside the steady-state tensor loop
+- dir_02: Retune the cp.async pipeline so the 4-warp CTA pays fewer full-block wait/sync penalties | bottleneck: Synchronization-limited overlap between async staging and MMA consumption in the steady-state mainloop
+- dir_03: Bypass the shared epilogue scratch with a register-first BF16/vector store path | bottleneck: Epilogue LSU/MIO pressure and shared-footprint overhead from the `c_shared` round-trip
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
