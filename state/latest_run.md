@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_123228_bf16_gemm_v1_1dd4420`
-- run dir: `runs/20260419_123228_bf16_gemm_v1_1dd4420`
-- kernel tag: `bf16_gemm_v1_1dd4420`
-- round label: `round 1/5`
+- run id: `20260419_123851_bf16_gemm_v1_98fdc11`
+- run dir: `runs/20260419_123851_bf16_gemm_v1_98fdc11`
+- kernel tag: `bf16_gemm_v1_98fdc11`
+- round label: `round 2/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `42.259968 ms`
-- p10 runtime: `41.666765 ms`
-- p90 runtime: `43.000833 ms`
-- TFLOP/s: `17.203502 TFLOP/s`
-- previous run id: `20260419_122438_bf16_gemm_v1_15d63b2`
-- runtime delta vs previous measured run: `+6.534143 ms`
-- TFLOP/s delta vs previous measured run: `-3.146468 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `36.462511 ms`
+- p10 runtime: `36.187008 ms`
+- p90 runtime: `37.263070 ms`
+- TFLOP/s: `19.938819 TFLOP/s`
+- previous run id: `20260419_123228_bf16_gemm_v1_1dd4420`
+- runtime delta vs previous measured run: `-5.797457 ms`
+- TFLOP/s delta vs previous measured run: `+2.735318 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Warp-specialize the peeled 64x384 hot loop into producer and consumer warps`
+- implemented direction name: `Split the fixed 64x384 hot path into explicit prologue, steady-state, and epilogue phases`
 - implemented selection mode: `approved`
 - implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_123228_bf16_gemm_v1_1dd4420/summary.json`
-- measured commit: `1dd4420e7958cd21478c561c7169064f8b6f054b`
+- raw summary json: `runs/20260419_123851_bf16_gemm_v1_98fdc11/summary.json`
+- measured commit: `98fdc11cc6ae7dc163941540befb6c30ec91529e`
 - new best custom: `no`
-- generated at: `2026-04-19T12:32:38-07:00`
+- generated at: `2026-04-19T12:39:00-07:00`
