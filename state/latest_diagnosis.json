@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_100543",
+  "status": "completed",
+  "created_at": "2026-04-19T10:05:43-07:00",
   "source_run_id": "20260419_100457_bf16_gemm_v1_6dd39ad",
   "source_run_dir": "runs/20260419_100457_bf16_gemm_v1_6dd39ad",
   "source_summary_json": "runs/20260419_100457_bf16_gemm_v1_6dd39ad/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Re-land the peeled hot kernel and trim the c_shared export path",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "Round 4 is the strongest evidence for the final round: the peeled fixed-shape hot kernel reached 37.373951 ms, only about 0.088 ms behind the accepted 37.285807 ms base, while improving tensor active from 32.61% to 34.58% and lowering barrier stall from 8.93% to 6.54%. The remaining gap now looks memory-side rather than control-flow-side: DRAM throughput rose to 50.65%, short scoreboard to 14.29%, and LSU requests to about 82.77%. The best one-round move on the restored base is therefore to re-land the peeled hot-path structure and pair it with a cheaper epilogue/export path so the win from the peeled steady-state loop is not handed back in the shared-to-global writeout.",
+      "expected_bottleneck": "Epilogue-side shared/export traffic after the peeled steady-state loop improves control overhead.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:421-450 (current hot-loop region that the round-4 peeled specialization improved and would need to be re-landed)",
+        "src/kernels/bf16_gemm_v1.cu:41-46 and src/kernels/bf16_gemm_v1.cu:454-485 (per-warp c_shared scratch and shared export path to trim)",
+        "src/kernels/bf16_gemm_v1.cu:517-550 (fixed-shape dispatch path that should select the peeled hot kernel plus unchanged 64x96 tail)"
+      ],
+      "risk": "This combines two moving pieces, so the implementation can regress if the peeled hot path is not re-landed cleanly or if the export simplification introduces layout/correctness bugs.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if runtime does not beat the accepted base after re-landing the peeled hot path, or if epilogue changes fail to lower LSU / short-scoreboard pressure."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Re-land the peeled hot kernel and deepen single-skew cp.async overlap",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "The round-4 near-hit shows that fixed-shape steady-state peeling is the right base direction, but it also exposed a larger latency signal: short-scoreboard rose from 4.16% on the accepted base to 14.29%, even while barrier stall fell. That points to the next complementary move being a bounded prefetch/wait retune inside the existing single-skew layout rather than another producer/consumer rewrite. Re-land the peeled hot kernel, then adjust prefill depth, commit timing, or wait placement so the peeled loop keeps its barrier win while hiding more of the remaining copy latency.",
+      "expected_bottleneck": "Copy-latency / short-scoreboard exposure in the peeled steady-state loop.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:189-199 (cp.async commit and wait helpers)",
+        "src/kernels/bf16_gemm_v1.cu:213-239 (existing single-skew A/B staging helpers that should remain the only feed path)",
+        "src/kernels/bf16_gemm_v1.cu:415-450 (prefill, next-stage issue, and wait/barrier sequence inside the hot loop)"
+      ],
+      "risk": "The overlap window is easy to get wrong, and moving waits or deepening prefetch can erase the peeled-hot-kernel gain or complicate correctness without much upside.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Stop if short-scoreboard does not fall on top of the peeled hot path or if the retune raises registers/thread and regresses runtime."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Re-land the peeled hot kernel with a bounded single-skew B stride retune",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "Broad B-feed rewrites are still negative evidence: round 1 two-level B staging regressed badly, and round 3 warp-specialized staging improved one symptom but stayed much slower than the base. The only feed-side follow-up still justified for the final round is a narrowly bounded one: keep the current row-major single-skew semantics and re-land the peeled hot path, then test whether a modest stride/skew adjustment can reduce the remaining DRAM / LSU pressure that the round-4 run exposed without reopening the failed producer/consumer families.",
+      "expected_bottleneck": "Residual B-side staging inefficiency in the current single-skew layout, not a full feed-path redesign.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:47-52 (current single-skew B shared stride and tile sizing)",
+        "src/kernels/bf16_gemm_v1.cu:208-239 (logical-to-shared B mapping and staging path to keep bounded)",
+        "src/kernels/bf16_gemm_v1.cu:437-445 (warp-side B fragment loads from the staged single-skew layout)"
+      ],
+      "risk": "Recent evidence says feed-path changes are dangerous; even a bounded skew retune can regress the near-hit if it reintroduces the same class of shared/LSU problems as round 1.",
+      "metrics_to_recheck": [
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if DRAM / LSU pressure does not improve quickly or if the bounded stride retune loses the round-4 near-hit behavior."
+    }
+  ],
+  "notes": "Round 5/5 diagnosis prepared from near-hit run 20260419_100457_bf16_gemm_v1_6dd39ad. Evidence hierarchy: accepted base 16a98f7 remains nominally best at 37.285807 ms; round 1 two-level B staging regressed badly; round 2 phased 64x384 micro-panels regressed badly; round 3 warp-specialized staging improved one symptom but stayed much slower; round 4 fixed-shape peeled hot kernel nearly matched the base at 37.373951 ms while raising tensor active and lowering barrier stall. Final-round ranking therefore treats the peeled hot path as the most credible basis and prioritizes complementary one-round changes over reopening the clearly failed rewrite families."
 }
