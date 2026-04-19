@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `2a86c71387e520f89bd133d824161d17428f4242`
 - plateau counter: `1`
 - round loop: `round 7/20`
 - rounds remaining: `14`
-- notes: `Node A completed round 6/20. Run node_b to continue round 7/20.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 7/20.`
 
 ## Latest measured custom run
 
@@ -28,18 +28,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_231124`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Restore the low-footprint wide B slab and keep any new swizzle occupancy-neutral | bottleneck: Shared-memory footprint and B-fragment load efficiency are cutting block residency and leaving the tensor loop underfed.
+- dir_02: Retune the CTA and per-warp N tile so B-side experiments do not burn residency | bottleneck: Occupancy and latency hiding are constrained by the current CTA tile shape and its shared-memory budget.
+- dir_03: Specialize the fixed-shape mainloop so the async pipeline pays less per-step control and sync overhead | bottleneck: Synchronization and fixed-shape control overhead in the steady-state async-copy and MMA loop.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
