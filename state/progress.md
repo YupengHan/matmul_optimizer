@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `awaiting_direction_selection_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `77f95870d9eaf181f0be8556393e50ed38d1dd72`
 - plateau counter: `10`
 - round loop: `round 1/5`
 - rounds remaining: `5`
-- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
+- notes: `Node C build succeeded for round 1/5. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -31,7 +31,7 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - diagnosis status: `completed`
 - diagnosis id: `diagnosis_20260419_130817`
 - recommended direction: `dir_01`
-- approved direction: `None`
+- approved direction: `dir_01`
 - diagnosis notes: `This diagnosis intentionally keeps all three directions on the same human-directed 64x384 hot-band PTX microkernel branch. The 64x96 tail remains unchanged in every direction, and the round-18 sweep still anchors 64x384 as the right hot-band macro tile. Strong negative evidence from earlier warp specialization, producer straight-lining, and consumer-side B swizzle means the branch should not revert to generic WMMA cleanup or other old feed-path experiments; later rounds should refine the explicit PTX hot-band path instead.`
 - dir_01: PTX hot-band microkernel branch with unchanged 64x96 tail | bottleneck: The dominant limiter is the WMMA hot-band control surface itself: it constrains fragment lifetime and instruction ordering, which keeps tensor issue diluted by feed/orchestration overhead even though the macro tile and tail split are already well chosen.
 - dir_02: PTX phase 1 compute-core swap under current staging and tail split | bottleneck: Instruction selection and fragment scheduling inside the hot compute body, not the launch split and not the fixed 64x96 tail.
@@ -39,10 +39,10 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `approved`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 

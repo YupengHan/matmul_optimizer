@@ -228,6 +228,77 @@ __device__ __forceinline__ void store_bfloat164_quad(
   *reinterpret_cast<int2*>(dst) = packed.words;
 }
 
+struct PtxWmmaBf16Fragment {
+  unsigned int reg[4];
+};
+
+struct PtxWmmaAccFragment {
+  float reg[8];
+};
+
+__device__ __forceinline__ void ptx_wmma_fill_zero(PtxWmmaAccFragment& frag) {
+  #pragma unroll
+  for (int i = 0; i < 8; ++i) {
+    frag.reg[i] = 0.0f;
+  }
+}
+
+__device__ __forceinline__ void ptx_wmma_load_a_row(
+    PtxWmmaBf16Fragment& frag,
+    const __nv_bfloat16* shared_tile,
+    int leading_dim) {
+  const unsigned long long shared_addr = __cvta_generic_to_shared(shared_tile);
+  asm volatile(
+      "wmma.load.a.sync.aligned.row.m16n16k16.shared.bf16 "
+      "{%0, %1, %2, %3}, [%4], %5;\n"
+      : "=r"(frag.reg[0]), "=r"(frag.reg[1]), "=r"(frag.reg[2]), "=r"(frag.reg[3])
+      : "l"(shared_addr), "r"(leading_dim));
+}
+
+__device__ __forceinline__ void ptx_wmma_load_b_row(
+    PtxWmmaBf16Fragment& frag,
+    const __nv_bfloat16* shared_tile,
+    int leading_dim) {
+  const unsigned long long shared_addr = __cvta_generic_to_shared(shared_tile);
+  asm volatile(
+      "wmma.load.b.sync.aligned.row.m16n16k16.shared.bf16 "
+      "{%0, %1, %2, %3}, [%4], %5;\n"
+      : "=r"(frag.reg[0]), "=r"(frag.reg[1]), "=r"(frag.reg[2]), "=r"(frag.reg[3])
+      : "l"(shared_addr), "r"(leading_dim));
+}
+
+__device__ __forceinline__ void ptx_wmma_mma_row_row(
+    PtxWmmaAccFragment& acc_frag,
+    const PtxWmmaBf16Fragment& a_frag,
+    const PtxWmmaBf16Fragment& b_frag) {
+  asm volatile(
+      "wmma.mma.sync.aligned.row.row.m16n16k16.f32.bf16.bf16.f32 "
+      "{%0, %1, %2, %3, %4, %5, %6, %7}, "
+      "{%8, %9, %10, %11}, "
+      "{%12, %13, %14, %15}, "
+      "{%0, %1, %2, %3, %4, %5, %6, %7};\n"
+      : "+f"(acc_frag.reg[0]), "+f"(acc_frag.reg[1]), "+f"(acc_frag.reg[2]), "+f"(acc_frag.reg[3]),
+        "+f"(acc_frag.reg[4]), "+f"(acc_frag.reg[5]), "+f"(acc_frag.reg[6]), "+f"(acc_frag.reg[7])
+      : "r"(a_frag.reg[0]), "r"(a_frag.reg[1]), "r"(a_frag.reg[2]), "r"(a_frag.reg[3]),
+        "r"(b_frag.reg[0]), "r"(b_frag.reg[1]), "r"(b_frag.reg[2]), "r"(b_frag.reg[3]));
+}
+
+__device__ __forceinline__ void ptx_wmma_store_d_row_shared(
+    float* shared_tile,
+    const PtxWmmaAccFragment& frag,
+    int leading_dim) {
+  const unsigned int shared_addr =
+      static_cast<unsigned int>(__cvta_generic_to_shared(shared_tile));
+  asm volatile(
+      "wmma.store.d.sync.aligned.row.m16n16k16.shared.f32 "
+      "[%0], {%1, %2, %3, %4, %5, %6, %7, %8}, %9;\n"
+      :
+      : "r"(shared_addr),
+        "f"(frag.reg[0]), "f"(frag.reg[1]), "f"(frag.reg[2]), "f"(frag.reg[3]),
+        "f"(frag.reg[4]), "f"(frag.reg[5]), "f"(frag.reg[6]), "f"(frag.reg[7]),
+        "r"(leading_dim));
+}
+
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
@@ -532,27 +603,26 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
 }
 
 template <typename TileConfig>
-__device__ __forceinline__ void accumulate_peeled_shared_stage(
-    wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> (&acc_frags)[TileConfig::kWarpMmaTilesN],
+__device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
+    PtxWmmaAccFragment (&acc_frags)[TileConfig::kWarpMmaTilesN],
     const __nv_bfloat16* a_stage,
     const __nv_bfloat16* b_stage,
     int warp_tile_m,
     int warp_tile_n) {
-  wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
-  wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major>
-      b_frags[TileConfig::kWarpMmaTilesN];
+  PtxWmmaBf16Fragment a_frag;
+  PtxWmmaBf16Fragment b_frag;
 
   const __nv_bfloat16* a_tile =
       a_stage + warp_tile_m * kWmmaM * kWmmaK;
   const __nv_bfloat16* b_tile =
       b_stage + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
 
-  wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
+  ptx_wmma_load_a_row(a_frag, a_tile, kWmmaK);
   #pragma unroll
   for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-    wmma::load_matrix_sync(
-        b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
-    wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
+    ptx_wmma_load_b_row(
+        b_frag, b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
+    ptx_wmma_mma_row_row(acc_frags[tile_n], a_frag, b_frag);
   }
 }
 
@@ -566,6 +636,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   static_assert((FixedKTiles % 2) == 0, "Pairwise peeled fixed-shape kernel expects an even K-tile count.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
                 "Fixed-shape peeled kernel must match the benchmark K dimension.");
+  static_assert(TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN,
+                "The PTX hot-band branch is only expected for the fixed 64x384 kernel.");
 
   __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
   __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
@@ -587,10 +659,10 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   const int row = block_row + warp_tile_m * kWmmaM;
   const int col = block_col + warp_tile_n * TileConfig::kWarpMmaTilesN * kWmmaN;
 
-  wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> acc_frags[TileConfig::kWarpMmaTilesN];
+  PtxWmmaAccFragment acc_frags[TileConfig::kWarpMmaTilesN];
   #pragma unroll
   for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-    wmma::fill_fragment(acc_frags[tile_n], 0.0f);
+    ptx_wmma_fill_zero(acc_frags[tile_n]);
   }
 
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
@@ -616,7 +688,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
     const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
 
-    accumulate_peeled_shared_stage<TileConfig>(
+    accumulate_peeled_shared_stage_ptx<TileConfig>(
         acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
     // Keep the restored CTA-wide stage recycle model intact while cutting the
@@ -636,7 +708,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     curr_stage = next_stage;
     next_stage = consumed_stage;
 
-    accumulate_peeled_shared_stage<TileConfig>(
+    accumulate_peeled_shared_stage_ptx<TileConfig>(
         acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
     __syncthreads();
@@ -655,14 +727,14 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     next_stage = second_consumed_stage;
   }
 
-  accumulate_peeled_shared_stage<TileConfig>(
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
       acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   cp_async_wait_group_0();
   __syncthreads();
   curr_stage = next_stage;
 
-  accumulate_peeled_shared_stage<TileConfig>(
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
       acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   constexpr int kCSharedStageStride =
@@ -674,11 +746,9 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     float* warp_c_tile =
         c_shared + (tile_n & kCSharedStageMask) * kCSharedStageStride +
         warp_id * TileConfig::kCSharedTileElemsPerWarp;
-    wmma::store_matrix_sync(
-        warp_c_tile,
-        acc_frags[tile_n],
-        kWmmaN,
-        wmma::mem_row_major);
+    // Keep the accepted shared-export epilogue, but materialize the hot-band
+    // accumulator tile through inline PTX instead of the C++ WMMA surface.
+    ptx_wmma_store_d_row_shared(warp_c_tile, acc_frags[tile_n], kWmmaN);
     __syncwarp();
 
     const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);

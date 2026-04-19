@@ -1,11 +1,11 @@
 {
   "active": true,
-  "status": "running",
+  "status": "awaiting_measurement",
   "total_rounds": 5,
   "completed_rounds": 0,
   "remaining_rounds": 5,
   "next_round_index": 1,
-  "current_round_index": null,
+  "current_round_index": 1,
   "auto_use_recommended": false,
   "started_at": "2026-04-19T13:08:11-07:00",
   "completed_at": null,
@@ -14,5 +14,5 @@
   "accepted_base_measured_commit": "77f95870d9eaf181f0be8556393e50ed38d1dd72",
   "accepted_base_runtime_ms": 36.67148781,
   "history_path": "state/round_history.jsonl",
-  "notes": "Started a 5-round loop. Direction approval remains manual."
+  "notes": "Build passed for round 1/5. Node A will measure the result next."
 }
