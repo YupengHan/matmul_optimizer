@@ -2,6 +2,8 @@
 
 Node B is the diagnosis node. It does not call a remote model from inside `scripts/graph.py`; Codex performs the reasoning step after the repo prepares the context.
 
+In the intended workflow, Node B is executed by one diagnosis `sub-agent` under the main Codex supervisor.
+
 ## Entry
 
 Prepare the context with:
@@ -16,6 +18,8 @@ Finalize the diagnosis with:
 python scripts/graph.py node_b --finalize
 ```
 
+The main Codex supervisor is responsible for both commands. The `sub-agent` owns only the reasoning and the edit to `state/latest_diagnosis.json`.
+
 ## Required inputs
 
 Read these in order:
@@ -29,6 +33,11 @@ Read these in order:
 7. `state/human_review.md`
 8. current kernel source
 9. raw run files referenced from `state/node_b_context.md`
+
+The supervisor should also read:
+
+- `docs/supervisor_protocol.md`
+- `state/supervisor_task.json`
 
 ## Required output
 
@@ -75,6 +84,20 @@ The recommended direction should be the best expected upside / implementation-ri
 - create the node_b git commit unless `--skip-commit` is passed
 
 If a multi-round loop is active with `--auto-use-recommended`, finalize also auto-selects the recommended direction so node_c can start immediately.
+
+## Sub-agent boundary
+
+The diagnosis `sub-agent` should:
+
+- read the required inputs
+- edit only lightweight state for the diagnosis
+- avoid running the finalize command by itself
+
+After the `sub-agent` returns, the main Codex supervisor must run:
+
+```bash
+python scripts/graph.py node_b --finalize
+```
 
 ## Commit rule
 

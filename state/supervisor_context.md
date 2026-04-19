@@ -22,7 +22,7 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 - node context file: `state/node_b_context.md`
 - prepare command: `python scripts/graph.py node_b`
 - finalize command: `python scripts/graph.py node_b --finalize`
-- node_a requires direct GPU access: `no`
+- current dispatch requires direct GPU access: `no`
 
 ## Dispatch rule
 

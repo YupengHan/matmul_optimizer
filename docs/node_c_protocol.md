@@ -2,6 +2,8 @@
 
 Node C is the implementation node. It consumes one selected direction, makes one bounded code change, proves the code still builds, commits that implementation, then hands control back to node_a.
 
+In the intended workflow, Node C is executed by one implementation `sub-agent` under the main Codex supervisor.
+
 ## Entry
 
 Select a direction first:
@@ -28,6 +30,8 @@ Finalize after editing code:
 python scripts/graph.py node_c --finalize
 ```
 
+The main Codex supervisor is responsible for the prepare and finalize commands. The `sub-agent` owns the bounded code edit.
+
 ## Required inputs
 
 Read:
@@ -37,6 +41,11 @@ Read:
 3. `state/latest_diagnosis.json`
 4. `state/current_focus.md`
 5. the code files named in the selected direction's `code_locations`
+
+The supervisor should also read:
+
+- `docs/supervisor_protocol.md`
+- `state/supervisor_task.json`
 
 ## Allowed modification surface
 
@@ -53,6 +62,20 @@ Do not widen scope unless the selected direction truly requires minimal runner o
 ## Execution rule
 
 Implement exactly one direction. Do not combine extra optimizations in the same node_c loop.
+
+## Sub-agent boundary
+
+The implementation `sub-agent` should:
+
+- read the selected direction and its code locations
+- edit only the files required for that one direction
+- leave build validation and finalize orchestration to the main agent
+
+After the `sub-agent` returns, the main Codex supervisor must run:
+
+```bash
+python scripts/graph.py node_c --finalize
+```
 
 ## Build rule
 

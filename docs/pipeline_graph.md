@@ -8,10 +8,18 @@ dataset_init -> node_a -> node_b -> node_c -> node_a
 
 Only the state / node / edge idea is borrowed. The execution path stays local and script-first.
 
+Codex now operates this graph through a small supervisor layer:
+
+- the main Codex agent owns graph dispatch
+- `node_a` is executed directly
+- `node_b` and `node_c` are dispatched to one `sub-agent` each
+- the repo exposes the current dispatch through `state/supervisor_task.json`
+
 ## Design principles
 
 - execution-critical steps stay in scripts
 - reasoning-heavy steps are Codex-friendly agent nodes
+- the main Codex agent remains the supervisor and finalize owner
 - machine-readable state and human-readable state are both required
 - git is the audit log for measured runs, diagnoses, and implementations
 - optional multi-round loop state can budget repeated node_b -> node_c -> node_a rounds
@@ -21,10 +29,14 @@ Only the state / node / edge idea is borrowed. The execution path stays local an
 
 ```mermaid
 flowchart TD
-    D0[dataset_init script] --> A[node_a script]
-    A --> B[node_b Codex diagnosis]
-    B --> SEL[approve or use recommended direction]
-    SEL --> C[node_c Codex implementation]
+    SUP[main Codex supervisor] --> D0[dataset_init script]
+    SUP --> A[node_a script]
+    SUP --> B[node_b diagnosis sub-agent]
+    SUP --> SEL[approve or use recommended direction]
+    SUP --> C[node_c implementation sub-agent]
+    A --> B
+    B --> SEL
+    SEL --> C
     C --> A
 
     A -. optional baseline refresh .-> CUTLASS[run_cutlass_baseline script]
@@ -73,6 +85,7 @@ The diagnosis node.
 
 Responsibilities:
 
+- run under the main Codex supervisor as one diagnosis `sub-agent`
 - read the latest lightweight run summary
 - read the latest lightweight NCU summary
 - read `docs/heuristics.md`
@@ -87,6 +100,7 @@ Key outputs:
 - `state/latest_diagnosis.json`
 - `state/human_review.md`
 - `state/node_c_context.md`
+- `state/supervisor_task.json`
 
 ## `node_c`
 
@@ -94,6 +108,7 @@ The implementation node.
 
 Responsibilities:
 
+- run under the main Codex supervisor as one implementation `sub-agent`
 - read the selected direction
 - implement exactly one direction
 - build before claiming success
@@ -130,6 +145,7 @@ This node is intentionally **off the execution-critical path**.
 - `state/run_registry.jsonl`
 - `state/round_loop_state.json`
 - `state/round_history.jsonl`
+- `state/supervisor_task.json`
 
 ## Human-readable state
 
@@ -142,8 +158,22 @@ This node is intentionally **off the execution-critical path**.
 - `state/rounds.md`
 - `state/node_b_context.md`
 - `state/node_c_context.md`
+- `state/supervisor_context.md`
 
 The two layers must not contradict each other.
+
+## Supervisor state
+
+The extra orchestration layer is explicit rather than implicit.
+
+`state/supervisor_task.json` tells the main Codex agent:
+
+- which node to dispatch next
+- whether to run it directly or through a `sub-agent`
+- which protocol doc to use
+- which prepare / selection / finalize commands to run
+
+`state/supervisor_context.md` is the human-readable mirror of that dispatch state.
 
 ## Git as workflow memory
 

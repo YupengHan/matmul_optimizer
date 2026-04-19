@@ -25,6 +25,7 @@ from state_lib import (
     RUN_REGISTRY_PATH,
     RUNS_DIR,
     STATE_DIR,
+    SUPERVISOR_TASK_PATH,
     append_jsonl,
     current_kernel_path,
     default_active_direction,
@@ -39,6 +40,7 @@ from state_lib import (
     load_latest_ncu_summary,
     load_latest_run,
     load_round_loop_state,
+    load_supervisor_task,
     now_local_iso,
     ordered_direction_ids,
     repo_rel,
@@ -58,6 +60,7 @@ BENCHMARK_BASELINES_MD_PATH = STATE_DIR / 'benchmark_baselines.md'
 ROUNDS_MD_PATH = STATE_DIR / 'rounds.md'
 NODE_A_BUILD_LOG_PATH = STATE_DIR / 'node_a_last_build.log'
 NODE_C_BUILD_LOG_PATH = STATE_DIR / 'node_c_last_build.log'
+SUPERVISOR_CONTEXT_MD_PATH = STATE_DIR / 'supervisor_context.md'
 
 ALLOWED_NODE_C_PATHS = [
     REPO_ROOT / 'src' / 'kernels',
@@ -788,6 +791,148 @@ def render_node_c_context(
     return '\n'.join(lines) + '\n'
 
 
+def compute_supervisor_task(
+    graph_state: Dict[str, Any],
+    diagnosis: Dict[str, Any],
+    active_direction: Dict[str, Any],
+    round_loop: Dict[str, Any],
+) -> Dict[str, Any]:
+    current_node = graph_state.get('current_node', 'node_a')
+    task = {
+        'supervisor_role': 'main_codex_agent',
+        'dispatch_node': current_node,
+        'dispatch_mode': 'direct_script',
+        'graph_status': graph_state.get('status', 'unknown'),
+        'round_label': round_label(round_loop),
+        'round_loop_active': bool(round_loop.get('active')),
+        'rounds_remaining': int(round_loop.get('remaining_rounds', 0)),
+        'auto_use_recommended': bool(round_loop.get('auto_use_recommended')),
+        'requires_gpu_access': False,
+        'prepare_command': None,
+        'selection_command': None,
+        'finalize_command': None,
+        'protocol_doc': 'docs/supervisor_protocol.md',
+        'context_file': None,
+        'active_direction_id': active_direction.get('direction_id'),
+        'recommended_direction_id': diagnosis.get('recommended_direction_id'),
+        'notes': graph_state.get('notes', 'Inspect graph_state.json and dispatch the next node.'),
+    }
+
+    if current_node == 'node_a':
+        task.update(
+            {
+                'dispatch_mode': 'direct_script',
+                'requires_gpu_access': True,
+                'prepare_command': 'python scripts/graph.py node_a',
+                'protocol_doc': 'AGENTS.md',
+                'notes': 'Run node_a directly from the main Codex agent outside the sandbox, then re-read graph state.',
+            }
+        )
+        return task
+
+    if current_node == 'node_b':
+        task.update(
+            {
+                'dispatch_mode': 'sub_agent',
+                'prepare_command': 'python scripts/graph.py node_b',
+                'finalize_command': 'python scripts/graph.py node_b --finalize',
+                'protocol_doc': 'docs/node_b_protocol.md',
+                'context_file': repo_rel(NODE_B_CONTEXT_PATH),
+                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.',
+            }
+        )
+        return task
+
+    if current_node == 'node_c':
+        selection_command = None
+        if not active_direction.get('direction_id'):
+            if diagnosis.get('recommended_direction_id') and round_loop.get('auto_use_recommended'):
+                selection_command = 'python scripts/graph.py use-recommended-direction'
+            else:
+                selection_command = 'python scripts/graph.py approve --direction dir_0X'
+        task.update(
+            {
+                'dispatch_mode': 'sub_agent',
+                'prepare_command': 'python scripts/graph.py node_c',
+                'selection_command': selection_command,
+                'finalize_command': 'python scripts/graph.py node_c --finalize',
+                'protocol_doc': 'docs/node_c_protocol.md',
+                'context_file': repo_rel(NODE_C_CONTEXT_PATH),
+                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.',
+            }
+        )
+        return task
+
+    task['notes'] = f"Unknown current node {current_node!r}. Inspect state/graph_state.json before continuing."
+    return task
+
+
+def render_supervisor_context(
+    supervisor_task: Dict[str, Any],
+    graph_state: Dict[str, Any],
+    latest_run: Dict[str, Any],
+    diagnosis: Dict[str, Any],
+    active_direction: Dict[str, Any],
+    round_loop: Dict[str, Any],
+) -> str:
+    lines = ['# Supervisor context', '']
+    lines.append('This file is for the main Codex supervisor. It decides whether to run the next step directly or dispatch a sub-agent.')
+    lines.append('')
+    lines.append('## Current dispatch')
+    lines.append('')
+    lines.append(f"- dispatch node: `{supervisor_task.get('dispatch_node', 'node_a')}`")
+    lines.append(f"- dispatch mode: `{supervisor_task.get('dispatch_mode', 'direct_script')}`")
+    lines.append(f"- graph status: `{supervisor_task.get('graph_status', 'unknown')}`")
+    lines.append(f"- round label: `{supervisor_task.get('round_label', 'single-run')}`")
+    lines.append(f"- round loop active: `{'yes' if supervisor_task.get('round_loop_active') else 'no'}`")
+    lines.append(f"- rounds remaining: `{supervisor_task.get('rounds_remaining', 0)}`")
+    lines.append(f"- latest run id: `{latest_run.get('run_id', 'N/A')}`")
+    lines.append(f"- latest runtime: `{fmt_runtime(latest_run.get('median_runtime_ms'))}`")
+    lines.append(f"- recommended direction: `{diagnosis.get('recommended_direction_id', 'N/A')}`")
+    lines.append(f"- active direction: `{active_direction.get('direction_id', 'N/A')}`")
+    lines.append('')
+    lines.append('## Supervisor protocol')
+    lines.append('')
+    lines.append('- read `docs/supervisor_protocol.md` first')
+    lines.append(f"- node-specific protocol: `{supervisor_task.get('protocol_doc', 'N/A')}`")
+    if supervisor_task.get('context_file'):
+        lines.append(f"- node context file: `{supervisor_task.get('context_file')}`")
+    if supervisor_task.get('prepare_command'):
+        lines.append(f"- prepare command: `{supervisor_task.get('prepare_command')}`")
+    if supervisor_task.get('selection_command'):
+        lines.append(f"- selection command: `{supervisor_task.get('selection_command')}`")
+    if supervisor_task.get('finalize_command'):
+        lines.append(f"- finalize command: `{supervisor_task.get('finalize_command')}`")
+    lines.append(f"- current dispatch requires direct GPU access: `{'yes' if supervisor_task.get('requires_gpu_access') else 'no'}`")
+    lines.append('')
+    lines.append('## Dispatch rule')
+    lines.append('')
+    if supervisor_task.get('dispatch_mode') == 'direct_script':
+        lines.append('- run the script-first node directly from the main agent')
+        lines.append('- do not spawn a sub-agent for node_a')
+        lines.append('- after node_a finishes, re-read `state/supervisor_task.json` and continue')
+    else:
+        lines.append('- main agent stays responsible for graph state, commits, and loop control')
+        lines.append('- spawn exactly one sub-agent for the current node')
+        lines.append('- after the sub-agent returns, run the finalize command from the main agent')
+        lines.append('- then re-read `state/supervisor_task.json` before dispatching the next node')
+    lines.append('')
+    lines.append('## Multi-round loop')
+    lines.append('')
+    if round_loop.get('active'):
+        lines.append(f"- active loop: `{round_label(round_loop)}` with `{round_loop.get('remaining_rounds', 0)}` rounds remaining")
+        lines.append(f"- auto-use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
+        lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
+    else:
+        lines.append('- no multi-round loop is active')
+        lines.append('- to arm one, run `python scripts/graph.py rounds --count N --auto-use-recommended`')
+    lines.append('')
+    lines.append('## Notes')
+    lines.append('')
+    lines.append(f"- `{supervisor_task.get('notes', graph_state.get('notes', 'N/A'))}`")
+    return '\n'.join(lines) + '\n'
+
+
 def refresh_human_state() -> None:
     graph_state = load_graph_state()
     latest_run = load_latest_run()
@@ -805,6 +950,27 @@ def refresh_human_state() -> None:
     write_text(HUMAN_REVIEW_MD_PATH, render_human_review_md(graph_state, diagnosis, active_direction, round_loop))
 
 
+def refresh_supervisor_state() -> None:
+    graph_state = load_graph_state()
+    latest_run = load_latest_run()
+    diagnosis = load_latest_diagnosis()
+    active_direction = load_active_direction()
+    round_loop = load_round_loop_state()
+    supervisor_task = compute_supervisor_task(graph_state, diagnosis, active_direction, round_loop)
+    write_json(SUPERVISOR_TASK_PATH, supervisor_task)
+    write_text(
+        SUPERVISOR_CONTEXT_MD_PATH,
+        render_supervisor_context(
+            supervisor_task,
+            graph_state,
+            latest_run,
+            diagnosis,
+            active_direction,
+            round_loop,
+        ),
+    )
+
+
 def refresh_node_b_context() -> None:
     write_text(
         NODE_B_CONTEXT_PATH,
@@ -816,6 +982,13 @@ def refresh_node_b_context() -> None:
             load_round_loop_state(),
         ),
     )
+
+
+def refresh_all_views() -> None:
+    refresh_human_state()
+    refresh_node_b_context()
+    refresh_node_c_context()
+    refresh_supervisor_state()
 
 
 def tracked_dirty_paths() -> List[str]:
@@ -1035,6 +1208,7 @@ def node_c_commit_message(active_direction: Dict[str, Any], direction: Dict[str,
 def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = None) -> List[Path | str]:
     paths: List[Path | str] = [
         GRAPH_STATE_PATH,
+        SUPERVISOR_TASK_PATH,
         LATEST_RUN_PATH,
         LATEST_RUN_MD_PATH,
         LATEST_NCU_SUMMARY_PATH,
@@ -1052,6 +1226,7 @@ def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = No
         BENCHMARK_BASELINES_MD_PATH,
         NODE_B_CONTEXT_PATH,
         NODE_C_CONTEXT_PATH,
+        SUPERVISOR_CONTEXT_MD_PATH,
     ]
     if extra_paths:
         paths.extend(extra_paths)
@@ -1069,9 +1244,7 @@ def update_failure_state(node_name: str, message: str) -> None:
         round_loop['status'] = f'paused_on_{node_name}_failure'
         round_loop['notes'] = f'Paused {round_label(round_loop)} because {node_name} failed: {message}'
         write_json(ROUND_LOOP_STATE_PATH, round_loop)
-    refresh_human_state()
-    refresh_node_b_context()
-    refresh_node_c_context()
+    refresh_all_views()
 
 
 def run_node_a(args: argparse.Namespace) -> int:
@@ -1211,9 +1384,7 @@ def run_node_a(args: argparse.Namespace) -> int:
         graph_state['notes'] = 'Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.'
     write_json(GRAPH_STATE_PATH, graph_state)
     reset_post_measurement_direction_state(graph_state, latest_run)
-    refresh_human_state()
-    refresh_node_b_context()
-    refresh_node_c_context()
+    refresh_all_views()
 
     if not args.skip_commit:
         commit_paths(
@@ -1332,9 +1503,7 @@ def run_node_b(args: argparse.Namespace) -> int:
         if round_loop.get('active') and round_loop.get('auto_use_recommended'):
             select_direction(diagnosis.get('recommended_direction_id'), 'recommended')
             round_loop = load_round_loop_state()
-        refresh_human_state()
-        refresh_node_b_context()
-        refresh_node_c_context()
+        refresh_all_views()
         if not args.skip_commit:
             commit_paths(node_state_paths_for_commit(), node_b_commit_message(diagnosis, latest_run, round_loop))
         if round_loop.get('active') and round_loop.get('auto_use_recommended'):
@@ -1356,9 +1525,7 @@ def run_node_b(args: argparse.Namespace) -> int:
     else:
         graph_state['notes'] = 'Fill state/latest_diagnosis.json with exactly three directions, then run node_b --finalize.'
     write_json(GRAPH_STATE_PATH, graph_state)
-    refresh_human_state()
-    refresh_node_b_context()
-    refresh_node_c_context()
+    refresh_all_views()
     print_step(f'node_b context prepared at {repo_rel(NODE_B_CONTEXT_PATH)}')
     return 0
 
@@ -1402,8 +1569,7 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
     else:
         graph_state['notes'] = f'Node C is ready to implement {direction_id} via {selection_mode} selection.'
     write_json(GRAPH_STATE_PATH, graph_state)
-    refresh_human_state()
-    refresh_node_c_context()
+    refresh_all_views()
     print_step(f'selected {direction_id} for node_c using mode={selection_mode}')
     return 0
 
@@ -1429,8 +1595,7 @@ def run_node_c(args: argparse.Namespace) -> int:
         else:
             graph_state['notes'] = 'Implement the selected direction, then run node_c --finalize.'
         write_json(GRAPH_STATE_PATH, graph_state)
-        refresh_human_state()
-        refresh_node_c_context()
+        refresh_all_views()
         print_step(f'node_c context prepared at {repo_rel(NODE_C_CONTEXT_PATH)}')
         return 0
 
@@ -1455,8 +1620,7 @@ def run_node_c(args: argparse.Namespace) -> int:
             round_loop['status'] = 'paused_on_build_failure'
             round_loop['notes'] = f'Paused {round_label(round_loop)} because node_c failed to build.'
             write_json(ROUND_LOOP_STATE_PATH, round_loop)
-        refresh_human_state()
-        refresh_node_c_context()
+        refresh_all_views()
         raise RuntimeError(f'node_c build failed; see {repo_rel(NODE_C_BUILD_LOG_PATH)}')
 
     active_direction['status'] = 'implemented_pending_measurement'
@@ -1474,8 +1638,7 @@ def run_node_c(args: argparse.Namespace) -> int:
     else:
         graph_state['notes'] = 'Node C build succeeded. Node A will now measure the new code path.'
     write_json(GRAPH_STATE_PATH, graph_state)
-    refresh_human_state()
-    refresh_node_c_context()
+    refresh_all_views()
 
     commit_list = node_state_paths_for_commit(
         [
@@ -1508,16 +1671,21 @@ def run_node_c(args: argparse.Namespace) -> int:
 
 def run_status(_: argparse.Namespace) -> int:
     ensure_machine_state()
+    refresh_all_views()
     graph_state = load_graph_state()
     latest_run = load_latest_run()
     diagnosis = load_latest_diagnosis()
     active_direction = load_active_direction()
     benchmark_state = load_benchmark_state()
     round_loop = load_round_loop_state()
+    supervisor_task = load_supervisor_task()
     absolute_gap, runtime_ratio = compute_gap(benchmark_state)
     print(f"current_node={graph_state.get('current_node')}")
     print(f"previous_node={graph_state.get('previous_node')}")
     print(f"status={graph_state.get('status')}")
+    print(f"dispatch_mode={supervisor_task.get('dispatch_mode')}")
+    print(f"dispatch_prepare_command={supervisor_task.get('prepare_command')}")
+    print(f"dispatch_finalize_command={supervisor_task.get('finalize_command')}")
     print(f"latest_run_id={latest_run.get('run_id')}")
     print(f"latest_run_dir={latest_run.get('run_dir')}")
     print(f"latest_runtime_ms={latest_run.get('median_runtime_ms')}")
@@ -1533,9 +1701,30 @@ def run_status(_: argparse.Namespace) -> int:
     return 0
 
 
+def run_supervisor(_: argparse.Namespace) -> int:
+    ensure_machine_state()
+    refresh_all_views()
+    supervisor_task = load_supervisor_task()
+    print(f"dispatch_node={supervisor_task.get('dispatch_node')}")
+    print(f"dispatch_mode={supervisor_task.get('dispatch_mode')}")
+    print(f"graph_status={supervisor_task.get('graph_status')}")
+    print(f"prepare_command={supervisor_task.get('prepare_command')}")
+    print(f"selection_command={supervisor_task.get('selection_command')}")
+    print(f"finalize_command={supervisor_task.get('finalize_command')}")
+    print(f"protocol_doc={supervisor_task.get('protocol_doc')}")
+    print(f"context_file={supervisor_task.get('context_file')}")
+    print(f"requires_gpu_access={supervisor_task.get('requires_gpu_access')}")
+    print(f"round_label={supervisor_task.get('round_label')}")
+    print(f"round_loop_active={supervisor_task.get('round_loop_active')}")
+    print(f"rounds_remaining={supervisor_task.get('rounds_remaining')}")
+    print(f"notes={supervisor_task.get('notes')}")
+    return 0
+
+
 def run_rounds(args: argparse.Namespace) -> int:
     ensure_machine_state()
     if args.status:
+        refresh_all_views()
         round_loop = load_round_loop_state()
         print(f"active={round_loop.get('active')}")
         print(f"status={round_loop.get('status')}")
@@ -1552,9 +1741,7 @@ def run_rounds(args: argparse.Namespace) -> int:
         graph_state = load_graph_state()
         graph_state['notes'] = 'Round loop stopped by user request.'
         write_json(GRAPH_STATE_PATH, graph_state)
-        refresh_human_state()
-        refresh_node_b_context()
-        refresh_node_c_context()
+        refresh_all_views()
         print_step('stopped the active round loop')
         return 0
 
@@ -1563,9 +1750,7 @@ def run_rounds(args: argparse.Namespace) -> int:
         graph_state = load_graph_state()
         graph_state['notes'] = 'No multi-round loop is active.'
         write_json(GRAPH_STATE_PATH, graph_state)
-        refresh_human_state()
-        refresh_node_b_context()
-        refresh_node_c_context()
+        refresh_all_views()
         print_step('cleared the round loop state back to idle')
         return 0
 
@@ -1582,9 +1767,7 @@ def run_rounds(args: argparse.Namespace) -> int:
         f"Multi-round loop armed for {args.count} rounds. Continue with {graph_state.get('current_node', 'node_a')}."
     )
     write_json(GRAPH_STATE_PATH, graph_state)
-    refresh_human_state()
-    refresh_node_b_context()
-    refresh_node_c_context()
+    refresh_all_views()
     print_step(
         f"started a {args.count}-round loop"
         + (' with auto-use-recommended enabled' if args.auto_use_recommended else '')
@@ -1613,6 +1796,9 @@ def run_cycle(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Script-first workflow entrypoint for node_a/node_b/node_c')
     subparsers = parser.add_subparsers(dest='command', required=True)
+
+    supervisor = subparsers.add_parser('supervisor', help='Refresh and print the current main-agent dispatch task')
+    supervisor.set_defaults(func=run_supervisor)
 
     node_a = subparsers.add_parser('node_a', help='Run the script-first evaluation node')
     node_a.add_argument('--runner', default='build/custom_runner')

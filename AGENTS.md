@@ -29,6 +29,7 @@ Node workflow entrypoints:
 
 ```bash
 python scripts/graph.py status
+python scripts/graph.py supervisor
 python scripts/graph.py cycle
 python scripts/graph.py rounds --status
 python scripts/graph.py rounds --count 5 --auto-use-recommended
@@ -52,6 +53,31 @@ python scripts/run_cutlass_baseline.py --runner ./build/cutlass_runner --kernel-
 
 `python scripts/graph.py cycle` reads `state/graph_state.json` and either runs the script-first node or prepares the next Codex handoff context.
 
+`python scripts/graph.py supervisor` refreshes and prints the current main-agent dispatch task from `state/supervisor_task.json`.
+
+## Supervisor layer
+
+The execution model has one extra orchestration layer:
+
+- the main Codex agent is the supervisor
+- `node_a` is executed directly by the main agent
+- `node_b` and `node_c` are executed through one dedicated `sub-agent` each
+- repo-local scripts prepare context, validate state, and finalize commits
+- repo-local scripts do **not** try to spawn Codex agents by themselves
+
+The supervisor contract lives in:
+
+- `docs/supervisor_protocol.md`
+- `state/supervisor_task.json`
+- `state/supervisor_context.md`
+
+Supervisor rule:
+
+1. read `state/supervisor_task.json`
+2. if `dispatch_mode = direct_script`, run the node directly
+3. if `dispatch_mode = sub_agent`, prepare the node context, spawn exactly one sub-agent for that node, then run the finalize command from the main agent
+4. after every node completion, re-read `state/supervisor_task.json` before dispatching the next node
+
 ## Natural-language command mapping
 
 When the user says `开始运行 node_a`:
@@ -63,10 +89,10 @@ When the user says `开始运行 node_a`:
 When the user says `开始运行 node_b`:
 
 1. run `python scripts/graph.py node_b`
-2. read `docs/node_b_protocol.md` and `state/node_b_context.md`
-3. read the files listed there
-4. edit `state/latest_diagnosis.json` so it contains exactly 3 directions
-5. run `python scripts/graph.py node_b --finalize`
+2. read `docs/supervisor_protocol.md`, `docs/node_b_protocol.md`, and `state/node_b_context.md`
+3. main Codex supervisor spawns one diagnosis `sub-agent` for node_b
+4. the sub-agent reads the files listed there and edits `state/latest_diagnosis.json` so it contains exactly 3 directions
+5. after the sub-agent returns, the main agent runs `python scripts/graph.py node_b --finalize`
 
 When the user says `开始运行 node_c`:
 
@@ -75,9 +101,10 @@ When the user says `开始运行 node_c`:
    - `python scripts/graph.py approve --direction dir_0X`
    - `python scripts/graph.py use-recommended-direction`
 3. run `python scripts/graph.py node_c`
-4. read `docs/node_c_protocol.md` and `state/node_c_context.md`
-5. implement exactly one direction
-6. run `python scripts/graph.py node_c --finalize`
+4. read `docs/supervisor_protocol.md`, `docs/node_c_protocol.md`, and `state/node_c_context.md`
+5. main Codex supervisor spawns one implementation `sub-agent` for node_c
+6. the sub-agent implements exactly one direction
+7. after the sub-agent returns, the main agent runs `python scripts/graph.py node_c --finalize`
 
 When the user says `批准使用推荐方向`:
 
@@ -88,16 +115,24 @@ When the user says `批准使用推荐方向`:
 When the user says `开始运行5圈`:
 
 1. run `python scripts/graph.py rounds --count 5 --auto-use-recommended`
-2. keep looping through `node_b -> node_c -> node_a`
-3. treat one completed round as:
+2. read `state/supervisor_task.json`
+3. keep looping through `node_b -> node_c -> node_a`
+4. for `node_b` and `node_c`, use one `sub-agent` per node and let the main agent finalize after each sub-agent returns
+5. treat one completed round as:
    - diagnose one measured run
    - implement one selected direction
    - re-measure it with node_a
-4. continue until `state/round_loop_state.json` shows `remaining_rounds = 0`
-5. use the node_a commit for each completed round as the round-level record of:
+6. continue until `state/round_loop_state.json` shows `remaining_rounds = 0` or a failure pauses the loop
+7. use the node_a commit for each completed round as the round-level record of:
    - modification idea
    - performance delta
    - profile paths
+
+When the user says `连续工作5圈`:
+
+- treat it as the same instruction as `开始运行5圈`
+- the main agent owns the loop budget and the stop condition
+- the current dispatch step is always visible in `state/supervisor_task.json`
 
 ## Strict node definitions
 
@@ -140,6 +175,7 @@ Must not:
 Role:
 
 - Codex-friendly diagnosis node
+- normally executed through one diagnosis `sub-agent` under the main Codex supervisor
 
 Must read:
 
@@ -177,6 +213,7 @@ Must also:
 Role:
 
 - Codex-friendly implementation node
+- normally executed through one implementation `sub-agent` under the main Codex supervisor
 
 Must:
 
@@ -207,6 +244,7 @@ Safe to modify during node_c:
 - `state/*.md`
 - `docs/node_b_protocol.md`
 - `docs/node_c_protocol.md`
+- `docs/supervisor_protocol.md`
 - `README.md`
 - `docs/pipeline_graph.md`
 - `docs/commit_convention.md`

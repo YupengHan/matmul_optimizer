@@ -101,6 +101,17 @@ Contains:
 
 Append-only one-line summary for each completed round.
 
+## `supervisor_task.json`
+
+Machine-readable dispatch contract for the main Codex supervisor.
+
+Contains:
+
+- which node should run next
+- whether the main agent should run it directly or dispatch a `sub-agent`
+- which protocol doc and context file to use
+- which prepare / selection / finalize commands the main agent should run
+
 ## Human-readable files
 
 ## `latest_run.md`
@@ -139,10 +150,15 @@ Prepared read order and output contract for node_b.
 
 Prepared implementation brief and allowed edit surface for node_c.
 
+## `supervisor_context.md`
+
+Human-readable mirror of `supervisor_task.json` for the main Codex supervisor.
+
 ## Update rules
 
 - node_a updates the latest run files, NCU files, graph state, progress, focus, and baselines
 - node_a also closes the current round when it is measuring a just-implemented direction
 - node_b updates diagnosis, review state, and graph state
 - node_c updates active-direction state, build status, and graph state
+- the supervisor view is refreshed whenever graph state or round-loop state changes
 - raw logs belong under `runs/`, not under `state/`

@@ -20,6 +20,13 @@ node_a -> node_b -> node_c -> node_a
 
 It borrows only the concepts of nodes, edges, and state. It does **not** depend on LangGraph, OpenAI API keys, or any cloud runtime.
 
+Codex now has an explicit supervisor layer above that loop:
+
+- the main Codex agent owns graph dispatch and loop control
+- `node_a` stays direct and script-first
+- `node_b` and `node_c` are intended to run through one Codex `sub-agent` each
+- the repo exposes the dispatch contract through `state/supervisor_task.json` and `docs/supervisor_protocol.md`
+
 ## Fixed benchmark target
 
 `fixed_bf16_gemm_v1`
@@ -49,6 +56,12 @@ Codex-friendly agent nodes:
 - `node_b`: diagnose the latest measured run and output exactly three directions
 - `node_c`: implement one selected direction, prove the code still builds, then hand back to `node_a`
 
+Supervisor-only orchestration:
+
+- the main agent reads `state/supervisor_task.json`
+- it decides whether to run a node directly or dispatch a `sub-agent`
+- it always runs the finalize command after a `sub-agent` returns
+
 ## Repository layout
 
 ```text
@@ -66,6 +79,7 @@ matmul_optimizer/
 │   ├── heuristics.md
 │   ├── node_b_protocol.md
 │   ├── node_c_protocol.md
+│   ├── supervisor_protocol.md
 │   └── pipeline_graph.md
 ├── include/
 ├── scripts/
@@ -91,8 +105,12 @@ matmul_optimizer/
 │   ├── current_focus.md
 │   ├── human_review.md
 │   ├── benchmark_baselines.md
+│   ├── round_loop_state.json
+│   ├── round_history.jsonl
 │   ├── node_b_context.md
-│   └── node_c_context.md
+│   ├── node_c_context.md
+│   ├── supervisor_task.json
+│   └── supervisor_context.md
 ├── artifacts/
 └── runs/
 ```
@@ -109,6 +127,7 @@ Inspect workflow state:
 
 ```bash
 python scripts/graph.py status
+python scripts/graph.py supervisor
 ```
 
 Run the current actionable node from `state/graph_state.json`:
@@ -182,9 +201,12 @@ This means:
 
 - plan 5 rounds
 - each round is `node_b -> node_c -> node_a`
+- the main Codex agent stays in charge for the whole loop
+- `node_b` and `node_c` can each use one dedicated `sub-agent`
 - `--auto-use-recommended` is the explicit low-human-friction flag that allows the loop to keep moving with the rank-1 direction
 - each completed round is appended to `state/round_history.jsonl`
 - current loop status lives in `state/round_loop_state.json`
+- current supervisor dispatch lives in `state/supervisor_task.json`
 - human-readable loop status lives in `state/rounds.md`
 
 The round-level performance record is written by the `node_a:` commit after the re-measurement step. That commit now carries:
@@ -238,6 +260,16 @@ Do **not** let CUTLASS setup block the main custom-kernel loop.
 
 ## Current workflow semantics
 
+### main supervisor
+
+- reads `state/supervisor_task.json`
+- dispatches `node_a` directly
+- dispatches `node_b` and `node_c` through one `sub-agent` each
+- runs finalize commands after `sub-agent` completion
+- re-reads graph state before starting the next node
+
+Repo-local Python prepares and validates this handoff, but does **not** try to spawn Codex agents itself.
+
 ### node_a
 
 - builds `custom_runner` when needed
@@ -250,6 +282,7 @@ Do **not** let CUTLASS setup block the main custom-kernel loop.
 ### node_b
 
 - reads the latest lightweight summaries, heuristics, kernel, and state
+- normally runs inside one diagnosis `sub-agent`
 - outputs exactly 3 ranked directions
 - updates review state and graph state
 - creates a `node_b:` commit with state only
@@ -258,6 +291,7 @@ Do **not** let CUTLASS setup block the main custom-kernel loop.
 ### node_c
 
 - reads the selected direction
+- normally runs inside one implementation `sub-agent`
 - implements exactly one direction
 - proves the build still passes
 - creates a `node_c:` commit only after build success
@@ -276,6 +310,7 @@ Machine-readable:
 - `state/run_registry.jsonl`
 - `state/round_loop_state.json`
 - `state/round_history.jsonl`
+- `state/supervisor_task.json`
 
 Human-readable:
 
@@ -288,6 +323,7 @@ Human-readable:
 - `state/rounds.md`
 - `state/node_b_context.md`
 - `state/node_c_context.md`
+- `state/supervisor_context.md`
 
 ## Git and artifact policy
 
@@ -323,6 +359,8 @@ If you are operating this repo through Codex CLI, start with:
 
 1. `AGENTS.md`
 2. `python scripts/graph.py status`
-3. the protocol doc for the current node:
+3. `python scripts/graph.py supervisor`
+4. the protocol doc for the current node:
+   - `docs/supervisor_protocol.md`
    - `docs/node_b_protocol.md`
    - `docs/node_c_protocol.md`

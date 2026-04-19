@@ -22,6 +22,7 @@ BENCHMARK_STATE_PATH = STATE_DIR / 'benchmark_state.json'
 RUN_REGISTRY_PATH = STATE_DIR / 'run_registry.jsonl'
 ROUND_LOOP_STATE_PATH = STATE_DIR / 'round_loop_state.json'
 ROUND_HISTORY_PATH = STATE_DIR / 'round_history.jsonl'
+SUPERVISOR_TASK_PATH = STATE_DIR / 'supervisor_task.json'
 
 
 def now_local_iso() -> str:
@@ -194,6 +195,28 @@ def default_round_loop_state() -> Dict[str, Any]:
     }
 
 
+def default_supervisor_task() -> Dict[str, Any]:
+    return {
+        'supervisor_role': 'main_codex_agent',
+        'dispatch_node': 'node_a',
+        'dispatch_mode': 'direct_script',
+        'graph_status': 'ready_for_node_a',
+        'round_label': 'single-run',
+        'round_loop_active': False,
+        'rounds_remaining': 0,
+        'auto_use_recommended': False,
+        'requires_gpu_access': True,
+        'prepare_command': 'python scripts/graph.py node_a',
+        'selection_command': None,
+        'finalize_command': None,
+        'protocol_doc': 'AGENTS.md',
+        'context_file': None,
+        'active_direction_id': None,
+        'recommended_direction_id': None,
+        'notes': 'Run node_a directly from the main Codex agent.',
+    }
+
+
 def ensure_machine_state() -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     if not GRAPH_STATE_PATH.exists():
@@ -210,6 +233,8 @@ def ensure_machine_state() -> None:
         write_json(BENCHMARK_STATE_PATH, default_benchmark_state())
     if not ROUND_LOOP_STATE_PATH.exists():
         write_json(ROUND_LOOP_STATE_PATH, default_round_loop_state())
+    if not SUPERVISOR_TASK_PATH.exists():
+        write_json(SUPERVISOR_TASK_PATH, default_supervisor_task())
 
 
 def load_graph_state() -> Dict[str, Any]:
@@ -238,6 +263,10 @@ def load_benchmark_state() -> Dict[str, Any]:
 
 def load_round_loop_state() -> Dict[str, Any]:
     return load_json(ROUND_LOOP_STATE_PATH, default_round_loop_state())
+
+
+def load_supervisor_task() -> Dict[str, Any]:
+    return load_json(SUPERVISOR_TASK_PATH, default_supervisor_task())
 
 
 def direction_lookup(diagnosis: Dict[str, Any], direction_id: str) -> Optional[Dict[str, Any]]:
