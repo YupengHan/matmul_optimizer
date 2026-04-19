@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_005208_bf16_gemm_v1_8fbd2e5`
-- run dir: `runs/20260419_005208_bf16_gemm_v1_8fbd2e5`
-- kernel tag: `bf16_gemm_v1_8fbd2e5`
-- round label: `round 15/20`
+- run id: `20260419_010405_bf16_gemm_v1_79cdb43`
+- run dir: `runs/20260419_010405_bf16_gemm_v1_79cdb43`
+- kernel tag: `bf16_gemm_v1_79cdb43`
+- round label: `round 16/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `58.205168 ms`
-- p10 runtime: `57.356392 ms`
-- p90 runtime: `61.682789 ms`
-- TFLOP/s: `12.490634 TFLOP/s`
-- previous run id: `20260419_003937_bf16_gemm_v1_6eaca8e`
-- runtime delta vs previous measured run: `+14.435743 ms`
-- TFLOP/s delta vs previous measured run: `-4.119578 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_02`
-- implemented direction name: `Retile CTA and warp partition to trim per-warp N baggage`
-- implemented selection mode: `approved`
+- median runtime: `42.564560 ms`
+- p10 runtime: `42.102419 ms`
+- p90 runtime: `43.451392 ms`
+- TFLOP/s: `17.080393 TFLOP/s`
+- previous run id: `20260419_005208_bf16_gemm_v1_8fbd2e5`
+- runtime delta vs previous measured run: `-15.640608 ms`
+- TFLOP/s delta vs previous measured run: `+4.589760 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `dir_01`
+- implemented direction name: `64x160 main + 64x96 tail widened fixed split`
+- implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_005208_bf16_gemm_v1_8fbd2e5/summary.json`
-- measured commit: `8fbd2e568cc6f3da25601cbfbf3ef2b64e8bf179`
-- new best custom: `no`
-- generated at: `2026-04-19T00:52:19-07:00`
+- raw summary json: `runs/20260419_010405_bf16_gemm_v1_79cdb43/summary.json`
+- measured commit: `79cdb4341e0f3a30327d811f49424bb324cbbf43`
+- new best custom: `yes`
+- generated at: `2026-04-19T01:04:15-07:00`
