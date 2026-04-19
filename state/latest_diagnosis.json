@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_003032",
-  "status": "completed",
-  "created_at": "2026-04-19T00:30:32-07:00",
-  "source_run_id": "20260419_002954_bf16_gemm_v1_0ac7611",
-  "source_run_dir": "runs/20260419_002954_bf16_gemm_v1_0ac7611",
-  "source_summary_json": "runs/20260419_002954_bf16_gemm_v1_0ac7611/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_003937_bf16_gemm_v1_6eaca8e",
+  "source_run_dir": "runs/20260419_003937_bf16_gemm_v1_6eaca8e",
+  "source_summary_json": "runs/20260419_003937_bf16_gemm_v1_6eaca8e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "approved_direction_id": "dir_01",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea: vectorize transfers and thread-coarsen the load/store path",
-      "hypothesis": "Round 13 made it clear that the kernel is highly sensitive to MIO and ld/st pressure. Starting from the restored accepted base, push a human-in-loop optimization that reduces instruction count on the load/store side: keep each memory instruction moving more data by vectorizing contiguous BF16 traffic and thread-coarsening the copy/store work so fewer instructions cover the same bytes. The likely first payoff is in the epilogue and any scalarized staging loops that still serialize BF16 movement too finely.",
-      "expected_bottleneck": "MIO throttle and LSU pressure from too many narrow load/store instructions in the hot path and epilogue.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: stage_a_shared_tile_async and stage_b_shared_tile_async copy loops",
-        "src/kernels/bf16_gemm_v1.cu: the epilogue block after the K loop (`wmma::store_matrix_sync`, BF16 conversion, and final `c[...]` stores)",
-        "src/kernels/bf16_gemm_v1.cu: any helper additions needed for vectorized BF16 packing / wider stores and per-thread coarsened store ownership"
-      ],
-      "risk": "Medium-high. Vectorization and thread coarsening can increase register pressure, create alignment bugs, or make per-thread work imbalance worse if applied too aggressively.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if vectorization/coarsening lowers instruction-side counters only marginally, or if register growth and alignment constraints erase the gain before beating the 43.697664 ms accepted base.",
-      "idea_origin": "human-idea"
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Replace WMMA fragment loads with an explicit tensor feed pipeline",
-      "hypothesis": "Round 13 falsified another local shared-B layout tweak, not the broader feed path. The deeper issue is that the current WMMA load path still drives heavy LSU wavefront demand and underfeeds tensor issue. A full feed rewrite that abandons `wmma::load_matrix_sync` in favor of an explicit `ldmatrix` plus `mma.sync` register pipeline can attack the A/B fragment delivery mechanism itself instead of nibbling at shared layout details.",
-      "expected_bottleneck": "Tensor-core underfeed from the fragment delivery path, expressed as high MIO throttle and oversized LSU wavefront pressure before each MMA issue window.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: `TensorCoreTileConfig`, especially `kBSharedStride`, `kASharedTileElems`, and `kBSharedTileElems`",
-        "src/kernels/bf16_gemm_v1.cu: `b_shared_col_from_logical`, `stage_a_shared_tile_async`, and `stage_b_shared_tile_async`",
-        "src/kernels/bf16_gemm_v1.cu: the inner K loop in `bf16_gemm_v1_tensor_core_kernel`, replacing `wmma::load_matrix_sync` / `wmma::mma_sync` with explicit fragment-feed control"
-      ],
-      "risk": "Very high risk and larger code churn. This is close to a kernel rewrite, and the main danger is spending a round on plumbing without actually improving tensor issue or preserving the fixed-shape fast path.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if the rewrite still leaves MIO throttle near the accepted-base level or fails to lift tensor activity decisively above the current WMMA path."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Retile the CTA and cut per-warp output ownership",
-      "hypothesis": "The current 64x128 main tile makes each warp own multiple N-side MMA tiles, which amplifies accumulator footprint and fragment fanout even on the restored accepted base. A more aggressive retile and work repartitioning, such as reducing per-warp N fanout and redistributing CTA ownership across more blocks, can trade some reuse for a cleaner issue mix without returning to barrier-frequency tuning.",
-      "expected_bottleneck": "Per-warp fragment/accumulator footprint and issue inefficiency from the current 4x2 warp layout plus wide N-side ownership.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: `kTensorWarpTilesM`, `kTensorWarpTilesN`, and `TensorCoreTileConfig<...>::kWarpMmaTilesN`",
-        "src/kernels/bf16_gemm_v1.cu: fixed-shape split constants (`kFixedTailRegionN`, `kFixedMainRegionN`) and any specialized tile-family aliases",
-        "src/kernels/bf16_gemm_v1.cu: launch geometry in `launch_bf16_gemm_v1` for the main and tail tensor-core kernels"
-      ],
-      "risk": "Medium-to-high risk because tile changes can easily lose reuse or create new tail waste. It is also less direct than the epilogue path unless the new partition clearly lowers register footprint and raises usable waves.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__waves_per_multiprocessor",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if retiling does not reduce per-thread register pressure or improve waves/active warps, or if runtime regresses again because the smaller work partition just increases traffic."
-    }
-  ],
-  "notes": "Human-in-loop round: skip automatic node_b direction selection and prioritize the user-requested vectorization + thread-coarsening path for high MIO throttle."
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

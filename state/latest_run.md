@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_002954_bf16_gemm_v1_0ac7611`
-- run dir: `runs/20260419_002954_bf16_gemm_v1_0ac7611`
-- kernel tag: `bf16_gemm_v1_0ac7611`
-- round label: `round 13/20`
+- run id: `20260419_003937_bf16_gemm_v1_6eaca8e`
+- run dir: `runs/20260419_003937_bf16_gemm_v1_6eaca8e`
+- kernel tag: `bf16_gemm_v1_6eaca8e`
+- round label: `round 14/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `65.610237 ms`
-- p10 runtime: `64.881050 ms`
-- p90 runtime: `67.501155 ms`
-- TFLOP/s: `11.080884 TFLOP/s`
-- previous run id: `20260419_002116_bf16_gemm_v1_134df29`
-- runtime delta vs previous measured run: `+19.604477 ms`
-- TFLOP/s delta vs previous measured run: `-4.721907 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `43.769424 ms`
+- p10 runtime: `43.383500 ms`
+- p90 runtime: `45.235608 ms`
+- TFLOP/s: `16.610212 TFLOP/s`
+- previous run id: `20260419_002954_bf16_gemm_v1_0ac7611`
+- runtime delta vs previous measured run: `-21.840813 ms`
+- TFLOP/s delta vs previous measured run: `+5.529328 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Rewrite shared fragment delivery to cut MIO pressure`
-- implemented selection mode: `recommended`
-- implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_002954_bf16_gemm_v1_0ac7611/summary.json`
-- measured commit: `0ac7611b334ecc5aed0106a24dfae3c2125360d8`
+- implemented direction name: `Human idea: vectorize transfers and thread-coarsen the load/store path`
+- implemented selection mode: `human_idea`
+- implemented idea origin: `human-idea`
+- raw summary json: `runs/20260419_003937_bf16_gemm_v1_6eaca8e/summary.json`
+- measured commit: `6eaca8ea3a675237521dd743b9e744b57167933f`
 - new best custom: `no`
-- generated at: `2026-04-19T00:30:05-07:00`
+- generated at: `2026-04-19T00:39:46-07:00`
