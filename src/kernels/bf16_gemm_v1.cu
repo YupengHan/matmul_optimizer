@@ -262,6 +262,75 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   }
 }
 
+__device__ __forceinline__ void stage_a_shared_tile_async_tile384(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  static_assert(TensorCoreTile384::kAAsyncCopiesPerRow == 2,
+                "Tile384 hot-path A staging expects two 16-byte copies per row.");
+  const int copy_idx = threadIdx.x;
+  if (copy_idx >= TensorCoreTile384::kAAsyncCopiesPerTile) {
+    return;
+  }
+
+  const int row = copy_idx >> 1;
+  const int col = (copy_idx & 1) * kAsyncCopyElems;
+  cp_async_copy_16_bytes(
+      shared_tile + row * kWmmaK + col,
+      global_tile + row * global_stride + col);
+}
+
+__device__ __forceinline__ void stage_b_shared_tile_async_tile384_copy(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride,
+    int copy_idx) {
+  constexpr int kCopiesPerRow = TensorCoreTile384::kBAsyncCopiesPerRow;
+  const int row = copy_idx / kCopiesPerRow;
+  const int logical_col = (copy_idx - row * kCopiesPerRow) * kAsyncCopyElems;
+  const int shared_col = b_shared_col_from_logical<TensorCoreTile384>(logical_col);
+  cp_async_copy_16_bytes(
+      shared_tile + row * TensorCoreTile384::kBSharedStride + shared_col,
+      global_tile + row * global_stride + logical_col);
+}
+
+__device__ __forceinline__ void stage_b_shared_tile_async_tile384(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  constexpr int kTile384Threads = TensorCoreTile384::kWarpsPerBlock * kWarpSize;
+  const int copy_idx = threadIdx.x;
+  stage_b_shared_tile_async_tile384_copy(shared_tile, global_tile, global_stride, copy_idx);
+  stage_b_shared_tile_async_tile384_copy(
+      shared_tile, global_tile, global_stride, copy_idx + kTile384Threads);
+  stage_b_shared_tile_async_tile384_copy(
+      shared_tile, global_tile, global_stride, copy_idx + 2 * kTile384Threads);
+}
+
+template <typename TileConfig>
+__device__ __forceinline__ void stage_a_shared_tile_async_hot_path(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  if constexpr (TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN) {
+    stage_a_shared_tile_async_tile384(shared_tile, global_tile, global_stride);
+  } else {
+    stage_a_shared_tile_async<TileConfig>(shared_tile, global_tile, global_stride);
+  }
+}
+
+template <typename TileConfig>
+__device__ __forceinline__ void stage_b_shared_tile_async_hot_path(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  if constexpr (TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN) {
+    stage_b_shared_tile_async_tile384(shared_tile, global_tile, global_stride);
+  } else {
+    stage_b_shared_tile_async<TileConfig>(shared_tile, global_tile, global_stride);
+  }
+}
+
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
 }
@@ -596,11 +665,11 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
+  stage_a_shared_tile_async_hot_path<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
+  stage_b_shared_tile_async_hot_path<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  stage_a_shared_tile_async<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(
+  stage_a_shared_tile_async_hot_path<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async_hot_path<TileConfig>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
@@ -622,9 +691,9 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     // Keep the restored CTA-wide stage recycle model intact while cutting the
     // steady-state loop/index overhead in half.
     __syncthreads();
-    stage_a_shared_tile_async<TileConfig>(
+    stage_a_shared_tile_async_hot_path<TileConfig>(
         a_shared[curr_stage], a_block + first_future_tile_k, kFixedBenchmarkK);
-    stage_b_shared_tile_async<TileConfig>(
+    stage_b_shared_tile_async_hot_path<TileConfig>(
         b_shared[curr_stage],
         b_block + first_future_tile_k * kFixedBenchmarkN,
         kFixedBenchmarkN);
@@ -640,9 +709,9 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
         acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
     __syncthreads();
-    stage_a_shared_tile_async<TileConfig>(
+    stage_a_shared_tile_async_hot_path<TileConfig>(
         a_shared[curr_stage], a_block + second_future_tile_k, kFixedBenchmarkK);
-    stage_b_shared_tile_async<TileConfig>(
+    stage_b_shared_tile_async_hot_path<TileConfig>(
         b_shared[curr_stage],
         b_block + second_future_tile_k * kFixedBenchmarkN,
         kFixedBenchmarkN);
