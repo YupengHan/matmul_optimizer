@@ -1,27 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `5`
-- completed rounds: `2`
-- remaining rounds: `3`
-- current round label: `round 3/5`
+- completed rounds: `3`
+- remaining rounds: `2`
+- current round label: `round 4/5`
 - auto use recommended: `no`
-- accepted base run id: `20260419_132725_bf16_gemm_v1_c2f2bec`
-- accepted base measured commit: `c2f2bec47c9cba44f35cf7d260893f0416a4d251`
-- accepted base runtime: `34.234447 ms`
+- accepted base run id: `20260419_135930_bf16_gemm_v1_1e399d8`
+- accepted base measured commit: `1e399d80f7b02720493e3275ecb2c6865cbe1e63`
+- accepted base runtime: `33.366047 ms`
 - started at: `2026-04-19T13:08:11-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 3/5. Node A will measure the result next.`
+- notes: `Completed round 3/5. Continue with node_b for round 4/5. Accepted base: 20260419_135930_bf16_gemm_v1_1e399d8 at 33.366047 ms.`
 
 ## Last completed round
 
-- round: `2/5`
-- direction: `dir_01`
-- direction name: `Explicit ldmatrix PTX microkernel with smaller hot-band live set`
+- round: `3/5`
+- direction: `dir_03`
+- direction name: `Fixed-K PTX orchestration retime inside the peeled hot loop`
 - verdict: `improved`
-- runtime delta: `-1.183056 ms`
-- TFLOP/s delta: `+0.709365 TFLOP/s`
-- run dir: `runs/20260419_132725_bf16_gemm_v1_c2f2bec`
-- ncu rep path: `runs/20260419_132725_bf16_gemm_v1_c2f2bec/ncu_profile.ncu-rep`
+- runtime delta: `-0.868401 ms`
+- TFLOP/s delta: `+0.552711 TFLOP/s`
+- run dir: `runs/20260419_135930_bf16_gemm_v1_1e399d8`
+- ncu rep path: `runs/20260419_135930_bf16_gemm_v1_1e399d8/ncu_profile.ncu-rep`

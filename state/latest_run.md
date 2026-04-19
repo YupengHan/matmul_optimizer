@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_132725_bf16_gemm_v1_c2f2bec`
-- run dir: `runs/20260419_132725_bf16_gemm_v1_c2f2bec`
-- kernel tag: `bf16_gemm_v1_c2f2bec`
-- round label: `round 2/5`
+- run id: `20260419_135930_bf16_gemm_v1_1e399d8`
+- run dir: `runs/20260419_135930_bf16_gemm_v1_1e399d8`
+- kernel tag: `bf16_gemm_v1_1e399d8`
+- round label: `round 3/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `34.234447 ms`
-- p10 runtime: `34.062234 ms`
-- p90 runtime: `34.886753 ms`
-- TFLOP/s: `21.236488 TFLOP/s`
-- previous run id: `20260419_131756_bf16_gemm_v1_4ad2ee7`
-- runtime delta vs previous measured run: `-1.183056 ms`
-- TFLOP/s delta vs previous measured run: `+0.709365 TFLOP/s`
+- median runtime: `33.366047 ms`
+- p10 runtime: `32.732750 ms`
+- p90 runtime: `34.468148 ms`
+- TFLOP/s: `21.789199 TFLOP/s`
+- previous run id: `20260419_132725_bf16_gemm_v1_c2f2bec`
+- runtime delta vs previous measured run: `-0.868401 ms`
+- TFLOP/s delta vs previous measured run: `+0.552711 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `dir_01`
-- implemented direction name: `Explicit ldmatrix PTX microkernel with smaller hot-band live set`
+- implemented direction id: `dir_03`
+- implemented direction name: `Fixed-K PTX orchestration retime inside the peeled hot loop`
 - implemented selection mode: `approved`
-- implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_132725_bf16_gemm_v1_c2f2bec/summary.json`
-- measured commit: `c2f2bec47c9cba44f35cf7d260893f0416a4d251`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260419_135930_bf16_gemm_v1_1e399d8/summary.json`
+- measured commit: `1e399d80f7b02720493e3275ecb2c6865cbe1e63`
 - new best custom: `yes`
-- generated at: `2026-04-19T13:27:33-07:00`
+- generated at: `2026-04-19T13:59:38-07:00`

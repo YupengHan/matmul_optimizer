@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_132801",
-  "status": "completed",
-  "created_at": "2026-04-19T13:28:01-07:00",
-  "source_run_id": "20260419_132725_bf16_gemm_v1_c2f2bec",
-  "source_run_dir": "runs/20260419_132725_bf16_gemm_v1_c2f2bec",
-  "source_summary_json": "runs/20260419_132725_bf16_gemm_v1_c2f2bec/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_135930_bf16_gemm_v1_1e399d8",
+  "source_run_dir": "runs/20260419_135930_bf16_gemm_v1_1e399d8",
+  "source_summary_json": "runs/20260419_135930_bf16_gemm_v1_1e399d8/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "approved_direction_id": "dir_03",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "idea_origin": "human-idea",
-      "name": "Ldmatrix plus panelized PTX hot-band compute control",
-      "hypothesis": "The PTX branch has now produced two real runtime wins in a row, and round 2 showed that named accumulator tiles plus compile-time expansion materially helped without leaving the branch. The next coherent step is to keep the 64x384 outer CTA and unchanged 64x96 tail, but replace the remaining PTX WMMA load surface at src/kernels/bf16_gemm_v1.cu:261-299 and :746-763 with explicit ldmatrix plus mma.sync control, while panelizing the 12-tile hot-band compute into smaller serial chunks so fewer accumulator and B-fragment values stay live at once. That is the best fit for the current guardrail: runtime is improving, but the hot kernel is still stuck at occupancy_limit_registers=1 with only 16.78 active warps.",
-      "expected_bottleneck": "Register-limited live state inside the current PTX hot-band compute path is holding occupancy at one block/SM; the branch now needs finer compute/load-order control to reduce residency pressure without abandoning the winning PTX line.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:239-299",
-        "src/kernels/bf16_gemm_v1.cu:388-402",
-        "src/kernels/bf16_gemm_v1.cu:746-763",
-        "src/kernels/bf16_gemm_v1.cu:798-875"
-      ],
-      "risk": "Explicit ldmatrix lane mapping and smaller serial panels can easily trade register wins for extra control overhead or incorrect fragment packing. If the panelization becomes too fine-grained, the branch can give back the recent runtime win through more synchronization or weaker tensor issue density.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the more explicit PTX compute/load rewrite does not materially reduce register pressure or increase active warps, because then the branch is not addressing its main remaining guardrail."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Register-first PTX export follow-through",
-      "hypothesis": "The current PTX branch still exits through the old shared export shape: each accumulator tile is stored via ptx_wmma_store_d_row_shared() and then walked back out through the recursive shared tile exporter at src/kernels/bf16_gemm_v1.cu:301-315, :405-439, and :873-875. Since compute-side PTX control is now real and profitable, the next follow-through inside the same line is to own the export path as well: pack and spill from registers more directly so the hot band stops paying the WMMA-style shared round-trip after the final mma.sync block. That keeps the 64x96 tail untouched and extends the PTX branch in the most natural direction after round 2.",
-      "expected_bottleneck": "The hot-band export path is still consuming shared/LSU issue budget and can now be a larger share of the remaining cost because mio throttle has already dropped sharply while runtime continues to improve.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:212-229",
-        "src/kernels/bf16_gemm_v1.cu:301-315",
-        "src/kernels/bf16_gemm_v1.cu:405-439",
-        "src/kernels/bf16_gemm_v1.cu:873-875"
-      ],
-      "risk": "This does not directly solve the occupancy limit, so it may be lower upside than dir_01 if registers remain dominant. It also risks correctness and extra register pressure if the BF16 packing and lane-to-output mapping are not kept tight.",
-      "metrics_to_recheck": [
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the register-first export rewrite does not lower shared/LSU pressure or if it increases registers enough to worsen the occupancy guardrail."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Fixed-K PTX orchestration retime inside the peeled hot loop",
-      "hypothesis": "With the PTX branch now using a fully named 12-tile accumulator set, the fixed-K loop structure at src/kernels/bf16_gemm_v1.cu:819-875 is visible enough to retime directly. A bounded next step inside the same branch is to specialize the pairwise steady-state schedule further around the known 452 K-tiles so cp.async commit/wait, stage swap, and the two accumulate calls per loop body leave fewer issue bubbles between compute groups. This does not change the tail or macro tile; it is a PTX-local orchestration refinement on top of the newly stabilized hot-band kernel.",
-      "expected_bottleneck": "Barrier and issue scheduling inside the fixed peeled loop are still interrupting tensor issue, even though the branch has already cut mio versus the WMMA base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:765-818",
-        "src/kernels/bf16_gemm_v1.cu:819-860",
-        "src/kernels/bf16_gemm_v1.cu:863-875"
-      ],
-      "risk": "This keeps the same 172-register live set and therefore may not move the main occupancy guardrail on its own. It also risks chasing small schedule gains after two wins that were more structural than timing-only.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the loop retime changes barrier or mio only marginally while leaving active warps flat, because then the branch should stay focused on load-order or export control instead."
-    }
-  ],
-  "notes": "All three directions stay strictly inside the 64x384 hot-band PTX microkernel branch and keep the 64x96 tail unchanged. Ranking explicitly uses the new fact that the PTX line has now delivered two consecutive real runtime improvements, including the round-2 win from replacing the array-style accumulator surface with 12 named tiles and compile-time expansion. Because occupancy_limit_registers is still 1 and active warps are still only 16.78, the next ranking prefers deeper PTX-local compute/load-order and live-state control over any switch back to WMMA or unrelated tile tuning."
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
