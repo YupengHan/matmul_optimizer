@@ -1,19 +1,19 @@
 # Round loop
 
-- active: `no`
-- status: `stopped`
+- active: `yes`
+- status: `round_in_progress`
 - total rounds: `20`
 - completed rounds: `0`
 - remaining rounds: `20`
-- current round label: `single-run`
+- current round label: `round 1/20`
 - auto use recommended: `yes`
-- accepted base run id: `20260419_141843_bf16_gemm_v1_bd7984e`
-- accepted base measured commit: `bd7984e372e425002a9f8d421533d9b8f086e595`
-- accepted base runtime: `33.317888 ms`
-- started at: `2026-04-19T14:21:23-07:00`
-- completed at: `2026-04-19T14:21:56-07:00`
+- accepted base run id: `20260419_142213_bf16_gemm_v1_9bdc160`
+- accepted base measured commit: `9bdc160ee2a6ef0f1171c09f4cf72f7dd081cab1`
+- accepted base runtime: `33.128447 ms`
+- started at: `2026-04-19T14:22:54-07:00`
+- completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Stopped by user request.`
+- notes: `Executing round 1/20.`
 
 ## Last completed round
 

@@ -1,15 +1,85 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_142321",
+  "status": "completed",
+  "created_at": "2026-04-19T14:23:21-07:00",
   "source_run_id": "20260419_142213_bf16_gemm_v1_9bdc160",
   "source_run_dir": "runs/20260419_142213_bf16_gemm_v1_9bdc160",
   "source_summary_json": "runs/20260419_142213_bf16_gemm_v1_9bdc160/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Full-width PTX fragment-issue scheduling with tighter live ranges",
+      "hypothesis": "The restored accepted PTX base is still winning because orchestration and paired export already worked, but the remaining shape is clear: barrier and mio are low, occupancy is still 1, and long scoreboard is now the more visible residual stall. The best long-run next step is a full-width 64x384 PTX dataflow follow-through that does not reopen the regressed half-panel compute split and does not panelize B-load reorder. Instead, flatten the hot-band fragment issue order so each B fragment is loaded and consumed in a tighter scope inside the existing 12-tile kernel, reducing compiler-visible live ranges without changing the outer tile or the 64x96 tail.",
+      "expected_bottleneck": "Residual long-scoreboard latency and register-limited live state inside the current full-width PTX helper surface are now more limiting than synchronization overhead.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:261-299",
+        "src/kernels/bf16_gemm_v1.cu:388-402",
+        "src/kernels/bf16_gemm_v1.cu:801-818",
+        "src/kernels/bf16_gemm_v1.cu:915-948"
+      ],
+      "risk": "This is still PTX-local but not trivial: changing the full-width issue order can increase instruction count or accidentally drift toward the already-losing half-panel explicit mma.sync path. The payoff may also be modest if the compiler already keeps the fragment lifetimes tighter than expected.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if long-scoreboard and registers do not both move in the right direction, or if the implementation starts recreating the previously regressed half-panel compute path."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "PTX state and helper lifetime compaction without pair-compaction",
+      "hypothesis": "A safer but lower-ceiling continuation is to keep the current full-width PTX compute, fixed-K orchestration retime, and paired export exactly as they are, but reduce register pressure by compacting helper structure and template recursion around the 12-tile accumulator set. The target is not the prechecked pair-compaction experiment; it is the remaining compiler-visible lifetime inflation in PtxWmmaAccTileSet384, ptx_wmma_acc_tile(), ptx_wmma_accumulate_tile_set_384(), and the paired export helpers, which may still be enough to hold the kernel at 167 registers/thread.",
+      "expected_bottleneck": "Helper-induced live-range inflation around the named 12-tile PTX accumulator surface is still contributing to occupancy_limit_registers=1 even after the productive orchestration/export work.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:239-252",
+        "src/kernels/bf16_gemm_v1.cu:317-402",
+        "src/kernels/bf16_gemm_v1.cu:463-495",
+        "src/kernels/bf16_gemm_v1.cu:889-957"
+      ],
+      "risk": "This is the safest option, but it may only shave a handful of registers and not cross the occupancy boundary. It also has to avoid collapsing back into the already-unsuccessful pair-compaction precheck under a different name.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if helper/lifetime cleanup leaves registers and active warps flat, because then the branch needs a stronger dataflow change rather than more structural cleanup."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "More direct register-packed pair export beyond shared float scratch",
+      "hypothesis": "Round 4 proved that paired export is on the right line, but the hot-band PTX branch still routes each winning tile pair through shared float scratch before BF16 packing. A more aggressive continuation is to keep the same 64x384 compute body and unchanged 64x96 tail, but push the pair export further toward direct register-packed stores so export-side shared/LSU traffic shrinks again. That is still on the same PTX mainline, but it is riskier than dir_01 because it changes the output path more deeply while occupancy is still unresolved.",
+      "expected_bottleneck": "Export-side shared traffic and short-scoreboard pressure remain a secondary but still meaningful residual after paired export batching.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:212-229",
+        "src/kernels/bf16_gemm_v1.cu:301-315",
+        "src/kernels/bf16_gemm_v1.cu:442-495",
+        "src/kernels/bf16_gemm_v1.cu:950-956"
+      ],
+      "risk": "This is the highest-risk direction in the set: register-packed export can raise registers, complicate correctness, and still fail to move the main one-block occupancy guardrail. It is better suited as a follow-up if the safer state/dataflow steps keep paying off.",
+      "metrics_to_recheck": [
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if direct register-packed export raises registers or correctness risk without a clear reduction in shared/LSU pressure."
+    }
+  ],
+  "notes": "All three directions remain strictly inside the current 64x384 hot-band PTX microkernel mainline and keep the 64x96 tail untouched. Ranking is anchored on the fresh restored baseline run 20260419_142213_bf16_gemm_v1_9bdc160 of the accepted c9d030a code: barrier and mio are already low, while occupancy is still one block/SM and long-scoreboard is the more obvious residual stall. Known negative evidence is carried forward: explicit mma.sync half-panel compute regressed, and pair-compaction plus panelized B-load reorder prechecks did not beat the base. Because this is the start of a 20-round run, the recommendation favors a medium-risk, sustainable full-width PTX dataflow improvement rather than a larger rewrite."
 }

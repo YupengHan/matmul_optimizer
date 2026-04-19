@@ -1,18 +1,18 @@
 {
-  "active": false,
-  "status": "stopped",
+  "active": true,
+  "status": "round_in_progress",
   "total_rounds": 20,
   "completed_rounds": 0,
   "remaining_rounds": 20,
   "next_round_index": 1,
-  "current_round_index": null,
+  "current_round_index": 1,
   "auto_use_recommended": true,
-  "started_at": "2026-04-19T14:21:23-07:00",
-  "completed_at": "2026-04-19T14:21:56-07:00",
+  "started_at": "2026-04-19T14:22:54-07:00",
+  "completed_at": null,
   "last_completed_round": null,
-  "accepted_base_run_id": "20260419_141843_bf16_gemm_v1_bd7984e",
-  "accepted_base_measured_commit": "bd7984e372e425002a9f8d421533d9b8f086e595",
-  "accepted_base_runtime_ms": 33.31788826,
+  "accepted_base_run_id": "20260419_142213_bf16_gemm_v1_9bdc160",
+  "accepted_base_measured_commit": "9bdc160ee2a6ef0f1171c09f4cf72f7dd081cab1",
+  "accepted_base_runtime_ms": 33.12844658,
   "history_path": "state/round_history.jsonl",
-  "notes": "Stopped by user request."
+  "notes": "Executing round 1/20."
 }
