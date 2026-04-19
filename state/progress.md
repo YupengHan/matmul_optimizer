@@ -6,45 +6,43 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `eecbb72cf2ce923b80d7eab679b5355a3873fc88`
+- latest measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
 - plateau counter: `0`
-- round loop: `round 2/20`
-- rounds remaining: `19`
-- notes: `Node C build succeeded for round 2/20. Node A will now measure the new code path.`
+- round loop: `round 3/20`
+- rounds remaining: `18`
+- notes: `Node A completed round 2/20. Run node_b to continue round 3/20.`
 
 ## Latest measured custom run
 
-- run id: `20260418_221951_bf16_gemm_v1_eecbb72`
-- run dir: `runs/20260418_221951_bf16_gemm_v1_eecbb72`
+- run id: `20260418_222639_bf16_gemm_v1_95056ed`
+- run dir: `runs/20260418_222639_bf16_gemm_v1_95056ed`
 - correctness: `PASS`
-- median runtime: `82.266624 ms`
-- TFLOP/s: `8.837356 TFLOP/s`
+- median runtime: `66.354687 ms`
+- TFLOP/s: `10.956565 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 - result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260418_222017`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- dir_01: Retune the tensor tile so each warp does more MMA work per shared-memory feed | bottleneck: Shared-memory / fragment-load issue pressure with too little MMA work per warp and too few ready warps to hide it.
-- dir_02: Rewrite the A/B shared-memory layout for lower-friction WMMA fragment loads | bottleneck: Shared-memory layout inefficiency on the WMMA load path, especially the B-fragment feed, causing excessive MIO throttling before Tensor Cores can be kept busy.
-- dir_03: Retune the async pipeline handoff to reduce per-K synchronization bubbles | bottleneck: Stage-transition overhead from the double-buffered `cp.async` pipeline, where full-CTA waits and barriers are now a secondary limiter after global-load widening.
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `56.348736 ms`, `3.174125x` slower than CUTLASS
+- current best custom gap: `40.436798 ms`, `2.560189x` slower than CUTLASS

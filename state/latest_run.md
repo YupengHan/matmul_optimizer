@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_221951_bf16_gemm_v1_eecbb72`
-- run dir: `runs/20260418_221951_bf16_gemm_v1_eecbb72`
-- kernel tag: `bf16_gemm_v1_eecbb72`
-- round label: `round 1/20`
+- run id: `20260418_222639_bf16_gemm_v1_95056ed`
+- run dir: `runs/20260418_222639_bf16_gemm_v1_95056ed`
+- kernel tag: `bf16_gemm_v1_95056ed`
+- round label: `round 2/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `82.266624 ms`
-- p10 runtime: `80.802815 ms`
-- p90 runtime: `84.994763 ms`
-- TFLOP/s: `8.837356 TFLOP/s`
-- previous run id: `20260418_220017_bf16_gemm_v1_2e79574`
-- runtime delta vs previous measured run: `-9.334736 ms`
-- TFLOP/s delta vs previous measured run: `+0.900580 TFLOP/s`
+- median runtime: `66.354687 ms`
+- p10 runtime: `65.608600 ms`
+- p90 runtime: `68.528947 ms`
+- TFLOP/s: `10.956565 TFLOP/s`
+- previous run id: `20260418_221951_bf16_gemm_v1_eecbb72`
+- runtime delta vs previous measured run: `-15.911938 ms`
+- TFLOP/s delta vs previous measured run: `+2.119209 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Widen the async staging path to 16-byte fixed-tile copies`
-- raw summary json: `runs/20260418_221951_bf16_gemm_v1_eecbb72/summary.json`
-- measured commit: `eecbb72cf2ce923b80d7eab679b5355a3873fc88`
+- implemented direction name: `Retune the tensor tile so each warp does more MMA work per shared-memory feed`
+- raw summary json: `runs/20260418_222639_bf16_gemm_v1_95056ed/summary.json`
+- measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
 - new best custom: `yes`
-- generated at: `2026-04-18T22:20:01-07:00`
+- generated at: `2026-04-18T22:26:49-07:00`

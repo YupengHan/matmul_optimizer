@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Retune the tensor tile so each warp does more MMA work per shared-memory feed",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-18T22:24:14-07:00",
-  "source_diagnosis_id": "diagnosis_20260418_222017",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Retune the tensor tile so each warp does more MMA work per shared-memory feed",
-    "hypothesis": "The 32x32 CTA uses only 2 warps and each warp consumes 1 A fragment plus 2 B fragments for just 2 MMA ops per K-slice. After the 16-byte async-copy change, global delivery improved, but the kernel is still dominated by shared-memory issue pressure (`smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct = 42.83`) and weak residency (`sm__warps_active.avg.pct_of_peak_sustained_active = 45.70`). A tile retune that increases math per warp, starting with a wider N footprint and only then adding more warps if registers stay reasonable, should convert the faster staging path into higher tensor utilization.",
-    "expected_bottleneck": "Shared-memory / fragment-load issue pressure with too little MMA work per warp and too few ready warps to hide it.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:16-35",
-      "src/kernels/bf16_gemm_v1.cu:149-228",
-      "src/kernels/bf16_gemm_v1.cu:261-264"
-    ],
-    "risk": "Moderate. More output tiles per warp or a larger CTA can raise accumulator pressure, registers, and shared-memory footprint enough to erase the gain if occupancy collapses or the store path becomes awkward.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "TFLOP/s",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "launch__registers_per_thread",
-      "launch__shared_mem_per_block_allocated"
-    ],
-    "stop_condition": "Stop if the first tile variant pushes registers or shared memory high enough that active warps stay near 45.7% and runtime does not improve, or if `mio_throttle` remains roughly flat while occupancy gets worse."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
