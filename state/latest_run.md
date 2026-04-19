@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
-- run dir: `runs/20260418_224421_bf16_gemm_v1_f5de2e9`
-- kernel tag: `bf16_gemm_v1_f5de2e9`
-- round label: `round 3/20`
+- run id: `20260418_225011_bf16_gemm_v1_3265675`
+- run dir: `runs/20260418_225011_bf16_gemm_v1_3265675`
+- kernel tag: `bf16_gemm_v1_3265675`
+- round label: `round 4/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `65.617920 ms`
-- p10 runtime: `64.695502 ms`
-- p90 runtime: `67.830582 ms`
-- TFLOP/s: `11.079587 TFLOP/s`
-- previous run id: `20260418_222639_bf16_gemm_v1_95056ed`
-- runtime delta vs previous measured run: `-0.736767 ms`
-- TFLOP/s delta vs previous measured run: `+0.123022 TFLOP/s`
+- median runtime: `63.126495 ms`
+- p10 runtime: `62.722765 ms`
+- p90 runtime: `67.207371 ms`
+- TFLOP/s: `11.516867 TFLOP/s`
+- previous run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
+- runtime delta vs previous measured run: `-2.491425 ms`
+- TFLOP/s delta vs previous measured run: `+0.437280 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Skew the B shared tile with a bank-conflict-avoidance swizzle`
+- implemented direction name: `Reuse one 16x16 epilogue scratch tile per warp with warp-synchronous pair stores`
 - implemented selection mode: `human_idea`
 - implemented idea origin: `human-idea`
-- raw summary json: `runs/20260418_224421_bf16_gemm_v1_f5de2e9/summary.json`
-- measured commit: `f5de2e9ce546b72f0e2b1ecde0fbe5a766a31e42`
+- raw summary json: `runs/20260418_225011_bf16_gemm_v1_3265675/summary.json`
+- measured commit: `3265675318dd0108296bfc9c83879cc130bb6351`
 - new best custom: `yes`
-- generated at: `2026-04-18T22:44:30-07:00`
+- generated at: `2026-04-18T22:50:19-07:00`

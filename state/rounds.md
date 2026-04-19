@@ -1,27 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `3`
-- remaining rounds: `17`
-- current round label: `round 4/20`
+- completed rounds: `4`
+- remaining rounds: `16`
+- current round label: `round 5/20`
 - auto use recommended: `yes`
-- accepted base run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
-- accepted base measured commit: `f5de2e9ce546b72f0e2b1ecde0fbe5a766a31e42`
-- accepted base runtime: `65.617920 ms`
+- accepted base run id: `20260418_225011_bf16_gemm_v1_3265675`
+- accepted base measured commit: `3265675318dd0108296bfc9c83879cc130bb6351`
+- accepted base runtime: `63.126495 ms`
 - started at: `2026-04-18T22:03:53-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 4/20. Node A will measure the result next.`
+- notes: `Completed round 4/20. Continue with node_b for round 5/20. Accepted base: 20260418_225011_bf16_gemm_v1_3265675 at 63.126495 ms.`
 
 ## Last completed round
 
-- round: `3/20`
+- round: `4/20`
 - direction: `dir_01`
-- direction name: `Skew the B shared tile with a bank-conflict-avoidance swizzle`
+- direction name: `Reuse one 16x16 epilogue scratch tile per warp with warp-synchronous pair stores`
 - verdict: `improved`
-- runtime delta: `-0.736767 ms`
-- TFLOP/s delta: `+0.123022 TFLOP/s`
-- run dir: `runs/20260418_224421_bf16_gemm_v1_f5de2e9`
-- ncu rep path: `runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_profile.ncu-rep`
+- runtime delta: `-2.491425 ms`
+- TFLOP/s delta: `+0.437280 TFLOP/s`
+- run dir: `runs/20260418_225011_bf16_gemm_v1_3265675`
+- ncu rep path: `runs/20260418_225011_bf16_gemm_v1_3265675/ncu_profile.ncu-rep`
