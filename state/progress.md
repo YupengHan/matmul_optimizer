@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `1dd4420e7958cd21478c561c7169064f8b6f054b`
 - plateau counter: `4`
 - round loop: `round 2/5`
 - rounds remaining: `4`
-- notes: `Node A completed round 1/5. Run node_b to continue round 2/5.`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
@@ -28,12 +28,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_123318`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Diagnosed regressed round-1 run 20260419_123228_bf16_gemm_v1_1dd4420 while ranking follow-ups against the restored accepted base 15d63b2. The warp-specialized producer/consumer split is strong negative evidence: it pushed the hot kernel to 219 registers per thread, dropped occupancy_limit_registers to 1, cut active warps to 16.60, and regressed to 42.259968 ms. The recommended follow-up therefore keeps the accepted 64x384 macro shape and targets lower-risk fixed-shape control overhead by splitting the hot path into explicit prologue, steady-state, and epilogue phases.`
+- dir_01: Split the fixed 64x384 hot path into explicit prologue, steady-state, and epilogue phases | bottleneck: Fixed-shape hot-loop control and stage-transition overhead in the restored 64x384 peeled kernel, where tensor activity is still only 34.86 despite stable 2-block occupancy.
+- dir_02: Straight-line the Tile384 cp.async producer schedule without warp specialization | bottleneck: Producer-side cp.async issue overhead and LSU address work in the hot kernel, without changing warp roles or macro-tile shape.
+- dir_03: Add a fixed-K peeled 64x96 tail kernel | bottleneck: Residual generic-loop, barrier, and scoreboard overhead in the 64x96 tail kernel; total upside is capped by the tail's small share of wall time.
 
 ## Active implementation direction
 
