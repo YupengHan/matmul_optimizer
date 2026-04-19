@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `awaiting_direction_selection_for_node_c`
 - round loop: `single-run` with `0` rounds remaining
 
 ## Direction approval policy
@@ -14,11 +14,13 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260418_200741`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no diagnosis recorded yet; run node_b first
+- dir_01: Add CTA-level shared-memory staging for WMMA tiles | bottleneck: Global-memory bound
+- dir_02: Retune the WMMA tile hierarchy for more per-warp accumulation | bottleneck: Tensor Core under-utilization
+- dir_03: Specialize the hot path to the fixed aligned benchmark shape | bottleneck: Tail-handling overhead from generic code
 
 ## Active direction
 
