@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 3/5` with `3` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 4/5` with `2` rounds remaining
 
 ## Direction approval policy
 
@@ -14,17 +14,15 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260418_212050`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- dir_01: Restore explicit cp.async warm-up and consume ordering | bottleneck: Correctness-breaking cp.async producer/consumer hazard in the ping-pong pipeline; after recovery, the remaining limit is still CTA synchronization and MIO throttle rather than DRAM saturation.
-- dir_02: Fall back to a correctness-first single-stage staging path | bottleneck: Synchronization and MIO throttle overhead from an over-complicated copy pipeline, not raw memory bandwidth. The current profile already shows barrier stalls rising to 23.82% and MIO throttle to 39.04% while performance regresses.
-- dir_03: Amortize sync with a two-slice K macro-stage | bottleneck: Barrier and MIO throttle from too-frequent 16-wide stage turnover, which leaves tensor utilization low at 13.46% even though active warps stay high.
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

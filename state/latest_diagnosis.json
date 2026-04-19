@@ -1,83 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_212050",
-  "status": "completed",
-  "created_at": "2026-04-18T21:20:50-07:00",
-  "source_run_id": "20260418_212022_bf16_gemm_v1_deeb976",
-  "source_run_dir": "runs/20260418_212022_bf16_gemm_v1_deeb976",
-  "source_summary_json": "runs/20260418_212022_bf16_gemm_v1_deeb976/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_212627_bf16_gemm_v1_8138da5",
+  "source_run_dir": "runs/20260418_212627_bf16_gemm_v1_8138da5",
+  "source_summary_json": "runs/20260418_212627_bf16_gemm_v1_8138da5/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore explicit cp.async warm-up and consume ordering",
-      "hypothesis": "Treat the wait-group reorder in `deeb976` as the primary regression source. The previous measured kernel `aee3c09` was 3/3 correct at 101.375 ms, while the new version removed the initial `cp_async_wait_group_0()` plus `__syncthreads()` before the first consume and now issues next-stage copies before the current stage is proven visible. With all 3 correctness cases now failing and runtime slightly worse, the best next step is to reintroduce a distinct warm-up, steady-state, and drain sequence so `wmma::load_matrix_sync` never reads a stage that is still in-flight.",
-      "expected_bottleneck": "Correctness-breaking cp.async producer/consumer hazard in the ping-pong pipeline; after recovery, the remaining limit is still CTA synchronization and MIO throttle rather than DRAM saturation.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:50-59",
-        "src/kernels/bf16_gemm_v1.cu:151-173",
-        "src/kernels/bf16_gemm_v1.cu:175-180"
-      ],
-      "risk": "Low to moderate. This is the most targeted fix and should recover correctness fastest, but if the repaired schedule becomes too conservative it may give back the small long-scoreboard improvement without reducing barrier pressure.",
-      "metrics_to_recheck": [
-        "correctness cases 3/3",
-        "median runtime vs 101.3749619 ms from aee3c09",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the first repaired ordering still fails correctness on any case, or if correctness returns but runtime remains slower than the prior correct run with no reduction in barrier stalls."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Fall back to a correctness-first single-stage staging path",
-      "hypothesis": "The current 32x32 CTA does too little work per 16-wide K slice for the overlapping cp.async double buffer to justify its synchronization complexity on this GPU. Instead of trying another subtle wait reorder immediately, temporarily collapse the tensor-core path to a conservative one-stage schedule, or even synchronous cooperative shared loads, to recover correctness first and establish a trusted performance floor before reintroducing overlap.",
-      "expected_bottleneck": "Synchronization and MIO throttle overhead from an over-complicated copy pipeline, not raw memory bandwidth. The current profile already shows barrier stalls rising to 23.82% and MIO throttle to 39.04% while performance regresses.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:31-74",
-        "src/kernels/bf16_gemm_v1.cu:127-129",
-        "src/kernels/bf16_gemm_v1.cu:151-180"
-      ],
-      "risk": "Low correctness risk, medium performance risk. This should be the safest way to get back to a valid result, but it may sacrifice too much overlap and end up slower than the previous correct async kernel.",
-      "metrics_to_recheck": [
-        "correctness cases 3/3",
-        "median runtime vs 101.3749619 ms from aee3c09",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if correctness comes back but median runtime regresses by more than about 2 ms versus aee3c09, because that would make the simplified path a dead-end baseline rather than a viable next kernel."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Amortize sync with a two-slice K macro-stage",
-      "hypothesis": "The failed wait-group reorder was trying to reduce barrier cost by moving waits around, but the safer way to do that is to keep correctness-preserving ordering and halve the number of stage transitions. Because this benchmark has fixed `k=7232` and is divisible by 32, the kernel can stage and consume two consecutive 16-wide WMMA K slices per macro-step so there is more tensor work between block-wide fences.",
-      "expected_bottleneck": "Barrier and MIO throttle from too-frequent 16-wide stage turnover, which leaves tensor utilization low at 13.46% even though active warps stay high.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:20-29",
-        "src/kernels/bf16_gemm_v1.cu:127-129",
-        "src/kernels/bf16_gemm_v1.cu:155-180"
-      ],
-      "risk": "Medium to high. A wider macro-stage increases live fragments and staging state, so register pressure or shared-memory usage could climb and erase the barrier win. It also still has to recover correctness first, so the bookkeeping must stay explicit.",
-      "metrics_to_recheck": [
-        "correctness cases 3/3",
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the wider macro-stage does not restore full correctness on the first measurement, or if register growth and lower active warps offset any barrier reduction enough that runtime does not beat the repaired baseline."
-    }
-  ],
-  "notes": "Run node_b to produce exactly three ranked directions."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

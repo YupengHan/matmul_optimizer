@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_212022_bf16_gemm_v1_deeb976`
-- run dir: `runs/20260418_212022_bf16_gemm_v1_deeb976`
-- kernel tag: `bf16_gemm_v1_deeb976`
-- round label: `round 2/5`
+- run id: `20260418_212627_bf16_gemm_v1_8138da5`
+- run dir: `runs/20260418_212627_bf16_gemm_v1_8138da5`
+- kernel tag: `bf16_gemm_v1_8138da5`
+- round label: `round 3/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `101.616016 ms`
-- p10 runtime: `100.490137 ms`
-- p90 runtime: `104.467998 ms`
-- TFLOP/s: `7.154575 TFLOP/s`
-- previous run id: `20260418_210900_bf16_gemm_v1_aee3c09`
-- runtime delta vs previous measured run: `+0.241055 ms`
-- TFLOP/s delta vs previous measured run: `-0.017013 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `97.885185 ms`
+- p10 runtime: `96.832922 ms`
+- p90 runtime: `101.197822 ms`
+- TFLOP/s: `7.427267 TFLOP/s`
+- previous run id: `20260418_212022_bf16_gemm_v1_deeb976`
+- runtime delta vs previous measured run: `-3.730831 ms`
+- TFLOP/s delta vs previous measured run: `+0.272692 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reduce cp.async barrier pressure`
-- raw summary json: `runs/20260418_212022_bf16_gemm_v1_deeb976/summary.json`
-- measured commit: `deeb9765cb3ed49aa93e1d9cefc6b3beacd950f5`
-- new best custom: `no`
-- generated at: `2026-04-18T21:20:33-07:00`
+- implemented direction name: `Restore explicit cp.async warm-up and consume ordering`
+- raw summary json: `runs/20260418_212627_bf16_gemm_v1_8138da5/summary.json`
+- measured commit: `8138da55448e546af314940addc89fd3cadc56ff`
+- new best custom: `yes`
+- generated at: `2026-04-18T21:26:37-07:00`
