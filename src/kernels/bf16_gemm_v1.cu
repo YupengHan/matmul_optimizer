@@ -18,13 +18,15 @@ constexpr int kWmmaN = 16;
 constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
 constexpr int kWarpTilesM = 2;
-constexpr int kWarpTilesN = 2;
+constexpr int kWarpTilesN = 1;
+// Each warp spans two adjacent 16x16 output tiles along N.
+constexpr int kWarpMmaTilesN = 2;
 constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
 constexpr int kTensorBlockM = kWarpTilesM * kWmmaM;
-constexpr int kTensorBlockN = kWarpTilesN * kWmmaN;
+constexpr int kTensorBlockN = kWarpTilesN * kWarpMmaTilesN * kWmmaN;
 constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
 constexpr int kBSharedTileElems = kWmmaK * kTensorBlockN;
-constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
+constexpr int kCSharedTileElemsPerWarp = kWarpMmaTilesN * kWmmaM * kWmmaN;
 constexpr int kAsyncCopyElems = 4;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
 
@@ -134,10 +136,13 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   const int warp_tile_m = warp_id / kWarpTilesN;
   const int warp_tile_n = warp_id % kWarpTilesN;
   const int row = block_row + warp_tile_m * kWmmaM;
-  const int col = block_col + warp_tile_n * kWmmaN;
+  const int col = block_col + warp_tile_n * kWarpMmaTilesN * kWmmaN;
 
-  wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> acc_frag;
-  wmma::fill_fragment(acc_frag, 0.0f);
+  wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> acc_frags[kWarpMmaTilesN];
+  #pragma unroll
+  for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
+    wmma::fill_fragment(acc_frags[tile_n], 0.0f);
+  }
 
   const __nv_bfloat16* a_tile_0 = a + block_row * k;
   const __nv_bfloat16* b_tile_0 = b + block_col;
@@ -154,7 +159,7 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     const int next_stage = curr_stage ^ 1;
 
     wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
-    wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frag;
+    wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frags[kWarpMmaTilesN];
 
     if (next_tile_k < k) {
       const __nv_bfloat16* a_next_tile = a + block_row * k + next_tile_k;
@@ -165,11 +170,14 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
-    const __nv_bfloat16* b_tile = b_shared[curr_stage] + warp_tile_n * kWmmaN;
+    const __nv_bfloat16* b_tile = b_shared[curr_stage] + warp_tile_n * kWarpMmaTilesN * kWmmaN;
 
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
-    wmma::load_matrix_sync(b_frag, b_tile, kTensorBlockN);
-    wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
+    #pragma unroll
+    for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
+      wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, kTensorBlockN);
+      wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
+    }
 
     if (next_tile_k < k) {
       cp_async_wait_group_0();
@@ -178,14 +186,24 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
   }
 
   float* warp_c_tile = c_shared + warp_id * kCSharedTileElemsPerWarp;
-  wmma::store_matrix_sync(warp_c_tile, acc_frag, kWmmaN, wmma::mem_row_major);
+  #pragma unroll
+  for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
+    wmma::store_matrix_sync(
+        warp_c_tile + tile_n * kWmmaM * kWmmaN,
+        acc_frags[tile_n],
+        kWmmaN,
+        wmma::mem_row_major);
+  }
   __syncwarp();
 
   #pragma unroll
   for (int idx = lane_id; idx < kCSharedTileElemsPerWarp; idx += kWarpSize) {
-    const int local_row = idx / kWmmaN;
-    const int local_col = idx % kWmmaN;
-    c[(row + local_row) * n + col + local_col] = __float2bfloat16(warp_c_tile[idx]);
+    const int tile_n = idx / (kWmmaM * kWmmaN);
+    const int tile_elem = idx % (kWmmaM * kWmmaN);
+    const int local_row = tile_elem / kWmmaN;
+    const int local_col = tile_elem % kWmmaN;
+    c[(row + local_row) * n + col + tile_n * kWmmaN + local_col] =
+        __float2bfloat16(warp_c_tile[idx]);
   }
 #else
   (void)a;
