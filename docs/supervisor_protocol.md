@@ -80,8 +80,10 @@ After every node completion, re-read `state/supervisor_task.json` before dispatc
 To arm a planned loop:
 
 ```bash
-python scripts/graph.py rounds --count 5 --auto-use-recommended
+python scripts/graph.py rounds --count N --auto-use-recommended
 ```
+
+Here `N` is the user-requested positive integer round budget.
 
 Then the supervisor repeats this control flow:
 

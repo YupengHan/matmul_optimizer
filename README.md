@@ -140,7 +140,7 @@ Inspect or arm a multi-round loop:
 
 ```bash
 python scripts/graph.py rounds --status
-python scripts/graph.py rounds --count 5 --auto-use-recommended
+python scripts/graph.py rounds --count N --auto-use-recommended
 ```
 
 Run the fully script-first measurement node:
@@ -194,12 +194,12 @@ The repo now supports a round budget for Codex-driven optimization loops.
 Example:
 
 ```bash
-python scripts/graph.py rounds --count 5 --auto-use-recommended
+python scripts/graph.py rounds --count N --auto-use-recommended
 ```
 
 This means:
 
-- plan 5 rounds
+- plan `N` rounds
 - each round is `node_b -> node_c -> node_a`
 - the main Codex agent stays in charge for the whole loop
 - `node_b` and `node_c` can each use one dedicated `sub-agent`

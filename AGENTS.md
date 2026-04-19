@@ -32,7 +32,7 @@ python scripts/graph.py status
 python scripts/graph.py supervisor
 python scripts/graph.py cycle
 python scripts/graph.py rounds --status
-python scripts/graph.py rounds --count 5 --auto-use-recommended
+python scripts/graph.py rounds --count N --auto-use-recommended
 python scripts/graph.py node_a
 python scripts/graph.py node_b
 python scripts/graph.py node_b --finalize
@@ -112,25 +112,33 @@ When the user says `批准使用推荐方向`:
 2. confirm the selected direction in `state/active_direction.json`
 3. proceed to node_c
 
-When the user says `开始运行5圈`:
+When the user says `开始运行N圈`:
 
-1. run `python scripts/graph.py rounds --count 5 --auto-use-recommended`
-2. read `state/supervisor_task.json`
-3. keep looping through `node_b -> node_c -> node_a`
-4. for `node_b` and `node_c`, use one `sub-agent` per node and let the main agent finalize after each sub-agent returns
-5. treat one completed round as:
+1. parse the requested positive integer round count `N` from the user message
+2. run `python scripts/graph.py rounds --count N --auto-use-recommended`
+3. read `state/supervisor_task.json`
+4. keep looping through `node_b -> node_c -> node_a`
+5. for `node_b` and `node_c`, use one `sub-agent` per node and let the main agent finalize after each sub-agent returns
+6. treat one completed round as:
    - diagnose one measured run
    - implement one selected direction
    - re-measure it with node_a
-6. continue until `state/round_loop_state.json` shows `remaining_rounds = 0` or a failure pauses the loop
-7. use the node_a commit for each completed round as the round-level record of:
+7. continue until `state/round_loop_state.json` shows `remaining_rounds = 0` or a failure pauses the loop
+8. use the node_a commit for each completed round as the round-level record of:
    - modification idea
    - performance delta
    - profile paths
 
-When the user says `连续工作5圈`:
+When the user says `连续工作N圈`:
 
-- treat it as the same instruction as `开始运行5圈`
+- treat it as the same instruction as `开始运行N圈`
+- the main agent owns the loop budget and the stop condition
+- the current dispatch step is always visible in `state/supervisor_task.json`
+
+When the user says `再运行N圈`:
+
+- treat it as the same instruction as `开始运行N圈`
+- arm a fresh `N`-round loop from the current accepted base / current graph state
 - the main agent owns the loop budget and the stop condition
 - the current dispatch step is always visible in `state/supervisor_task.json`
 
