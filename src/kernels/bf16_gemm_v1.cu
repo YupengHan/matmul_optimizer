@@ -51,31 +51,33 @@ struct TensorCoreTileConfig {
 
 using TensorCoreTile96 = TensorCoreTileConfig<3>;
 using TensorCoreTile128 = TensorCoreTileConfig<4>;
+using TensorCoreTile160 = TensorCoreTileConfig<5>;
 
 constexpr int kFixedBenchmarkM = 6464;
 constexpr int kFixedBenchmarkN = 7776;
 constexpr int kFixedBenchmarkK = 7232;
+constexpr int kFixedMainRegionN = 7680;
 constexpr int kFixedTailRegionN = TensorCoreTile96::kTensorBlockN;
-constexpr int kFixedMainRegionN = kFixedBenchmarkN - kFixedTailRegionN;
 
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
 static_assert(TensorCoreTile96::kTensorBlockM == 64, "Tail path expects a fixed 64x96 CTA tile.");
 static_assert(TensorCoreTile96::kTensorBlockN == 96, "Tail path expects a fixed 64x96 CTA tile.");
 static_assert(TensorCoreTile96::kWarpsPerBlock == 8, "Tail path expects an 8-warp CTA.");
-static_assert(TensorCoreTile128::kTensorBlockM == 64, "Main path expects a fixed 64x128 CTA tile.");
-static_assert(TensorCoreTile128::kTensorBlockN == 128, "Main path expects a fixed 64x128 CTA tile.");
-static_assert(TensorCoreTile128::kWarpsPerBlock == 8, "Main path expects an 8-warp CTA.");
+static_assert(TensorCoreTile160::kTensorBlockM == 64, "Main path expects a fixed 64x160 CTA tile.");
+static_assert(TensorCoreTile160::kTensorBlockN == 160, "Main path expects a fixed 64x160 CTA tile.");
+static_assert(TensorCoreTile160::kWarpsPerBlock == 8, "Main path expects an 8-warp CTA.");
 static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
 static_assert((TensorCoreTile96::kTensorBlockN % kAsyncCopyElems) == 0, "Tail B tile width must stay 16-byte aligned.");
-static_assert((TensorCoreTile128::kTensorBlockN % kAsyncCopyElems) == 0, "Main B tile width must stay 16-byte aligned.");
+static_assert((TensorCoreTile160::kTensorBlockN % kAsyncCopyElems) == 0, "Main B tile width must stay 16-byte aligned.");
 static_assert((TensorCoreTile96::kWarpGroupCols % kAsyncCopyElems) == 0, "Tail warp-group span must stay 16-byte aligned.");
-static_assert((TensorCoreTile128::kWarpGroupCols % kAsyncCopyElems) == 0, "Main warp-group span must stay 16-byte aligned.");
+static_assert((TensorCoreTile160::kWarpGroupCols % kAsyncCopyElems) == 0, "Main warp-group span must stay 16-byte aligned.");
 static_assert((TensorCoreTile96::kBSharedStride % kAsyncCopyElems) == 0, "Tail B shared stride must stay 16-byte aligned.");
-static_assert((TensorCoreTile128::kBSharedStride % kAsyncCopyElems) == 0, "Main B shared stride must stay 16-byte aligned.");
+static_assert((TensorCoreTile160::kBSharedStride % kAsyncCopyElems) == 0, "Main B shared stride must stay 16-byte aligned.");
 static_assert((TensorCoreTile96::kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
 static_assert((TensorCoreTile96::kBSharedTileElems % kAsyncCopyElems) == 0, "Tail B tile must be divisible by async copy width.");
-static_assert((TensorCoreTile128::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
-static_assert((kFixedMainRegionN % TensorCoreTile128::kTensorBlockN) == 0, "Fixed-shape main region must be an even count of 64x128 CTAs.");
+static_assert((TensorCoreTile160::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
+static_assert((kFixedMainRegionN % TensorCoreTile160::kTensorBlockN) == 0, "Fixed-shape main region must be an even count of 64x160 CTAs.");
+static_assert(kFixedMainRegionN == kFixedBenchmarkN - kFixedTailRegionN, "Fixed-shape split must keep a 7680-column main region plus a 96-column tail.");
 static_assert(kFixedMainRegionN + kFixedTailRegionN == kFixedBenchmarkN, "Main/tail split must cover the fixed benchmark width exactly.");
 static_assert((kWmmaN % kEpilogueVecElems) == 0, "Epilogue vector stores require adjacent column pairs.");
 
@@ -318,9 +320,9 @@ bool launch_bf16_gemm_v1(
   auto* c = reinterpret_cast<__nv_bfloat16*>(c_bf16);
 
   if (m == kFixedBenchmarkM && n == kFixedBenchmarkN && k == kFixedBenchmarkK) {
-    const dim3 main_block(TensorCoreTile128::kWarpsPerBlock * kWarpSize, 1, 1);
-    const dim3 main_grid(kFixedMainRegionN / TensorCoreTile128::kTensorBlockN, m / TensorCoreTile128::kTensorBlockM, 1);
-    bf16_gemm_v1_tensor_core_kernel<TensorCoreTile128><<<main_grid, main_block, 0, stream>>>(a, b, c, m, n, k);
+    const dim3 main_block(TensorCoreTile160::kWarpsPerBlock * kWarpSize, 1, 1);
+    const dim3 main_grid(kFixedMainRegionN / TensorCoreTile160::kTensorBlockN, m / TensorCoreTile160::kTensorBlockM, 1);
+    bf16_gemm_v1_tensor_core_kernel<TensorCoreTile160><<<main_grid, main_block, 0, stream>>>(a, b, c, m, n, k);
 
     const dim3 tail_block(TensorCoreTile96::kWarpsPerBlock * kWarpSize, 1, 1);
     const dim3 tail_grid(kFixedTailRegionN / TensorCoreTile96::kTensorBlockN, m / TensorCoreTile96::kTensorBlockM, 1);

@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-19T01:00:57-07:00",
   "source_diagnosis_id": "diagnosis_20260419_005301",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -27,5 +27,5 @@
     ],
     "stop_condition": "Stop if the wider main tile still leaves DRAM near the round-15 level, or if register pressure materially worsens occupancy without a clear runtime win, because then 64x160 is not wide enough to justify the extra tile state."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
