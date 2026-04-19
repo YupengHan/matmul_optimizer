@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_195405_bf16_gemm_v1_a4966f5`
-- run dir: `runs/20260418_195405_bf16_gemm_v1_a4966f5`
-- kernel tag: `bf16_gemm_v1_a4966f5`
+- run id: `20260418_201228_bf16_gemm_v1_af155a5`
+- run dir: `runs/20260418_201228_bf16_gemm_v1_af155a5`
+- kernel tag: `bf16_gemm_v1_af155a5`
 - round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `298.095123 ms`
-- p10 runtime: `296.365366 ms`
-- p90 runtime: `299.554312 ms`
-- TFLOP/s: `2.438884 TFLOP/s`
-- previous run id: `20260418_193855_bf16_gemm_v1_2668282`
-- runtime delta vs previous measured run: `-515.510315 ms`
-- TFLOP/s delta vs previous measured run: `+1.545307 TFLOP/s`
+- median runtime: `145.344559 ms`
+- p10 runtime: `144.536232 ms`
+- p90 runtime: `146.377028 ms`
+- TFLOP/s: `5.002041 TFLOP/s`
+- previous run id: `20260418_195405_bf16_gemm_v1_a4966f5`
+- runtime delta vs previous measured run: `-152.750565 ms`
+- TFLOP/s delta vs previous measured run: `+2.563157 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Rewrite the steady-state tile around BF16 Tensor Cores`
-- raw summary json: `runs/20260418_195405_bf16_gemm_v1_a4966f5/summary.json`
-- measured commit: `a4966f51626c0ae4e2d99e4e49fe26264639b123`
+- implemented direction name: `Add CTA-level shared-memory staging for WMMA tiles`
+- raw summary json: `runs/20260418_201228_bf16_gemm_v1_af155a5/summary.json`
+- measured commit: `af155a5bdaa475a7edba5ed1957b25a46454536e`
 - new best custom: `yes`
-- generated at: `2026-04-18T19:54:29-07:00`
+- generated at: `2026-04-18T20:12:43-07:00`
