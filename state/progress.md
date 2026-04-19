@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `6eaca8ea3a675237521dd743b9e744b57167933f`
 - plateau counter: `4`
 - round loop: `round 15/20`
 - rounds remaining: `6`
-- notes: `Node A completed round 14/20. Run node_b to continue round 15/20.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 15/20.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_004022`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `This diagnosis incorporates the round-14 human-in-loop signal and avoids barrier/shared-B retry.`
+- dir_01: Main-path explicit ldmatrix/mma.sync feed rewrite | bottleneck: Main-path operand delivery and instruction mix before tensor issue, especially the WMMA fragment-load path feeding the 64x128 CTA kernel and showing persistent smsp__warp_issue_stalled_mio_throttle_per_warp_active pressure.
+- dir_02: Retile CTA and warp partition to trim per-warp N baggage | bottleneck: Per-warp fragment baggage and B-side staging pressure caused by the current CTA/warp partition, reflected in MIO throttle and possibly excess register footprint from carrying multiple N-side fragments per warp.
+- dir_03: Direct-writeback epilogue that removes c_shared entirely | bottleneck: Epilogue shared-memory staging and synchronization overhead after accumulation, specifically the c_shared scratch path and warp-level syncs around accumulator writeback.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
