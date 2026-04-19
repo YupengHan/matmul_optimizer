@@ -6,44 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `16a98f7af190c1b90503973135cbf4b754cdad0a`
-- plateau counter: `0`
-- round loop: `round 1/5`
-- rounds remaining: `5`
-- notes: `Node C build succeeded for round 1/5. Node A will now measure the new code path.`
+- latest measured commit: `d90a8731b2f67bd39feb4960efeb9b70068ce838`
+- plateau counter: `1`
+- round loop: `round 2/5`
+- rounds remaining: `4`
+- notes: `Node A completed round 1/5. Run node_b to continue round 2/5.`
 
 ## Latest measured custom run
 
-- run id: `20260419_015554_bf16_gemm_v1_16a98f7`
-- run dir: `runs/20260419_015554_bf16_gemm_v1_16a98f7`
+- run id: `20260419_093633_bf16_gemm_v1_d90a873`
+- run dir: `runs/20260419_093633_bf16_gemm_v1_d90a873`
 - correctness: `PASS`
-- median runtime: `37.285807 ms`
-- TFLOP/s: `19.498557 TFLOP/s`
+- median runtime: `42.341888 ms`
+- TFLOP/s: `17.170217 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
-- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_092350`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- diagnosis notes: `Round 1/5 diagnosis prepared from run 20260419_015554_bf16_gemm_v1_16a98f7. Recommended dir_01 per human-priority override; dir_01 and dir_02 are human ideas.`
-- dir_01: Two-level B staging for the 64x384 hot band | bottleneck: Shared/L1 B-feed pressure and LSU issue bandwidth in the hot 64x384 kernel.
-- dir_02: Phased 64x384 micro-panels to shrink the live set | bottleneck: Register-limited occupancy and weak latency hiding from keeping the full 384-wide working set live per warp.
-- dir_03: Warp-specialized producer-consumer pipeline for the 64x384 loop | bottleneck: Synchronization and stage-orchestration overhead in the hot K-loop rather than raw DRAM bandwidth.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `human_idea`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
