@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_130555_bf16_gemm_v1_6ba601e`
-- run dir: `runs/20260419_130555_bf16_gemm_v1_6ba601e`
-- kernel tag: `bf16_gemm_v1_6ba601e`
-- round label: `round 5/5`
+- run id: `20260419_130737_bf16_gemm_v1_77f9587`
+- run dir: `runs/20260419_130737_bf16_gemm_v1_77f9587`
+- kernel tag: `bf16_gemm_v1_77f9587`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `36.447233 ms`
-- p10 runtime: `35.969403 ms`
-- p90 runtime: `37.839666 ms`
-- TFLOP/s: `19.947177 TFLOP/s`
-- previous run id: `20260419_125734_bf16_gemm_v1_19f846e`
-- runtime delta vs previous measured run: `+0.075266 ms`
-- TFLOP/s delta vs previous measured run: `-0.041277 TFLOP/s`
+- median runtime: `36.671488 ms`
+- p10 runtime: `36.247142 ms`
+- p90 runtime: `37.573734 ms`
+- TFLOP/s: `19.825196 TFLOP/s`
+- previous run id: `20260419_130555_bf16_gemm_v1_6ba601e`
+- runtime delta vs previous measured run: `+0.224255 ms`
+- TFLOP/s delta vs previous measured run: `-0.121982 TFLOP/s`
 - perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Tile384 epilogue budget for overlap`
-- implemented selection mode: `approved`
-- implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_130555_bf16_gemm_v1_6ba601e/summary.json`
-- measured commit: `6ba601ee1b00adbea87d58b78cf45ac8c0cc64a7`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260419_130737_bf16_gemm_v1_77f9587/summary.json`
+- measured commit: `77f95870d9eaf181f0be8556393e50ed38d1dd72`
 - new best custom: `no`
-- generated at: `2026-04-19T13:06:03-07:00`
+- generated at: `2026-04-19T13:07:46-07:00`

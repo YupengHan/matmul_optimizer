@@ -2,12 +2,12 @@
 
 - next node: `node_b`
 - status: `ready_for_node_b`
-- latest run id: `20260419_130555_bf16_gemm_v1_6ba601e`
-- latest kernel tag: `bf16_gemm_v1_6ba601e`
-- median runtime: `36.447233 ms`
+- latest run id: `20260419_130737_bf16_gemm_v1_77f9587`
+- latest kernel tag: `bf16_gemm_v1_77f9587`
+- median runtime: `36.671488 ms`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - round loop: `single-run`
 - rounds remaining: `0`
 - recommended direction: `None`
 - selected direction: `None`
-- immediate next action: `Node A completed the final planned round. Review the results before starting another loop.`
+- immediate next action: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
