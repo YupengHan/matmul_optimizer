@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_103438_bf16_gemm_v1_3eeb098`
-- run dir: `runs/20260419_103438_bf16_gemm_v1_3eeb098`
-- kernel tag: `bf16_gemm_v1_3eeb098`
-- round label: `round 2/5`
+- run id: `20260419_104631_bf16_gemm_v1_8346b48`
+- run dir: `runs/20260419_104631_bf16_gemm_v1_8346b48`
+- kernel tag: `bf16_gemm_v1_8346b48`
+- round label: `round 3/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `41.745407 ms`
-- p10 runtime: `41.641369 ms`
-- p90 runtime: `42.207522 ms`
-- TFLOP/s: `17.415555 TFLOP/s`
-- previous run id: `20260419_102608_bf16_gemm_v1_2872f92`
-- runtime delta vs previous measured run: `+6.068319 ms`
-- TFLOP/s delta vs previous measured run: `-2.962213 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `34.655231 ms`
+- p10 runtime: `34.474849 ms`
+- p90 runtime: `36.164361 ms`
+- TFLOP/s: `20.978634 TFLOP/s`
+- previous run id: `20260419_103438_bf16_gemm_v1_3eeb098`
+- runtime delta vs previous measured run: `-7.090176 ms`
+- TFLOP/s delta vs previous measured run: `+3.563079 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reduce stage-recycle barriers in the peeled 64x384 hot loop`
+- implemented direction name: `Pairwise unroll the peeled 64x384 hot loop without changing the handoff model`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_103438_bf16_gemm_v1_3eeb098/summary.json`
-- measured commit: `3eeb098209be61266f0448e163821fbc4f819003`
-- new best custom: `no`
-- generated at: `2026-04-19T10:34:46-07:00`
+- raw summary json: `runs/20260419_104631_bf16_gemm_v1_8346b48/summary.json`
+- measured commit: `8346b48ca5272beb86282fa09eb346dc73ab9f68`
+- new best custom: `yes`
+- generated at: `2026-04-19T10:46:39-07:00`
