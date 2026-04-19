@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `awaiting_direction_selection_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `05bac60ebd99e273cb46db683c56f34d8cdd87fe`
 - plateau counter: `6`
 - round loop: `round 4/5`
 - rounds remaining: `2`
-- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
+- notes: `Node C build succeeded for round 4/5. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -31,7 +31,7 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - diagnosis status: `completed`
 - diagnosis id: `diagnosis_20260419_124517`
 - recommended direction: `dir_01`
-- approved direction: `None`
+- approved direction: `dir_01`
 - diagnosis notes: `Diagnosed round-3 run 20260419_124436_bf16_gemm_v1_05bac60 while ranking against the restored accepted base 15d63b2 at 35.725824 ms. Round 1 warp specialization and round 3 straight-line producer scheduling are both strong negative evidence because both collapsed the hot kernel to one register-limited block per SM. The recommended direction therefore follows the human constraint set exactly: any new B-feed attempt must be warp-local at the consumer boundary only, with no CTA-wide repack, no second B shared tile, no extra CTA barrier, no increase in `launch__shared_mem_per_block_allocated`, and no reduction in `kCSharedStageCount`.`
 - dir_01: Use a warp-local consumer-side B load swizzle on the peeled 64x384 hot path | bottleneck: Warp-local shared-memory B-fragment reads and bank behavior in the 64x384 hot kernel, where the current consumer path may still be overfeeding LSU without requiring any macro-tile or CTA-pipeline rewrite.
 - dir_02: Pair Tile384 epilogue export across the existing two C-scratch stages | bottleneck: Hot-kernel shared export and LSU traffic after MMA completion, which can still contribute to the restored base's high mio_throttle even when occupancy is healthy.
@@ -39,10 +39,10 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `approved`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 
