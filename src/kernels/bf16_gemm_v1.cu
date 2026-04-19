@@ -41,11 +41,23 @@ struct TensorCoreTileConfig {
   // Reuse a single 16x16 scratch tile per warp during the epilogue instead of
   // materializing all N tiles in shared memory at once.
   static constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
+  static constexpr int kStaticSharedByteBudget = 48 * 1024;
+  static constexpr int kASharedBytes = 2 * kASharedTileElems * sizeof(__nv_bfloat16);
+  static constexpr int kCSharedTileBytesPerWarp = kCSharedTileElemsPerWarp * sizeof(float);
   static constexpr int kWarpGroupCols = kWarpMmaTilesN * kWmmaN;
   // Keep the B tile row-major for WMMA, but place a single 16-byte skew
   // between the two warp groups so each warp still reads a local slice.
   static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
   static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
+  static constexpr int kBSharedBytes = 2 * kBSharedTileElems * sizeof(__nv_bfloat16);
+  // Two scratch stages let the hot epilogue reuse the alternate tile and skip
+  // the extra warp sync that only protects the next store from clobbering the
+  // current tile's shared export buffer.
+  static constexpr int kCSharedStageCount =
+      (kASharedBytes + kBSharedBytes +
+       2 * kWarpsPerBlock * kCSharedTileBytesPerWarp <= kStaticSharedByteBudget)
+          ? 2
+          : 1;
   static constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
   static constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
   static constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
@@ -373,7 +385,9 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
   __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
   __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
-  __shared__ __align__(16) float c_shared[TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp];
+  __shared__ __align__(16)
+      float c_shared[TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
+                     TileConfig::kCSharedTileElemsPerWarp];
 
   const int warp_id = threadIdx.x / kWarpSize;
   const int lane_id = threadIdx.x % kWarpSize;
@@ -437,9 +451,15 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
   }
 
-  float* warp_c_tile = c_shared + warp_id * TileConfig::kCSharedTileElemsPerWarp;
+  constexpr int kCSharedStageStride =
+      TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
+  constexpr int kCSharedStageMask = TileConfig::kCSharedStageCount - 1;
+  __nv_bfloat16* c_tile_base = c + row * n + col;
   #pragma unroll
   for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
+    float* warp_c_tile =
+        c_shared + (tile_n & kCSharedStageMask) * kCSharedStageStride +
+        warp_id * TileConfig::kCSharedTileElemsPerWarp;
     wmma::store_matrix_sync(
         warp_c_tile,
         acc_frags[tile_n],
@@ -456,10 +476,12 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
       const int local_row = pair_idx / kPairsPerRow;
       const int local_col = (pair_idx % kPairsPerRow) * kEpilogueVecElems;
       store_bfloat162_pair(
-          c + (row + local_row) * n + col + tile_n * kWmmaN + local_col,
+          c_tile_base + local_row * n + tile_n * kWmmaN + local_col,
           warp_c_tile_pairs[pair_idx]);
     }
-    __syncwarp();
+    if constexpr (TileConfig::kCSharedStageCount == 1) {
+      __syncwarp();
+    }
   }
 #else
   (void)a;
