@@ -1,33 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Rewrite shared fragment delivery to cut MIO pressure",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T00:26:13-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_002159",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Rewrite shared fragment delivery to cut MIO pressure",
-    "hypothesis": "Round 12 falsified barrier frequency as the main limiter: barrier stalls dropped sharply while runtime regressed, tensor active fell to 28.43%, and MIO throttle climbed to 25.25%. The next aggressive move should target the tensor feed path itself by changing how A/B tiles are laid out in shared memory and how warps consume them so WMMA loads stop overdriving the MIO/LSU path.",
-    "expected_bottleneck": "Shared-memory fragment delivery and MIO saturation from the current CTA-wide staging plus warp-group B skew, not CTA barrier cadence.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu: TensorCoreTileConfig shared-layout constants",
-      "src/kernels/bf16_gemm_v1.cu: b_shared_col_from_logical",
-      "src/kernels/bf16_gemm_v1.cu: stage_a_shared_tile_async",
-      "src/kernels/bf16_gemm_v1.cu: stage_b_shared_tile_async",
-      "src/kernels/bf16_gemm_v1.cu: bf16_gemm_v1_tensor_core_kernel WMMA load path"
-    ],
-    "risk": "High-touch layout work can silently break correctness or worsen bank behavior if the new swizzle does not match WMMA consumption exactly.",
-    "metrics_to_recheck": [
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-      "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-      "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if MIO throttle stays near the current mid-20% range or tensor active does not recover above the high-20s after the layout rewrite."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

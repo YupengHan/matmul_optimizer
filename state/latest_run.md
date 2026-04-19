@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_002116_bf16_gemm_v1_134df29`
-- run dir: `runs/20260419_002116_bf16_gemm_v1_134df29`
-- kernel tag: `bf16_gemm_v1_134df29`
-- round label: `round 12/20`
+- run id: `20260419_002954_bf16_gemm_v1_0ac7611`
+- run dir: `runs/20260419_002954_bf16_gemm_v1_0ac7611`
+- kernel tag: `bf16_gemm_v1_0ac7611`
+- round label: `round 13/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.005760 ms`
-- p10 runtime: `45.703782 ms`
-- p90 runtime: `49.023078 ms`
-- TFLOP/s: `15.802791 TFLOP/s`
-- previous run id: `20260419_000651_bf16_gemm_v1_662a03b`
-- runtime delta vs previous measured run: `+1.923071 ms`
-- TFLOP/s delta vs previous measured run: `-0.689384 TFLOP/s`
+- median runtime: `65.610237 ms`
+- p10 runtime: `64.881050 ms`
+- p90 runtime: `67.501155 ms`
+- TFLOP/s: `11.080884 TFLOP/s`
+- previous run id: `20260419_002116_bf16_gemm_v1_134df29`
+- runtime delta vs previous measured run: `+19.604477 ms`
+- TFLOP/s delta vs previous measured run: `-4.721907 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Stage 32-wide K macro-tiles so each sync feeds two MMA slices`
+- implemented direction name: `Rewrite shared fragment delivery to cut MIO pressure`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_002116_bf16_gemm_v1_134df29/summary.json`
-- measured commit: `134df2982fe154e85e9b0d1b62207275ee201a27`
+- raw summary json: `runs/20260419_002954_bf16_gemm_v1_0ac7611/summary.json`
+- measured commit: `0ac7611b334ecc5aed0106a24dfae3c2125360d8`
 - new best custom: `no`
-- generated at: `2026-04-19T00:21:26-07:00`
+- generated at: `2026-04-19T00:30:05-07:00`

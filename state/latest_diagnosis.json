@@ -1,87 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_002159",
-  "status": "completed",
-  "created_at": "2026-04-19T00:21:59-07:00",
-  "source_run_id": "20260419_002116_bf16_gemm_v1_134df29",
-  "source_run_dir": "runs/20260419_002116_bf16_gemm_v1_134df29",
-  "source_summary_json": "runs/20260419_002116_bf16_gemm_v1_134df29/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_002954_bf16_gemm_v1_0ac7611",
+  "source_run_dir": "runs/20260419_002954_bf16_gemm_v1_0ac7611",
+  "source_summary_json": "runs/20260419_002954_bf16_gemm_v1_0ac7611/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Rewrite shared fragment delivery to cut MIO pressure",
-      "hypothesis": "Round 12 falsified barrier frequency as the main limiter: barrier stalls dropped sharply while runtime regressed, tensor active fell to 28.43%, and MIO throttle climbed to 25.25%. The next aggressive move should target the tensor feed path itself by changing how A/B tiles are laid out in shared memory and how warps consume them so WMMA loads stop overdriving the MIO/LSU path.",
-      "expected_bottleneck": "Shared-memory fragment delivery and MIO saturation from the current CTA-wide staging plus warp-group B skew, not CTA barrier cadence.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: TensorCoreTileConfig shared-layout constants",
-        "src/kernels/bf16_gemm_v1.cu: b_shared_col_from_logical",
-        "src/kernels/bf16_gemm_v1.cu: stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu: stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu: bf16_gemm_v1_tensor_core_kernel WMMA load path"
-      ],
-      "risk": "High-touch layout work can silently break correctness or worsen bank behavior if the new swizzle does not match WMMA consumption exactly.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if MIO throttle stays near the current mid-20% range or tensor active does not recover above the high-20s after the layout rewrite."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Collapse the epilogue scratch and scalar writeback path",
-      "hypothesis": "The kernel currently stores each WMMA accumulator tile through shared float scratch and then emits scalar BF16 writes lane-by-lane. That adds CUDA-core and LSU work after every tensor-core tile and likely contributes to the elevated MIO throttle and low tensor share. Repacking the epilogue around register-resident fragments and wider BF16 stores should reduce non-tensor instructions without touching barrier cadence.",
-      "expected_bottleneck": "Epilogue/writeback overhead from shared scratch plus scalar output stores diluting tensor-core work.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: c_shared allocation",
-        "src/kernels/bf16_gemm_v1.cu: warp_c_tile scratch usage",
-        "src/kernels/bf16_gemm_v1.cu: wmma::store_matrix_sync epilogue loop",
-        "src/kernels/bf16_gemm_v1.cu: scalar BF16 global-store loop"
-      ],
-      "risk": "Medium-high; fragment repacking and wider stores can introduce layout mistakes or alignment-sensitive bugs in the fixed-shape fast path.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if writeback changes lower LSU work only marginally and the full-kernel runtime does not improve by a measurable amount."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Retile warp ownership to raise tensor density and active warps",
-      "hypothesis": "With only 33.08% active warps and register-limited occupancy, the current 64x128 main tile may be asking each warp to carry too much accumulator, address-generation, and store work relative to tensor math. An aggressive retile along the N-side or warp-MMA fanout can reduce per-warp baggage so more warps stay eligible and a larger fraction of cycles land on the tensor pipe.",
-      "expected_bottleneck": "Poor CUDA-core vs tensor-core work partitioning from the present CTA/warp tile shape, not synchronization frequency.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: kTensorWarpTilesM",
-        "src/kernels/bf16_gemm_v1.cu: kTensorWarpTilesN",
-        "src/kernels/bf16_gemm_v1.cu: TensorCoreTile96 alias",
-        "src/kernels/bf16_gemm_v1.cu: TensorCoreTile128 alias",
-        "src/kernels/bf16_gemm_v1.cu: launch_bf16_gemm_v1 fixed-shape main/tail launch geometry"
-      ],
-      "risk": "Medium; retiling is mechanically contained but can reduce data reuse or increase tail inefficiency if the new shape fights the fixed 7776-wide output.",
-      "metrics_to_recheck": [
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the retile fails to increase active warps or tensor activity while adding more grid/tail overhead."
-    }
-  ],
-  "notes": "This diagnosis incorporates aggressive exploration and human-in-loop guidance."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
