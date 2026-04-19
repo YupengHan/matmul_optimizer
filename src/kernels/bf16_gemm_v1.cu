@@ -33,15 +33,10 @@ constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
 constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
-// Stage B as independent 16x16 row-major subtiles so each warp loads from a
-// compact, aligned shared-memory region instead of striding through one wide
-// 16x96 slab. Keep a 16-byte skew per subtile row to preserve async-copy
-// alignment while changing the bank pattern seen by the 4-warp CTA.
-constexpr int kBSharedSubtileCols = kWmmaN;
-constexpr int kBSharedSubtiles = kTensorBlockN / kBSharedSubtileCols;
-constexpr int kBSharedStride = kBSharedSubtileCols + kAsyncCopyElems;
-constexpr int kBSharedSubtileElems = kWmmaK * kBSharedStride;
-constexpr int kBSharedTileElems = kBSharedSubtiles * kBSharedSubtileElems;
+// Keep the B tile row-major for WMMA, but add one 16-byte chunk of skew per row
+// so adjacent rows no longer alias the same shared-memory bank pattern.
+constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
+constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
 constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
 constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
 constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
@@ -51,10 +46,8 @@ constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
 static_assert((kWmmaK % kAsyncCopyElems) == 0, "A tile width must stay 16-byte aligned.");
 static_assert((kTensorBlockN % kAsyncCopyElems) == 0, "B tile width must stay 16-byte aligned.");
-static_assert((kTensorBlockN % kBSharedSubtileCols) == 0, "B tile must decompose into full WMMA subtiles.");
 static_assert((kBSharedStride % kAsyncCopyElems) == 0, "B shared stride must stay 16-byte aligned.");
 static_assert((kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
-static_assert((kBSharedSubtileElems % kAsyncCopyElems) == 0, "B subtile must be divisible by async copy width.");
 static_assert((kBSharedTileElems % kAsyncCopyElems) == 0, "B tile must be divisible by async copy width.");
 
 __device__ __forceinline__ void cp_async_copy_16_bytes(
@@ -102,10 +95,8 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   for (int copy_idx = threadIdx.x; copy_idx < kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
     const int row = copy_idx / kBAsyncCopiesPerRow;
     const int col = (copy_idx % kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int subtile_idx = col / kBSharedSubtileCols;
-    const int subtile_col = col % kBSharedSubtileCols;
     cp_async_copy_16_bytes(
-        shared_tile + subtile_idx * kBSharedSubtileElems + row * kBSharedStride + subtile_col,
+        shared_tile + row * kBSharedStride + col,
         global_tile + row * global_stride + col);
   }
 }
@@ -211,12 +202,12 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
+    const __nv_bfloat16* b_tile = b_shared[curr_stage] + warp_tile_n * kWarpMmaTilesN * kWmmaN;
+
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     #pragma unroll
     for (int tile_n = 0; tile_n < kWarpMmaTilesN; ++tile_n) {
-      const int subtile_idx = warp_tile_n * kWarpMmaTilesN + tile_n;
-      const __nv_bfloat16* b_tile = b_shared[curr_stage] + subtile_idx * kBSharedSubtileElems;
-      wmma::load_matrix_sync(b_frags[tile_n], b_tile, kBSharedStride);
+      wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, kBSharedStride);
       wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
     }
 
