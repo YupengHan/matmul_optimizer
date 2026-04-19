@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_105226_bf16_gemm_v1_edb3741`
-- run dir: `runs/20260419_105226_bf16_gemm_v1_edb3741`
-- kernel tag: `bf16_gemm_v1_edb3741`
-- round label: `round 4/5`
+- run id: `20260419_105842_bf16_gemm_v1_24b5d83`
+- run dir: `runs/20260419_105842_bf16_gemm_v1_24b5d83`
+- kernel tag: `bf16_gemm_v1_24b5d83`
+- round label: `round 5/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `34.966097 ms`
-- p10 runtime: `34.947673 ms`
-- p90 runtime: `36.192258 ms`
-- TFLOP/s: `20.792124 TFLOP/s`
-- previous run id: `20260419_104631_bf16_gemm_v1_8346b48`
-- runtime delta vs previous measured run: `+0.310865 ms`
-- TFLOP/s delta vs previous measured run: `-0.186510 TFLOP/s`
+- median runtime: `39.569407 ms`
+- p10 runtime: `39.521074 ms`
+- p90 runtime: `40.202539 ms`
+- TFLOP/s: `18.373271 TFLOP/s`
+- previous run id: `20260419_105226_bf16_gemm_v1_edb3741`
+- runtime delta vs previous measured run: `+4.603310 ms`
+- TFLOP/s delta vs previous measured run: `-2.418853 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Micro-retune the single-level B skew in the peeled 64x384 hot kernel`
+- implemented direction name: `Specialize Tile384 cp.async producer assignment in the peeled hot path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_105226_bf16_gemm_v1_edb3741/summary.json`
-- measured commit: `edb374118aaec47be2390e0a334526b8d5359596`
+- raw summary json: `runs/20260419_105842_bf16_gemm_v1_24b5d83/summary.json`
+- measured commit: `24b5d8378a1227859b9a24d7fa45d52918ae2d00`
 - new best custom: `no`
-- generated at: `2026-04-19T10:52:33-07:00`
+- generated at: `2026-04-19T10:58:50-07:00`

@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_105254",
-  "status": "completed",
-  "created_at": "2026-04-19T10:52:54-07:00",
-  "source_run_id": "20260419_105226_bf16_gemm_v1_edb3741",
-  "source_run_dir": "runs/20260419_105226_bf16_gemm_v1_edb3741",
-  "source_summary_json": "runs/20260419_105226_bf16_gemm_v1_edb3741/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_105842_bf16_gemm_v1_24b5d83",
+  "source_run_dir": "runs/20260419_105842_bf16_gemm_v1_24b5d83",
+  "source_summary_json": "runs/20260419_105842_bf16_gemm_v1_24b5d83/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Specialize Tile384 cp.async producer assignment in the peeled hot path",
-      "hypothesis": "The accepted best 8346b48 already restored the right hot-loop shape: pairwise peeled steady-state compute, 128 registers/thread, and a stable 2-block register occupancy limit. The edb3741 skew-retune is explicit negative evidence against further B-layout tweaking because runtime regressed while mio_throttle stayed flat-to-worse and the hot kernel's LSU wavefront pressure jumped instead of falling. The best bounded next move is therefore to leave the accepted single-level B layout and CTA-wide recycle model intact, but replace the generic stage_a_shared_tile_async and stage_b_shared_tile_async ownership loops with a Tile384-specific producer schedule so cp.async issue and address work are straighter and cheaper in the hot path.",
-      "expected_bottleneck": "Producer-side cp.async issue overhead and LSU address-generation pressure in the 64x384 peeled hot kernel, not occupancy or synchronization.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:236-263",
-        "src/kernels/bf16_gemm_v1.cu:599-607",
-        "src/kernels/bf16_gemm_v1.cu:625-649",
-        "src/kernels/bf16_gemm_v1.cu:709-762"
-      ],
-      "risk": "A bad producer partition can break global-to-shared coalescing or add enough control flow to erase the gain. It also must not increase registers/thread enough to lose the accepted 2-block occupancy limit.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if hot-kernel LSU or mio pressure does not improve, or if register usage rises enough to threaten the accepted 2-block occupancy behavior."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Pair the Tile384 epilogue export across the existing two C-scratch stages",
-      "hypothesis": "8346b48 still finishes each hot CTA by serializing 12 accumulator tiles through the c_shared scratch path with one warp sync and one quad-export loop per tile_n. Since Tile384 already has kCSharedStageCount = 2, there is a bounded follow-up that stays entirely within the accepted implementation family: export two accumulator tiles at a time through the two existing scratch stages so sync, pointer setup, and some shared round-trip overhead are amortized across a tile pair. This attacks the same hot-kernel LSU pressure from the epilogue side rather than from the B-layout side that just regressed.",
-      "expected_bottleneck": "Hot-kernel epilogue LSU traffic and shared-memory export overhead after MMA completion, which can still contribute to the elevated mio_throttle.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:54-61",
-        "src/kernels/bf16_gemm_v1.cu:668-699"
-      ],
-      "risk": "The epilogue is correctness-sensitive. A paired export must preserve the shared scratch aliasing rules and output ordering, and the upside may be modest if the epilogue is not the dominant contributor to the remaining LSU pressure.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "gpu__time_duration.sum",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the hot-kernel duration and LSU indicators do not move together, or if the change needs extra synchronization beyond the current accepted two-stage scratch scheme."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Add a fixed-K peeled 64x96 tail kernel",
-      "hypothesis": "The last 96 columns still run through the generic tensor-core kernel even though the benchmark shape is fixed and the tail metrics are stable but clearly generic: about 19.6% barrier stall and 15.3% short scoreboard in both the best run and the regression. Reusing the peeled fixed-K structure for the tail is a low-risk cleanup that complements the accepted hot kernel without revisiting the disproven skew-retune or named-barrier paths.",
-      "expected_bottleneck": "Residual generic-loop, barrier, and scoreboard overhead in the 64x96 tail kernel; the upside is capped because the tail is a small fraction of total time.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:415-523",
-        "src/kernels/bf16_gemm_v1.cu:559-705",
-        "src/kernels/bf16_gemm_v1.cu:739-761"
-      ],
-      "risk": "This direction is safer than the hot-kernel changes but has a lower ceiling. It may clean up the tail nicely while barely moving end-to-end runtime.",
-      "metrics_to_recheck": [
-        "gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the specialized tail does not materially reduce tail-kernel duration or if the end-to-end improvement is within benchmark noise."
-    }
-  ],
-  "notes": "Diagnosed regressed run 20260419_105226_bf16_gemm_v1_edb3741 against the restored accepted best 8346b48. The latest single-level B skew retune is negative evidence: end-to-end runtime regressed from 34.655231 ms to 34.966097 ms, tensor active slipped from 35.06 to 34.56, mio_throttle stayed effectively unchanged at 35.83, and hot-kernel LSU wavefront pressure rose sharply. The ranking therefore excludes any further B-skew or mapping tweaks, and it also keeps the earlier named-barrier/subgroup handoff family excluded because that path already regressed much harder by inflating register pressure and collapsing active warps."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
