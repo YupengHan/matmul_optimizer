@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_225901_bf16_gemm_v1_91e446e`
-- run dir: `runs/20260418_225901_bf16_gemm_v1_91e446e`
-- kernel tag: `bf16_gemm_v1_91e446e`
-- round label: `round 5/20`
+- run id: `20260418_230727_bf16_gemm_v1_2a86c71`
+- run dir: `runs/20260418_230727_bf16_gemm_v1_2a86c71`
+- kernel tag: `bf16_gemm_v1_2a86c71`
+- round label: `round 6/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `54.136911 ms`
-- p10 runtime: `54.022860 ms`
-- p90 runtime: `57.542648 ms`
-- TFLOP/s: `13.429274 TFLOP/s`
-- previous run id: `20260418_225011_bf16_gemm_v1_3265675`
-- runtime delta vs previous measured run: `-8.989584 ms`
-- TFLOP/s delta vs previous measured run: `+1.912408 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `57.120176 ms`
+- p10 runtime: `56.703691 ms`
+- p90 runtime: `61.815400 ms`
+- TFLOP/s: `12.727892 TFLOP/s`
+- previous run id: `20260418_225901_bf16_gemm_v1_91e446e`
+- runtime delta vs previous measured run: `+2.983265 ms`
+- TFLOP/s delta vs previous measured run: `-0.701382 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps`
+- implemented direction name: `Replace the simple B-row skew with a warp-friendly shared-memory B swizzle`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260418_225901_bf16_gemm_v1_91e446e/summary.json`
-- measured commit: `91e446eea2cf2de912e81e21c45653dcd227d591`
-- new best custom: `yes`
-- generated at: `2026-04-18T22:59:09-07:00`
+- raw summary json: `runs/20260418_230727_bf16_gemm_v1_2a86c71/summary.json`
+- measured commit: `2a86c71387e520f89bd133d824161d17428f4242`
+- new best custom: `no`
+- generated at: `2026-04-18T23:07:35-07:00`

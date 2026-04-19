@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Replace the simple B-row skew with a warp-friendly shared-memory B swizzle",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-18T23:04:44-07:00",
-  "source_diagnosis_id": "diagnosis_20260418_225935",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Replace the simple B-row skew with a warp-friendly shared-memory B swizzle",
-    "idea_origin": "auto-analysis",
-    "hypothesis": "The round 5 retile already pushed the kernel up to its current shared-memory occupancy ceiling: NCU reports 7 theoretical CTAs per SM from shared memory, 28 maximum warps per active cycle, and 58.03% active warps, so another occupancy-only tweak is no longer the first-order move. The remaining dominant stall is MIO throttle at 33.09%, and the detailed CSV still shows heavy LSU/L1 activity from the steady-state load path (`l1tex__data_pipe_lsu_wavefronts` 66.09%, `l1tex__data_bank_reads` 13.55%). Each warp still issues three `matrix_b` fragment loads per K-step from a row-major shared tile with only a +8-element skew, so a stronger B-side swizzle or permuted staging layout is the most direct way to reduce shared-load pressure and feed Tensor Cores more consistently.",
-    "expected_bottleneck": "Shared-memory and MIO pressure on the B fragment load path inside the steady-state tensor loop",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:36-44 (`kBSharedStride`, `kBSharedTileElems`, and B staging shape constants)",
-      "src/kernels/bf16_gemm_v1.cu:91-102 (`stage_b_shared_tile_async`)",
-      "src/kernels/bf16_gemm_v1.cu:204-211 (B shared pointer setup and `wmma::load_matrix_sync` for `b_frags`)"
-    ],
-    "risk": "Moderate. The B layout change must preserve 16-byte `cp.async` alignment and the current WMMA row-major semantics; a swizzle that helps the warp-load pattern can still make staging math or correctness more fragile.",
-    "metrics_to_recheck": [
-      "median_runtime_ms",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-      "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "correctness_passed"
-    ],
-    "stop_condition": "Stop if the swizzled B layout does not produce a clear drop in MIO throttle or LSU wavefront pressure, or if correctness becomes brittle enough that the extra shared indexing complexity is not paying for itself."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

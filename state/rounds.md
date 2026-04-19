@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `5`
-- remaining rounds: `15`
-- current round label: `round 6/20`
+- completed rounds: `6`
+- remaining rounds: `14`
+- current round label: `round 7/20`
 - auto use recommended: `yes`
 - accepted base run id: `20260418_225901_bf16_gemm_v1_91e446e`
 - accepted base measured commit: `91e446eea2cf2de912e81e21c45653dcd227d591`
@@ -13,15 +13,15 @@
 - started at: `2026-04-18T22:03:53-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 6/20. Node A will measure the result next.`
+- notes: `Completed round 6/20. Continue with node_b for round 7/20. Accepted base: 20260418_225901_bf16_gemm_v1_91e446e at 54.136911 ms.`
 
 ## Last completed round
 
-- round: `5/20`
+- round: `6/20`
 - direction: `dir_01`
-- direction name: `Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps`
-- verdict: `improved`
-- runtime delta: `-8.989584 ms`
-- TFLOP/s delta: `+1.912408 TFLOP/s`
-- run dir: `runs/20260418_225901_bf16_gemm_v1_91e446e`
-- ncu rep path: `runs/20260418_225901_bf16_gemm_v1_91e446e/ncu_profile.ncu-rep`
+- direction name: `Replace the simple B-row skew with a warp-friendly shared-memory B swizzle`
+- verdict: `regressed`
+- runtime delta: `+2.983265 ms`
+- TFLOP/s delta: `-0.701382 TFLOP/s`
+- run dir: `runs/20260418_230727_bf16_gemm_v1_2a86c71`
+- ncu rep path: `runs/20260418_230727_bf16_gemm_v1_2a86c71/ncu_profile.ncu-rep`
