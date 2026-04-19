@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_111959_bf16_gemm_v1_host_v0`
-- run dir: `runs/20260418_111959_bf16_gemm_v1_host_v0`
-- kernel tag: `bf16_gemm_v1_host_v0`
+- run id: `20260418_193855_bf16_gemm_v1_2668282`
+- run dir: `runs/20260418_193855_bf16_gemm_v1_2668282`
+- kernel tag: `bf16_gemm_v1_2668282`
 - round label: `single-run`
-- runner: `build/custom_runner`
+- runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `802.842560 ms`
-- p10 runtime: `796.220923 ms`
-- p90 runtime: `807.935077 ms`
-- TFLOP/s: `0.905557 TFLOP/s`
-- previous run id: `None`
-- runtime delta vs previous measured run: `N/A`
-- TFLOP/s delta vs previous measured run: `N/A`
-- perf verdict: `unknown`
+- median runtime: `813.605438 ms`
+- p10 runtime: `811.410504 ms`
+- p90 runtime: `817.891785 ms`
+- TFLOP/s: `0.893577 TFLOP/s`
+- previous run id: `20260418_111959_bf16_gemm_v1_host_v0`
+- runtime delta vs previous measured run: `+10.762878 ms`
+- TFLOP/s delta vs previous measured run: `-0.011979 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `None`
 - implemented direction name: `None`
-- raw summary json: `runs/20260418_111959_bf16_gemm_v1_host_v0/summary.json`
-- measured commit: `9e20de18aa67dc6b5eb289d5e8e4c203dae37fa6`
-- new best custom: `yes`
-- generated at: `2026-04-18T12:13:00-07:00`
+- raw summary json: `runs/20260418_193855_bf16_gemm_v1_2668282/summary.json`
+- measured commit: `2668282cfb6bcf377df99fc25b0aefbbcdf90aec`
+- new best custom: `no`
+- generated at: `2026-04-18T19:39:56-07:00`

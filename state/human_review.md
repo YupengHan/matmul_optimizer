@@ -3,7 +3,7 @@
 ## Current workflow gate
 
 - next node: `node_b`
-- status: `node_b_context_ready`
+- status: `ready_for_node_b`
 - round loop: `single-run` with `0` rounds remaining
 
 ## Direction approval policy
@@ -14,13 +14,11 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260418_174143`
-- diagnosis status: `awaiting_codex`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
 - recommended direction: `None`
 - approved direction: `None`
-- dir_01: PENDING | bottleneck: PENDING
-- dir_02: PENDING | bottleneck: PENDING
-- dir_03: PENDING | bottleneck: PENDING
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
