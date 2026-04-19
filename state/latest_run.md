@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_210900_bf16_gemm_v1_aee3c09`
-- run dir: `runs/20260418_210900_bf16_gemm_v1_aee3c09`
-- kernel tag: `bf16_gemm_v1_aee3c09`
-- round label: `round 1/5`
+- run id: `20260418_212022_bf16_gemm_v1_deeb976`
+- run dir: `runs/20260418_212022_bf16_gemm_v1_deeb976`
+- kernel tag: `bf16_gemm_v1_deeb976`
+- round label: `round 2/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `101.374962 ms`
-- p10 runtime: `100.403029 ms`
-- p90 runtime: `105.198390 ms`
-- TFLOP/s: `7.171588 TFLOP/s`
-- previous run id: `20260418_201228_bf16_gemm_v1_af155a5`
-- runtime delta vs previous measured run: `-43.969597 ms`
-- TFLOP/s delta vs previous measured run: `+2.169547 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `101.616016 ms`
+- p10 runtime: `100.490137 ms`
+- p90 runtime: `104.467998 ms`
+- TFLOP/s: `7.154575 TFLOP/s`
+- previous run id: `20260418_210900_bf16_gemm_v1_aee3c09`
+- runtime delta vs previous measured run: `+0.241055 ms`
+- TFLOP/s delta vs previous measured run: `-0.017013 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Async double-buffered K pipeline`
-- raw summary json: `runs/20260418_210900_bf16_gemm_v1_aee3c09/summary.json`
-- measured commit: `aee3c09b51fbf78ad79f4ce5f68841449bab54a1`
-- new best custom: `yes`
-- generated at: `2026-04-18T21:09:11-07:00`
+- implemented direction name: `Reduce cp.async barrier pressure`
+- raw summary json: `runs/20260418_212022_bf16_gemm_v1_deeb976/summary.json`
+- measured commit: `deeb9765cb3ed49aa93e1d9cefc6b3beacd950f5`
+- new best custom: `no`
+- generated at: `2026-04-18T21:20:33-07:00`

@@ -1,75 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_210931",
-  "status": "completed",
-  "created_at": "2026-04-18T21:09:31-07:00",
-  "source_run_id": "20260418_210900_bf16_gemm_v1_aee3c09",
-  "source_run_dir": "runs/20260418_210900_bf16_gemm_v1_aee3c09",
-  "source_summary_json": "runs/20260418_210900_bf16_gemm_v1_aee3c09/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_212022_bf16_gemm_v1_deeb976",
+  "source_run_dir": "runs/20260418_212022_bf16_gemm_v1_deeb976",
+  "source_summary_json": "runs/20260418_212022_bf16_gemm_v1_deeb976/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Reduce cp.async barrier pressure",
-      "hypothesis": "The new profile shifted away from long-scoreboard latency and toward synchronization overhead. A less stop-and-go prefetch schedule, with fewer or better-placed waits in the K loop, should reduce the 21.89% barrier stall and let the tensor pipe stay busier.",
-      "expected_bottleneck": "Barrier and wait-group serialization in the double-buffered steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:44-53",
-        "src/kernels/bf16_gemm_v1.cu:113-177"
-      ],
-      "risk": "Moderate. Reordering the cp.async pipeline can introduce correctness bugs or remove useful overlap if the new schedule is too shallow.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if barrier stalls stay materially high or runtime does not improve after one pipeline rewrite; do not keep tuning sync ordering past that point."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Widen and repack the staging path",
-      "hypothesis": "The 37.79% MIO throttle suggests the kernel is still issuing too many small memory instructions or feeding shared memory in a layout that is not friendly to the tensor-core load path. Using wider async copies and a cleaner shared-memory packing/swizzle should reduce instruction pressure and improve overlap.",
-      "expected_bottleneck": "MIO throttle from cp.async issue rate and shared-memory staging layout.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:28-67",
-        "src/kernels/bf16_gemm_v1.cu:121-123",
-        "src/kernels/bf16_gemm_v1.cu:145-171"
-      ],
-      "risk": "Moderate to high. Copy-size and layout changes are easy to misalign, and a bad swizzle can trade one memory bottleneck for another.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if MIO throttle does not fall materially or memory throughput drops without a runtime win; revert the staging idea instead of layering more tweaks."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Retune the tensor block geometry",
-      "hypothesis": "Tensor activity is still low at 13.61% even though occupancy is not obviously collapsed. A different warp/CTA split could reduce live state, lower control overhead per unit of math, and give the schedulers a better balance between issue density and register pressure for this fixed shape.",
-      "expected_bottleneck": "Occupancy / register pressure limiting tensor-core issue efficiency.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:16-24",
-        "src/kernels/bf16_gemm_v1.cu:113-189",
-        "src/kernels/bf16_gemm_v1.cu:221-228"
-      ],
-      "risk": "High. Changing the warp tile or block shape can easily reduce throughput or require more invasive register and shared-memory rebalancing.",
-      "metrics_to_recheck": [
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if a new tile shape fails to raise tensor activity or cuts occupancy without a runtime gain; do not expand into multiple geometry variants in this loop."
-    }
-  ],
-  "notes": "Run node_b to produce exactly three ranked directions."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 2/5` with `4` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 3/5` with `3` rounds remaining
 
 ## Direction approval policy
 
@@ -14,17 +14,15 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260418_210931`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- dir_01: Reduce cp.async barrier pressure | bottleneck: Barrier and wait-group serialization in the double-buffered steady-state loop.
-- dir_02: Widen and repack the staging path | bottleneck: MIO throttle from cp.async issue rate and shared-memory staging layout.
-- dir_03: Retune the tensor block geometry | bottleneck: Occupancy / register pressure limiting tensor-core issue efficiency.
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
