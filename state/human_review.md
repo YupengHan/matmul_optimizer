@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 13/20` with `8` rounds remaining
 
 ## Direction approval policy
@@ -14,16 +14,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260419_002159`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `This diagnosis incorporates aggressive exploration and human-in-loop guidance.`
+- dir_01: Rewrite shared fragment delivery to cut MIO pressure | bottleneck: Shared-memory fragment delivery and MIO saturation from the current CTA-wide staging plus warp-group B skew, not CTA barrier cadence.
+- dir_02: Collapse the epilogue scratch and scalar writeback path | bottleneck: Epilogue/writeback overhead from shared scratch plus scalar output stores diluting tensor-core work.
+- dir_03: Retile warp ownership to raise tensor density and active warps | bottleneck: Poor CUDA-core vs tensor-core work partitioning from the present CTA/warp tile shape, not synchronization frequency.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
