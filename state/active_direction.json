@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Two-level B staging for the 64x384 hot band",
+  "selection_mode": "human_idea",
+  "selected_at": "2026-04-19T09:29:53-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_092350",
+  "status": "implemented_pending_measurement",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Two-level B staging for the 64x384 hot band",
+    "idea_origin": "human-idea",
+    "hypothesis": "The promoted 64x384 path already wins on CTA count, but the B feed still uses one row-major shared layout plus a single 16-byte warp-group skew. On the measured 64x384 kernel, mio_throttle is 31.60%, l1tex LSU wavefront pressure is high, and tensor active is only 32.61%, which points to the current B producer and consumer layout serving neither cp.async/coalescing nor warp consumption especially well. Keep the 64x384 outer tile, but split global->shared and shared->fragment into separate layouts via a CTA-local reorder or an interleaved swizzle so producer traffic and consumer bank behavior are optimized independently.",
+    "expected_bottleneck": "Shared/L1 B-feed pressure and LSU issue bandwidth in the hot 64x384 kernel.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:47-52 (current single-skew B shared layout in TensorCoreTileConfig)",
+      "src/kernels/bf16_gemm_v1.cu:208-239 (logical-to-shared B mapping and async staging path)",
+      "src/kernels/bf16_gemm_v1.cu:437-445 (warp B base pointer selection and per-fragment shared loads)"
+    ],
+    "risk": "A two-level B layout can add address math, extra shared traffic, or enough staging footprint to offset the gain if the reorder is not kept local and cheap.",
+    "metrics_to_recheck": [
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+      "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+      "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop if mio_throttle and L1/shared-bank pressure stay flat, or if runtime regresses without a clear rise in tensor active."
+  },
+  "notes": "Build passed. Node A must measure this implementation next."
 }
