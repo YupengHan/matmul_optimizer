@@ -567,10 +567,12 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
                 "Fixed-shape peeled kernel must match the benchmark K dimension.");
 
+  constexpr int kHotCSharedStageCount =
+      (TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN) ? 1 : TileConfig::kCSharedStageCount;
   __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
   __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
   __shared__ __align__(16)
-      float c_shared[TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
+      float c_shared[kHotCSharedStageCount * TileConfig::kWarpsPerBlock *
                      TileConfig::kCSharedTileElemsPerWarp];
 
   const int warp_id = threadIdx.x / kWarpSize;
@@ -667,7 +669,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
 
   constexpr int kCSharedStageStride =
       TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
-  constexpr int kCSharedStageMask = TileConfig::kCSharedStageCount - 1;
+  constexpr int kCSharedStageMask = kHotCSharedStageCount - 1;
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
   #pragma unroll
   for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
@@ -693,7 +695,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
           c_tile_base + local_row * kFixedBenchmarkN + tile_n * kWmmaN + local_col,
           warp_c_tile_quads[quad_idx]);
     }
-    if constexpr (TileConfig::kCSharedStageCount == 1) {
+    if constexpr (kHotCSharedStageCount == 1) {
       __syncwarp();
     }
   }

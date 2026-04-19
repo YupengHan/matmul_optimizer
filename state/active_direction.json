@@ -1,10 +1,33 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Tile384 epilogue budget for overlap",
+  "selection_mode": "approved",
+  "selected_at": "2026-04-19T13:02:19-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_125849",
+  "status": "implemented_pending_measurement",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "idea_origin": "human-idea",
+    "name": "Tile384 epilogue budget for overlap",
+    "hypothesis": "Keep the measured 64x384 hot band, but treat the c_shared epilogue/export path as the easiest budget source for the main loop rather than as a standalone store path. On the restored base, the hot peeled kernel still allocates 46.592 KB shared per block and spends a float c_shared round-trip at src/kernels/bf16_gemm_v1.cu:570-574 and :668-699 while headline tensor active stays only 35.06 and mio throttle stays 35.64. Compressing or lightening that c_shared path should be pursued only if the saved shared-memory budget can be reinvested into a deeper A/B prefetch window or otherwise wider hot-path overlap at :599-666. The success condition is not merely fewer export stores; it is buying overlap budget back for the tensor loop.",
+    "expected_bottleneck": "The limiting factor is overlap budget inside the 64x384 peeled kernel: shared-memory allocation and epilogue round-trip pressure leave the hot loop underfed, which shows up as persistent mio throttle and only middling tensor activity despite low DRAM pressure.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:41-60",
+      "src/kernels/bf16_gemm_v1.cu:570-574",
+      "src/kernels/bf16_gemm_v1.cu:599-666",
+      "src/kernels/bf16_gemm_v1.cu:668-699"
+    ],
+    "risk": "If the c_shared savings are too small to fund a real overlap change, this devolves into epilogue-only churn with low upside. Additional CTA-wide B repacks, producer splits, or extra synchronization would violate the evidence from rounds 1, 3, and 4 and should stay out of scope.",
+    "metrics_to_recheck": [
+      "launch__shared_mem_per_block_allocated",
+      "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+      "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "median runtime"
+    ],
+    "stop_condition": "Stop if shared memory per block does not drop materially, or if the resulting overlap retune fails to raise tensor active and beat the 36.371967 ms baseline."
+  },
+  "notes": "Build passed. Node A must measure this implementation next."
 }
