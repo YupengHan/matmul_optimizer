@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_222639_bf16_gemm_v1_95056ed`
-- run dir: `runs/20260418_222639_bf16_gemm_v1_95056ed`
-- kernel tag: `bf16_gemm_v1_95056ed`
-- round label: `round 2/20`
+- run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
+- run dir: `runs/20260418_224421_bf16_gemm_v1_f5de2e9`
+- kernel tag: `bf16_gemm_v1_f5de2e9`
+- round label: `round 3/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `66.354687 ms`
-- p10 runtime: `65.608600 ms`
-- p90 runtime: `68.528947 ms`
-- TFLOP/s: `10.956565 TFLOP/s`
-- previous run id: `20260418_221951_bf16_gemm_v1_eecbb72`
-- runtime delta vs previous measured run: `-15.911938 ms`
-- TFLOP/s delta vs previous measured run: `+2.119209 TFLOP/s`
+- median runtime: `65.617920 ms`
+- p10 runtime: `64.695502 ms`
+- p90 runtime: `67.830582 ms`
+- TFLOP/s: `11.079587 TFLOP/s`
+- previous run id: `20260418_222639_bf16_gemm_v1_95056ed`
+- runtime delta vs previous measured run: `-0.736767 ms`
+- TFLOP/s delta vs previous measured run: `+0.123022 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune the tensor tile so each warp does more MMA work per shared-memory feed`
-- implemented selection mode: `N/A`
-- implemented idea origin: `N/A`
-- raw summary json: `runs/20260418_222639_bf16_gemm_v1_95056ed/summary.json`
-- measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
+- implemented direction name: `Skew the B shared tile with a bank-conflict-avoidance swizzle`
+- implemented selection mode: `human_idea`
+- implemented idea origin: `human-idea`
+- raw summary json: `runs/20260418_224421_bf16_gemm_v1_f5de2e9/summary.json`
+- measured commit: `f5de2e9ce546b72f0e2b1ecde0fbe5a766a31e42`
 - new best custom: `yes`
-- generated at: `2026-04-18T22:26:49-07:00`
+- generated at: `2026-04-18T22:44:30-07:00`

@@ -11,10 +11,10 @@ Node B is the diagnosis node. Read the files below, then write exactly three dir
 - `state/current_focus.md`
 - `state/human_review.md`
 - `src/kernels/bf16_gemm_v1.cu`
-- `runs/20260418_222639_bf16_gemm_v1_95056ed/summary.json`
-- `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_metrics.csv`
-- `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_details.csv`
-- `runs/20260418_222639_bf16_gemm_v1_95056ed/ncu_profile.ncu-rep`
+- `runs/20260418_224421_bf16_gemm_v1_f5de2e9/summary.json`
+- `runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_metrics.csv`
+- `ncu_details.csv`
+- `runs/20260418_224421_bf16_gemm_v1_f5de2e9/ncu_profile.ncu-rep`
 
 Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
 
@@ -33,10 +33,10 @@ Use the raw detailed CSV when the headline summary is too shallow to explain pip
 
 ## Current source snapshot
 
-- round loop: `round 3/20`
-- rounds remaining after this one: `17`
-- latest run id: `20260418_222639_bf16_gemm_v1_95056ed`
-- median runtime: `66.354687 ms`
-- TFLOP/s: `10.956565 TFLOP/s`
-- measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
-- existing diagnosis status: `completed`
+- round loop: `round 4/20`
+- rounds remaining after this one: `16`
+- latest run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
+- median runtime: `65.617920 ms`
+- TFLOP/s: `11.079587 TFLOP/s`
+- measured commit: `f5de2e9ce546b72f0e2b1ecde0fbe5a766a31e42`
+- existing diagnosis status: `pending_generation`

@@ -6,45 +6,43 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `95056ed21eab5afe9e0a7fc2faefa6e3b29e3903`
+- latest measured commit: `f5de2e9ce546b72f0e2b1ecde0fbe5a766a31e42`
 - plateau counter: `0`
-- round loop: `round 3/20`
-- rounds remaining: `18`
-- notes: `Node C build succeeded for round 3/20. Node A will now measure the new code path.`
+- round loop: `round 4/20`
+- rounds remaining: `17`
+- notes: `Node A completed round 3/20. Run node_b to continue round 4/20.`
 
 ## Latest measured custom run
 
-- run id: `20260418_222639_bf16_gemm_v1_95056ed`
-- run dir: `runs/20260418_222639_bf16_gemm_v1_95056ed`
+- run id: `20260418_224421_bf16_gemm_v1_f5de2e9`
+- run dir: `runs/20260418_224421_bf16_gemm_v1_f5de2e9`
 - correctness: `PASS`
-- median runtime: `66.354687 ms`
-- TFLOP/s: `10.956565 TFLOP/s`
+- median runtime: `65.617920 ms`
+- TFLOP/s: `11.079587 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 - result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260418_222704`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- dir_01: Skew the B shared tile with a bank-conflict-avoidance swizzle | bottleneck: Residual bank conflicts and port contention on the shared-memory-to-WMMA B-fragment feed path, which still show up as `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct = 25.61` and `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct = 11.28` even after the tile-retune improvement.
-- dir_02: Split the B tile into three independently padded 16x16 shared subtiles | bottleneck: The combined 16x48 row-major B layout may be making the three adjacent fragment loads interfere with each other at shared-memory bank granularity even though the per-warp compute reuse is otherwise correct.
-- dir_03: Transpose B into a conflict-friendlier shared layout and switch the WMMA load orientation | bottleneck: The row-major B shared layout may be fundamentally mismatched to the warp-level matrix_b load pattern, keeping the tensor pipe underfed even after the earlier global-to-shared improvements.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `human_idea`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `40.436798 ms`, `2.560189x` slower than CUTLASS
+- current best custom gap: `39.700031 ms`, `2.531762x` slower than CUTLASS
