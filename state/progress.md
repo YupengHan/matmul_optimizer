@@ -6,44 +6,43 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `2668282cfb6bcf377df99fc25b0aefbbcdf90aec`
-- plateau counter: `1`
+- latest measured commit: `a4966f51626c0ae4e2d99e4e49fe26264639b123`
+- plateau counter: `0`
 - round loop: `single-run`
 - rounds remaining: `0`
-- notes: `Node C build succeeded. Node A will now measure the new code path.`
+- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
 
 ## Latest measured custom run
 
-- run id: `20260418_193855_bf16_gemm_v1_2668282`
-- run dir: `runs/20260418_193855_bf16_gemm_v1_2668282`
+- run id: `20260418_195405_bf16_gemm_v1_a4966f5`
+- run dir: `runs/20260418_195405_bf16_gemm_v1_a4966f5`
 - correctness: `PASS`
-- median runtime: `813.605438 ms`
-- TFLOP/s: `0.893577 TFLOP/s`
+- median runtime: `298.095123 ms`
+- TFLOP/s: `2.438884 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260418_194629`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- dir_01: Rewrite the steady-state tile around BF16 Tensor Cores | bottleneck: Tensor Core under-utilization
-- dir_02: Keep tiles in BF16 and add a staged vectorized copy pipeline | bottleneck: Global-memory and shared-memory staging pressure
-- dir_03: Split the fixed-shape steady state from edge cleanup | bottleneck: Tail-handling overhead from generic code and excess synchronization
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `776.924671 ms`, `30.976387x` slower than CUTLASS
+- current best custom gap: `272.177235 ms`, `11.501520x` slower than CUTLASS

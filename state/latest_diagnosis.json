@@ -1,73 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_194629",
-  "status": "completed",
-  "created_at": "2026-04-18T19:46:29-07:00",
-  "source_run_id": "20260418_193855_bf16_gemm_v1_2668282",
-  "source_run_dir": "runs/20260418_193855_bf16_gemm_v1_2668282",
-  "source_summary_json": "runs/20260418_193855_bf16_gemm_v1_2668282/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_195405_bf16_gemm_v1_a4966f5",
+  "source_run_dir": "runs/20260418_195405_bf16_gemm_v1_a4966f5",
+  "source_summary_json": "runs/20260418_195405_bf16_gemm_v1_a4966f5/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "approved_direction_id": "dir_01",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Rewrite the steady-state tile around BF16 Tensor Cores",
-      "hypothesis": "The current kernel is a 16x16 scalar FP32-FMA tiled GEMM that converts BF16 inputs to float on load and never issues Tensor Core MMA instructions. With tensor pipe activity at 0 and the kernel still over 30x slower than the CUTLASS baseline, the dominant bottleneck is instruction mix and compute-path selection rather than small launch tuning. Replacing the hot loop with a warp-level BF16 Tensor Core microkernel should deliver the largest single-step upside.",
-      "expected_bottleneck": "Tensor Core under-utilization",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu::bf16_gemm_v1_kernel",
-        "src/kernels/bf16_gemm_v1.cu::launch_bf16_gemm_v1"
-      ],
-      "risk": "Moderate: this is a structural rewrite of the inner kernel, so fragment layout, accumulator mapping, and the BF16 epilogue all need fresh correctness validation.",
-      "metrics_to_recheck": [
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-        "median_runtime_ms",
-        "tflops"
-      ],
-      "stop_condition": "Stop if the first Tensor Core version still reports near-zero tensor activity or breaks correctness, because that means the rewrite did not actually move execution onto the intended MMA path."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Keep tiles in BF16 and add a staged vectorized copy pipeline",
-      "hypothesis": "The kernel currently stages tiles as float in shared memory and loads one BF16 element per thread per step, which inflates data movement and shared-memory traffic before any useful math happens. The very high mio throttle stall rate (56.76%) and non-trivial long scoreboard stalls suggest the copy/staging path is expensive. Reworking the staging path around BF16 tiles, vectorized global loads, and double-buffered or cp.async-style copies should reduce shared and memory-pipeline pressure.",
-      "expected_bottleneck": "Global-memory and shared-memory staging pressure",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu::bf16_gemm_v1_kernel",
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Moderate to high: vector alignment, shared layout, and stage management all get more complex, and the gain is easiest to realize when the compute microkernel is also widened.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "median_runtime_ms"
-      ],
-      "stop_condition": "Stop if the new staging path does not materially lower MIO or scoreboard stalls, because then the extra copy complexity is not paying for itself."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Split the fixed-shape steady state from edge cleanup",
-      "hypothesis": "Even though this repo targets one fixed GEMM shape, the hot loop still does bounds checks on every tile load and the output path still carries generic edge handling. Separating a predicate-free full-tile kernel from a cleanup path should reduce barrier overhead, simplify the steady-state instruction stream, and make later Tensor Core or vectorized implementations easier to reason about.",
-      "expected_bottleneck": "Tail-handling overhead from generic code and excess synchronization",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu::bf16_gemm_v1_kernel",
-        "src/kernels/bf16_gemm_v1.cu::launch_bf16_gemm_v1"
-      ],
-      "risk": "Low to moderate: the control-flow split is straightforward, but the standalone speedup may be modest because the current SIMT compute path is still the main structural limiter.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "median_runtime_ms",
-        "tflops"
-      ],
-      "stop_condition": "Stop if a predicate-free steady-state path changes runtime only at noise level without reducing barrier stalls, because then the cleanup split is not where the main loss sits."
-    }
-  ],
-  "notes": "Run node_b to produce exactly three ranked directions."
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

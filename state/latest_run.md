@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_193855_bf16_gemm_v1_2668282`
-- run dir: `runs/20260418_193855_bf16_gemm_v1_2668282`
-- kernel tag: `bf16_gemm_v1_2668282`
+- run id: `20260418_195405_bf16_gemm_v1_a4966f5`
+- run dir: `runs/20260418_195405_bf16_gemm_v1_a4966f5`
+- kernel tag: `bf16_gemm_v1_a4966f5`
 - round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `813.605438 ms`
-- p10 runtime: `811.410504 ms`
-- p90 runtime: `817.891785 ms`
-- TFLOP/s: `0.893577 TFLOP/s`
-- previous run id: `20260418_111959_bf16_gemm_v1_host_v0`
-- runtime delta vs previous measured run: `+10.762878 ms`
-- TFLOP/s delta vs previous measured run: `-0.011979 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `None`
-- implemented direction name: `None`
-- raw summary json: `runs/20260418_193855_bf16_gemm_v1_2668282/summary.json`
-- measured commit: `2668282cfb6bcf377df99fc25b0aefbbcdf90aec`
-- new best custom: `no`
-- generated at: `2026-04-18T19:39:56-07:00`
+- median runtime: `298.095123 ms`
+- p10 runtime: `296.365366 ms`
+- p90 runtime: `299.554312 ms`
+- TFLOP/s: `2.438884 TFLOP/s`
+- previous run id: `20260418_193855_bf16_gemm_v1_2668282`
+- runtime delta vs previous measured run: `-515.510315 ms`
+- TFLOP/s delta vs previous measured run: `+1.545307 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `dir_01`
+- implemented direction name: `Rewrite the steady-state tile around BF16 Tensor Cores`
+- raw summary json: `runs/20260418_195405_bf16_gemm_v1_a4966f5/summary.json`
+- measured commit: `a4966f51626c0ae4e2d99e4e49fe26264639b123`
+- new best custom: `yes`
+- generated at: `2026-04-18T19:54:29-07:00`
