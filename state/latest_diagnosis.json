@@ -1,15 +1,81 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_124517",
+  "status": "completed",
+  "created_at": "2026-04-19T12:45:17-07:00",
   "source_run_id": "20260419_124436_bf16_gemm_v1_05bac60",
   "source_run_dir": "runs/20260419_124436_bf16_gemm_v1_05bac60",
   "source_summary_json": "runs/20260419_124436_bf16_gemm_v1_05bac60/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "idea_origin": "human-idea",
+      "name": "Use a warp-local consumer-side B load swizzle on the peeled 64x384 hot path",
+      "hypothesis": "The restored 15d63b2 base still shows a hot-kernel signature consistent with shared/LSU pressure at the warp consumer boundary: tensor active is only 34.86 while mio_throttle stays at 35.53 with healthy 2-block occupancy, and the current B path still feeds WMMA through a simple single-skew shared layout. If B feed is attacked again, it must stay warp-local and consumer-side only: keep the existing single-skew producer path, keep `kCSharedStageCount = 2`, keep shared allocation at the accepted 46,592-byte hot-kernel level, and change only the warp read boundary with a lighter lane remap, XOR/interleaved swizzle, or hot-band-only explicit load path in `accumulate_peeled_shared_stage`. This explicitly rules out CTA-wide `repack_b_shared_tile()`-style work, extra B shared tiles, and any added CTA barrier.",
+      "expected_bottleneck": "Warp-local shared-memory B-fragment reads and bank behavior in the 64x384 hot kernel, where the current consumer path may still be overfeeding LSU without requiring any macro-tile or CTA-pipeline rewrite.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:48-60",
+        "src/kernels/bf16_gemm_v1.cu:231-233",
+        "src/kernels/bf16_gemm_v1.cu:535-556",
+        "src/kernels/bf16_gemm_v1.cu:599-607"
+      ],
+      "risk": "Even a warp-local swizzle can backfire if it silently increases lane address complexity or forces more shared instructions per fragment load. This direction is invalid if it increases `launch__shared_mem_per_block_allocated`, adds CTA barriers, or reduces `kCSharedStageCount` below 2.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__shared_mem_per_block_allocated",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if shared allocation rises above the accepted hot-kernel footprint, if barrier pressure increases, if `kCSharedStageCount` drops, or if mio/bank indicators move without a runtime win."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Pair Tile384 epilogue export across the existing two C-scratch stages",
+      "hypothesis": "If the hot kernel is not primarily limited by the B consumer path, the next most surgical remaining lever is the serial export of 12 accumulator tiles through `c_shared`. The restored base already has `kCSharedStageCount = 2`, so export two accumulator tiles at a time through the existing scratch stages to amortize sync and shared-export setup without changing the macro tile, shared allocation, or stage count.",
+      "expected_bottleneck": "Hot-kernel shared export and LSU traffic after MMA completion, which can still contribute to the restored base's high mio_throttle even when occupancy is healthy.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:54-61",
+        "src/kernels/bf16_gemm_v1.cu:668-699"
+      ],
+      "risk": "The epilogue is correctness-sensitive, and the upside may be smaller than the consumer-side B idea if export is only a secondary source of LSU pressure. The change should not add barriers or shared footprint.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "launch__shared_mem_per_block_allocated",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if hot-kernel duration and LSU indicators do not move together, or if the paired export needs extra CTA barriers or extra shared storage."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Peel only the fixed final-drain path on the restored steady-state kernel",
+      "hypothesis": "Round 2 is mixed evidence, not a clean dead end: the broad phase split still lost to the accepted base, but it did reduce barrier and mio before short-scoreboard stall rose sharply. The conservative takeaway is that only very small fixed-shape simplifications remain plausible. Leave the restored steady-state loop intact and specialize only the last two-tile drain path, where the kernel still pays generic `cp_async_wait_group_0`, stage rotation, and final accumulate sequencing for a known fixed shape.",
+      "expected_bottleneck": "Terminal stage-drain control overhead in the hot kernel, with the main risk being a repeat of round 2 where barrier/mio improve but scoreboard pressure rises enough to lose runtime.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:611-666"
+      ],
+      "risk": "This should stay tightly bounded. If it grows into another full prologue/steady-state/epilogue rewrite, it is repeating a family that already failed to beat the restored base.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if short-scoreboard stall rises again without a compensating tensor-active or runtime gain, or if the change spills beyond the final drain into a broader steady-state rewrite."
+    }
+  ],
+  "notes": "Diagnosed round-3 run 20260419_124436_bf16_gemm_v1_05bac60 while ranking against the restored accepted base 15d63b2 at 35.725824 ms. Round 1 warp specialization and round 3 straight-line producer scheduling are both strong negative evidence because both collapsed the hot kernel to one register-limited block per SM. The recommended direction therefore follows the human constraint set exactly: any new B-feed attempt must be warp-local at the consumer boundary only, with no CTA-wide repack, no second B shared tile, no extra CTA barrier, no increase in `launch__shared_mem_per_block_allocated`, and no reduction in `kCSharedStageCount`."
 }

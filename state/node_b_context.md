@@ -44,4 +44,4 @@
         - median runtime: `41.554512 ms`
         - TFLOP/s: `17.495559 TFLOP/s`
         - measured commit: `05bac60ebd99e273cb46db683c56f34d8cdd87fe`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`
