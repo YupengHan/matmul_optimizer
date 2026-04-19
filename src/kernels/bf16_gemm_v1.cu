@@ -42,10 +42,17 @@ struct TensorCoreTileConfig {
   // materializing all N tiles in shared memory at once.
   static constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
   static constexpr int kWarpGroupCols = kWarpMmaTilesN * kWmmaN;
-  // Keep the B tile row-major for WMMA, but place a single 16-byte skew
-  // between the two warp groups so each warp still reads a local slice.
+  // Keep the validated 64x384 macro tile, but repack its hot B feed path into
+  // per-fragment shared tiles so WMMA loads no longer walk a wide 392-element
+  // row stride. Other tile shapes keep the existing row-major + skew layout.
+  static constexpr bool kUseFragmentBSharedLayout = (WarpMmaTilesNValue == 12);
+  static constexpr int kBSharedFragments = kTensorBlockN / kWmmaN;
+  static constexpr int kBSharedFragmentStride = kWmmaN;
+  static constexpr int kBSharedFragmentElems = kWmmaK * kBSharedFragmentStride;
   static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
-  static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
+  static constexpr int kBSharedTileElems =
+      kUseFragmentBSharedLayout ? (kBSharedFragments * kBSharedFragmentElems)
+                                : (kWmmaK * kBSharedStride);
   static constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
   static constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
   static constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
@@ -198,6 +205,42 @@ __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_co
 }
 
 template <typename TileConfig>
+__host__ __device__ __forceinline__ int b_shared_offset_from_logical(int row, int logical_col) {
+  if constexpr (TileConfig::kUseFragmentBSharedLayout) {
+    const int fragment_idx = logical_col / kWmmaN;
+    const int fragment_col = logical_col % kWmmaN;
+    return fragment_idx * TileConfig::kBSharedFragmentElems +
+           row * TileConfig::kBSharedFragmentStride +
+           fragment_col;
+  } else {
+    return row * TileConfig::kBSharedStride + b_shared_col_from_logical<TileConfig>(logical_col);
+  }
+}
+
+template <typename TileConfig>
+__host__ __device__ __forceinline__ int b_shared_fragment_stride() {
+  if constexpr (TileConfig::kUseFragmentBSharedLayout) {
+    return TileConfig::kBSharedFragmentStride;
+  } else {
+    return TileConfig::kBSharedStride;
+  }
+}
+
+template <typename TileConfig>
+__device__ __forceinline__ const __nv_bfloat16* b_shared_fragment_ptr(
+    const __nv_bfloat16* shared_tile,
+    int warp_tile_n,
+    int tile_n) {
+  if constexpr (TileConfig::kUseFragmentBSharedLayout) {
+    const int fragment_idx = warp_tile_n * TileConfig::kWarpMmaTilesN + tile_n;
+    return shared_tile + fragment_idx * TileConfig::kBSharedFragmentElems;
+  } else {
+    const int logical_col = warp_tile_n * TileConfig::kWarpGroupCols + tile_n * kWmmaN;
+    return shared_tile + b_shared_col_from_logical<TileConfig>(logical_col);
+  }
+}
+
+template <typename TileConfig>
 __device__ __forceinline__ void stage_a_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
@@ -219,9 +262,9 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
     const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
     const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
+    const int shared_offset = b_shared_offset_from_logical<TileConfig>(row, logical_col);
     cp_async_copy_16_bytes(
-        shared_tile + row * TileConfig::kBSharedStride + shared_col,
+        shared_tile + shared_offset,
         global_tile + row * global_stride + logical_col);
   }
 }
@@ -421,13 +464,14 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
     }
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
+    const int b_fragment_stride = b_shared_fragment_stride<TileConfig>();
 
     wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
     #pragma unroll
     for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-      wmma::load_matrix_sync(b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
+      const __nv_bfloat16* b_frag_tile =
+          b_shared_fragment_ptr<TileConfig>(b_shared[curr_stage], warp_tile_n, tile_n);
+      wmma::load_matrix_sync(b_frags[tile_n], b_frag_tile, b_fragment_stride);
       wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
     }
 
