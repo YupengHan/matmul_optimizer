@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Full-width PTX fragment-issue scheduling with tighter live ranges`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260419_142321`
-- round loop: `round 1/20`
-- hypothesis: `The restored accepted PTX base is still winning because orchestration and paired export already worked, but the remaining shape is clear: barrier and mio are low, occupancy is still 1, and long scoreboard is now the more visible residual stall. The best long-run next step is a full-width 64x384 PTX dataflow follow-through that does not reopen the regressed half-panel compute split and does not panelize B-load reorder. Instead, flatten the hot-band fragment issue order so each B fragment is loaded and consumed in a tighter scope inside the existing 12-tile kernel, reducing compiler-visible live ranges without changing the outer tile or the 64x96 tail.`
-- expected bottleneck: `Residual long-scoreboard latency and register-limited live state inside the current full-width PTX helper surface are now more limiting than synchronization overhead.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:261-299, src/kernels/bf16_gemm_v1.cu:388-402, src/kernels/bf16_gemm_v1.cu:801-818, src/kernels/bf16_gemm_v1.cu:915-948`
-- risk: `This is still PTX-local but not trivial: changing the full-width issue order can increase instruction count or accidentally drift toward the already-losing half-panel explicit mma.sync path. The payoff may also be modest if the compiler already keeps the fragment lifetimes tighter than expected.`
-- metrics to re-check: `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, launch__registers_per_thread, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, median runtime`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 2/20`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
