@@ -209,13 +209,6 @@ __device__ __forceinline__ void cp_async_wait_group_1() {
 #endif
 }
 
-template <int BarrierId, int ThreadCount>
-__device__ __forceinline__ void named_barrier_sync() {
-#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
-  asm volatile("bar.sync %0, %1;\n" :: "n"(BarrierId), "n"(ThreadCount) : "memory");
-#endif
-}
-
 __device__ __forceinline__ void store_bfloat162_pair(
     __nv_bfloat16* dst,
     const float2 values) {
@@ -267,90 +260,6 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
         shared_tile + row * TileConfig::kBSharedStride + shared_col,
         global_tile + row * global_stride + logical_col);
   }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void hot_stage_a_shared_tile_async(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride,
-    int warp_tile_m,
-    int warp_tile_n,
-    int lane_id) {
-  static_assert(TileConfig::kTensorBlockM == 64, "Hot-path A staging assumes a fixed 64-row CTA tile.");
-  static_assert(TileConfig::kWarpTilesN == 2, "Hot-path A staging assumes two N-side warp groups.");
-  constexpr int kCopiesPerRowGroup = (kWmmaM * kWmmaK) / kAsyncCopyElems;
-  constexpr int kCopiesPerWarp = kCopiesPerRowGroup / TileConfig::kWarpTilesN;
-  if (lane_id >= kCopiesPerWarp) {
-    return;
-  }
-
-  const int copy_idx = warp_tile_n * kCopiesPerWarp + lane_id;
-  const int row = copy_idx / TileConfig::kAAsyncCopiesPerRow;
-  const int col = (copy_idx % TileConfig::kAAsyncCopiesPerRow) * kAsyncCopyElems;
-  cp_async_copy_16_bytes(
-      shared_tile + (warp_tile_m * kWmmaM + row) * kWmmaK + col,
-      global_tile + (warp_tile_m * kWmmaM + row) * global_stride + col);
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void hot_stage_b_shared_tile_async(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride,
-    int warp_tile_m,
-    int warp_tile_n,
-    int lane_id) {
-  static_assert(TileConfig::kWarpTilesM == 4, "Hot-path B staging assumes four M-side warp groups.");
-  static_assert(TileConfig::kWarpTilesN == 2, "Hot-path B staging assumes two N-side warp groups.");
-  constexpr int kCopiesPerGroupRow = TileConfig::kWarpGroupCols / kAsyncCopyElems;
-  constexpr int kCopiesPerWarpGroup = kWmmaK * kCopiesPerGroupRow;
-  constexpr int kGroupThreads = TileConfig::kWarpTilesM * kWarpSize;
-  const int group_thread = warp_tile_m * kWarpSize + lane_id;
-  for (int copy_idx = group_thread; copy_idx < kCopiesPerWarpGroup; copy_idx += kGroupThreads) {
-    const int row = copy_idx / kCopiesPerGroupRow;
-    const int group_logical_col = (copy_idx % kCopiesPerGroupRow) * kAsyncCopyElems;
-    const int logical_col = warp_tile_n * TileConfig::kWarpGroupCols + group_logical_col;
-    const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
-    cp_async_copy_16_bytes(
-        shared_tile + row * TileConfig::kBSharedStride + shared_col,
-        global_tile + row * global_stride + logical_col);
-  }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void hot_stage_a_group_sync(int warp_tile_m) {
-  static_assert(TileConfig::kWarpTilesM == 4, "Hot-path A barriers assume four row groups.");
-  switch (warp_tile_m) {
-    case 0:
-      named_barrier_sync<1, 2 * kWarpSize>();
-      break;
-    case 1:
-      named_barrier_sync<2, 2 * kWarpSize>();
-      break;
-    case 2:
-      named_barrier_sync<3, 2 * kWarpSize>();
-      break;
-    default:
-      named_barrier_sync<4, 2 * kWarpSize>();
-      break;
-  }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void hot_stage_b_group_sync(int warp_tile_n) {
-  static_assert(TileConfig::kWarpTilesN == 2, "Hot-path B barriers assume two column groups.");
-  if (warp_tile_n == 0) {
-    named_barrier_sync<5, TileConfig::kWarpTilesM * kWarpSize>();
-  } else {
-    named_barrier_sync<6, TileConfig::kWarpTilesM * kWarpSize>();
-  }
-}
-
-template <typename TileConfig>
-__device__ __forceinline__ void hot_stage_handoff_sync(int warp_tile_m, int warp_tile_n) {
-  hot_stage_a_group_sync<TileConfig>(warp_tile_m);
-  hot_stage_b_group_sync<TileConfig>(warp_tile_n);
 }
 
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
@@ -661,23 +570,17 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  hot_stage_a_shared_tile_async<TileConfig>(
-      a_shared[0], a_block, kFixedBenchmarkK, warp_tile_m, warp_tile_n, lane_id);
-  hot_stage_b_shared_tile_async<TileConfig>(
-      b_shared[0], b_block, kFixedBenchmarkN, warp_tile_m, warp_tile_n, lane_id);
+  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  hot_stage_a_shared_tile_async<TileConfig>(
-      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK, warp_tile_m, warp_tile_n, lane_id);
-  hot_stage_b_shared_tile_async<TileConfig>(
+  stage_a_shared_tile_async<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
-      kFixedBenchmarkN,
-      warp_tile_m,
-      warp_tile_n,
-      lane_id);
+      kFixedBenchmarkN);
   cp_async_commit_group();
   cp_async_wait_group_1();
-  hot_stage_handoff_sync<TileConfig>(warp_tile_m, warp_tile_n);
+  __syncthreads();
 
   int curr_stage = 0;
   int next_stage = 1;
@@ -703,28 +606,19 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
       wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
     }
 
-    // The hot 64x384 path recycles shared stages with the same consumer groups
-    // that own each A row slice and B half-tile, so the steady-state handoff
-    // only synchronizes those groups instead of the full CTA.
-    hot_stage_handoff_sync<TileConfig>(warp_tile_m, warp_tile_n);
-    hot_stage_a_shared_tile_async<TileConfig>(
-        a_shared[curr_stage],
-        a_block + future_tile_k,
-        kFixedBenchmarkK,
-        warp_tile_m,
-        warp_tile_n,
-        lane_id);
-    hot_stage_b_shared_tile_async<TileConfig>(
+    // All warps must finish reading the current shared stage before the peeled
+    // hot loop recycles that buffer for tile i+2.
+    __syncthreads();
+    stage_a_shared_tile_async<TileConfig>(
+        a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
+    stage_b_shared_tile_async<TileConfig>(
         b_shared[curr_stage],
         b_block + future_tile_k * kFixedBenchmarkN,
-        kFixedBenchmarkN,
-        warp_tile_m,
-        warp_tile_n,
-        lane_id);
+        kFixedBenchmarkN);
     cp_async_commit_group();
 
     cp_async_wait_group_1();
-    hot_stage_handoff_sync<TileConfig>(warp_tile_m, warp_tile_n);
+    __syncthreads();
     const int consumed_stage = curr_stage;
     curr_stage = next_stage;
     next_stage = consumed_stage;
@@ -750,7 +644,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   }
 
   cp_async_wait_group_0();
-  hot_stage_handoff_sync<TileConfig>(warp_tile_m, warp_tile_n);
+  __syncthreads();
   curr_stage = next_stage;
 
   {
