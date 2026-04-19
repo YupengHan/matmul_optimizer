@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `16a98f7af190c1b90503973135cbf4b754cdad0a`
 - plateau counter: `0`
-- round loop: `single-run`
-- rounds remaining: `0`
-- notes: `Node A completed the final planned round. Review the results before starting another loop.`
+- round loop: `round 1/5`
+- rounds remaining: `5`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
@@ -29,12 +29,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_092350`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 1/5 diagnosis prepared from run 20260419_015554_bf16_gemm_v1_16a98f7. Recommended dir_01 per human-priority override; dir_01 and dir_02 are human ideas.`
+- dir_01: Two-level B staging for the 64x384 hot band | bottleneck: Shared/L1 B-feed pressure and LSU issue bandwidth in the hot 64x384 kernel.
+- dir_02: Phased 64x384 micro-panels to shrink the live set | bottleneck: Register-limited occupancy and weak latency hiding from keeping the full 384-wide working set live per warp.
+- dir_03: Warp-specialized producer-consumer pipeline for the 64x384 loop | bottleneck: Synchronization and stage-orchestration overhead in the hot K-loop rather than raw DRAM bandwidth.
 
 ## Active implementation direction
 

@@ -8,7 +8,7 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 - direction name: `N/A`
 - selection mode: `None`
 - source diagnosis id: `None`
-- round loop: `single-run`
+- round loop: `round 1/5`
 
 ## Allowed edit surface
 

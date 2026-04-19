@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_092350",
+  "status": "completed",
+  "created_at": "2026-04-19T09:23:50-07:00",
   "source_run_id": "20260419_015554_bf16_gemm_v1_16a98f7",
   "source_run_dir": "runs/20260419_015554_bf16_gemm_v1_16a98f7",
   "source_summary_json": "runs/20260419_015554_bf16_gemm_v1_16a98f7/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Two-level B staging for the 64x384 hot band",
+      "idea_origin": "human-idea",
+      "hypothesis": "The promoted 64x384 path already wins on CTA count, but the B feed still uses one row-major shared layout plus a single 16-byte warp-group skew. On the measured 64x384 kernel, mio_throttle is 31.60%, l1tex LSU wavefront pressure is high, and tensor active is only 32.61%, which points to the current B producer and consumer layout serving neither cp.async/coalescing nor warp consumption especially well. Keep the 64x384 outer tile, but split global->shared and shared->fragment into separate layouts via a CTA-local reorder or an interleaved swizzle so producer traffic and consumer bank behavior are optimized independently.",
+      "expected_bottleneck": "Shared/L1 B-feed pressure and LSU issue bandwidth in the hot 64x384 kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:47-52 (current single-skew B shared layout in TensorCoreTileConfig)",
+        "src/kernels/bf16_gemm_v1.cu:208-239 (logical-to-shared B mapping and async staging path)",
+        "src/kernels/bf16_gemm_v1.cu:437-445 (warp B base pointer selection and per-fragment shared loads)"
+      ],
+      "risk": "A two-level B layout can add address math, extra shared traffic, or enough staging footprint to offset the gain if the reorder is not kept local and cheap.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if mio_throttle and L1/shared-bank pressure stay flat, or if runtime regresses without a clear rise in tensor active."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Phased 64x384 micro-panels to shrink the live set",
+      "idea_origin": "human-idea",
+      "hypothesis": "Autotune says 64x384 is the best outer CTA width, but the current inner schedule keeps TileConfig::kWarpMmaTilesN=12 live across the full K loop, so each warp carries 12 accumulator fragments and 12 B fragments at once. That matches the measured 126 registers/thread and register-limited 2-block occupancy. Preserve the 64x384 outer tile and launch geometry, but execute it as serial micro-panels such as 2x192 or 3x128 so the live B and accumulator set is smaller while the CTA still covers 384 columns overall.",
+      "expected_bottleneck": "Register-limited occupancy and weak latency hiding from keeping the full 384-wide working set live per warp.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:32-39 (TileConfig shape parameters, especially kWarpMmaTilesN and kTensorBlockN)",
+        "src/kernels/bf16_gemm_v1.cu:406-445 (accumulator and B-fragment live set inside the hot MMA loop)",
+        "src/kernels/bf16_gemm_v1.cu:517-550 (fixed-shape launch path that should keep the 64x384 outer tile intact)"
+      ],
+      "risk": "Serial micro-panels can give back some of the 64x384 CTA-count win if extra panel boundaries, reloads, or control flow add too much instruction overhead.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if registers/thread stays near 126 or occupancy remains capped at 2 resident CTAs without a runtime gain."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Warp-specialized producer-consumer pipeline for the 64x384 loop",
+      "idea_origin": "auto-analysis",
+      "hypothesis": "The current 64x384 kernel has moderate barrier stall (8.93%) on top of heavy mio_throttle (31.60%), while DRAM throughput is only 27.74%. That suggests issue slots are being spent on CTA-wide stage orchestration rather than pure math. Keep the 64x384 tile, but assign a subset of warps to producer duties for A/B cp.async staging and let the remaining warps stay focused on MMA so the steady-state loop spends fewer cycles in all-warp copy/setup plus block-wide synchronization.",
+      "expected_bottleneck": "Synchronization and stage-orchestration overhead in the hot K-loop rather than raw DRAM bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:213-239 (current all-warps async staging helpers for A and B)",
+        "src/kernels/bf16_gemm_v1.cu:392-404 (warp role derivation and tile ownership)",
+        "src/kernels/bf16_gemm_v1.cu:421-450 (current steady-state loop, cp.async commits, waits, and CTA barriers)"
+      ],
+      "risk": "Dedicating warps to producer work can lower compute-side parallelism if overlap is weak, and the extra role specialization may complicate correctness or make the copy warps the new bottleneck.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if barrier stall does not fall meaningfully or if runtime regresses because the producer warps starve the consumer warps."
+    }
+  ],
+  "notes": "Round 1/5 diagnosis prepared from run 20260419_015554_bf16_gemm_v1_16a98f7. Recommended dir_01 per human-priority override; dir_01 and dir_02 are human ideas."
 }
