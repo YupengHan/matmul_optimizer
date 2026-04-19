@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `c2f2bec47c9cba44f35cf7d260893f0416a4d251`
 - plateau counter: `0`
 - round loop: `round 3/5`
 - rounds remaining: `3`
-- notes: `Node A completed round 2/5. Run node_b to continue round 3/5.`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
@@ -29,12 +29,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_132801`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `All three directions stay strictly inside the 64x384 hot-band PTX microkernel branch and keep the 64x96 tail unchanged. Ranking explicitly uses the new fact that the PTX line has now delivered two consecutive real runtime improvements, including the round-2 win from replacing the array-style accumulator surface with 12 named tiles and compile-time expansion. Because occupancy_limit_registers is still 1 and active warps are still only 16.78, the next ranking prefers deeper PTX-local compute/load-order and live-state control over any switch back to WMMA or unrelated tile tuning.`
+- dir_01: Ldmatrix plus panelized PTX hot-band compute control | bottleneck: Register-limited live state inside the current PTX hot-band compute path is holding occupancy at one block/SM; the branch now needs finer compute/load-order control to reduce residency pressure without abandoning the winning PTX line.
+- dir_02: Register-first PTX export follow-through | bottleneck: The hot-band export path is still consuming shared/LSU issue budget and can now be a larger share of the remaining cost because mio throttle has already dropped sharply while runtime continues to improve.
+- dir_03: Fixed-K PTX orchestration retime inside the peeled hot loop | bottleneck: Barrier and issue scheduling inside the fixed peeled loop are still interrupting tensor issue, even though the branch has already cut mio versus the WMMA base.
 
 ## Active implementation direction
 
