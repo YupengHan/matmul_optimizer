@@ -1,10 +1,29 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Add CTA-level shared-memory staging for WMMA tiles",
+  "selection_mode": "approved",
+  "selected_at": "2026-04-18T20:10:33-07:00",
+  "source_diagnosis_id": "diagnosis_20260418_200741",
+  "status": "implemented_pending_measurement",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Add CTA-level shared-memory staging for WMMA tiles",
+    "hypothesis": "The new WMMA kernel moved math onto Tensor Cores, but each warp still loads its A and B fragments directly from global memory with no cross-warp reuse. The profile now looks memory-led: tensor pipe active is only 4.78%, DRAM/L2 throughput is much higher than SM throughput, and long scoreboard plus MIO throttle stalls dominate. A shared-memory staging path with CTA-level reuse, ideally double-buffered, is the highest-upside next step because it should turn repeated global fragment fetches into reused BF16 tiles that feed multiple warps.",
+    "expected_bottleneck": "Global-memory bound",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu::bf16_gemm_v1_tensor_core_kernel",
+      "src/kernels/bf16_gemm_v1.cu::launch_bf16_gemm_v1"
+    ],
+    "risk": "Moderate to high: shared-memory layout, load choreography, and WMMA-compatible tile packing all become more complex, and a bad layout can trade one memory bottleneck for another.",
+    "metrics_to_recheck": [
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "median_runtime_ms"
+    ],
+    "stop_condition": "Stop if staged tiles do not materially lower scoreboard or MIO stalls and tensor activity stays near the same level, because then the added shared-memory pipeline is not improving feed rate to the Tensor Cores."
+  },
+  "notes": "Build passed. Node A must measure this implementation next."
 }
