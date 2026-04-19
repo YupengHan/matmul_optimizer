@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Warp-specialize the 64x384 copy/compute pipeline on the restored base",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T09:53:07-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_094909",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Warp-specialize the 64x384 copy/compute pipeline on the restored base",
-    "idea_origin": "auto-analysis",
-    "hypothesis": "Both recent human-guided families are negative evidence on top of the accepted 16a98f7 base: the two-level B repack regressed to 42.341888 ms and the phased 64x384 micro-panels regressed further to 42.673632 ms versus the accepted 37.285807 ms run. The round-2 profile did lower the hot-kernel register footprint to 80/thread and lift the register occupancy cap to 3, but barrier stall jumped to 17.31% and DRAM throughput rose to 43.78%, which points to orchestration and feed overlap rather than another B-layout or live-set rewrite. On the restored accepted base, keep the single-skew 64x384 tile and instead reduce all-warp staging overhead with a producer/consumer warp split or another lighter copy/compute overlap scheme.",
-    "expected_bottleneck": "CTA-wide synchronization and hot-loop feed orchestration in the 64x384 K-loop.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:53-60 (stage-count choice tied to shared-memory budget)",
-      "src/kernels/bf16_gemm_v1.cu:213-239 (A/B async staging helpers currently run by all warps)",
-      "src/kernels/bf16_gemm_v1.cu:392-450 (warp mapping, cp.async commit/wait sequence, and CTA barriers in the hot loop)"
-    ],
-    "risk": "Warp-specialized staging is more invasive than a simple schedule tweak and can starve MMA if producer warps do not hide latency cleanly.",
-    "metrics_to_recheck": [
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
-    ],
-    "stop_condition": "Stop if barrier stall and mio_throttle do not fall on the restored base, or if tensor active stays flat while runtime regresses."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

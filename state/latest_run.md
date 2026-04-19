@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_094829_bf16_gemm_v1_fe097e9`
-- run dir: `runs/20260419_094829_bf16_gemm_v1_fe097e9`
-- kernel tag: `bf16_gemm_v1_fe097e9`
-- round label: `round 2/5`
+- run id: `20260419_095653_bf16_gemm_v1_f237679`
+- run dir: `runs/20260419_095653_bf16_gemm_v1_f237679`
+- kernel tag: `bf16_gemm_v1_f237679`
+- round label: `round 3/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `42.673632 ms`
-- p10 runtime: `42.315571 ms`
-- p90 runtime: `43.144909 ms`
-- TFLOP/s: `17.036737 TFLOP/s`
-- previous run id: `20260419_093633_bf16_gemm_v1_d90a873`
-- runtime delta vs previous measured run: `+0.331743 ms`
-- TFLOP/s delta vs previous measured run: `-0.133481 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `40.935423 ms`
+- p10 runtime: `40.400384 ms`
+- p90 runtime: `41.620472 ms`
+- TFLOP/s: `17.760154 TFLOP/s`
+- previous run id: `20260419_094829_bf16_gemm_v1_fe097e9`
+- runtime delta vs previous measured run: `-1.738209 ms`
+- TFLOP/s delta vs previous measured run: `+0.723418 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Phased 64x384 micro-panels to shrink the live set`
-- implemented selection mode: `human_idea`
-- implemented idea origin: `human-idea`
-- raw summary json: `runs/20260419_094829_bf16_gemm_v1_fe097e9/summary.json`
-- measured commit: `fe097e98f5e51da7e72c909a85c76f35a8c9508a`
+- implemented direction name: `Warp-specialize the 64x384 copy/compute pipeline on the restored base`
+- implemented selection mode: `recommended`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260419_095653_bf16_gemm_v1_f237679/summary.json`
+- measured commit: `f237679f9fc0bed9c49d1043495794c187d0aea4`
 - new best custom: `no`
-- generated at: `2026-04-19T09:48:37-07:00`
+- generated at: `2026-04-19T09:57:03-07:00`
