@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_02",
-  "name": "Retile CTA and warp partition to trim per-warp N baggage",
-  "selection_mode": "approved",
-  "selected_at": "2026-04-19T00:47:52-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_004022",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_02",
-    "rank": 2,
-    "name": "Retile CTA and warp partition to trim per-warp N baggage",
-    "hypothesis": "The current 4x2 warp layout with a wide per-warp N fanout keeps the accepted main/tail split, but each warp still carries multiple N fragments and a relatively heavy B-side footprint. Retiling the CTA or warp work split to reduce per-warp N baggage should ease fragment handling and MIO pressure without abandoning the proven split between the 64x128 main path and the 64x96 tail path.",
-    "expected_bottleneck": "Per-warp fragment baggage and B-side staging pressure caused by the current CTA/warp partition, reflected in MIO throttle and possibly excess register footprint from carrying multiple N-side fragments per warp.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu: kTensorWarpTilesM, kTensorWarpTilesN, and TensorCoreTileConfig warp/CTA shape constants",
-      "src/kernels/bf16_gemm_v1.cu: TensorCoreTile96 and TensorCoreTile128 specializations plus derived kWarpGroupCols and kTensorBlockN values",
-      "src/kernels/bf16_gemm_v1.cu: fixed-shape main/tail launch geometry in launch_bf16_gemm_v1"
-    ],
-    "risk": "Medium risk. A narrower per-warp N assignment can reduce fragment baggage, but it may also weaken reuse, increase CTA count, or create a worse balance between tensor utilization and memory traffic if the new partition is too fine-grained.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "TFLOP/s",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-    ],
-    "stop_condition": "Stop if the retile lowers per-warp baggage on paper but measured runtime regresses, tensor active drops, or DRAM pressure rises enough to offset any MIO improvement, because then the partition change is just moving the bottleneck."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
