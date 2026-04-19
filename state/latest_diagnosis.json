@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_104652",
-  "status": "completed",
-  "created_at": "2026-04-19T10:46:52-07:00",
-  "source_run_id": "20260419_104631_bf16_gemm_v1_8346b48",
-  "source_run_dir": "runs/20260419_104631_bf16_gemm_v1_8346b48",
-  "source_summary_json": "runs/20260419_104631_bf16_gemm_v1_8346b48/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_105226_bf16_gemm_v1_edb3741",
+  "source_run_dir": "runs/20260419_105226_bf16_gemm_v1_edb3741",
+  "source_summary_json": "runs/20260419_105226_bf16_gemm_v1_edb3741/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Micro-retune the single-level B skew in the peeled 64x384 hot kernel",
-      "hypothesis": "8346b48 is the new best base because the pairwise peeled hot loop raised tensor active to 35.06 without increasing register pressure beyond 128/thread or breaking the 2-block register occupancy limit. The next visible limiter is no longer synchronization but shared-memory / LSU feed pressure: hot-kernel mio_throttle climbed to 35.58, l1tex data-bank reads rose to 12.15, and lsuin_requests reached 83.68 while active warps stayed flat at 33.07. The coherent next move is a tiny single-level mapping retune inside the existing B shared layout, such as adjusting the warp-group skew or logical-to-shared column mapping, while explicitly avoiding the previously regressive two-level repack and named-barrier handoff families.",
-      "expected_bottleneck": "Shared-memory B-fragment load pressure and bank behavior in the 64x384 hot kernel, expressed as high mio_throttle and LSU issue pressure rather than low occupancy.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:48-53",
-        "src/kernels/bf16_gemm_v1.cu:231-263",
-        "src/kernels/bf16_gemm_v1.cu:535-556",
-        "src/kernels/bf16_gemm_v1.cu:619-620"
-      ],
-      "risk": "Feed-path rewrites have a bad track record in this search. This must stay at the level of one skew or mapping tweak inside the current single-stage layout; if it turns into a broader B repack or new handoff scheme, it is repeating disproven ground.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if mio or shared-bank metrics improve only cosmetically without a runtime win, or if the change requires a second staging level or any new named-barrier/subgroup machinery."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Specialize Tile384 cp.async producer assignment in the peeled hot path",
-      "hypothesis": "The hot kernel is now clearly the performance center and its producer side still executes a large amount of looped cp.async issue work for the 64x384 B tile: each steady-state recycle walks the generic stage_a_shared_tile_async and stage_b_shared_tile_async loops, recomputes row and column ownership, and then immediately returns to a kernel whose LSU pipe is already at 83.68% and mio_throttle at 35.58. A bounded follow-up is to keep the same CTA-wide barrier model and same shared layout, but add a Tile384-specific producer schedule so thread ownership and copy counts are straight-line or more tightly unrolled in the peeled kernel.",
-      "expected_bottleneck": "Producer-side cp.async issue overhead and LSU address-generation work in the 64x384 hot loop, not a synchronization problem.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:236-263",
-        "src/kernels/bf16_gemm_v1.cu:599-607",
-        "src/kernels/bf16_gemm_v1.cu:625-649",
-        "src/kernels/bf16_gemm_v1.cu:709-762"
-      ],
-      "risk": "The upside depends on keeping global-to-shared coalescing intact. A bad thread-to-copy partition can reduce cp.async efficiency or add branches that erase the gain.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__lsuin_requests.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the specialization does not lower LSU or mio pressure on the hot kernel, or if it needs more synchronization state than the current restored barrier recycle model."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Add a fixed-K peeled 64x96 tail kernel",
-      "hypothesis": "The remaining 64x96 tail still runs the generic tensor-core loop even though the benchmark shape is fully fixed. That tail kernel is only about 0.9 ms of GPU time, but it still carries roughly 19.56% barrier stall and 15.41% short scoreboard with no visible improvement from the hot-kernel win. Reusing the fixed-K peeled structure and quad epilogue on the last 96 columns is a safe cleanup path that complements the current winner without reopening the failed named-barrier path.",
-      "expected_bottleneck": "Residual generic-loop and scoreboard overhead in the 64x96 tail kernel; total upside is capped by the tail's small share of wall time.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:415-523",
-        "src/kernels/bf16_gemm_v1.cu:559-705",
-        "src/kernels/bf16_gemm_v1.cu:739-761"
-      ],
-      "risk": "This is low risk but also lower ceiling. Even a clear tail-kernel improvement may only move total runtime by a few tenths of a millisecond.",
-      "metrics_to_recheck": [
-        "gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the specialized tail does not materially reduce tail-kernel duration or if the end-to-end runtime change stays within measurement noise."
-    }
-  ],
-  "notes": "Diagnosed accepted-best run 20260419_104631_bf16_gemm_v1_8346b48 at 34.655231 ms. Pairwise peeled hot-loop unrolling was a real win: hot-kernel duration dropped from the 2872f92 base while registers/thread stayed at 128 and occupancy_limit_registers stayed at 2. The remaining dominant symptom is hot-kernel shared/LSU feed pressure, especially mio_throttle at 35.58. The previous named-barrier/subgroup handoff path remains strong negative evidence because it regressed badly to 41.745407 ms by inflating the hot kernel to 167 registers/thread and cutting active warps in half, so none of the ranked directions continue that family."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

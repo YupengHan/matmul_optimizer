@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_104631_bf16_gemm_v1_8346b48`
-- run dir: `runs/20260419_104631_bf16_gemm_v1_8346b48`
-- kernel tag: `bf16_gemm_v1_8346b48`
-- round label: `round 3/5`
+- run id: `20260419_105226_bf16_gemm_v1_edb3741`
+- run dir: `runs/20260419_105226_bf16_gemm_v1_edb3741`
+- kernel tag: `bf16_gemm_v1_edb3741`
+- round label: `round 4/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `34.655231 ms`
-- p10 runtime: `34.474849 ms`
-- p90 runtime: `36.164361 ms`
-- TFLOP/s: `20.978634 TFLOP/s`
-- previous run id: `20260419_103438_bf16_gemm_v1_3eeb098`
-- runtime delta vs previous measured run: `-7.090176 ms`
-- TFLOP/s delta vs previous measured run: `+3.563079 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `34.966097 ms`
+- p10 runtime: `34.947673 ms`
+- p90 runtime: `36.192258 ms`
+- TFLOP/s: `20.792124 TFLOP/s`
+- previous run id: `20260419_104631_bf16_gemm_v1_8346b48`
+- runtime delta vs previous measured run: `+0.310865 ms`
+- TFLOP/s delta vs previous measured run: `-0.186510 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Pairwise unroll the peeled 64x384 hot loop without changing the handoff model`
+- implemented direction name: `Micro-retune the single-level B skew in the peeled 64x384 hot kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_104631_bf16_gemm_v1_8346b48/summary.json`
-- measured commit: `8346b48ca5272beb86282fa09eb346dc73ab9f68`
-- new best custom: `yes`
-- generated at: `2026-04-19T10:46:39-07:00`
+- raw summary json: `runs/20260419_105226_bf16_gemm_v1_edb3741/summary.json`
+- measured commit: `edb374118aaec47be2390e0a334526b8d5359596`
+- new best custom: `no`
+- generated at: `2026-04-19T10:52:33-07:00`
