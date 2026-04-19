@@ -148,6 +148,7 @@ def build_ncu_summary(metrics: Dict[str, str], csv_path: Path, rep_path: Path) -
         'headline_metrics': metrics,
         'raw_csv_path': csv_path.name if csv_path.exists() else None,
         'raw_rep_path': rep_path.name if rep_path.exists() else None,
+        'raw_details_csv_path': None,
     }
 
 
@@ -158,6 +159,7 @@ def render_markdown_ncu_summary(summary: Dict) -> str:
     lines.append(f"- status: `{summary.get('status', 'unknown')}`")
     lines.append(f"- raw csv path: `{summary.get('raw_csv_path', 'N/A')}`")
     lines.append(f"- raw rep path: `{summary.get('raw_rep_path', 'N/A')}`")
+    lines.append(f"- raw detailed csv path: `{summary.get('raw_details_csv_path', 'N/A')}`")
     lines.append(f"- kernel name: `{summary.get('kernel_name', 'N/A')}`")
     lines.append(f"- block size: `{summary.get('block_size', 'N/A')}`")
     lines.append(f"- grid size: `{summary.get('grid_size', 'N/A')}`")
@@ -340,6 +342,7 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
     rep_prefix = run_dir / 'ncu_profile'
     rep_path = Path(f"{rep_prefix}.ncu-rep")
     csv_path = run_dir / 'ncu_metrics.csv'
+    detailed_csv_path = run_dir / 'ncu_details.csv'
 
     runner_cmd = (
         runner_base_command(args)
@@ -382,10 +385,29 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
         if csv_rc == 0 and csv_path.exists():
             csv_metrics = parse_ncu_csv(csv_path)
 
+    details_rc = None
+    if rep_path.exists():
+        details_cmd = [
+            args.ncu_bin,
+            '--import',
+            str(rep_path),
+            '--csv',
+            '--page', 'raw',
+        ]
+        details_rc = run_command(
+            details_cmd,
+            cwd=args.workdir,
+            stdout_path=detailed_csv_path,
+            stderr_path=run_dir / 'ncu_details.stderr.log',
+        )
+        if details_rc != 0 and detailed_csv_path.exists():
+            detailed_csv_path.unlink()
+
     ncu_summary = None
     if csv_path.exists() or rep_path.exists():
         picked_metrics = pick_headline_metrics(csv_metrics, headline_metrics) if csv_metrics else {}
         ncu_summary = build_ncu_summary(picked_metrics, csv_path, rep_path)
+        ncu_summary['raw_details_csv_path'] = detailed_csv_path.name if detailed_csv_path.exists() else None
         ncu_summary_json_path = run_dir / 'ncu_summary.json'
         ncu_summary_md_path = run_dir / 'ncu_summary.md'
         write_json(ncu_summary_json_path, ncu_summary)
@@ -399,6 +421,8 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
         'rep_path': rep_path.name if rep_path.exists() else None,
         'csv_return_code': csv_rc,
         'csv_path': csv_path.name if csv_path.exists() else None,
+        'details_csv_return_code': details_rc,
+        'details_csv_path': detailed_csv_path.name if detailed_csv_path.exists() else None,
         'headline_metrics': pick_headline_metrics(csv_metrics, headline_metrics) if csv_metrics else {},
         'summary_json_path': ncu_summary_json_path.name if ncu_summary_json_path else None,
         'summary_md_path': ncu_summary_md_path.name if ncu_summary_md_path else None,

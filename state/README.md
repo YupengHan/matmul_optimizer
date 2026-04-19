@@ -38,6 +38,7 @@ Contains:
 - kernel tag
 - correctness summary
 - performance summary
+- implemented direction provenance, including selection mode and idea origin
 - references to raw run artifacts
 
 ## `latest_ncu_summary.json`
@@ -85,6 +86,8 @@ Machine-readable baseline registry for:
 
 Append-only lightweight log of node_a measurements.
 
+Entries also record the implemented direction provenance for each measured run, including selection mode and idea origin.
+
 ## `round_loop_state.json`
 
 Current multi-round loop budget and progress.
@@ -101,9 +104,13 @@ Contains:
 
 Append-only one-line summary for each completed round.
 
+Round entries record the selected direction, selection mode, and idea origin so regressed human-guided experiments remain traceable even when a later round restores an earlier baseline.
+
 ## `diagnosis_history.jsonl`
 
 Append-only snapshot of every finalized node_b diagnosis, including all three directions and the recommended choice.
+
+Directions may also carry an `idea_origin` field such as `human-idea` when a round is explicitly driven by user input rather than node_b analysis.
 
 ## `supervisor_task.json`
 

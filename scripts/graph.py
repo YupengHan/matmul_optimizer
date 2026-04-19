@@ -370,6 +370,7 @@ def summarize_run(
             'headline_metrics': metrics,
             'raw_csv_path': repo_rel(csv_path) if csv_path.exists() else None,
             'raw_rep_path': repo_rel(run_dir / 'ncu_profile.ncu-rep'),
+            'raw_details_csv_path': repo_rel(run_dir / 'ncu_details.csv') if (run_dir / 'ncu_details.csv').exists() else None,
         }
 
     correctness_runs = raw_summary.get('correctness_runs', [])
@@ -425,6 +426,8 @@ def summarize_run(
         'headline_metrics': raw_ncu.get('headline_metrics', {}),
         'raw_csv_path': repo_rel(run_dir / 'ncu_metrics.csv') if (run_dir / 'ncu_metrics.csv').exists() else None,
         'raw_rep_path': repo_rel(run_dir / 'ncu_profile.ncu-rep') if (run_dir / 'ncu_profile.ncu-rep').exists() else None,
+        'raw_details_csv_path': raw_ncu.get('raw_details_csv_path')
+        or (repo_rel(run_dir / 'ncu_details.csv') if (run_dir / 'ncu_details.csv').exists() else None),
         'generated_at': now_local_iso(),
     }
     return latest_run, latest_ncu, is_new_best
@@ -490,6 +493,8 @@ def render_latest_run_md(latest_run: Dict[str, Any]) -> str:
     lines.append(f"- perf verdict: `{latest_run.get('perf_verdict', 'N/A')}`")
     lines.append(f"- implemented direction id: `{latest_run.get('implemented_direction_id', 'N/A')}`")
     lines.append(f"- implemented direction name: `{latest_run.get('implemented_direction_name', 'N/A')}`")
+    lines.append(f"- implemented selection mode: `{latest_run.get('implemented_selection_mode', 'N/A')}`")
+    lines.append(f"- implemented idea origin: `{latest_run.get('implemented_idea_origin', 'N/A')}`")
     lines.append(f"- raw summary json: `{latest_run.get('raw_summary_json', 'N/A')}`")
     lines.append(f"- measured commit: `{latest_run.get('measured_commit', 'N/A')}`")
     lines.append(f"- new best custom: `{'yes' if latest_run.get('is_new_best_custom') else 'no'}`")
@@ -509,6 +514,7 @@ def render_latest_ncu_md(ncu_summary: Dict[str, Any]) -> str:
     lines.append(f"- shared mem / block allocated: `{ncu_summary.get('shared_mem_per_block_allocated', 'N/A')}`")
     lines.append(f"- raw csv path: `{ncu_summary.get('raw_csv_path', 'N/A')}`")
     lines.append(f"- raw rep path: `{ncu_summary.get('raw_rep_path', 'N/A')}`")
+    lines.append(f"- raw detailed csv path: `{ncu_summary.get('raw_details_csv_path', 'N/A')}`")
     lines.append('')
     lines.append('## Headline metrics')
     lines.append('')
@@ -752,6 +758,10 @@ def render_node_b_context(
         - `{graph_state.get('current_kernel_path', current_kernel_path())}`
         - `{latest_run.get('raw_summary_json', 'N/A')}`
         - `{ncu_summary.get('raw_csv_path', 'N/A')}`
+        - `{ncu_summary.get('raw_details_csv_path', 'N/A')}`
+        - `{ncu_summary.get('raw_rep_path', 'N/A')}`
+
+        Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
 
         ## Output contract
 
@@ -1169,6 +1179,7 @@ def node_a_commit_message(
     tensor = (ncu_summary.get('headline_metrics') or {}).get('sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active', 'N/A')
     runtime_delta, tflops_delta, verdict = compute_perf_delta(previous_run, latest_run)
     direction_summary = active_direction.get('summary') or {}
+    direction_origin = direction_summary.get('idea_origin', 'auto-analysis')
     round_info = round_label(round_loop if round_entry is None else {'current_round_index': round_entry.get('round_index'), 'total_rounds': round_entry.get('total_rounds')})
     if round_entry and not round_loop.get('active'):
         follow_up = 'planned multi-round loop is complete; review results before starting another loop'
@@ -1189,6 +1200,8 @@ def node_a_commit_message(
         - updated the latest Nsight Compute headline summary
         - refreshed human-readable progress and focus files
         - implementation idea: {active_direction.get('direction_id', 'N/A')} {direction_summary.get('name', 'N/A')}
+        - selection mode: {active_direction.get('selection_mode', 'N/A')}
+        - idea origin: {direction_origin}
         - hypothesis: {direction_summary.get('hypothesis', 'N/A')}
 
         Measurement:
@@ -1212,6 +1225,8 @@ def node_a_commit_message(
 
 def node_b_commit_message(diagnosis: Dict[str, Any], latest_run: Dict[str, Any], round_loop: Dict[str, Any]) -> str:
     names = ', '.join(direction.get('name', direction.get('direction_id', 'dir_xx')) for direction in diagnosis.get('directions', []))
+    recommended = direction_lookup(diagnosis, diagnosis.get('recommended_direction_id') or '')
+    recommended_origin = recommended.get('idea_origin', 'auto-analysis') if recommended else 'auto-analysis'
     return textwrap.dedent(
         f'''\
         node_b: {round_label(round_loop)} rank 3 directions from {latest_run.get('run_id', 'unknown')}
@@ -1224,6 +1239,7 @@ def node_b_commit_message(diagnosis: Dict[str, Any], latest_run: Dict[str, Any],
         - recorded exactly three optimization directions in state/latest_diagnosis.json
         - updated review and focus state for node_c handoff
         - set the recommended direction to {diagnosis.get('recommended_direction_id', 'N/A')}
+        - recommended idea origin: {recommended_origin}
 
         Measurement:
         - source run id: {latest_run.get('run_id', 'N/A')}
@@ -1240,6 +1256,7 @@ def node_b_commit_message(diagnosis: Dict[str, Any], latest_run: Dict[str, Any],
 
 
 def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any], round_loop: Dict[str, Any]) -> Dict[str, Any]:
+    recommended = direction_lookup(diagnosis, diagnosis.get('recommended_direction_id') or '')
     return {
         'recorded_at': now_local_iso(),
         'round_label': round_label(round_loop),
@@ -1248,6 +1265,7 @@ def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any
         'source_measured_commit': latest_run.get('measured_commit'),
         'diagnosis_id': diagnosis.get('diagnosis_id'),
         'recommended_direction_id': diagnosis.get('recommended_direction_id'),
+        'recommended_idea_origin': recommended.get('idea_origin', 'auto-analysis') if recommended else 'auto-analysis',
         'approved_direction_id': diagnosis.get('approved_direction_id'),
         'current_kernel_path': diagnosis.get('current_kernel_path'),
         'directions': diagnosis.get('directions', []),
@@ -1255,6 +1273,7 @@ def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any
 
 
 def node_c_commit_message(active_direction: Dict[str, Any], direction: Dict[str, Any], round_loop: Dict[str, Any]) -> str:
+    direction_origin = direction.get('idea_origin', 'auto-analysis')
     return textwrap.dedent(
         f'''\
         node_c: {round_label(round_loop)} implement {active_direction.get('direction_id', 'dir_xx')} {direction.get('name', 'unnamed')}
@@ -1265,6 +1284,8 @@ def node_c_commit_message(active_direction: Dict[str, Any], direction: Dict[str,
 
         What changed:
         - updated the implementation surface for the selected direction
+        - selection mode: {active_direction.get('selection_mode', 'N/A')}
+        - idea origin: {direction_origin}
         - implementation hypothesis: {direction.get('hypothesis', 'N/A')}
         - expected bottleneck: {direction.get('expected_bottleneck', 'N/A')}
         - code locations: {', '.join(direction.get('code_locations', [])) or 'N/A'}
@@ -1453,6 +1474,8 @@ def run_node_a(args: argparse.Namespace) -> int:
     latest_run['perf_verdict'] = verdict
     latest_run['implemented_direction_id'] = active_direction_before.get('direction_id')
     latest_run['implemented_direction_name'] = (active_direction_before.get('summary') or {}).get('name')
+    latest_run['implemented_selection_mode'] = active_direction_before.get('selection_mode')
+    latest_run['implemented_idea_origin'] = (active_direction_before.get('summary') or {}).get('idea_origin', 'auto-analysis')
     latest_run['round_label'] = round_label(round_loop) if active_direction_before.get('status') == 'implemented_pending_measurement' else 'single-run'
     if is_new_best:
         update_best_custom(benchmark_state, latest_run)
@@ -1475,6 +1498,9 @@ def run_node_a(args: argparse.Namespace) -> int:
             'tflops_delta': latest_run.get('tflops_delta'),
             'perf_verdict': latest_run.get('perf_verdict'),
             'implemented_direction_id': latest_run.get('implemented_direction_id'),
+            'implemented_direction_name': latest_run.get('implemented_direction_name'),
+            'implemented_selection_mode': latest_run.get('implemented_selection_mode'),
+            'implemented_idea_origin': latest_run.get('implemented_idea_origin'),
             'round_label': latest_run.get('round_label'),
             'correctness_passed': latest_run.get('correctness_passed'),
             'measured_commit': latest_run.get('measured_commit'),
@@ -1490,6 +1516,7 @@ def run_node_a(args: argparse.Namespace) -> int:
             'direction_id': active_direction_before.get('direction_id'),
             'direction_name': (active_direction_before.get('summary') or {}).get('name'),
             'selection_mode': active_direction_before.get('selection_mode'),
+            'idea_origin': (active_direction_before.get('summary') or {}).get('idea_origin', 'auto-analysis'),
             'hypothesis': (active_direction_before.get('summary') or {}).get('hypothesis'),
             'previous_run_id': previous_run.get('run_id'),
             'run_id': latest_run.get('run_id'),
@@ -1699,7 +1726,7 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
     }
     write_json(ACTIVE_DIRECTION_PATH, active)
 
-    if selection_mode == 'approved':
+    if selection_mode in ('approved', 'human_idea'):
         diagnosis['approved_direction_id'] = direction_id
     write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
 
@@ -2007,6 +2034,10 @@ def build_parser() -> argparse.ArgumentParser:
     approve = subparsers.add_parser('approve', help='Select one explicit node_b direction for node_c')
     approve.add_argument('--direction', required=True)
     approve.set_defaults(func=lambda args: select_direction(args.direction, 'approved'))
+
+    human_idea = subparsers.add_parser('use-human-direction', help='Select one node_b direction for node_c and record it as a human idea')
+    human_idea.add_argument('--direction', required=True)
+    human_idea.set_defaults(func=lambda args: select_direction(args.direction, 'human_idea'))
 
     use_recommended = subparsers.add_parser('use-recommended-direction', help='Select the rank-1 recommended direction for node_c')
     use_recommended.set_defaults(
