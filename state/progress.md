@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `3265675318dd0108296bfc9c83879cc130bb6351`
 - plateau counter: `0`
 - round loop: `round 5/20`
 - rounds remaining: `16`
-- notes: `Node A completed round 4/20. Run node_b to continue round 5/20.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 5/20.`
 
 ## Latest measured custom run
 
@@ -29,18 +29,20 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260418_225054`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- no directions recorded yet
+- dir_01: Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps | bottleneck: Occupancy ceiling and synchronization-limited tensor-core utilization in the steady-state mainloop
+- dir_02: Replace the simple B-row skew with a stronger shared-memory swizzle for WMMA loads | bottleneck: Shared-memory/L1 bank and MIO pressure on B fragment loads
+- dir_03: Remove the shared scratch epilogue and emit BF16 stores from registers with wider vectors | bottleneck: Epilogue LSU/MIO pressure from shared scratch traffic and scalar BF16 stores
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 

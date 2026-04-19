@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-18T22:56:15-07:00",
+  "source_diagnosis_id": "diagnosis_20260418_225054",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Retile to a 4-warp CTA so each K-slice carries more MMA work and more resident warps",
+    "hypothesis": "The fixed shape hits the tensor path exactly, so the low tensor active 23.25% is not tail overhead. The current 2-warp 32x48 CTA only allows about 22 resident warps per SM (45.63% active, 48 registers/thread, 8.704 KB shared/block) and does very little math between full-block sync points, which matches the 19.10% barrier stall and leaves Tensor Cores underfed. Moving to a shape such as a 4-warp CTA that increases MMA work per staged tile should improve latency hiding and amortize the per-iteration barrier cost.",
+    "expected_bottleneck": "Occupancy ceiling and synchronization-limited tensor-core utilization in the steady-state mainloop",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:20-42",
+      "src/kernels/bf16_gemm_v1.cu:164-215",
+      "src/kernels/bf16_gemm_v1.cu:268-271"
+    ],
+    "risk": "A larger CTA can increase B staging, accumulator, or epilogue state enough to raise registers/shared memory and keep the warp ceiling unchanged or worse. Tile choices that improve barrier amortization can still lose if they make the B path or store path materially heavier.",
+    "metrics_to_recheck": [
+      "median_runtime_ms",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "launch__registers_per_thread",
+      "launch__shared_mem_per_block_allocated"
+    ],
+    "stop_condition": "Stop if the retile prototype still tops out around the current 22 resident warps or leaves barrier stall near 19% without a clear runtime win."
+  },
+  "notes": "Node C may now implement this one direction."
 }
