@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `awaiting_direction_selection_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `6dd39ad50b8e36dd035ae435800103257053f6a2`
 - plateau counter: `4`
 - round loop: `round 5/5`
 - rounds remaining: `1`
-- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
+- notes: `Node C build succeeded for round 5/5. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -39,10 +39,10 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 
