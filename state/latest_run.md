@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260418_235548_bf16_gemm_v1_01d0040`
-- run dir: `runs/20260418_235548_bf16_gemm_v1_01d0040`
-- kernel tag: `bf16_gemm_v1_01d0040`
-- round label: `round 10/20`
+- run id: `20260419_000651_bf16_gemm_v1_662a03b`
+- run dir: `runs/20260419_000651_bf16_gemm_v1_662a03b`
+- kernel tag: `bf16_gemm_v1_662a03b`
+- round label: `round 11/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `43.697664 ms`
-- p10 runtime: `43.081524 ms`
-- p90 runtime: `44.604108 ms`
-- TFLOP/s: `16.637489 TFLOP/s`
-- previous run id: `20260418_234153_bf16_gemm_v1_da19f01`
-- runtime delta vs previous measured run: `-3.074049 ms`
-- TFLOP/s delta vs previous measured run: `+1.093491 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `44.082689 ms`
+- p10 runtime: `43.583284 ms`
+- p90 runtime: `45.405286 ms`
+- TFLOP/s: `16.492175 TFLOP/s`
+- previous run id: `20260418_235548_bf16_gemm_v1_01d0040`
+- runtime delta vs previous measured run: `+0.385025 ms`
+- TFLOP/s delta vs previous measured run: `-0.145314 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Split the fixed shape into a 64x128 main kernel plus a 64x96 tail kernel`
+- implemented direction name: `Main-kernel producer/consumer cp.async pipeline`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260418_235548_bf16_gemm_v1_01d0040/summary.json`
-- measured commit: `01d00409efc03fdf555fef3ea7cc4efd403a720a`
-- new best custom: `yes`
-- generated at: `2026-04-18T23:55:56-07:00`
+- raw summary json: `runs/20260419_000651_bf16_gemm_v1_662a03b/summary.json`
+- measured commit: `662a03b3908edf72485e5b57055242944802fa97`
+- new best custom: `no`
+- generated at: `2026-04-19T00:07:00-07:00`
