@@ -426,8 +426,11 @@ def summarize_run(
         'headline_metrics': raw_ncu.get('headline_metrics', {}),
         'raw_csv_path': repo_rel(run_dir / 'ncu_metrics.csv') if (run_dir / 'ncu_metrics.csv').exists() else None,
         'raw_rep_path': repo_rel(run_dir / 'ncu_profile.ncu-rep') if (run_dir / 'ncu_profile.ncu-rep').exists() else None,
-        'raw_details_csv_path': raw_ncu.get('raw_details_csv_path')
-        or (repo_rel(run_dir / 'ncu_details.csv') if (run_dir / 'ncu_details.csv').exists() else None),
+        'raw_details_csv_path': (
+            repo_rel(run_dir / Path(raw_ncu['raw_details_csv_path']).name)
+            if raw_ncu.get('raw_details_csv_path')
+            else (repo_rel(run_dir / 'ncu_details.csv') if (run_dir / 'ncu_details.csv').exists() else None)
+        ),
         'generated_at': now_local_iso(),
     }
     return latest_run, latest_ncu, is_new_best
