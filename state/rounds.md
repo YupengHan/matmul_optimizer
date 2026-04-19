@@ -1,24 +1,24 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `5`
-- completed rounds: `3`
-- remaining rounds: `2`
-- current round label: `round 4/5`
+- completed rounds: `4`
+- remaining rounds: `1`
+- current round label: `round 5/5`
 - auto use recommended: `yes`
 - started at: `2026-04-18T21:03:35-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 4/5. Node A will measure the result next.`
+- notes: `Completed round 4/5. Continue with node_b for round 5/5.`
 
 ## Last completed round
 
-- round: `3/5`
+- round: `4/5`
 - direction: `dir_01`
-- direction name: `Restore explicit cp.async warm-up and consume ordering`
+- direction name: `Increase per-warp output tile reuse`
 - verdict: `improved`
-- runtime delta: `-3.730831 ms`
-- TFLOP/s delta: `+0.272692 TFLOP/s`
-- run dir: `runs/20260418_212627_bf16_gemm_v1_8138da5`
-- ncu rep path: `runs/20260418_212627_bf16_gemm_v1_8138da5/ncu_profile.ncu-rep`
+- runtime delta: `-9.342083 ms`
+- TFLOP/s delta: `+0.783643 TFLOP/s`
+- run dir: `runs/20260418_213511_bf16_gemm_v1_4473555`
+- ncu rep path: `runs/20260418_213511_bf16_gemm_v1_4473555/ncu_profile.ncu-rep`

@@ -1,24 +1,24 @@
 # Latest run
 
-- run id: `20260418_212627_bf16_gemm_v1_8138da5`
-- run dir: `runs/20260418_212627_bf16_gemm_v1_8138da5`
-- kernel tag: `bf16_gemm_v1_8138da5`
-- round label: `round 3/5`
+- run id: `20260418_213511_bf16_gemm_v1_4473555`
+- run dir: `runs/20260418_213511_bf16_gemm_v1_4473555`
+- kernel tag: `bf16_gemm_v1_4473555`
+- round label: `round 4/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `97.885185 ms`
-- p10 runtime: `96.832922 ms`
-- p90 runtime: `101.197822 ms`
-- TFLOP/s: `7.427267 TFLOP/s`
-- previous run id: `20260418_212022_bf16_gemm_v1_deeb976`
-- runtime delta vs previous measured run: `-3.730831 ms`
-- TFLOP/s delta vs previous measured run: `+0.272692 TFLOP/s`
+- median runtime: `88.543102 ms`
+- p10 runtime: `87.984129 ms`
+- p90 runtime: `91.513375 ms`
+- TFLOP/s: `8.210910 TFLOP/s`
+- previous run id: `20260418_212627_bf16_gemm_v1_8138da5`
+- runtime delta vs previous measured run: `-9.342083 ms`
+- TFLOP/s delta vs previous measured run: `+0.783643 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore explicit cp.async warm-up and consume ordering`
-- raw summary json: `runs/20260418_212627_bf16_gemm_v1_8138da5/summary.json`
-- measured commit: `8138da55448e546af314940addc89fd3cadc56ff`
+- implemented direction name: `Increase per-warp output tile reuse`
+- raw summary json: `runs/20260418_213511_bf16_gemm_v1_4473555/summary.json`
+- measured commit: `4473555b78b0a2cfa211c4e9ca7c96dbd42353a8`
 - new best custom: `yes`
-- generated at: `2026-04-18T21:26:37-07:00`
+- generated at: `2026-04-18T21:35:20-07:00`

@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Increase per-warp output tile reuse`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260418_212651`
-- round loop: `round 4/5`
-- hypothesis: `The restored warm-up fixed correctness and recovered a few milliseconds, but the kernel still does only one 16x16x16 MMA per warp for each staged K slice while paying shared loads, commit/wait, and barrier overhead every iteration. Expanding the warp or CTA tile so each warp accumulates multiple output fragments should raise arithmetic intensity, amortize the shared-memory traffic, and lift the still-low 13.64% tensor-pipe activity without revisiting the rejected round-2 wait reorder.`
-- expected bottleneck: `Tensor Core under-utilization driven by too little MMA work per staged tile, currently surfacing as low `sm__pipe_tensor_cycles_active` with persistent `smsp__warp_issue_stalled_mio_throttle`.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:20-29 (tile-shape constants and derived CTA dimensions), src/kernels/bf16_gemm_v1.cu:132-137 (warp-to-output-tile mapping), src/kernels/bf16_gemm_v1.cu:156-172 (fragment load and MMA sequence), src/kernels/bf16_gemm_v1.cu:221-224 (tensor-core launch geometry)`
-- risk: `Moderate. A larger warp tile or extra accumulator fragments will increase register and possibly shared-memory footprint, so it can hurt occupancy or complicate the per-lane fragment mapping if pushed too far.`
-- metrics to re-check: `median runtime_ms, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, launch__registers_per_thread, sm__warps_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 5/5`
 
 ## Allowed edit surface
 
@@ -30,4 +25,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- no active direction selected yet; select one before using the dirty-path guardrail

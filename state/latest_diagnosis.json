@@ -1,83 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260418_212651",
-  "status": "completed",
-  "created_at": "2026-04-18T21:26:51-07:00",
-  "source_run_id": "20260418_212627_bf16_gemm_v1_8138da5",
-  "source_run_dir": "runs/20260418_212627_bf16_gemm_v1_8138da5",
-  "source_summary_json": "runs/20260418_212627_bf16_gemm_v1_8138da5/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260418_213511_bf16_gemm_v1_4473555",
+  "source_run_dir": "runs/20260418_213511_bf16_gemm_v1_4473555",
+  "source_summary_json": "runs/20260418_213511_bf16_gemm_v1_4473555/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Increase per-warp output tile reuse",
-      "hypothesis": "The restored warm-up fixed correctness and recovered a few milliseconds, but the kernel still does only one 16x16x16 MMA per warp for each staged K slice while paying shared loads, commit/wait, and barrier overhead every iteration. Expanding the warp or CTA tile so each warp accumulates multiple output fragments should raise arithmetic intensity, amortize the shared-memory traffic, and lift the still-low 13.64% tensor-pipe activity without revisiting the rejected round-2 wait reorder.",
-      "expected_bottleneck": "Tensor Core under-utilization driven by too little MMA work per staged tile, currently surfacing as low `sm__pipe_tensor_cycles_active` with persistent `smsp__warp_issue_stalled_mio_throttle`.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:20-29 (tile-shape constants and derived CTA dimensions)",
-        "src/kernels/bf16_gemm_v1.cu:132-137 (warp-to-output-tile mapping)",
-        "src/kernels/bf16_gemm_v1.cu:156-172 (fragment load and MMA sequence)",
-        "src/kernels/bf16_gemm_v1.cu:221-224 (tensor-core launch geometry)"
-      ],
-      "risk": "Moderate. A larger warp tile or extra accumulator fragments will increase register and possibly shared-memory footprint, so it can hurt occupancy or complicate the per-lane fragment mapping if pushed too far.",
-      "metrics_to_recheck": [
-        "median runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if a first larger-tile prototype drives `launch__registers_per_thread` high enough to materially cut active warps from the current ~91% without a clear rise in tensor-pipe activity or runtime."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Pad or swizzle shared A/B tiles for WMMA loads",
-      "hypothesis": "The dominant stall is still `smsp__warp_issue_stalled_mio_throttle` at 37.81%, and the current `a_shared`/`b_shared` buffers are packed without any skew or swizzle before `wmma::load_matrix_sync`. Rewriting the shared layout so the WMMA fragment loads land on a more bank-friendly pattern should reduce shared-port serialization and free the tensor pipe without changing the now-correct copy ordering.",
-      "expected_bottleneck": "Shared-memory / MIO pressure around `wmma::load_matrix_sync`, likely caused by conflict-prone staging layout rather than global-memory bandwidth saturation.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:121-123 (shared-memory buffer declarations)",
-        "src/kernels/bf16_gemm_v1.cu:56-68 (global-to-shared staging layout)",
-        "src/kernels/bf16_gemm_v1.cu:167-171 (warp fragment load addresses)"
-      ],
-      "risk": "Moderate. Layout changes are easy to make subtly wrong, especially for matrix B, and a padding or transpose scheme can break alignment assumptions for `cp.async` or regress correctness if the fragment addressing is off.",
-      "metrics_to_recheck": [
-        "median runtime_ms",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "correctness cases"
-      ],
-      "stop_condition": "Stop if the revised layout cannot preserve aligned `cp.async` staging or if `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct` stays roughly flat after adding padding or swizzle."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Specialize a 2x K macro-stage pipeline",
-      "hypothesis": "Even with the warm-up restored, the kernel still executes a commit/wait/sync cadence for every 16-wide K slice, so the 21.86% barrier stall is being paid 452 times per CTA. Because this benchmark uses one fixed `k=7232` shape that is exactly divisible by 32 and 64, unrolling the steady-state loop into 2-slice macro-stages should let one synchronization interval feed multiple MMAs and reduce barrier pressure without reintroducing the unsafe round-2 wait shuffle.",
-      "expected_bottleneck": "Synchronization overhead from the current one-barrier-per-`kWmmaK` steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:50-53 (wait-group primitive)",
-        "src/kernels/bf16_gemm_v1.cu:145-149 (pipeline warm-up)",
-        "src/kernels/bf16_gemm_v1.cu:151-177 (steady-state K loop and stage transitions)"
-      ],
-      "risk": "Moderate to high. Grouping multiple K slices per pipeline stage increases bookkeeping and live state, and it can quietly regress correctness if the warm-up, steady-state, and drain phases are not rewritten as one coherent pipeline.",
-      "metrics_to_recheck": [
-        "median runtime_ms",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "correctness cases"
-      ],
-      "stop_condition": "Stop if the change collapses back into merely moving waits around instead of reducing the sync cadence, or if barrier stalls stay near the current level while register pressure and complexity increase."
-    }
-  ],
-  "notes": "Run node_b to produce exactly three ranked directions."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
