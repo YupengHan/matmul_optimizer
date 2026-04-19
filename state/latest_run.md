@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_011243_bf16_gemm_v1_33e1461`
-- run dir: `runs/20260419_011243_bf16_gemm_v1_33e1461`
-- kernel tag: `bf16_gemm_v1_33e1461`
-- round label: `round 17/20`
+- run id: `20260419_013130_bf16_gemm_v1_ea27d5a`
+- run dir: `runs/20260419_013130_bf16_gemm_v1_ea27d5a`
+- kernel tag: `bf16_gemm_v1_ea27d5a`
+- round label: `round 18/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `41.534977 ms`
-- p10 runtime: `40.915764 ms`
-- p90 runtime: `42.246347 ms`
-- TFLOP/s: `17.503788 TFLOP/s`
-- previous run id: `20260419_010405_bf16_gemm_v1_79cdb43`
-- runtime delta vs previous measured run: `-1.029583 ms`
-- TFLOP/s delta vs previous measured run: `+0.423395 TFLOP/s`
+- median runtime: `38.473728 ms`
+- p10 runtime: `37.728783 ms`
+- p90 runtime: `39.507661 ms`
+- TFLOP/s: `18.896516 TFLOP/s`
+- previous run id: `20260419_011243_bf16_gemm_v1_33e1461`
+- runtime delta vs previous measured run: `-3.061249 ms`
+- TFLOP/s delta vs previous measured run: `+1.392728 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `64x192 main + 64x128 middle + 64x96 tail fixed split`
-- implemented selection mode: `recommended`
-- implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_011243_bf16_gemm_v1_33e1461/summary.json`
-- measured commit: `33e1461e09c0f90b0896452a94c16277f2a251db`
+- implemented direction name: `Human idea: autotune fixed-shape main tiling across 10+ candidates`
+- implemented selection mode: `human_idea`
+- implemented idea origin: `human-idea`
+- raw summary json: `runs/20260419_013130_bf16_gemm_v1_ea27d5a/summary.json`
+- measured commit: `ea27d5a906ceb46b0a4ec429d6d53f4a457620d6`
 - new best custom: `yes`
-- generated at: `2026-04-19T01:12:52-07:00`
+- generated at: `2026-04-19T01:31:38-07:00`
