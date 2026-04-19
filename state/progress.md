@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `d90a8731b2f67bd39feb4960efeb9b70068ce838`
 - plateau counter: `1`
 - round loop: `round 2/5`
 - rounds remaining: `4`
-- notes: `Node A completed round 1/5. Run node_b to continue round 2/5.`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
@@ -28,12 +28,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_093742`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 2/5 diagnosis prepared from regressed run 20260419_093633_bf16_gemm_v1_d90a873. Round-1 two-level B staging is treated as negative evidence; recommendation pivots to the human phased-64x384 idea on the restored accepted base surface.`
+- dir_01: Phased 64x384 micro-panels to shrink the live set | bottleneck: Register-limited occupancy and weak latency hiding from the 12-fragment live set in the hot 64x384 loop.
+- dir_02: Simplify the 64x384 K-loop pipeline instead of repacking B | bottleneck: CTA-wide synchronization and copy-pipeline issue pressure in the hot loop.
+- dir_03: Trim the 64x384 epilogue export path on the restored single-skew base | bottleneck: LSU/shared writeback pressure and epilogue-side shared-memory traffic after the main MMA loop.
 
 ## Active implementation direction
 
