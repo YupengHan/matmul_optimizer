@@ -10,19 +10,19 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - previous node: `node_a`
 - status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `24b5d8378a1227859b9a24d7fa45d52918ae2d00`
-- plateau counter: `2`
+- latest measured commit: `15d63b2993c6eecc3a912dc4a648de6294e82efc`
+- plateau counter: `3`
 - round loop: `single-run`
 - rounds remaining: `0`
-- notes: `Node A completed the final planned round. Review the results before starting another loop.`
+- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
 
 ## Latest measured custom run
 
-- run id: `20260419_105842_bf16_gemm_v1_24b5d83`
-- run dir: `runs/20260419_105842_bf16_gemm_v1_24b5d83`
+- run id: `20260419_122438_bf16_gemm_v1_15d63b2`
+- run dir: `runs/20260419_122438_bf16_gemm_v1_15d63b2`
 - correctness: `PASS`
-- median runtime: `39.569407 ms`
-- TFLOP/s: `18.373271 TFLOP/s`
+- median runtime: `35.725824 ms`
+- TFLOP/s: `20.349969 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 

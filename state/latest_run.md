@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_105842_bf16_gemm_v1_24b5d83`
-- run dir: `runs/20260419_105842_bf16_gemm_v1_24b5d83`
-- kernel tag: `bf16_gemm_v1_24b5d83`
-- round label: `round 5/5`
+- run id: `20260419_122438_bf16_gemm_v1_15d63b2`
+- run dir: `runs/20260419_122438_bf16_gemm_v1_15d63b2`
+- kernel tag: `bf16_gemm_v1_15d63b2`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `39.569407 ms`
-- p10 runtime: `39.521074 ms`
-- p90 runtime: `40.202539 ms`
-- TFLOP/s: `18.373271 TFLOP/s`
-- previous run id: `20260419_105226_bf16_gemm_v1_edb3741`
-- runtime delta vs previous measured run: `+4.603310 ms`
-- TFLOP/s delta vs previous measured run: `-2.418853 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Specialize Tile384 cp.async producer assignment in the peeled hot path`
-- implemented selection mode: `recommended`
+- median runtime: `35.725824 ms`
+- p10 runtime: `35.178086 ms`
+- p90 runtime: `36.955547 ms`
+- TFLOP/s: `20.349969 TFLOP/s`
+- previous run id: `20260419_105842_bf16_gemm_v1_24b5d83`
+- runtime delta vs previous measured run: `-3.843582 ms`
+- TFLOP/s delta vs previous measured run: `+1.976698 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_105842_bf16_gemm_v1_24b5d83/summary.json`
-- measured commit: `24b5d8378a1227859b9a24d7fa45d52918ae2d00`
+- raw summary json: `runs/20260419_122438_bf16_gemm_v1_15d63b2/summary.json`
+- measured commit: `15d63b2993c6eecc3a912dc4a648de6294e82efc`
 - new best custom: `no`
-- generated at: `2026-04-19T10:58:50-07:00`
+- generated at: `2026-04-19T12:24:47-07:00`
