@@ -531,13 +531,39 @@ __global__ void bf16_gemm_v1_tensor_core_kernel(
 #endif
 }
 
+template <typename TileConfig>
+__device__ __forceinline__ void accumulate_peeled_shared_stage(
+    wmma::fragment<wmma::accumulator, kWmmaM, kWmmaN, kWmmaK, float> (&acc_frags)[TileConfig::kWarpMmaTilesN],
+    const __nv_bfloat16* a_stage,
+    const __nv_bfloat16* b_stage,
+    int warp_tile_m,
+    int warp_tile_n) {
+  wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
+  wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major>
+      b_frags[TileConfig::kWarpMmaTilesN];
+
+  const __nv_bfloat16* a_tile =
+      a_stage + warp_tile_m * kWmmaM * kWmmaK;
+  const __nv_bfloat16* b_tile =
+      b_stage + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
+
+  wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
+  #pragma unroll
+  for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
+    wmma::load_matrix_sync(
+        b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
+    wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
+  }
+}
+
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
-  static_assert(FixedKTiles > 1, "Peeled fixed-shape kernel expects at least two K-tiles.");
+  static_assert(FixedKTiles > 3, "Pairwise peeled fixed-shape kernel expects at least four K-tiles.");
+  static_assert((FixedKTiles % 2) == 0, "Pairwise peeled fixed-shape kernel expects an even K-tile count.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
                 "Fixed-shape peeled kernel must match the benchmark K dimension.");
 
@@ -586,34 +612,21 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   int next_stage = 1;
 
   #pragma unroll 1
-  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; ++tile_idx) {
-    const int future_tile_k = (tile_idx + 2) * kWmmaK;
+  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; tile_idx += 2) {
+    const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
+    const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
 
-    wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
-    wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frags[TileConfig::kWarpMmaTilesN];
+    accumulate_peeled_shared_stage<TileConfig>(
+        acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
-
-    wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
-    #pragma unroll
-    for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-      wmma::load_matrix_sync(
-          b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
-      wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
-    }
-
-    // All warps must finish reading the current shared stage before the peeled
-    // hot loop recycles that buffer for tile i+2.
+    // Keep the restored CTA-wide stage recycle model intact while cutting the
+    // steady-state loop/index overhead in half.
     __syncthreads();
     stage_a_shared_tile_async<TileConfig>(
-        a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
+        a_shared[curr_stage], a_block + first_future_tile_k, kFixedBenchmarkK);
     stage_b_shared_tile_async<TileConfig>(
         b_shared[curr_stage],
-        b_block + future_tile_k * kFixedBenchmarkN,
+        b_block + first_future_tile_k * kFixedBenchmarkN,
         kFixedBenchmarkN);
     cp_async_commit_group();
 
@@ -622,49 +635,35 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const int consumed_stage = curr_stage;
     curr_stage = next_stage;
     next_stage = consumed_stage;
+
+    accumulate_peeled_shared_stage<TileConfig>(
+        acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+    __syncthreads();
+    stage_a_shared_tile_async<TileConfig>(
+        a_shared[curr_stage], a_block + second_future_tile_k, kFixedBenchmarkK);
+    stage_b_shared_tile_async<TileConfig>(
+        b_shared[curr_stage],
+        b_block + second_future_tile_k * kFixedBenchmarkN,
+        kFixedBenchmarkN);
+    cp_async_commit_group();
+
+    cp_async_wait_group_1();
+    __syncthreads();
+    const int second_consumed_stage = curr_stage;
+    curr_stage = next_stage;
+    next_stage = second_consumed_stage;
   }
 
-  {
-    wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
-    wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frags[TileConfig::kWarpMmaTilesN];
-
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
-
-    wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
-    #pragma unroll
-    for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-      wmma::load_matrix_sync(
-          b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
-      wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
-    }
-  }
+  accumulate_peeled_shared_stage<TileConfig>(
+      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   cp_async_wait_group_0();
   __syncthreads();
   curr_stage = next_stage;
 
-  {
-    wmma::fragment<wmma::matrix_a, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> a_frag;
-    wmma::fragment<wmma::matrix_b, kWmmaM, kWmmaN, kWmmaK, __nv_bfloat16, wmma::row_major> b_frags[TileConfig::kWarpMmaTilesN];
-
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] + warp_tile_m * kWmmaM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
-
-    wmma::load_matrix_sync(a_frag, a_tile, kWmmaK);
-    #pragma unroll
-    for (int tile_n = 0; tile_n < TileConfig::kWarpMmaTilesN; ++tile_n) {
-      wmma::load_matrix_sync(
-          b_frags[tile_n], b_tile + tile_n * kWmmaN, TileConfig::kBSharedStride);
-      wmma::mma_sync(acc_frags[tile_n], a_frag, b_frags[tile_n], acc_frags[tile_n]);
-    }
-  }
+  accumulate_peeled_shared_stage<TileConfig>(
+      acc_frags, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   constexpr int kCSharedStageStride =
       TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
