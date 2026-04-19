@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_122438_bf16_gemm_v1_15d63b2`
-- run dir: `runs/20260419_122438_bf16_gemm_v1_15d63b2`
-- kernel tag: `bf16_gemm_v1_15d63b2`
-- round label: `single-run`
+- run id: `20260419_123228_bf16_gemm_v1_1dd4420`
+- run dir: `runs/20260419_123228_bf16_gemm_v1_1dd4420`
+- kernel tag: `bf16_gemm_v1_1dd4420`
+- round label: `round 1/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `35.725824 ms`
-- p10 runtime: `35.178086 ms`
-- p90 runtime: `36.955547 ms`
-- TFLOP/s: `20.349969 TFLOP/s`
-- previous run id: `20260419_105842_bf16_gemm_v1_24b5d83`
-- runtime delta vs previous measured run: `-3.843582 ms`
-- TFLOP/s delta vs previous measured run: `+1.976698 TFLOP/s`
-- perf verdict: `improved`
-- implemented direction id: `None`
-- implemented direction name: `None`
-- implemented selection mode: `None`
-- implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_122438_bf16_gemm_v1_15d63b2/summary.json`
-- measured commit: `15d63b2993c6eecc3a912dc4a648de6294e82efc`
+- median runtime: `42.259968 ms`
+- p10 runtime: `41.666765 ms`
+- p90 runtime: `43.000833 ms`
+- TFLOP/s: `17.203502 TFLOP/s`
+- previous run id: `20260419_122438_bf16_gemm_v1_15d63b2`
+- runtime delta vs previous measured run: `+6.534143 ms`
+- TFLOP/s delta vs previous measured run: `-3.146468 TFLOP/s`
+- perf verdict: `regressed`
+- implemented direction id: `dir_01`
+- implemented direction name: `Warp-specialize the peeled 64x384 hot loop into producer and consumer warps`
+- implemented selection mode: `approved`
+- implemented idea origin: `human-idea`
+- raw summary json: `runs/20260419_123228_bf16_gemm_v1_1dd4420/summary.json`
+- measured commit: `1dd4420e7958cd21478c561c7169064f8b6f054b`
 - new best custom: `no`
-- generated at: `2026-04-19T12:24:47-07:00`
+- generated at: `2026-04-19T12:32:38-07:00`

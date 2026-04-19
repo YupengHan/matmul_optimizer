@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `15d63b2993c6eecc3a912dc4a648de6294e82efc`
-- plateau counter: `3`
-- round loop: `round 1/5`
-- rounds remaining: `5`
-- notes: `Node C build succeeded for round 1/5. Node A will now measure the new code path.`
+- latest measured commit: `1dd4420e7958cd21478c561c7169064f8b6f054b`
+- plateau counter: `4`
+- round loop: `round 2/5`
+- rounds remaining: `4`
+- notes: `Node A completed round 1/5. Run node_b to continue round 2/5.`
 
 ## Latest measured custom run
 
-- run id: `20260419_122438_bf16_gemm_v1_15d63b2`
-- run dir: `runs/20260419_122438_bf16_gemm_v1_15d63b2`
+- run id: `20260419_123228_bf16_gemm_v1_1dd4420`
+- run dir: `runs/20260419_123228_bf16_gemm_v1_1dd4420`
 - correctness: `PASS`
-- median runtime: `35.725824 ms`
-- TFLOP/s: `20.349969 TFLOP/s`
+- median runtime: `42.259968 ms`
+- TFLOP/s: `17.203502 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_122507`
-- recommended direction: `dir_01`
-- approved direction: `dir_01`
-- diagnosis notes: `Diagnosed accepted base run 20260419_122438_bf16_gemm_v1_15d63b2 at 35.725824 ms. The human-priority direction is ranked first and recommended: keep the single-skew 64x384 macro tile and test a warp-specialized producer/consumer split in the peeled hot kernel. The current measured bottlenecks are coherent with that choice: tensor active remains only 34.86 while barrier stall is 15.23, mio_throttle is 35.53, and hot-kernel LSU pressure is already high. The other two directions stay bounded and avoid reopening macro-tile changes.`
-- dir_01: Warp-specialize the peeled 64x384 hot loop into producer and consumer warps | bottleneck: All-warps staging and CTA-wide stage handoff in the peeled 64x384 hot kernel, which can suppress tensor issue even when occupancy is still healthy at the current 2-block register limit.
-- dir_02: Pair Tile384 epilogue export across the existing two C-scratch stages | bottleneck: Hot-kernel shared export and LSU traffic after MMA completion, which can still contribute to the current mio_throttle even when the main loop is well scheduled.
-- dir_03: Add a fixed-K peeled 64x96 tail kernel | bottleneck: Residual generic-loop, barrier, and scoreboard overhead in the 64x96 tail kernel; upside is capped because the tail is only a small share of total wall time.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
