@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_014602",
+  "status": "completed",
+  "created_at": "2026-04-19T01:46:02-07:00",
   "source_run_id": "20260419_014521_bf16_gemm_v1_4113319",
   "source_run_dir": "runs/20260419_014521_bf16_gemm_v1_4113319",
   "source_summary_json": "runs/20260419_014521_bf16_gemm_v1_4113319/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Reduce hot-kernel epilogue and writeback work on the accepted 64x384 base",
+      "hypothesis": "The accepted round-18 result already proved that 64x384 over the first 7680 columns plus the 64x96 tail is the right macro split on this NVIDIA GeForce RTX 3070 Laptop GPU (sm86). The next gain should come from instruction-mix cleanup, not another feed-path rewrite: on the accepted round-18 base the main 64x384 kernel still spent 77.865532% of issue on LSU instructions, stalled 31.42% on MIO throttle, and only reached 32.130750% tensor active. Every warp currently stores each 16x16 accumulator tile through shared float scratch, does two __syncwarp calls per tile, then runs a lane-strided BF16 pack/store loop. That non-tensor writeback path was not the target of round 19 and is a better next lever than the regressed B-layout family.",
+      "expected_bottleneck": "Non-tensor epilogue work and shared-scratch writeback are diluting Tensor Core issue inside the proven 64x384 hot kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:189-192 (round-18 base ea27d5a, BF16 pair packing helper)",
+        "src/kernels/bf16_gemm_v1.cu:374-376 (round-18 base ea27d5a, c_shared scratch allocation)",
+        "src/kernels/bf16_gemm_v1.cu:440-462 (round-18 base ea27d5a, WMMA store and epilogue writeback loop)"
+      ],
+      "risk": "Moderate. The edit surface is localized and avoids the round-19 regression family, but WMMA accumulator export paths are awkward and a bad rewrite can just trade one LSU pattern for another or break BF16 packing correctness.",
+      "metrics_to_recheck": [
+        "main-kernel sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "main-kernel sm__inst_executed.avg.pct_of_peak_sustained_elapsed",
+        "main-kernel smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
+        "main-kernel smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "median_runtime_ms"
+      ],
+      "stop_condition": "Stop if the epilogue cleanup does not lower LSU/MIO pressure or improve runtime beyond noise on the round-18 base, because then the extra writeback complexity is not buying more Tensor Core work."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Pivot away from B-layout rewrites and peel the fixed 452-step steady state",
+      "hypothesis": "Round 19 is strong negative evidence against continuing the feed-path rewrite family on top of the 64x384 winner: registers stayed flat at 126/thread and active warps stayed flat at about 33%, but LSU wavefront activity jumped from 48.590499% to 68.567113%, MIO throttle rose from 31.42% to 36.14%, tensor active fell from 32.130750% to 29.184802%, and runtime regressed by 0.82687950 ms. The safer pivot is to go back to the accepted round-18 row-major-plus-skew B path and specialize the fixed-shape hot loop itself. Because k is always 7232 and divisible into exactly 452 WMMA K-slices, the tile_k loop can be peeled into prologue, branch-light steady state, and drain so the hot path spends fewer CUDA-core issue slots on next_tile_k checks, stage toggling, and repeated A/B pointer arithmetic.",
+      "expected_bottleneck": "Steady-state control, address-generation, and wait/sync bookkeeping on the accepted round-18 path are wasting issue bandwidth that should go to Tensor Core work.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:195-225 (round-18 base ea27d5a, accepted B staging path to preserve)",
+        "src/kernels/bf16_gemm_v1.cu:398-405 (round-18 base ea27d5a, prologue load/commit/wait sequence)",
+        "src/kernels/bf16_gemm_v1.cu:407-437 (round-18 base ea27d5a, fixed-shape K loop and next-stage bookkeeping)"
+      ],
+      "risk": "Moderate. It respects the round-19 negative signal and stays on the accepted base, but loop peeling around cp.async can easily create code bloat or scheduling mistakes if the drain/prologue boundaries are not exact.",
+      "metrics_to_recheck": [
+        "main-kernel sm__inst_executed_pipe_uniform.avg.pct_of_peak_sustained_elapsed",
+        "main-kernel sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_elapsed",
+        "main-kernel smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "main-kernel smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
+        "median_runtime_ms"
+      ],
+      "stop_condition": "Stop if the peeled steady-state loop leaves uniform or barrier work essentially unchanged, or if the required control-path surgery starts to look larger than a single round-20 implementation should own."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep the 64x384 macro split, but cut per-warp fragment footprint",
+      "hypothesis": "The round-18 autotune sweep answered the macro question, but not the micro-schedule question. On the accepted round-18 base, the hot kernel still runs at 126 registers/thread, is register-limited to 2 resident CTAs/SM, and only reaches 33.14% active warps. Each warp carries 12 accumulator fragments and 12 B fragments through the loop. Keeping the 64x384 CTA count win while serializing tile_n in smaller groups or otherwise reducing live B/accumulator fragment residency could improve ready-warp count and let this sm86 laptop GPU spend a larger fraction of cycles on Tensor Cores instead of latency hiding through heavy per-thread state.",
+      "expected_bottleneck": "Register-limited occupancy and low ready-warp count are capping Tensor Core utilization on the accepted 64x384 base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:32-53 (round-18 base ea27d5a, tile config and per-warp N footprint)",
+        "src/kernels/bf16_gemm_v1.cu:392-395 (round-18 base ea27d5a, accumulator fragment allocation)",
+        "src/kernels/bf16_gemm_v1.cu:412-431 (round-18 base ea27d5a, B fragment live set and MMA loop)"
+      ],
+      "risk": "High. This is the most invasive option because it changes the warp micro-schedule rather than only trimming epilogue or loop bookkeeping, and extra inner-loop control can erase any occupancy benefit if the live-state reduction is too small.",
+      "metrics_to_recheck": [
+        "main-kernel launch__registers_per_thread",
+        "main-kernel launch__occupancy_limit_registers",
+        "main-kernel sm__warps_active.avg.pct_of_peak_sustained_active",
+        "main-kernel sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
+        "main-kernel sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "median_runtime_ms"
+      ],
+      "stop_condition": "Stop if registers/thread do not come down meaningfully or if runtime stays flat after the live-fragment change, because then the 64x384 win is better exploited through epilogue or steady-state cleanup instead."
+    }
+  ],
+  "notes": "Round 20 diagnosis is intentionally framed for implementation on the accepted round-18 base commit ea27d5a906ceb46b0a4ec429d6d53f4a457620d6 at 38.47372818 ms, not on the regressed round-19 code. Round 19 is treated as negative evidence: the localized 64x384 B-fragment shared-layout rewrite regressed to 39.30060768 ms while MIO throttle rose from 31.42 to 36.14, LSU wavefront activity rose from 48.590499 to 68.567113, and tensor active fell from 32.130750 to 29.184802."
 }
