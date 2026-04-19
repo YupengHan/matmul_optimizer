@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_124436_bf16_gemm_v1_05bac60`
-- run dir: `runs/20260419_124436_bf16_gemm_v1_05bac60`
-- kernel tag: `bf16_gemm_v1_05bac60`
-- round label: `round 3/5`
+- run id: `20260419_125107_bf16_gemm_v1_52747c0`
+- run dir: `runs/20260419_125107_bf16_gemm_v1_52747c0`
+- kernel tag: `bf16_gemm_v1_52747c0`
+- round label: `round 4/5`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `41.554512 ms`
-- p10 runtime: `40.910951 ms`
-- p90 runtime: `42.384792 ms`
-- TFLOP/s: `17.495559 TFLOP/s`
-- previous run id: `20260419_123851_bf16_gemm_v1_98fdc11`
-- runtime delta vs previous measured run: `+5.092001 ms`
-- TFLOP/s delta vs previous measured run: `-2.443260 TFLOP/s`
+- median runtime: `491.896835 ms`
+- p10 runtime: `488.965994 ms`
+- p90 runtime: `494.815744 ms`
+- TFLOP/s: `1.477992 TFLOP/s`
+- previous run id: `20260419_124436_bf16_gemm_v1_05bac60`
+- runtime delta vs previous measured run: `+450.342323 ms`
+- TFLOP/s delta vs previous measured run: `-16.017567 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Straight-line the Tile384 cp.async producer schedule on the restored base`
-- implemented selection mode: `recommended`
-- implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_124436_bf16_gemm_v1_05bac60/summary.json`
-- measured commit: `05bac60ebd99e273cb46db683c56f34d8cdd87fe`
+- implemented direction name: `Use a warp-local consumer-side B load swizzle on the peeled 64x384 hot path`
+- implemented selection mode: `approved`
+- implemented idea origin: `human-idea`
+- raw summary json: `runs/20260419_125107_bf16_gemm_v1_52747c0/summary.json`
+- measured commit: `52747c0863292a8c9895c343897d9908c362c319`
 - new best custom: `no`
-- generated at: `2026-04-19T12:44:45-07:00`
+- generated at: `2026-04-19T12:51:43-07:00`
