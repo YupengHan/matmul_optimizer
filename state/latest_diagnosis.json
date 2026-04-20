@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_020307",
-  "status": "completed",
-  "created_at": "2026-04-20T02:03:07-07:00",
-  "source_run_id": "20260420_020244_bf16_gemm_v1_6b518ac",
-  "source_run_dir": "runs/20260420_020244_bf16_gemm_v1_6b518ac",
-  "source_summary_json": "runs/20260420_020244_bf16_gemm_v1_6b518ac/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_021058_bf16_gemm_v1_046f075",
+  "source_run_dir": "runs/20260420_021058_bf16_gemm_v1_046f075",
+  "source_summary_json": "runs/20260420_021058_bf16_gemm_v1_046f075/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Retune PTX Hot-Band Async Stage",
-      "hypothesis": "The active PTX hot-band path is already functionally equivalent to accepted round-38 commit e26d834 on the active code path, so round 42's 27.003904 ms regression is more consistent with measurement drift than with a dirty source restore. The dominant bottleneck is still the 128x128 PTX hot-band microkernel, which spends nearly all profiled time in a one-K-tile ping-pong loop with full CTA barriers; porting this branch toward the neighboring two-K-tile staged pipeline should cut synchronization tax and feed Tensor Cores more steadily.",
-      "expected_bottleneck": "Synchronization and stage-pipeline overhead in the active hot-band PTX branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1895-1991 bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:330-357 cp.async_copy_16_bytes / cp_async_commit_group / cp_async_wait_group_*",
-        "src/kernels/bf16_gemm_v1.cu:1648-1778 neighboring fixed_hot_band_128x128 staged kernel with two-K-tile pipeline"
-      ],
-      "risk": "Medium. The steady-state schedule changes are localized to the active hot-band branch, but the stage rewrite can introduce correctness bugs or erase overlap if the wait-group ordering is wrong.",
-      "metrics_to_recheck": [
-        "gpu__time_duration.avg for bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if barrier stalls do not fall materially or if Tensor Core activity stays flat after the stage regrouping."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim Hot-Band Register Footprint",
-      "hypothesis": "The hot-band PTX microkernel reports 188 registers per thread, register-limited occupancy of 2 blocks per SM, and only 16.52% active warps, so latency hiding is still poor even when the source matches e26d834. Reducing live accumulator and export state, or shortening the lifetime of shared-export scratch during the PTX epilogue, should raise residency and let the same source path recover more consistent throughput instead of remaining sensitive to drift.",
-      "expected_bottleneck": "Register pressure and low active-warps occupancy in the active PTX hot-band branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134-142 FixedHotBandTile128x128PtxExportScratch",
-        "src/kernels/bf16_gemm_v1.cu:963-1013 ptx_wmma_store_tile_pairs_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:1925-1991 hot-band PTX accumulator and export path"
-      ],
-      "risk": "Medium-high. Register wins may require reshaping accumulator/export sequencing, and an overly aggressive reduction can drop ILP or force extra shared/global traffic.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__inst_executed_pipe_tensor.sum.per_cycle_active"
-      ],
-      "stop_condition": "Stop if register count does not drop or if occupancy improves but total hot-band duration does not."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Recover L2 And Shared-Layout Efficiency In Hot Band",
-      "hypothesis": "The PTX hot-band branch currently uses a plain blockIdx traversal, while the nearby non-PTX 128x128 hot-band kernel already carries grouped-row scheduling to improve reuse across the fixed hot band. Reintroducing that grouped traversal for the active branch, and then retuning the B shared skew or PTX export scratch padding, is the best remaining L2 Cache / Bank Conflict / Coalescing option once source-restore explanations are ruled out.",
-      "expected_bottleneck": "L2 reuse loss plus residual shared-bank/layout friction in the active hot-band branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156-159 kFixedHotBandGroupedRows and fixed-shape hot-band constants",
-        "src/kernels/bf16_gemm_v1.cu:1016-1045 b_shared_col_from_logical and stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:1659-1678 grouped-row scheduler reference",
-        "src/kernels/bf16_gemm_v1.cu:1918-1929 PTX hot-band block traversal",
-        "src/kernels/bf16_gemm_v1.cu:134-142 FixedHotBandTile128x128PtxExportScratch"
-      ],
-      "risk": "High. Address-order changes can help cache locality, but they are less directly tied to the headline stalls than dir_01 and dir_02, and layout retunes can trade one replay mode for another.",
-      "metrics_to_recheck": [
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if cache/shared metrics move without a corresponding reduction in hot-band kernel duration."
-    }
-  ],
-  "notes": "Current diagnosis assumes the active PTX hot-band path in src/kernels/bf16_gemm_v1.cu is already equivalent to accepted round-38 commit e26d834 on the active path; the user-verified diff says only formatting differs there, so round 42's 27.003904 ms fallback should be treated primarily as measurement drift / environment variance, not as a source-restore failure. NCU still points at the active 128x128 PTX hot-band microkernel as the optimization target: it dominates profiled time, reaches only 47.86% tensor-pipe activity, sits at 16.52% active warps, carries 11.18% barrier stall, and uses 188 registers per thread. Ranking therefore stays within the human idea families Async Copy / Stage, Register Reuse, and L2 Cache / Bank Conflict / Coalescing Access. The optimization target remains sub-20 ms for the fixed benchmark, not merely re-matching or barely beating the 25.917889 ms CUTLASS baseline."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_020244_bf16_gemm_v1_6b518ac`
-- run dir: `runs/20260420_020244_bf16_gemm_v1_6b518ac`
-- kernel tag: `bf16_gemm_v1_6b518ac`
-- round label: `round 42/100`
+- run id: `20260420_021058_bf16_gemm_v1_046f075`
+- run dir: `runs/20260420_021058_bf16_gemm_v1_046f075`
+- kernel tag: `bf16_gemm_v1_046f075`
+- round label: `round 43/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.003904 ms`
-- p10 runtime: `26.653379 ms`
-- p90 runtime: `28.475846 ms`
-- TFLOP/s: `26.922752 TFLOP/s`
-- previous run id: `20260420_015358_bf16_gemm_v1_80ceab7`
-- runtime delta vs previous measured run: `-0.258047 ms`
-- TFLOP/s delta vs previous measured run: `+0.254836 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.126080 ms`
+- p10 runtime: `29.638554 ms`
+- p90 runtime: `31.480140 ms`
+- TFLOP/s: `24.132560 TFLOP/s`
+- previous run id: `20260420_020244_bf16_gemm_v1_6b518ac`
+- runtime delta vs previous measured run: `+3.122175 ms`
+- TFLOP/s delta vs previous measured run: `-2.790192 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore Accepted PTX Branch And Tighten Export Path`
+- implemented direction name: `Retune PTX Hot-Band Async Stage`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_020244_bf16_gemm_v1_6b518ac/summary.json`
-- measured commit: `6b518acb290f307ada1e207a9121a440e36edbbe`
+- raw summary json: `runs/20260420_021058_bf16_gemm_v1_046f075/summary.json`
+- measured commit: `046f075e6e6bba834990615cddaf89a3060fb4f1`
 - new best custom: `no`
-- generated at: `2026-04-20T02:02:51-07:00`
+- generated at: `2026-04-20T02:11:05-07:00`
