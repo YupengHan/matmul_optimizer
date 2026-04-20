@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_160517_bf16_gemm_v1_c3f11c3`
-- run dir: `runs/20260420_160517_bf16_gemm_v1_c3f11c3`
-- kernel tag: `bf16_gemm_v1_c3f11c3`
-- round label: `round 7/17`
+- run id: `20260420_160736_bf16_gemm_v1_d8e9048`
+- run dir: `runs/20260420_160736_bf16_gemm_v1_d8e9048`
+- kernel tag: `bf16_gemm_v1_d8e9048`
+- round label: `round 8/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.845824 ms`
-- p10 runtime: `24.799920 ms`
-- p90 runtime: `26.259149 ms`
-- TFLOP/s: `29.261232 TFLOP/s`
-- previous run id: `20260420_160231_bf16_gemm_v1_8ed8cf3`
-- runtime delta vs previous measured run: `-0.925695 ms`
-- TFLOP/s delta vs previous measured run: `+1.051043 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.959904 ms`
+- p10 runtime: `25.362739 ms`
+- p90 runtime: `27.051623 ms`
+- TFLOP/s: `28.005474 TFLOP/s`
+- previous run id: `20260420_160517_bf16_gemm_v1_c3f11c3`
+- runtime delta vs previous measured run: `+1.114079 ms`
+- TFLOP/s delta vs previous measured run: `-1.255757 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Apply Only A Minimal PTX Export Address Cleanup`
+- implemented direction name: `Continue The Narrow PTX Export Cleanup In The Row-Pair Helper`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_160517_bf16_gemm_v1_c3f11c3/summary.json`
-- measured commit: `c3f11c31cb51d8199d308580575f3aff7ac381c1`
+- raw summary json: `runs/20260420_160736_bf16_gemm_v1_d8e9048/summary.json`
+- measured commit: `d8e9048d7887e2c2e735dde93e5e75165800b3cd`
 - new best custom: `no`
-- generated at: `2026-04-20T16:05:25-07:00`
+- generated at: `2026-04-20T16:07:45-07:00`
