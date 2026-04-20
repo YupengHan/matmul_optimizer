@@ -153,7 +153,7 @@ constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
-constexpr int kFixedHotBandPtxGroupedRows = 8;
+constexpr int kFixedHotBandPtxGroupedRows = 4;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1411,12 +1411,12 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
   cp_async_wait_group_0();
   __syncthreads();
 
-  stage_a_shared_tile_async<TileConfig>(
-      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
   stage_b_shared_tile_async<TileConfig>(
       b_shared[curr_stage],
       b_block + future_tile_k * kFixedBenchmarkN,
       kFixedBenchmarkN);
+  stage_a_shared_tile_async<TileConfig>(
+      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
   cp_async_commit_group();
 
   const int consumed_stage = curr_stage;
@@ -1996,14 +1996,14 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
         // then reuse a single padded export scratch tile per warp to shorten the
         // store/export live range.
         const int future_tile_k = future_tile_idx * kWmmaK;
-        stage_a_shared_tile_async<FixedHotBandTile128x128>(
-            a_shared[curr_stage],
-            a_block + future_tile_k,
-            kFixedBenchmarkK);
         stage_b_shared_tile_async<FixedHotBandTile128x128>(
             b_shared[curr_stage],
             b_block + future_tile_k * kFixedBenchmarkN,
             kFixedBenchmarkN);
+        stage_a_shared_tile_async<FixedHotBandTile128x128>(
+            a_shared[curr_stage],
+            a_block + future_tile_k,
+            kFixedBenchmarkK);
         cp_async_commit_group();
       }
     }
