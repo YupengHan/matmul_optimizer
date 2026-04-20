@@ -1,15 +1,85 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_214233",
+  "status": "completed",
+  "created_at": "2026-04-19T21:42:33-07:00",
   "source_run_id": "20260419_214140_bf16_gemm_v1_63d2faf",
   "source_run_dir": "runs/20260419_214140_bf16_gemm_v1_63d2faf",
   "source_summary_json": "runs/20260419_214140_bf16_gemm_v1_63d2faf/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "human-idea+auto-analysis",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "notes": "Final-round audit after the round-9 regression and restore to the stronger round-8 implementation surface: Tiling remains accepted at the 64x384 hot-band shape; Coalescing Access, Data Reuse, Async Copy, and Pg2s remain baseline; L2 Cache, fixed-shape Stage, and the footprint-neutral B shared permutation are all now explicitly treated as tested-negative for this loop; the round-8 streaming B-consumer branch remains the best recent positive signal because it improved runtime and feed-side metrics without increasing registers or shared memory. That means the strongest remaining final-round bet is not another tiny B-layout permutation, but a more orthogonal complement on top of the restored round-8 feed branch. Recommended direction dir_01 therefore spends the last round on producer/consumer warp specialization over the round-8 streaming path: if the feed path is cleaner and the result is still occupancy-limited, the remaining upside is likely orchestration rather than another narrow layout tweak.",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Warp-specialized producer/consumer on top of the restored round-8 streaming B branch",
+      "hypothesis": "Round 8 showed that cleaning up the warp-local B consumer path can move runtime and feed metrics in the right direction without raising registers or shared memory. Round 9 then showed that squeezing the shared permutation harder is not the answer. The best remaining final-round bet is therefore to keep the restored round-8 streaming consumer branch and add the user's producer/consumer split on top: dedicate a small warp subset to staging and publication, while the remaining warps focus more heavily on MMA. This tests whether the residual gap is now CTA orchestration rather than raw B-fragment ordering.",
+      "expected_bottleneck": "All-warps staging and handoff overhead after the most obvious warp-local B feed pressure has already been reduced.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
+      ],
+      "risk": "High but worthwhile for a final-round ceiling test. The branch is still register-limited to one resident block, so losing compute warps can erase the benefit if the producer count is wrong.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if barrier stall drops but hot-band time and runtime do not, or if tensor active falls because too many warps stop doing MMA."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea Ps2r on the restored round-8 streaming branch: one-fragment shared-to-register lookahead",
+      "hypothesis": "If the final round still wants to stay inside the feed family, the highest-ceiling remaining version is now Ps2r on the restored round-8 branch. That branch already streams one B fragment at a time in mirrored order, so the next direct feed-latency move is to overlap the next B fragment load from shared to registers with the current MMA issue chain, turning the existing consumer cleanup into a one-step register lookahead.",
+      "expected_bottleneck": "Residual shared-to-register feed latency inside the hot-band 64x64 micro-tile after the round-8 consumer refactor.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "High register risk. The branch is already on the register wall, so a Ps2r lookahead can destroy the small positive signal round 8 recovered.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if registers rise or occupancy worsens without a clear hot-band runtime win."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Trim the hot-band export path so the feed-side gains are not spent back in the epilogue",
+      "hypothesis": "If the restored round-8 feed branch is already close to the best point this loop found, the remaining tax may be on the way out rather than on the way in. The hot-band kernel still exports through the shared-memory scratch path, so a final alternative is to keep the round-8 B-feed branch and trim the `c_shared` export path or helper-warp writeback mechanics to reduce LSU/shared round-trip overhead without reopening tiling or B staging.",
+      "expected_bottleneck": "Epilogue/export LSU and shared-memory round-trip overhead after the feed path has already been partially improved.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_d_row_shared",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "High. The epilogue path is correctness-sensitive, and a scratch rewrite can easily balloon register pressure or produce subtle layout bugs this late in the loop.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "launch__registers_per_thread",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Reject if the export rewrite raises registers materially or leaves hot-band time flat."
+    }
+  ]
 }
