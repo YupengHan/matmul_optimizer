@@ -1957,7 +1957,8 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
         b_shared_col_from_logical<FixedHotBandTile128x128>(
             warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
-    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+    ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
+        acc_tiles, a_tile, b_tile);
 
     if (future_tile_idx < FixedKTiles) {
       // Keep the restored accepted base intact while isolating future PTX work
