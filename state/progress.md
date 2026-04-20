@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `a7d381754d2b7e09d1ea99275532f036dfd5fc81`
-- plateau counter: `20`
-- round loop: `round 79/100`
-- rounds remaining: `22`
-- notes: `Node C build succeeded for round 79/100. Node A will now measure the new code path.`
+- latest measured commit: `1b918573ad23909f16117d559ff52de3af7f1f05`
+- plateau counter: `21`
+- round loop: `round 80/100`
+- rounds remaining: `21`
+- notes: `Node A completed round 79/100. Run node_b to continue round 80/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_114346_bf16_gemm_v1_a7d3817`
-- run dir: `runs/20260420_114346_bf16_gemm_v1_a7d3817`
+- run id: `20260420_114650_bf16_gemm_v1_1b91857`
+- run dir: `runs/20260420_114650_bf16_gemm_v1_1b91857`
 - correctness: `PASS`
-- median runtime: `31.552928 ms`
-- TFLOP/s: `23.041266 TFLOP/s`
+- median runtime: `27.076655 ms`
+- TFLOP/s: `26.850415 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_114507`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 79/100 diagnosis for run 20260420_114346_bf16_gemm_v1_a7d3817. The staged K32 family is now explicitly closed-negative: the round-79 measurement regressed to 31.55292797 ms with tensor active 39.90, barrier 10.02, long scoreboard 5.76, mio 4.98, and dram 23.54. The restored PTX baseline from round 78 remains the current reference shape in this environment, but the source surface alone does not explain the slowdown back to 25.97375965 ms and should not be treated as an unresolved launch-path difference. Do not reopen the broad default-dispatch promotion family unless a concrete new hypothesis appears.`
-- dir_01: Activate The Existing 128x128 Two-Stage Hot-Band Kernel | bottleneck: Residual synchronization and latency-hiding overhead in the hot-band steady state, with lower occupancy pressure than the failed K32 staging variant.
-- dir_02: Trim PTX Export And Scratch Shape On The Restored Baseline | bottleneck: PTX epilogue overhead, register pressure around the export path, and secondary synchronization cost rather than raw tensor throughput.
-- dir_03: Bound The 128x128 PTX Hot-Band Grouping Window | bottleneck: Group coordination and tail-peeled row-band overhead inside the PTX hot-band path, not the staged K32 pipeline itself.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

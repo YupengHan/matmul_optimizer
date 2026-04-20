@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_114346_bf16_gemm_v1_a7d3817`
-- run dir: `runs/20260420_114346_bf16_gemm_v1_a7d3817`
-- kernel tag: `bf16_gemm_v1_a7d3817`
-- round label: `round 78/100`
+- run id: `20260420_114650_bf16_gemm_v1_1b91857`
+- run dir: `runs/20260420_114650_bf16_gemm_v1_1b91857`
+- kernel tag: `bf16_gemm_v1_1b91857`
+- round label: `round 79/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.552928 ms`
-- p10 runtime: `30.775706 ms`
-- p90 runtime: `32.667035 ms`
-- TFLOP/s: `23.041266 TFLOP/s`
-- previous run id: `20260420_114003_bf16_gemm_v1_9f8afe4`
-- runtime delta vs previous measured run: `+5.579168 ms`
-- TFLOP/s delta vs previous measured run: `-4.949268 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `27.076655 ms`
+- p10 runtime: `26.596865 ms`
+- p90 runtime: `28.365309 ms`
+- TFLOP/s: `26.850415 TFLOP/s`
+- previous run id: `20260420_114346_bf16_gemm_v1_a7d3817`
+- runtime delta vs previous measured run: `-4.476273 ms`
+- TFLOP/s delta vs previous measured run: `+3.809148 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Try The 128x128x32 Staged Hot-Band Family`
+- implemented direction name: `Activate The Existing 128x128 Two-Stage Hot-Band Kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_114346_bf16_gemm_v1_a7d3817/summary.json`
-- measured commit: `a7d381754d2b7e09d1ea99275532f036dfd5fc81`
+- raw summary json: `runs/20260420_114650_bf16_gemm_v1_1b91857/summary.json`
+- measured commit: `1b918573ad23909f16117d559ff52de3af7f1f05`
 - new best custom: `no`
-- generated at: `2026-04-20T11:43:54-07:00`
+- generated at: `2026-04-20T11:46:57-07:00`
