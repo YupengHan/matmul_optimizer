@@ -1440,12 +1440,9 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel(
   cp_async_wait_group_1();
   __syncthreads();
 
+  int curr_stage = 0;
   #pragma unroll 1
-  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
-    const int curr_stage = tile_idx & 1;
-    const int next_tile_idx = tile_idx + 1;
-    const int future_tile_idx = tile_idx + 2;
-
+  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; ++tile_idx) {
     const __nv_bfloat16* a_tile =
         a_shared[curr_stage] +
         warp_tile_m * TileConfig::kWarpTileM * kWmmaK;
@@ -1456,27 +1453,45 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel(
 
     ptx_wmma_accumulate_tile_set_64x64<TileConfig>(acc_tiles, a_tile, b_tile);
 
-    if (future_tile_idx < FixedKTiles) {
-      const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async<TileConfig>(
-          a_shared[curr_stage],
-          a_block + future_tile_k,
-          kFixedBenchmarkK);
-      stage_b_shared_tile_async<TileConfig>(
-          b_shared[curr_stage],
-          b_block + future_tile_k * kFixedBenchmarkN,
-          kFixedBenchmarkN);
-      cp_async_commit_group();
-    }
+    const int future_tile_k = (tile_idx + 2) * kWmmaK;
+    stage_a_shared_tile_async<TileConfig>(
+        a_shared[curr_stage],
+        a_block + future_tile_k,
+        kFixedBenchmarkK);
+    stage_b_shared_tile_async<TileConfig>(
+        b_shared[curr_stage],
+        b_block + future_tile_k * kFixedBenchmarkN,
+        kFixedBenchmarkN);
+    cp_async_commit_group();
+    cp_async_wait_group_1();
+    __syncthreads();
+    curr_stage ^= 1;
+  }
 
-    if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
-        cp_async_wait_group_1();
-      } else {
-        cp_async_wait_group_0();
-      }
-      __syncthreads();
-    }
+  {
+    const __nv_bfloat16* a_tile =
+        a_shared[curr_stage] +
+        warp_tile_m * TileConfig::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] +
+        b_shared_col_from_logical<TileConfig>(
+            warp_tile_n * TileConfig::kWarpGroupCols);
+    ptx_wmma_accumulate_tile_set_64x64<TileConfig>(acc_tiles, a_tile, b_tile);
+  }
+
+  cp_async_wait_group_0();
+  __syncthreads();
+  curr_stage ^= 1;
+
+  {
+    const __nv_bfloat16* a_tile =
+        a_shared[curr_stage] +
+        warp_tile_m * TileConfig::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] +
+        b_shared_col_from_logical<TileConfig>(
+            warp_tile_n * TileConfig::kWarpGroupCols);
+    ptx_wmma_accumulate_tile_set_64x64<TileConfig>(acc_tiles, a_tile, b_tile);
   }
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
