@@ -1890,28 +1890,21 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
 
-    if (future_tile_idx < FixedKTiles) {
-      // Keep the double-buffered stage live until every warp finishes consuming it.
-      __syncthreads();
-      const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async<FixedHotBandTile128x128>(
-          a_shared[curr_stage],
-          a_block + future_tile_k,
-          kFixedBenchmarkK);
-      stage_b_shared_tile_async<FixedHotBandTile128x128>(
-          b_shared[curr_stage],
-          b_block + future_tile_k * kFixedBenchmarkN,
-          kFixedBenchmarkN);
-      cp_async_commit_group();
-    }
-
     if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
-        cp_async_wait_group_1();
-      } else {
-        cp_async_wait_group_0();
-      }
+      cp_async_wait_group_0();
       __syncthreads();
+      if (future_tile_idx < FixedKTiles) {
+        const int future_tile_k = future_tile_idx * kWmmaK;
+        stage_b_shared_tile_async<FixedHotBandTile128x128>(
+            b_shared[curr_stage],
+            b_block + future_tile_k * kFixedBenchmarkN,
+            kFixedBenchmarkN);
+        stage_a_shared_tile_async<FixedHotBandTile128x128>(
+            a_shared[curr_stage],
+            a_block + future_tile_k,
+            kFixedBenchmarkK);
+        cp_async_commit_group();
+      }
     }
   }
 
@@ -2083,7 +2076,7 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel<
           kFixedBenchmarkKTiles><<<
               dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
                    kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
