@@ -1,15 +1,71 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_001328",
+  "status": "completed",
+  "created_at": "2026-04-20T00:13:28-07:00",
   "source_run_id": "20260420_001248_bf16_gemm_v1_4fc47fd",
   "source_run_dir": "runs/20260420_001248_bf16_gemm_v1_4fc47fd",
   "source_summary_json": "runs/20260420_001248_bf16_gemm_v1_4fc47fd/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Keep the grouped CTA-order remap and reduce the hot-band row-group size to check the other side of the L2 curve",
+      "hypothesis": "Round 21 with grouped_rows=8 improved the baseline, while round 22 with grouped_rows=16 regressed. The fastest way to identify whether 8 is already near the local optimum is to probe the opposite side of the same L2-family tuning curve. Reducing the hot-band grouped-row size to 4 will shorten each B-reuse window and show whether the round-21 gain came from moderate grouping specifically or whether a smaller group balances A and B locality better on this grid.",
+      "expected_bottleneck": "Cross-CTA cache locality on the accepted grouped-order hot-band kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:141",
+        "src/kernels/bf16_gemm_v1.cu:1635"
+      ],
+      "risk": "This may simply give back the round-21 win. The point of the round is to bracket the grouped-order optimum, not to assume the smaller group is better.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "correctness pass rate"
+      ],
+      "stop_condition": "Stop if grouped_rows=4 clearly regresses versus the current grouped_rows=8 best, which would effectively lock in 8 as the preferred grouped-order setting."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Hold grouped_rows=8 as the accepted L2 base and return to conservative K16 barrier-side cleanup",
+      "hypothesis": "If the smaller group does not help, the grouped-order search has probably converged. The next best bounded move is then to keep grouped_rows=8 and revisit tiny Stage-side cleanup within the accepted K16 inner loop.",
+      "expected_bottleneck": "Residual barrier overhead in the accepted grouped-order K16 kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1689",
+        "src/kernels/bf16_gemm_v1.cu:1694"
+      ],
+      "risk": "Minimal headroom remains, and the correctness envelope is delicate.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "correctness pass rate"
+      ],
+      "stop_condition": "Stop if no improvement appears over the grouped_rows=8 best."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Freeze the accepted grouped-order kernel and revisit a strictly milder register hint later",
+      "hypothesis": "The register idea remains deferred, not deleted. If grouped-order tuning converges and barrier cleanup is exhausted, a later round can try a much weaker compiler hint than the failed round-19 attempt.",
+      "expected_bottleneck": "Compiler allocation quality on top of the accepted grouped-order base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1611"
+      ],
+      "risk": "Round 19 showed how easy it is to overdo this axis, so it should stay third-rank for now.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "median runtime",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the hint again distorts the kernel toward the memory-stall signature seen in round 19."
+    }
+  ],
+  "notes": "Human-idea reflection for round 23: L2 Cache remains primary because grouped_rows=8 produced a real improvement and grouped_rows=16 provided useful negative evidence, which means this axis is still actively informative. Stage, Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted fixed infrastructure under the current base. Register Reuse remains deferred after the launch-bounds failure. Tiling 256x128 stays rejected. Coalescing Access and Bank Conflict remain deferred because the current wins and losses are still tracking CTA-order choices more than those signals."
 }

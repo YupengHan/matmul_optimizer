@@ -1,10 +1,29 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Keep the grouped CTA-order remap and reduce the hot-band row-group size to check the other side of the L2 curve",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T00:13:59-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_001328",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Keep the grouped CTA-order remap and reduce the hot-band row-group size to check the other side of the L2 curve",
+    "hypothesis": "Round 21 with grouped_rows=8 improved the baseline, while round 22 with grouped_rows=16 regressed. The fastest way to identify whether 8 is already near the local optimum is to probe the opposite side of the same L2-family tuning curve. Reducing the hot-band grouped-row size to 4 will shorten each B-reuse window and show whether the round-21 gain came from moderate grouping specifically or whether a smaller group balances A and B locality better on this grid.",
+    "expected_bottleneck": "Cross-CTA cache locality on the accepted grouped-order hot-band kernel.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:141",
+      "src/kernels/bf16_gemm_v1.cu:1635"
+    ],
+    "risk": "This may simply give back the round-21 win. The point of the round is to bracket the grouped-order optimum, not to assume the smaller group is better.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "correctness pass rate"
+    ],
+    "stop_condition": "Stop if grouped_rows=4 clearly regresses versus the current grouped_rows=8 best, which would effectively lock in 8 as the preferred grouped-order setting."
+  },
+  "notes": "Node C may now implement this one direction."
 }
