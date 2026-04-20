@@ -502,22 +502,6 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
 }
 
 template <typename TileConfig>
-__device__ __noinline__ void ptx_wmma_export_tiles_384(
-    const PtxWmmaAccTileSet384& acc_tiles,
-    float* c_shared,
-    __nv_bfloat16* c_tile_base,
-    int warp_id,
-    int lane_id) {
-  if constexpr (TileConfig::kCSharedStageCount == 2) {
-    ptx_wmma_store_tile_pairs_384<TileConfig>(
-        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  } else {
-    ptx_wmma_store_tile_set_384<TileConfig>(
-        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  }
-}
-
-template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
 }
@@ -912,16 +896,52 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx_deep(
 }
 
 template <typename TileConfig, int FixedKTiles>
-__device__ __noinline__ void run_peeled_hot_pipeline_ptx_3stage(
-    PtxWmmaAccTileSet384& acc_tiles,
-    __nv_bfloat16 a_shared[][TileConfig::kASharedTileElems],
-    __nv_bfloat16 b_shared[][TileConfig::kBSharedTileElems],
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    int warp_id) {
+__global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
+    const __nv_bfloat16* a,
+    const __nv_bfloat16* b,
+    __nv_bfloat16* c) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
   constexpr int kHotStageCount = 3;
+  static_assert(FixedKTiles > 3, "Pairwise peeled fixed-shape kernel expects at least four K-tiles.");
+  static_assert((FixedKTiles % 2) == 0, "Pairwise peeled fixed-shape kernel expects an even K-tile count.");
+  static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
+                "Fixed-shape peeled kernel must match the benchmark K dimension.");
+  static_assert(TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN,
+                "The PTX hot-band branch is only expected for the fixed 64x384 kernel.");
+  static_assert(
+      kHotStageCount * (TileConfig::kASharedTileElems + TileConfig::kBSharedTileElems) *
+              sizeof(__nv_bfloat16) <=
+          TileConfig::kStaticSharedByteBudget,
+      "Hot Tile384 stage-depth branch exceeds the static shared-memory budget.");
+  static_assert(
+      kHotStageCount * TileConfig::kBSharedTileElems * sizeof(__nv_bfloat16) >=
+          TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
+              TileConfig::kCSharedTileElemsPerWarp * sizeof(float),
+      "Hot Tile384 export scratch must fit inside the overlaid B-stage storage.");
+
+  __shared__ __align__(16) __nv_bfloat16 a_shared[kHotStageCount][TileConfig::kASharedTileElems];
+  __shared__ __align__(16) __nv_bfloat16 b_shared[kHotStageCount][TileConfig::kBSharedTileElems];
+
+  const int warp_id = threadIdx.x / kWarpSize;
+  const int lane_id = threadIdx.x % kWarpSize;
+
+  if (warp_id >= TileConfig::kWarpsPerBlock) {
+    return;
+  }
+
+  const int block_row = blockIdx.y * TileConfig::kTensorBlockM;
+  const int block_col = blockIdx.x * TileConfig::kTensorBlockN;
   const int warp_tile_m = warp_id / TileConfig::kWarpTilesN;
   const int warp_tile_n = warp_id % TileConfig::kWarpTilesN;
+  const int row = block_row + warp_tile_m * kWmmaM;
+  const int col = block_col + warp_tile_n * TileConfig::kWarpMmaTilesN * kWmmaN;
+
+  PtxWmmaAccTileSet384 acc_tiles;
+  ptx_wmma_fill_zero_tile_set(acc_tiles);
+
+  const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
+  const __nv_bfloat16* b_block = b + block_col;
+  float* c_shared = reinterpret_cast<float*>(b_shared);
 
   stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
   stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
@@ -984,63 +1004,15 @@ __device__ __noinline__ void run_peeled_hot_pipeline_ptx_3stage(
   // ownership transition explicit so every warp finishes consuming the final B
   // stage before any warp starts writing epilogue scratch into that storage.
   __syncthreads();
-}
 
-template <typename TileConfig, int FixedKTiles>
-__global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
-    const __nv_bfloat16* a,
-    const __nv_bfloat16* b,
-    __nv_bfloat16* c) {
-#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
-  constexpr int kHotStageCount = 3;
-  static_assert(FixedKTiles > 3, "Pairwise peeled fixed-shape kernel expects at least four K-tiles.");
-  static_assert((FixedKTiles % 2) == 0, "Pairwise peeled fixed-shape kernel expects an even K-tile count.");
-  static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
-                "Fixed-shape peeled kernel must match the benchmark K dimension.");
-  static_assert(TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN,
-                "The PTX hot-band branch is only expected for the fixed 64x384 kernel.");
-  static_assert(
-      kHotStageCount * (TileConfig::kASharedTileElems + TileConfig::kBSharedTileElems) *
-              sizeof(__nv_bfloat16) <=
-          TileConfig::kStaticSharedByteBudget,
-      "Hot Tile384 stage-depth branch exceeds the static shared-memory budget.");
-  static_assert(
-      kHotStageCount * TileConfig::kBSharedTileElems * sizeof(__nv_bfloat16) >=
-          TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
-              TileConfig::kCSharedTileElemsPerWarp * sizeof(float),
-      "Hot Tile384 export scratch must fit inside the overlaid B-stage storage.");
-
-  __shared__ __align__(16) __nv_bfloat16 a_shared[kHotStageCount][TileConfig::kASharedTileElems];
-  __shared__ __align__(16) __nv_bfloat16 b_shared[kHotStageCount][TileConfig::kBSharedTileElems];
-
-  const int warp_id = threadIdx.x / kWarpSize;
-  const int lane_id = threadIdx.x % kWarpSize;
-
-  if (warp_id >= TileConfig::kWarpsPerBlock) {
-    return;
-  }
-
-  const int block_row = blockIdx.y * TileConfig::kTensorBlockM;
-  const int block_col = blockIdx.x * TileConfig::kTensorBlockN;
-
-  PtxWmmaAccTileSet384 acc_tiles;
-  ptx_wmma_fill_zero_tile_set(acc_tiles);
-
-  {
-    const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
-    const __nv_bfloat16* b_block = b + block_col;
-    run_peeled_hot_pipeline_ptx_3stage<TileConfig, FixedKTiles>(
-        acc_tiles, a_shared, b_shared, a_block, b_block, warp_id);
-  }
-
-  const int warp_tile_m = warp_id / TileConfig::kWarpTilesN;
-  const int warp_tile_n = warp_id % TileConfig::kWarpTilesN;
-  const int row = block_row + warp_tile_m * kWmmaM;
-  const int col = block_col + warp_tile_n * TileConfig::kWarpMmaTilesN * kWmmaN;
-  float* c_shared = reinterpret_cast<float*>(b_shared);
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_export_tiles_384<TileConfig>(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  if constexpr (TileConfig::kCSharedStageCount == 2) {
+    ptx_wmma_store_tile_pairs_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  } else {
+    ptx_wmma_store_tile_set_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 #else
   (void)a;
   (void)b;

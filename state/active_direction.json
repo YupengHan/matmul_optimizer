@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-19T18:24:25-07:00",
   "source_diagnosis_id": "diagnosis_20260419_182158",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -27,5 +27,5 @@
     ],
     "stop_condition": "Stop if reverting away from the __noinline__ split does not restore something close to the round-8 signature, meaning tensor active back near the mid-30s with barrier, long scoreboard, and mio back down sharply and runtime back near the 35-36 ms range. If that recovery does not happen, abandon the current Stage branch as primary."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
