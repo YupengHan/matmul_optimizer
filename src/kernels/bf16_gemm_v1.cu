@@ -812,12 +812,53 @@ __device__ __forceinline__ void stage_a_shared_tile_async(
   }
 }
 
+template <typename TileConfig, int ProducerThreads>
+__device__ __forceinline__ void stage_a_shared_tile_async_subset(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  static_assert(ProducerThreads > 0, "Subset staging expects at least one producer thread.");
+  static_assert(ProducerThreads <= TileConfig::kWarpsPerBlock * kWarpSize,
+                "Subset staging cannot use more producer threads than the CTA size.");
+  if (threadIdx.x >= ProducerThreads) {
+    return;
+  }
+  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kAAsyncCopiesPerTile; copy_idx += ProducerThreads) {
+    const int row = copy_idx / TileConfig::kAAsyncCopiesPerRow;
+    const int col = (copy_idx % TileConfig::kAAsyncCopiesPerRow) * kAsyncCopyElems;
+    cp_async_copy_16_bytes(
+        shared_tile + row * kWmmaK + col,
+        global_tile + row * global_stride + col);
+  }
+}
+
 template <typename TileConfig>
 __device__ __forceinline__ void stage_b_shared_tile_async(
     __nv_bfloat16* shared_tile,
     const __nv_bfloat16* global_tile,
     int global_stride) {
   for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += blockDim.x) {
+    const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
+    const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
+    const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
+    cp_async_copy_16_bytes(
+        shared_tile + row * TileConfig::kBSharedStride + shared_col,
+        global_tile + row * global_stride + logical_col);
+  }
+}
+
+template <typename TileConfig, int ProducerThreads>
+__device__ __forceinline__ void stage_b_shared_tile_async_subset(
+    __nv_bfloat16* shared_tile,
+    const __nv_bfloat16* global_tile,
+    int global_stride) {
+  static_assert(ProducerThreads > 0, "Subset staging expects at least one producer thread.");
+  static_assert(ProducerThreads <= TileConfig::kWarpsPerBlock * kWarpSize,
+                "Subset staging cannot use more producer threads than the CTA size.");
+  if (threadIdx.x >= ProducerThreads) {
+    return;
+  }
+  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += ProducerThreads) {
     const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
     const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
     const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
@@ -1308,6 +1349,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
                 "The 256x128 fixed hot-band kernel expects at least two K-tiles.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
                 "The 256x128 fixed hot-band kernel must match the benchmark K dimension.");
+  constexpr int kProducerThreads =
+      (FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize) / 2;
   __shared__ __align__(16)
       __nv_bfloat16 a_shared[2][FixedHotBandTile256x128::kASharedTileElems];
   __shared__ __align__(16)
@@ -1339,14 +1382,14 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+  stage_a_shared_tile_async_subset<FixedHotBandTile256x128, kProducerThreads>(
       a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+  stage_b_shared_tile_async_subset<FixedHotBandTile256x128, kProducerThreads>(
       b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+  stage_a_shared_tile_async_subset<FixedHotBandTile256x128, kProducerThreads>(
       a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+  stage_b_shared_tile_async_subset<FixedHotBandTile256x128, kProducerThreads>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
@@ -1372,11 +1415,11 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
 
     if (future_tile_idx < FixedKTiles) {
       const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async<FixedHotBandTile256x128>(
+      stage_a_shared_tile_async_subset<FixedHotBandTile256x128, kProducerThreads>(
           a_shared[curr_stage],
           a_block + future_tile_k,
           kFixedBenchmarkK);
-      stage_b_shared_tile_async<FixedHotBandTile256x128>(
+      stage_b_shared_tile_async_subset<FixedHotBandTile256x128, kProducerThreads>(
           b_shared[curr_stage],
           b_block + future_tile_k * kFixedBenchmarkN,
           kFixedBenchmarkN);
