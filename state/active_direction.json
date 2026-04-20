@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Peel the 452-tile steady state for the shared 64x64 PTX hot-band family",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T22:53:17-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_224955",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Peel the 452-tile steady state for the shared 64x64 PTX hot-band family",
-    "hypothesis": "The new residual 64x128 PTX kernel did cut the last-64-row strip from 0.866 ms to 0.702 ms, but the dominant 256x128 hot-band kernel stayed essentially flat at 41.080 ms vs the accepted base's 40.911 ms while tensor activity, barrier stalls, short scoreboard stalls, and registers all stayed nearly unchanged. That points back to the generic tile_idx loop itself: every one of the 452 K-tiles still pays next/future bounds checks, stage-select logic, and cp.async wait branching. Now that both the pivot kernel and the residual kernel share one 64x64 PTX microkernel family, the best next structural move is to split them into fixed-shape prologue / steady-state / epilogue loops and let the compiler see the exact 452-tile schedule.",
-    "expected_bottleneck": "Hot-band control/orchestration overhead inside the fixed-shape PTX main loop, which is still diluting tensor issue after the residual path was specialized.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
-      "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-      "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-      "src/kernels/bf16_gemm_v1.cu:launch_fixed_hot_band_ptx_region"
-    ],
-    "risk": "Moderate. A previous steady-state peeling attempt failed on a different path, so the cp.async commit/wait ordering must stay exact, but the scope is now cleaner because both hot-band kernels share the same PTX microkernel family.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-      "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "launch__registers_per_thread"
-    ],
-    "stop_condition": "Reject if the main 256x128 hot-band kernel time does not move materially, if registers rise above the current 167/thread surface, or if correctness breaks."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

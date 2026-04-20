@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_224922_bf16_gemm_v1_797c137`
-- run dir: `runs/20260419_224922_bf16_gemm_v1_797c137`
-- kernel tag: `bf16_gemm_v1_797c137`
-- round label: `round 3/50`
+- run id: `20260419_225440_bf16_gemm_v1_6557fa0`
+- run dir: `runs/20260419_225440_bf16_gemm_v1_6557fa0`
+- kernel tag: `bf16_gemm_v1_6557fa0`
+- round label: `round 4/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.461472 ms`
-- p10 runtime: `29.642208 ms`
-- p90 runtime: `31.714817 ms`
-- TFLOP/s: `23.866852 TFLOP/s`
-- previous run id: `20260419_223856_bf16_gemm_v1_9e7679d`
-- runtime delta vs previous measured run: `-0.117216 ms`
-- TFLOP/s delta vs previous measured run: `+0.091488 TFLOP/s`
+- median runtime: `30.008207 ms`
+- p10 runtime: `29.412659 ms`
+- p90 runtime: `30.849741 ms`
+- TFLOP/s: `24.227353 TFLOP/s`
+- previous run id: `20260419_224922_bf16_gemm_v1_797c137`
+- runtime delta vs previous measured run: `-0.453264 ms`
+- TFLOP/s delta vs previous measured run: `+0.360501 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the best surface and replace the last 64 hot rows with a dedicated 64x128 residual PTX kernel`
+- implemented direction name: `Peel the 452-tile steady state for the shared 64x64 PTX hot-band family`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_224922_bf16_gemm_v1_797c137/summary.json`
-- measured commit: `797c137cc3c66a42beb82a28e0e8e5010cb2f59b`
+- raw summary json: `runs/20260419_225440_bf16_gemm_v1_6557fa0/summary.json`
+- measured commit: `6557fa0df424fb14ba776782e32b35635c89bbc0`
 - new best custom: `no`
-- generated at: `2026-04-19T22:49:30-07:00`
+- generated at: `2026-04-19T22:54:48-07:00`
