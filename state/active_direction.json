@@ -1,30 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Human idea 5 fallback reset: restore the last correct accepted base before spending more rounds on the hot branch",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T21:02:49-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_210044",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Human idea 5 fallback reset: restore the last correct accepted base before spending more rounds on the hot branch",
-    "hypothesis": "Round 2 proved the half-panel branch has real occupancy upside, but round 3 proved it is still not stable enough to justify continued blind repair: runtime regressed to 31.486 ms, correctness stayed 0/3, and local reruns of the same correctness case still moved the max-error index and value. With six more implementation rounds available after this diagnosis, the highest expected-value move is to stop paying debugging tax on an unstable branch and restore the last correct accepted base first. That gives the loop back a known-good runtime/correctness floor and frees the remaining budget to attack the correct branch with the user's warp-local B-consumer and feed-orchestration ideas instead of continuing to burn rounds on nondeterministic half-panel behavior.",
-    "expected_bottleneck": "The immediate bottleneck is workflow risk, not another micro-metric: the current half-panel branch is still an incorrect and unstable implementation. Restoring the accepted base removes that blocker so the next rounds can optimize a correct kernel again.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu",
-      "src/runner/main.cpp",
-      "include/runner_contract.h"
-    ],
-    "risk": "This gives up the only live branch that pierced the 167-register wall. The tradeoff is deliberate: correctness and a clean baseline are worth more than one more speculative repair round when six rounds remain after the reset.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "TFLOP/s",
-      "restored run id / commit",
-      "latest NCU summary on the restored base"
-    ],
-    "stop_condition": "Stop once the accepted base is measured again and correctness is back to PASS. Use that restored run as the new floor for the remaining optimization rounds."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
