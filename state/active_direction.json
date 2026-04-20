@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-19T21:04:52-07:00",
   "source_diagnosis_id": "diagnosis_20260419_210642",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -30,5 +30,5 @@
     ],
     "stop_condition": "Reject if the hot-band runtime stays flat or tensor-active does not move while correctness remains unchanged. Also reject any implementation that increases shared memory or inserts CTA repack."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
