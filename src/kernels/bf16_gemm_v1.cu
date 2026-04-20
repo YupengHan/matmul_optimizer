@@ -1625,7 +1625,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
 }
 
 template <int FixedKTiles>
-__global__ __launch_bounds__(128)
+__global__ __launch_bounds__(128, 2)
 void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
