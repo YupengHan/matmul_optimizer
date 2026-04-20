@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_021122",
-  "status": "completed",
-  "created_at": "2026-04-20T02:11:22-07:00",
-  "source_run_id": "20260420_021058_bf16_gemm_v1_046f075",
-  "source_run_dir": "runs/20260420_021058_bf16_gemm_v1_046f075",
-  "source_summary_json": "runs/20260420_021058_bf16_gemm_v1_046f075/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_022041_bf16_gemm_v1_2c6441d",
+  "source_run_dir": "runs/20260420_022041_bf16_gemm_v1_2c6441d",
+  "source_summary_json": "runs/20260420_022041_bf16_gemm_v1_2c6441d/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Trim PTX Hot-Band Register And Export Lifetime",
-      "hypothesis": "Round 43's K32 staged PTX hot-band experiment is now a measured negative result: barrier stall fell from 11.18% to 4.80%, but runtime regressed from 27.003904 ms to 30.126080 ms while tensor active dropped from 47.86% to 43.84%, `mio_throttle` rose from 0.56% to 2.37%, and `long_scoreboard` rose from 1.29% to 4.35%. The active 128x128 PTX microkernel also grew from 188 to 196 registers per thread and from 28.160 KB to 45.056 KB shared memory per block, so the next move should recover Tensor Core issue rate by shortening live state in the PTX export and accumulator path rather than deepening the async pipeline again.",
-      "expected_bottleneck": "Register pressure and export-side live-range bloat in the active PTX hot-band branch are suppressing active warps and tensor issue efficiency after the failed K32 stage expansion.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134-142 FixedHotBandTile128x128PtxExportScratch",
-        "src/kernels/bf16_gemm_v1.cu:967-1014 ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel / ptx_wmma_store_tile_pairs_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:1898-2033 bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel"
-      ],
-      "risk": "Medium. This stays inside the active hot-band PTX branch and targets the new regression signature directly, but export/accumulator lifetime changes can easily trade register savings for extra instructions or correctness bugs.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "gpu__time_duration.sum for bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Reject if registers do not fall materially, if tensor active stays flat, or if total runtime does not move back toward the 27 ms band."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Add A Small PTX Ps2r Lookahead Without Deeper Staging",
-      "hypothesis": "Once barrier stopped dominating, the failed K32 staged variant exposed a different feed problem: `long_scoreboard` climbed to 4.35% and `mio_throttle` to 2.37% while tensor active fell. That points at shared-to-register fragment delivery and issue ordering inside the 64x64 PTX MMA micro-tile, not at insufficient stage depth. A one-fragment PTX Ps2r lookahead or equivalent local prefetch in the col-tile accumulate helpers could hide the next B-fragment fetch without increasing stage count or making barrier reduction the goal by itself.",
-      "expected_bottleneck": "Shared-to-register fragment feed latency and issue ordering in the PTX hot-band microkernel are now more limiting than CTA barrier frequency.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:631-761 ptx_wmma_load_col_fragment_64x64 / ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel / ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:1971-1994 stage_idx steady-state MMA loop in bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel"
-      ],
-      "risk": "Medium-high. Ps2r lookahead can easily recreate the same regression pattern if it expands live fragments too much, so the lookahead must stay deliberately small and stage-neutral.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "gpu__time_duration.sum for bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if scoreboard and mio stalls do not fall together, or if they fall but runtime and tensor active do not improve jointly."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Recover Hot-Band Reuse Via Traversal And Shared-Layout Retune",
-      "hypothesis": "If the next gain is not in registers or Ps2r, the remaining non-stage path is to recover data reuse and memory-side efficiency in the active PTX branch. The current PTX hot-band kernel still uses the plain block traversal while the neighboring non-PTX 128x128 branch already carries grouped-row scheduling, and the regressed K32 staged version also lowered L2 throughput from 31.27% to 29.15%. Porting grouped-row traversal and retuning the B shared skew/layout together is the best way to test Coalescing Access, Data Reuse, L2 Cache, and Bank Conflict as one coherent family without repeating the negative deeper-stage experiment.",
-      "expected_bottleneck": "Hot-band locality, cache reuse, and residual shared-layout friction are leaving the PTX branch underfed even after barrier was reduced.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156-159 kFixedHotBandGroupedRows and fixed hot-band constants",
-        "src/kernels/bf16_gemm_v1.cu:1016-1045 b_shared_col_from_logical / stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:1658-1678 grouped-row traversal reference in neighboring fixed_hot_band_128x128 kernel",
-        "src/kernels/bf16_gemm_v1.cu:1919-1928 PTX hot-band block traversal"
-      ],
-      "risk": "High. Traversal and shared-layout retunes are broader than dir_01 and dir_02, and they can move cache or bank metrics without yielding wall-clock improvement.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "gpu__time_duration.sum for bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if reuse/layout metrics shift without a matching reduction in hot-band duration and total runtime."
-    }
-  ],
-  "notes": "1. Round 43 is a negative result for deeper PTX hot-band staging: the K32 staged branch cut barrier from 11.18% to 4.80%, but runtime regressed from 27.003904 ms to 30.126080 ms, tensor active fell from 47.86% to 43.84%, `mio_throttle` rose from 0.56% to 2.37%, and `long_scoreboard` rose from 1.29% to 4.35%. Next rounds must judge ideas by wall-clock time plus tensor active together, not by barrier alone.\n2. Coalescing Access: still live, but only as part of a measured hot-band locality/traversal or B-load packing change; it is not strong enough as a standalone target after the latest regression.\n3. Data Reuse: still live because the PTX hot-band branch likely left reuse on the table when L2 throughput slipped; grouped-row scheduling and better hot-band traversal remain the cleanest reuse probe.\n4. Async Copy: current negative result when expressed as a deeper K32 staged PTX pipeline on this branch; do not rank more async-stage expansion as the next move.\n5. Bank Conflict: possible secondary contributor through the B shared layout or export scratch, but it should be bundled with reuse/layout work rather than treated as the primary diagnosis.\n6. L2 Cache: still worth probing through grouped-row traversal and hot-band scheduling because the regressed run lost some L2 throughput while also losing tensor activity.\n7. Register Reuse: promoted to the top family because the staged regression increased hot-band register pressure and shared allocation while lowering tensor issue efficiency.\n8. Pg2s: not the next recommendation; producer-side staging already failed to translate barrier relief into speed, so further producer/deeper-stage work is currently deprioritized.\n9. Ps2r: promoted ahead of more Stage work because the new stall mix points to fragment feed timing inside the PTX MMA microkernel.\n10. Stage: explicitly treat deeper stage expansion as a current reject on this branch until a future idea can improve runtime and tensor active together.\n11. The optimization target remains below 20 ms for the fixed benchmark, not merely re-matching or barely beating the 25.917889 ms CUTLASS baseline."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
