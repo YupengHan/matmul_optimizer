@@ -253,6 +253,8 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
+The tree below is regenerated from the latest tracked round history in the repo, so it can show newer exploratory commits even when the official best runtime remains unchanged.
+
 At the moment, the official benchmark snapshot in the repo is:
 - custom kernel: **26.92 ms**
 - local CUTLASS baseline: **25.92 ms**
