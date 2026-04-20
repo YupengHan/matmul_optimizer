@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_192825_bf16_gemm_v1_282e50e`
-- run dir: `runs/20260419_192825_bf16_gemm_v1_282e50e`
-- kernel tag: `bf16_gemm_v1_282e50e`
-- round label: `round 16/20`
+- run id: `20260419_194001_bf16_gemm_v1_e51df4e`
+- run dir: `runs/20260419_194001_bf16_gemm_v1_e51df4e`
+- kernel tag: `bf16_gemm_v1_e51df4e`
+- round label: `round 17/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `32.914944 ms`
-- p10 runtime: `32.306789 ms`
-- p90 runtime: `33.784424 ms`
-- TFLOP/s: `22.087822 TFLOP/s`
-- previous run id: `20260419_191708_bf16_gemm_v1_b13027c`
-- runtime delta vs previous measured run: `+2.862176 ms`
-- TFLOP/s delta vs previous measured run: `-2.103608 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `30.876160 ms`
+- p10 runtime: `30.440336 ms`
+- p90 runtime: `32.021402 ms`
+- TFLOP/s: `23.546303 TFLOP/s`
+- previous run id: `20260419_192825_bf16_gemm_v1_282e50e`
+- runtime delta vs previous measured run: `-2.038784 ms`
+- TFLOP/s delta vs previous measured run: `+1.458481 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7 Register reuse: replace the full 64x64 accumulator set with two serial 64x32 half-panel passes`
+- implemented direction name: `Human idea 7 Register reuse: continue the half-panel family, but make it an end-to-end 64x32 pass with explicit half-panel export mapping and compact B staging`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_192825_bf16_gemm_v1_282e50e/summary.json`
-- measured commit: `282e50e647f8004a1d3f0e45e516bc68d8b6a804`
+- raw summary json: `runs/20260419_194001_bf16_gemm_v1_e51df4e/summary.json`
+- measured commit: `e51df4ec602d1f830f7c7816a81a2d4ea4497ee9`
 - new best custom: `no`
-- generated at: `2026-04-19T19:28:34-07:00`
+- generated at: `2026-04-19T19:40:10-07:00`
