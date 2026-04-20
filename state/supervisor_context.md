@@ -4,24 +4,24 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Current dispatch
 
-- dispatch node: `node_b`
+- dispatch node: `node_c`
 - dispatch mode: `sub_agent`
-- graph status: `ready_for_node_b`
-- round label: `single-run`
-- round loop active: `no`
-- rounds remaining: `0`
+- graph status: `ready_for_node_c`
+- round label: `round 1/30`
+- round loop active: `yes`
+- rounds remaining: `30`
 - latest run id: `20260419_214535_bf16_gemm_v1_dfd7960`
 - latest runtime: `32.758783 ms`
-- recommended direction: `None`
-- active direction: `None`
+- recommended direction: `dir_01`
+- active direction: `dir_01`
 
 ## Supervisor protocol
 
 - read `docs/supervisor_protocol.md` first
-- node-specific protocol: `docs/node_b_protocol.md`
-- node context file: `state/node_b_context.md`
-- prepare command: `python scripts/graph.py node_b`
-- finalize command: `python scripts/graph.py node_b --finalize`
+- node-specific protocol: `docs/node_c_protocol.md`
+- node context file: `state/node_c_context.md`
+- prepare command: `python scripts/graph.py node_c`
+- finalize command: `python scripts/graph.py node_c --finalize`
 - current dispatch requires direct GPU access: `no`
 
 ## Dispatch rule
@@ -33,9 +33,10 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Multi-round loop
 
-- no multi-round loop is active
-- to arm one, run `python scripts/graph.py rounds --count N --auto-use-recommended`
+- active loop: `round 1/30` with `30` rounds remaining
+- auto-use recommended: `yes`
+- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop
 
 ## Notes
 
-- `Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.`
+- `Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.`
