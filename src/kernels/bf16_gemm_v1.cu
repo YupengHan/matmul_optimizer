@@ -1951,12 +1951,13 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   const int pids_per_group = kFixedHotBandPtxGroupedRows * hot_band_tiles_n;
   const int group_id = physical_pid / pids_per_group;
   const int first_block_y = group_id * kFixedHotBandPtxGroupedRows;
+  const int group_size_y =
+      (first_block_y + kFixedHotBandPtxGroupedRows <= hot_band_tiles_m)
+          ? kFixedHotBandPtxGroupedRows
+          : (hot_band_tiles_m - first_block_y);
   const int pid_in_group = physical_pid % pids_per_group;
-  // Keep the 6-row window, but walk columns first inside the group so the
-  // PTX hot-band traversal tests the grouping policy independently from the
-  // previous y-major remap.
-  const int logical_block_x = pid_in_group % hot_band_tiles_n;
-  const int logical_block_y = first_block_y + (pid_in_group / hot_band_tiles_n);
+  const int logical_block_y = first_block_y + (pid_in_group % group_size_y);
+  const int logical_block_x = pid_in_group / group_size_y;
 
   const int block_row = logical_block_y * FixedHotBandTile128x128::kTensorBlockM;
   const int block_col = logical_block_x * FixedHotBandTile128x128::kTensorBlockN;
