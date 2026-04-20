@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `35`
-- remaining rounds: `65`
-- current round label: `round 36/100`
+- completed rounds: `36`
+- remaining rounds: `64`
+- current round label: `round 37/100`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_010120_bf16_gemm_v1_d52137a`
 - accepted base measured commit: `d52137aeec77eeeeffce6d3af05468487e1ea98c`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 36/100. Node A will measure the result next.`
+- notes: `Completed round 36/100. Continue with node_b for round 37/100. Accepted base: 20260420_010120_bf16_gemm_v1_d52137a at 26.093568 ms.`
 
 ## Last completed round
 
-- round: `35/100`
+- round: `36/100`
 - direction: `dir_01`
-- direction name: `Restore the 26.924 ms 128x128 K16 base and open an active hot-band PTX microkernel branch`
-- verdict: `improved`
-- runtime delta: `-5.515153 ms`
-- TFLOP/s delta: `+4.861420 TFLOP/s`
-- run dir: `runs/20260420_010120_bf16_gemm_v1_d52137a`
-- ncu rep path: `runs/20260420_010120_bf16_gemm_v1_d52137a/ncu_profile.ncu-rep`
+- direction name: `Rewrite active PTX hot-band B delivery at the consumer boundary without CTA repack`
+- verdict: `regressed`
+- runtime delta: `+0.034736 ms`
+- TFLOP/s delta: `-0.037041 TFLOP/s`
+- run dir: `runs/20260420_011121_bf16_gemm_v1_e0ebab7`
+- ncu rep path: `runs/20260420_011121_bf16_gemm_v1_e0ebab7/ncu_profile.ncu-rep`

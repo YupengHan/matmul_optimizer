@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_010120_bf16_gemm_v1_d52137a`
-- run dir: `runs/20260420_010120_bf16_gemm_v1_d52137a`
-- kernel tag: `bf16_gemm_v1_d52137a`
-- round label: `round 35/100`
+- run id: `20260420_011121_bf16_gemm_v1_e0ebab7`
+- run dir: `runs/20260420_011121_bf16_gemm_v1_e0ebab7`
+- kernel tag: `bf16_gemm_v1_e0ebab7`
+- round label: `round 36/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.093568 ms`
-- p10 runtime: `25.853952 ms`
-- p90 runtime: `27.380942 ms`
-- TFLOP/s: `27.862017 TFLOP/s`
-- previous run id: `20260420_005216_bf16_gemm_v1_8bbe001`
-- runtime delta vs previous measured run: `-5.515153 ms`
-- TFLOP/s delta vs previous measured run: `+4.861420 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.128304 ms`
+- p10 runtime: `25.891491 ms`
+- p90 runtime: `27.641546 ms`
+- TFLOP/s: `27.824976 TFLOP/s`
+- previous run id: `20260420_010120_bf16_gemm_v1_d52137a`
+- runtime delta vs previous measured run: `+0.034736 ms`
+- TFLOP/s delta vs previous measured run: `-0.037041 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the 26.924 ms 128x128 K16 base and open an active hot-band PTX microkernel branch`
+- implemented direction name: `Rewrite active PTX hot-band B delivery at the consumer boundary without CTA repack`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_010120_bf16_gemm_v1_d52137a/summary.json`
-- measured commit: `d52137aeec77eeeeffce6d3af05468487e1ea98c`
-- new best custom: `yes`
-- generated at: `2026-04-20T01:01:26-07:00`
+- raw summary json: `runs/20260420_011121_bf16_gemm_v1_e0ebab7/summary.json`
+- measured commit: `e0ebab7aeabd6cd1f0c37da10ad81e949407df7d`
+- new best custom: `no`
+- generated at: `2026-04-20T01:11:27-07:00`
