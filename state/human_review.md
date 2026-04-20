@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 59/100` with `42` rounds remaining
 
 ## Direction approval policy
@@ -14,16 +14,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260420_085345`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Anchored to run 20260420_084915_bf16_gemm_v1_4e5579e at 24.570881 ms. Accepted themes this round were Register Reuse, Ps2r, and Bank Conflict. Rejected this round: grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites.`
+- dir_01: PTX hot-band consumer-order refinement | bottleneck: Long scoreboard latency in the PTX hot-band consumer path, not the barrier or shared-memory handoff itself.
+- dir_02: Recover overlap behind the one-sync wait_group_0 handoff | bottleneck: Residual overlap loss after the single wait_group_0 + __syncthreads() handoff, now exposed mainly as long scoreboard.
+- dir_03: Limited locality closure with grouped_rows=8 only | bottleneck: Minor locality loss in the grouped_rows=8 dispatch order, not a structural tile-size problem.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
