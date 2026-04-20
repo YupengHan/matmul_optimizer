@@ -529,6 +529,24 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   }
 }
 
+template <typename TileConfig>
+__device__ __forceinline__ void stage_peeled_hot_future_tile_async(
+    __nv_bfloat16* a_stage,
+    __nv_bfloat16* b_stage,
+    const __nv_bfloat16* a_block,
+    const __nv_bfloat16* b_block,
+    int future_tile_k) {
+  // The Tile384 hot path is B-heavier than A. Launch the wider future B stream
+  // first so more of that shared fill can age while the next ready stage is
+  // being consumed after the handoff.
+  stage_b_shared_tile_async<TileConfig>(
+      b_stage,
+      b_block + future_tile_k * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  stage_a_shared_tile_async<TileConfig>(
+      a_stage, a_block + future_tile_k, kFixedBenchmarkK);
+}
+
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
 }
@@ -840,17 +858,17 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
   cp_async_wait_group_0();
   __syncthreads();
 
-  stage_a_shared_tile_async<TileConfig>(
-      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(
-      b_shared[curr_stage],
-      b_block + future_tile_k * kFixedBenchmarkN,
-      kFixedBenchmarkN);
-  cp_async_commit_group();
-
   const int consumed_stage = curr_stage;
   curr_stage = next_stage;
   next_stage = consumed_stage;
+
+  stage_peeled_hot_future_tile_async<TileConfig>(
+      a_shared[next_stage],
+      b_shared[next_stage],
+      a_block,
+      b_block,
+      future_tile_k);
+  cp_async_commit_group();
 }
 
 template <typename TileConfig, int FixedKTiles>
