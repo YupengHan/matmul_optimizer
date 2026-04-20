@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_191708_bf16_gemm_v1_b13027c`
-- run dir: `runs/20260419_191708_bf16_gemm_v1_b13027c`
-- kernel tag: `bf16_gemm_v1_b13027c`
-- round label: `round 15/20`
+- run id: `20260419_192825_bf16_gemm_v1_282e50e`
+- run dir: `runs/20260419_192825_bf16_gemm_v1_282e50e`
+- kernel tag: `bf16_gemm_v1_282e50e`
+- round label: `round 16/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.052768 ms`
-- p10 runtime: `29.465792 ms`
-- p90 runtime: `30.903910 ms`
-- TFLOP/s: `24.191430 TFLOP/s`
-- previous run id: `20260419_190546_bf16_gemm_v1_3d01edf`
-- runtime delta vs previous measured run: `-0.009776 ms`
-- TFLOP/s delta vs previous measured run: `+0.007867 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `32.914944 ms`
+- p10 runtime: `32.306789 ms`
+- p90 runtime: `33.784424 ms`
+- TFLOP/s: `22.087822 TFLOP/s`
+- previous run id: `20260419_191708_bf16_gemm_v1_b13027c`
+- runtime delta vs previous measured run: `+2.862176 ms`
+- TFLOP/s delta vs previous measured run: `-2.103608 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7 Register reuse: stream the 64x64 PTX micro-tile by row-pairs and export each completed pair through the new paired scratch`
+- implemented direction name: `Human idea 7 Register reuse: replace the full 64x64 accumulator set with two serial 64x32 half-panel passes`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_191708_bf16_gemm_v1_b13027c/summary.json`
-- measured commit: `b13027cdde2a90d1f00f3bd9b1e6b355ea15f2d9`
-- new best custom: `yes`
-- generated at: `2026-04-19T19:17:17-07:00`
+- raw summary json: `runs/20260419_192825_bf16_gemm_v1_282e50e/summary.json`
+- measured commit: `282e50e647f8004a1d3f0e45e516bc68d8b6a804`
+- new best custom: `no`
+- generated at: `2026-04-19T19:28:34-07:00`

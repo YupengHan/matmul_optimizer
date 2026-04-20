@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_191757",
-  "status": "completed",
-  "created_at": "2026-04-19T19:17:57-07:00",
-  "source_run_id": "20260419_191708_bf16_gemm_v1_b13027c",
-  "source_run_dir": "runs/20260419_191708_bf16_gemm_v1_b13027c",
-  "source_summary_json": "runs/20260419_191708_bf16_gemm_v1_b13027c/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_192825_bf16_gemm_v1_282e50e",
+  "source_run_dir": "runs/20260419_192825_bf16_gemm_v1_282e50e",
+  "source_summary_json": "runs/20260419_192825_bf16_gemm_v1_282e50e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 7 Register reuse: replace the full 64x64 accumulator set with two serial 64x32 half-panel passes",
-      "hypothesis": "Round 15 proved that the current 256x128/64x64 tiling branch still has real headroom, but it also clarified what the true wall is. The hot kernel's barrier stall fell from 20.89 to 6.49 and mio throttle fell from 2.23 to 0.33, while tensor active rose to 38.55, yet wall-clock moved by only 0.009776 ms and registers per thread actually rose from 166 to 167. That means barrier was not the final wall; the row-pair helper mainly converted synchronization delay into more immediate shared-memory work. The remaining hard wall is still the full 16-fragment 64x64 accumulator footprint plus one-block-per-SM register residency. The concrete next step is to stop carrying a full 64x64 accumulator set through the whole K sweep. Instead, split each warp's 64x64 output into two serial 64x32 half-panels, accumulate one half-panel across all K tiles with an 8-fragment accumulator set, export it through the existing paired scratch, then reuse those registers for the second half-panel. This is the first follow-up that can actually cut live accumulator state rather than only changing issue order.",
-      "expected_bottleneck": "Register-limited occupancy and warp-local live-state pressure inside the 64x64 PTX microkernel, not headline CTA barrier frequency.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:318-320",
-        "src/kernels/bf16_gemm_v1.cu:512-595",
-        "src/kernels/bf16_gemm_v1.cu:716-768",
-        "src/kernels/bf16_gemm_v1.cu:1261-1329"
-      ],
-      "risk": "A real half-panel accumulator cut will increase some A/B shared loads and may raise LSU or bank pressure further if the implementation is sloppy. If the register drop is not large enough to change scheduling or occupancy behavior, the extra shared traffic can erase the benefit.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if registers do not fall materially below 167 or if active warps stay flat while LSU wavefronts climb again. Then the extra serialization is not actually piercing the register wall."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 5 Bank conflict: keep the row-pair schedule, but retune only the 64x64 branch's B-shared mapping and consume order",
-      "hypothesis": "The new evidence says the row-pair helper did buy something, but it bought it by shifting pressure. The hot kernel's LSU wavefronts rose from 28.75 to 34.45 and shared bank reads rose from 6.42 to 8.98 while barrier collapsed. That is a strong hint that the remaining cost is now warp-local shared traffic, especially on the B side. A bounded next move is to keep the accepted 256x128/64x64 control flow and export structure, but change only the 64x64 branch's B-shared mapping and fragment consume order: for example, add a branch-local logical-col skew or mirrored 2-column-pair consume order so the newly exposed shared-load phase hits fewer bank collisions. This stays inside the current family and directly targets the pressure that replaced the old barrier tax.",
-      "expected_bottleneck": "Shared-memory bank and LSU pressure in the 64x64 PTX branch after the row-pair helper removed much of the previous synchronization tax.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-105",
-        "src/kernels/bf16_gemm_v1.cu:543-595",
-        "src/kernels/bf16_gemm_v1.cu:770-802",
-        "src/kernels/bf16_gemm_v1.cu:1321-1329"
-      ],
-      "risk": "This is a narrower lever than the register-cut path. If the shared-load spike is only a side effect of unchanged accumulator residency, a B-mapping retune may become another low-signal micro-tune and consume a round without moving runtime much.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if bank and LSU metrics remain elevated without any runtime improvement. Then the post-barrier cost is not mainly a local B-shared mapping problem."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 3 Data reuse: keep paired export, but overlay its scratch onto dead terminal B-shared storage to reclaim overlap budget",
-      "hypothesis": "The paired-export branch is still a useful mechanism, but it now occupies 42.496 KB of shared memory in the hot kernel and no longer looks like the main missing win by itself. A lower-ranked but still coherent follow-up is to preserve the paired export mechanism while remapping its scratch onto dead B-shared storage after the final cp.async handoff, instead of carrying a dedicated two-stage c_shared footprint the whole time. That would keep the round-14 export win, trim the scratch budget back down, and reopen headroom for later overlap experiments if the register-cut path succeeds. This is less likely to be the immediate best round-16 move because the current wall is still registers, but it is a useful bounded family-consistent option.",
-      "expected_bottleneck": "Export-side shared-memory budget and late-kernel scratch residency that now persists even after the main barrier problem has been reduced.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-105",
-        "src/kernels/bf16_gemm_v1.cu:716-768",
-        "src/kernels/bf16_gemm_v1.cu:1271-1329"
-      ],
-      "risk": "This is correctness-sensitive because the final B-shared stage must be provably dead before export scratch overlays it. It also may not move runtime directly if the register wall remains untouched.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "launch__shared_mem_per_block_allocated",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if shared memory drops but runtime does not move, or if the overlay adds synchronization that pushes barrier or long-scoreboard back up. Then export scratch budget is not the right next lever."
-    }
-  ],
-  "notes": "Round 16 is a continue-family move on the Human idea 1 / Tiling branch, not a pivot away from it. The 256x128 CTA / 64x64 warp structural pivot is still the only family that has produced multi-millisecond step changes, and round 15 still set a new accepted base. The key diagnostic point this round is why barrier fell so hard without a matching wall-clock gain. The hot kernel's machine state changed dramatically in the expected direction for synchronization cleanup: barrier dropped from 20.89 to 6.49, mio fell from 2.23 to 0.33, tensor active rose from 37.58 to 38.55, and the profiled hot-kernel time improved materially. But registers stayed pinned at 167, active warps stayed around 16.68, and the new pressure simply showed up elsewhere: LSU wavefronts rose from 28.75 to 34.45, bank reads rose from 6.42 to 8.98, and short-scoreboard stayed high at 6.74. That means the current helper-level retime already captured most of the easy barrier win. The real wall is still the unchanged live accumulator footprint and register-limited residency, so another small barrier-focused tweak is the wrong next move.\n\nHuman idea audit for round 16:\n1. Tiling: accept-now as the active top-level family. The 256x128/64x64 path remains the only clearly proven mainline.\n2. Coalescing Access: defer. DRAM throughput is only 17.16 and the hot path already uses wide async copies, so global coalescing is not the primary wall.\n3. Data Reuse: accept-now as a lower-ranked family-consistent option. Export scratch reuse over dead B-shared storage is now technically meaningful, but it is not the first wall to attack.\n4. Async Copy: accept-now only as established baseline infrastructure. The current bottleneck is no longer obvious global-to-shared latency.\n5. Bank Conflict: accept-now and rank second. The row-pair helper exposed a new shared-load and bank-read tax that deserves a bounded local follow-up.\n6. L2 Cache: reject-for-this-round. The hot kernel is not L2- or DRAM-bound.\n7. Register Reuse: accept-now and rank first. Barrier cleanup already landed; the unchanged register wall is now the clearest next limiter.\n8. Pg2s: defer. The global-to-shared pipeline is functioning and is not the main missing win.\n9. Ps2r: defer. Long scoreboard remains tiny relative to the register and shared-load issues.\n10. Stage: reject-for-this-round. With only five rounds left, there is no evidence that reopening a stage-family rewrite beats continuing the proven tiling branch.\n\nPrimary decision for this round: continue the Human idea 1 family, but shift the immediate lever to a more aggressive Human idea 7 register-cut implementation. The round-15 helper retime showed that barrier was not the final wall; round 16 should attack the accumulator and register footprint directly."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
