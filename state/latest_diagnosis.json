@@ -1,86 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_202755",
-  "status": "completed",
-  "created_at": "2026-04-19T20:27:55-07:00",
-  "source_run_id": "20260419_202711_bf16_gemm_v1_5135c1d",
-  "source_run_dir": "runs/20260419_202711_bf16_gemm_v1_5135c1d",
-  "source_summary_json": "runs/20260419_202711_bf16_gemm_v1_5135c1d/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_203259_bf16_gemm_v1_786b3e4",
+  "source_run_dir": "runs/20260419_203259_bf16_gemm_v1_786b3e4",
+  "source_summary_json": "runs/20260419_203259_bf16_gemm_v1_786b3e4/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 7 Register reuse: keep the outer 64x384 hot path, but serialise the inner live set into 2x192 micro-panels",
-      "hypothesis": "The current correct 64x384 PTX path is no longer barrier- or mio-limited: barrier is only 6.58%, mio throttle is 0.33%, DRAM is 17.39%, but tensor active is still only 38.58% and warps active only 16.59% with launch__occupancy_limit_registers = 1. That is a classic register-wall signature. The highest-upside next move is therefore not another feed tweak first; it is to keep the outer CTA count advantage of 64x384 while cutting the live accumulator and B-fragment set roughly in half by issuing two serial 192-column subpanels inside the same fixed peeled kernel. This preserves the proven macro shape while targeting the actual limiter that remains on the correct branch.",
-      "expected_bottleneck": "Register pressure and resulting latency-hiding loss on the stable 64x384 PTX hot path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaAccTileSet384",
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex384",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_384",
-        "src/kernels/bf16_gemm_v1.cu:accumulate_peeled_shared_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_384"
-      ],
-      "risk": "Moderate. This stays on the correct branch, but it touches the hot PTX control path and can easily give back the CTA-count win if the extra serialisation adds too much steady-state overhead.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Keep this family only if correctness stays PASS and registers/active-warps move in the right direction. Reject it if runtime regresses materially without a clear occupancy improvement."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 7 Register reuse: if 2x192 still keeps too much live state, split the 64x384 hot path into 3x128 micro-panels",
-      "hypothesis": "The same register-wall diagnosis supports an even narrower phased schedule. If 2x192 does not drop the live footprint enough, a 3x128 serial panel schedule is the next step along the same family: keep outer 384 columns for CTA-count reduction, but only keep one-third of the B/accumulator live set resident at a time. This is lower-risk for correctness than reviving the old half-panel branch because it stays inside the already-correct 64x384 peeled kernel.",
-      "expected_bottleneck": "Register pressure first, then possible serialisation overhead if the panel size gets too small.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaAccTileSet384",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_384",
-        "src/kernels/bf16_gemm_v1.cu:accumulate_peeled_shared_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel"
-      ],
-      "risk": "Moderate-to-high. It is safer than the broken half-panel family, but more aggressive paneling may increase control overhead enough to erase the occupancy win.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Use only if 2x192 is either neutral or clearly promising but still register-limited. Reject if runtime loss comes mainly from serialisation overhead."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 5 Bank conflict: stay on the correct 64x384 path and do a warp-local B-consumer load-order retune with no extra shared or CTA barriers",
-      "hypothesis": "If the phased-live-set family stalls, the fallback that best respects the user's hard constraints is a warp-local B-consumer retune on the same correct 64x384 kernel. That means changing the tile issue order or warp-local B fragment load order inside ptx_wmma_accumulate_tile_set_384, not adding a new CTA repack tile and not touching stage depth. This is lower ceiling than the register-wall attack, but it is auditable and safe to continue across multiple rounds if it shows even a small tensor-active gain without correctness risk.",
-      "expected_bottleneck": "Operand-delivery efficiency and shared-bank behavior inside the warp-local B consumer path, not DRAM throughput.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex384",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_384",
-        "src/kernels/bf16_gemm_v1.cu:accumulate_peeled_shared_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel"
-      ],
-      "risk": "Lower upside. The current base already has low barrier and mio stalls, so this may only move noise-level performance.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Only continue if the change is correctness-safe and does not increase shared memory footprint or CTA-level synchronisation."
-    }
-  ],
-  "notes": "Round 1/10 human-idea audit against the fresh correct baseline: Tiling is accepted historically, but not as a fresh pivot this round because the repo already proved 64x384 is the best correct macro width for this GPU/shape; Coalescing Access is accepted as baseline because cp.async staging is already 16-byte aligned and the run is not DRAM-bound; Data Reuse is accepted as baseline because the fixed peeled kernel already depends on shared reuse; Async Copy is accepted as baseline because the current pipeline is already cp.async-based; Bank Conflict is deferred to rank-3 because the more immediate limiter on the correct branch is register-driven occupancy rather than feed stalls; L2 Cache swizzle is deferred because lts and dram throughput are both modest; Register Reuse is accepted as the primary family because the stable base is still sitting at only 16.59 active warps with launch__occupancy_limit_registers = 1; Pg2s is accepted as baseline because double-buffer G2S is already present; Ps2r is accepted in spirit via serial micro-panels that reduce simultaneously live B/acc tiles; Stage is accepted as baseline because barrier and mio are already low enough that stage churn is not the first lever. Recommended direction is dir_01 because it keeps the proven 64x384 outer shape while directly attacking the remaining register wall on the correct branch."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
