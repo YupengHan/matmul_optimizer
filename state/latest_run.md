@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_233123_bf16_gemm_v1_466263f`
-- run dir: `runs/20260419_233123_bf16_gemm_v1_466263f`
-- kernel tag: `bf16_gemm_v1_466263f`
-- round label: `round 14/50`
+- run id: `20260419_233546_bf16_gemm_v1_b42811c`
+- run dir: `runs/20260419_233546_bf16_gemm_v1_b42811c`
+- kernel tag: `bf16_gemm_v1_b42811c`
+- round label: `round 15/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `29.493760 ms`
-- p10 runtime: `29.092250 ms`
-- p90 runtime: `30.384652 ms`
-- TFLOP/s: `24.649940 TFLOP/s`
-- previous run id: `20260419_232419_bf16_gemm_v1_5e1cfd4`
-- runtime delta vs previous measured run: `-1.201664 ms`
-- TFLOP/s delta vs previous measured run: `+0.964995 TFLOP/s`
+- median runtime: `28.363264 ms`
+- p10 runtime: `27.710771 ms`
+- p90 runtime: `29.536854 ms`
+- TFLOP/s: `25.632431 TFLOP/s`
+- previous run id: `20260419_233123_bf16_gemm_v1_466263f`
+- runtime delta vs previous measured run: `-1.130496 ms`
+- TFLOP/s delta vs previous measured run: `+0.982491 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Start a CUTLASS-shaped hot-band branch: 128x128 CTA, 64x64 warp tiles, 128-thread launch, and K32 staged mainloop`
+- implemented direction name: `Keep the 128x128/128-thread hot-band branch but revert only the K32 mainloop back to proven K16 staging to localize correctness`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_233123_bf16_gemm_v1_466263f/summary.json`
-- measured commit: `466263fcce7c61689773fa9fec22144a0d7233e1`
+- raw summary json: `runs/20260419_233546_bf16_gemm_v1_b42811c/summary.json`
+- measured commit: `b42811cb8dad2d5f208f388d8aea982b97a2c62e`
 - new best custom: `no`
-- generated at: `2026-04-19T23:31:30-07:00`
+- generated at: `2026-04-19T23:35:53-07:00`

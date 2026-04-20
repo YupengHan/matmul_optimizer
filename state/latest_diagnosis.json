@@ -1,78 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_233204",
-  "status": "completed",
-  "created_at": "2026-04-19T23:32:04-07:00",
-  "source_run_id": "20260419_233123_bf16_gemm_v1_466263f",
-  "source_run_dir": "runs/20260419_233123_bf16_gemm_v1_466263f",
-  "source_summary_json": "runs/20260419_233123_bf16_gemm_v1_466263f/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_233546_bf16_gemm_v1_b42811c",
+  "source_run_dir": "runs/20260419_233546_bf16_gemm_v1_b42811c",
+  "source_summary_json": "runs/20260419_233546_bf16_gemm_v1_b42811c/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human+auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep the 128x128/128-thread hot-band branch but revert only the K32 mainloop back to proven K16 staging to localize correctness",
-      "hypothesis": "Round 14 finally found a high-ceiling family: the new 128x128x32 hot-band kernel cut hot-band time from about 41.62 ms to 34.98 ms and raised tensor active from about 38.13% to 45.21% and DRAM throughput from about 17.00% to 39.65%. That is too large a gain to throw away. The immediate problem is correctness, not throughput. Because the CTA shape, block size, and epilogue all changed together with the K32 stage logic, the fastest way to localize the bug is to keep the 128x128 CTA and 128-thread launch but revert only the hot-band mainloop to the simpler K16 double-buffer schedule. If that passes correctness, the error is in the K32 half-stage addressing / refill logic rather than in the new CTA shape itself.",
-      "expected_bottleneck": "Correctness bug likely in the K32 staged mainloop bookkeeping, not in the new 128x128 warp mapping.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile128x128",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Moderate. This keeps the promising new launch shape but should reduce logic complexity materially; the main risk is that performance drops enough to hide the upside of the new CTA structure.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "runs/*/ncu_metrics.csv main hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "runs/*/ncu_metrics.csv main hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject this localization branch only if correctness still fails; otherwise keep the 128x128 family alive even if runtime regresses modestly."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "If 128x128 K16 is correct, reintroduce K32 with explicit [stage][half] helpers to eliminate half-stage aliasing",
-      "hypothesis": "The first K32 implementation packed two K16 slices into one stage using manual pointer arithmetic. If the localization branch confirms that the 128x128 CTA itself is sound, the next step should be to rebuild the K32 mainloop with explicit helpers for stage-half load and consume instead of raw offset arithmetic. That keeps the performance shape while shrinking the correctness surface.",
-      "expected_bottleneck": "Stage-half address aliasing or refill ordering inside the new K32 mainloop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
-      ],
-      "risk": "Moderate to high. This keeps the same structural family but adds one more round of staging-specific code.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Use this only after the K16 localization branch proves the CTA/epilogue mapping is correct."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore the accepted-correct implementation surface if the new family cannot be made correct quickly",
-      "hypothesis": "The 128x128 family is clearly promising, but the repo still needs a correct fallback. If both the K16 localization branch and the explicit K32 repair fail quickly, restore the accepted surface and continue from there rather than carrying an incorrect default kernel.",
-      "expected_bottleneck": "Not a bottleneck attack; this is the fallback path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu",
-        "python scripts/graph.py restore-implementation --source-commit 0d78758"
-      ],
-      "risk": "Low.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime"
-      ],
-      "stop_condition": "Use this if the 128x128 family still fails correctness after the isolation step."
-    }
-  ],
-  "notes": "Round 15/50 keeps the new 128x128 family alive because it delivered the first major kernel-time improvement in many rounds. The recommended next move is a localization step: preserve the winning CTA/launch shape and revert only the K32 mainloop to K16 so the correctness bug can be isolated without discarding the structural gain."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
