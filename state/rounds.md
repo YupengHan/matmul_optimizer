@@ -1,7 +1,7 @@
 # Round loop
 
 - active: `yes`
-- status: `running`
+- status: `round_in_progress`
 - total rounds: `30`
 - completed rounds: `8`
 - remaining rounds: `22`
@@ -13,7 +13,7 @@
 - started at: `2026-04-19T21:51:08-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Completed round 8/30. Continue with node_b for round 9/30. Accepted base: 20260419_221014_bf16_gemm_v1_5dd9f0d at 29.432832 ms.`
+- notes: `Executing round 9/30.`
 
 ## Last completed round
 
