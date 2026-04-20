@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore the best surface and replace the last 64 hot rows with a dedicated 64x128 residual PTX kernel`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260419_223942`
 - round loop: `round 3/50`
+- hypothesis: `The recent hot-band micro-tuning attempts are mostly noise or regressions, and the latest best custom still comes from the restored pre-experiment surface. The largest untouched structural opportunity is no longer inside the 256x128 hot-band body, but in the last 64 hot rows that still fall back to the 384-wide peeled kernel. Those rows match one 64x128 warp-local PTX tile perfectly, so a dedicated residual-hot-band kernel can keep the same 64x64 warp microkernel and export path while avoiding the heavier 384 peeled path for that final strip.`
+- expected bottleneck: `Residual hot-row overhead from routing the last 64 rows through the generic 384 peeled kernel instead of a matching fixed-shape PTX path.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:FixedHotBandTile256x128, src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel, src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1`
+- risk: `Moderate to high. This is a larger structural change than the recent local tweaks, but it reuses the existing hot-band PTX machinery instead of inventing a new microkernel family.`
+- metrics to re-check: `correctness, median runtime, runs/*/ncu_details.csv hot-band gpu__time_duration.sum, runs/*/ncu_details.csv peeled kernel gpu__time_duration.sum, launch__registers_per_thread, launch__shared_mem_per_block_allocated`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
