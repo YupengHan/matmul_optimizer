@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_222209_bf16_gemm_v1_7f0af83`
-- run dir: `runs/20260419_222209_bf16_gemm_v1_7f0af83`
-- kernel tag: `bf16_gemm_v1_7f0af83`
-- round label: `round 8/30`
+- run id: `20260419_222503_bf16_gemm_v1_edcdbea`
+- run dir: `runs/20260419_222503_bf16_gemm_v1_edcdbea`
+- kernel tag: `bf16_gemm_v1_edcdbea`
+- round label: `round 9/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.386592 ms`
-- p10 runtime: `30.149529 ms`
-- p90 runtime: `31.497114 ms`
-- TFLOP/s: `23.925665 TFLOP/s`
-- previous run id: `20260419_221757_bf16_gemm_v1_9d84c09`
-- runtime delta vs previous measured run: `-0.382560 ms`
-- TFLOP/s delta vs previous measured run: `+0.297473 TFLOP/s`
-- perf verdict: `improved`
-- implemented direction id: `dir_03`
-- implemented direction name: `Restore the pre-sweep best surface without adding a new experiment`
-- implemented selection mode: `approved`
+- median runtime: `30.861776 ms`
+- p10 runtime: `30.326068 ms`
+- p90 runtime: `31.713279 ms`
+- TFLOP/s: `23.557277 TFLOP/s`
+- previous run id: `20260419_222209_bf16_gemm_v1_7f0af83`
+- runtime delta vs previous measured run: `+0.475184 ms`
+- TFLOP/s delta vs previous measured run: `-0.368388 TFLOP/s`
+- perf verdict: `regressed`
+- implemented direction id: `dir_01`
+- implemented direction name: `Human idea async copy: split hot-band copy ownership so lower warps stage A and upper warps stage B`
+- implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_222209_bf16_gemm_v1_7f0af83/summary.json`
-- measured commit: `7f0af836fe07d39be9f5b7354aadb7e740dbab6b`
+- raw summary json: `runs/20260419_222503_bf16_gemm_v1_edcdbea/summary.json`
+- measured commit: `edcdbea324dc7306e7a111e771f8d65aaf39eabd`
 - new best custom: `no`
-- generated at: `2026-04-19T22:22:17-07:00`
+- generated at: `2026-04-19T22:25:11-07:00`

@@ -1,74 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_222312",
-  "status": "completed",
-  "created_at": "2026-04-19T22:23:12-07:00",
-  "source_run_id": "20260419_222209_bf16_gemm_v1_7f0af83",
-  "source_run_dir": "runs/20260419_222209_bf16_gemm_v1_7f0af83",
-  "source_summary_json": "runs/20260419_222209_bf16_gemm_v1_7f0af83/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_222503_bf16_gemm_v1_edcdbea",
+  "source_run_dir": "runs/20260419_222503_bf16_gemm_v1_edcdbea",
+  "source_summary_json": "runs/20260419_222503_bf16_gemm_v1_edcdbea/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human-idea",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea async copy: split hot-band copy ownership so lower warps stage A and upper warps stage B",
-      "hypothesis": "The hot-band kernel still dominates and the current branch remains occupancy-limited but feed-sensitive. The user explicitly asked to keep pushing coalescing / async-copy ideas without falling back into the dedicated producer-only branch that already failed. A concrete middle ground is to keep all eight warps in the CTA and the same two-stage pipeline, but split copy ownership inside the staging helpers so the lower four warps own contiguous A stripes and the upper four warps own contiguous B stripes. That reduces simultaneous A/B copy traffic from every warp while avoiding permanent producer-only roles.",
-      "expected_bottleneck": "Global-to-shared staging issue regularity and LSU pressure in the hot-band copy phase.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Moderate to high. This is intentionally narrower than the failed producer-only branch, but it still changes who issues the `cp.async` traffic and can regress if the participating half-warps become the new bottleneck.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if barrier stall grows sharply, if hot-band time regresses, or if correctness breaks."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore-only fallback if split ownership fails quickly",
-      "hypothesis": "Because the copy-ownership change is more structural than a lane-order tweak, the repo should keep a low-risk restore path in reserve. If the split ownership branch does not validate quickly, the safest move is to return to the current restored surface without layering more staging changes on top.",
-      "expected_bottleneck": "Not a direct bottleneck attack; this is a branch repair fallback.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. This does not move performance forward by itself, but it protects the remaining rounds from staying on a broken copy schedule.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
-      ],
-      "stop_condition": "Use this immediately if the split-ownership build or correctness validation fails."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea stage: revisit steady-state peeling later, but only on a simpler copy schedule",
-      "hypothesis": "The previous steady-state peeling attempt likely interacted badly with the surrounding copy schedule. If the split-ownership experiment clarifies staging behavior, the stage-peeling idea may become easier to reason about on top of a simpler ownership model, but it should not be retried immediately on the unchanged surface.",
-      "expected_bottleneck": "Fixed-shape stage-transition overhead once the staging schedule itself is cleaner.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "High. The last peeling attempt already failed correctness, so it should only be revisited after another change materially improves staging clarity.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Do not attempt this until the copy-ownership experiment has been resolved."
-    }
-  ],
-  "notes": "Round 9/30 starts from the restored pre-sweep surface. The hot-band kernel still dominates, the warp-local consumer variants and CTA-order clue are both negative, and the previous stage-peeling attempt failed correctness. That leaves the copy pipeline as the clearest remaining human-idea family to test. Recommended direction dir_01 therefore tries a bounded ownership split inside the existing two-stage hot-band copy path: lower warps stage A, upper warps stage B, while all warps still participate in compute. Dir_02 is the restore fallback if that schedule fails quickly, and dir_03 records that steady-state peeling should only be revisited after the copy schedule becomes easier to reason about."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `7f0af836fe07d39be9f5b7354aadb7e740dbab6b`
-- plateau counter: `4`
-- round loop: `round 9/30`
-- rounds remaining: `22`
-- notes: `Node C build succeeded for round 9/30. Node A will now measure the new code path.`
+- latest measured commit: `edcdbea324dc7306e7a111e771f8d65aaf39eabd`
+- plateau counter: `5`
+- round loop: `round 10/30`
+- rounds remaining: `21`
+- notes: `Node A completed round 9/30. Run node_b to continue round 10/30.`
 
 ## Latest measured custom run
 
-- run id: `20260419_222209_bf16_gemm_v1_7f0af83`
-- run dir: `runs/20260419_222209_bf16_gemm_v1_7f0af83`
+- run id: `20260419_222503_bf16_gemm_v1_edcdbea`
+- run dir: `runs/20260419_222503_bf16_gemm_v1_edcdbea`
 - correctness: `PASS`
-- median runtime: `30.386592 ms`
-- TFLOP/s: `23.925665 TFLOP/s`
+- median runtime: `30.861776 ms`
+- TFLOP/s: `23.557277 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_222312`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 9/30 starts from the restored pre-sweep surface. The hot-band kernel still dominates, the warp-local consumer variants and CTA-order clue are both negative, and the previous stage-peeling attempt failed correctness. That leaves the copy pipeline as the clearest remaining human-idea family to test. Recommended direction dir_01 therefore tries a bounded ownership split inside the existing two-stage hot-band copy path: lower warps stage A, upper warps stage B, while all warps still participate in compute. Dir_02 is the restore fallback if that schedule fails quickly, and dir_03 records that steady-state peeling should only be revisited after the copy schedule becomes easier to reason about.`
-- dir_01: Human idea async copy: split hot-band copy ownership so lower warps stage A and upper warps stage B | bottleneck: Global-to-shared staging issue regularity and LSU pressure in the hot-band copy phase.
-- dir_02: Restore-only fallback if split ownership fails quickly | bottleneck: Not a direct bottleneck attack; this is a branch repair fallback.
-- dir_03: Human idea stage: revisit steady-state peeling later, but only on a simpler copy schedule | bottleneck: Fixed-shape stage-transition overhead once the staging schedule itself is cleaner.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
