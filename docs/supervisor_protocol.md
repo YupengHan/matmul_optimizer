@@ -103,13 +103,11 @@ node_b -> node_c -> node_a
 
 The round-level measurement record is the `node_a:` commit after the real re-measurement step.
 
-## Regression recovery rule
+## Exploration branch rule
 
-When a multi-round experiment wants to preserve every failed attempt in git history but avoid building the next round on top of a regressed implementation:
+Default safety policy:
 
-1. let `node_a` finish and record the regressed run normally,
-2. keep the `node_c:` and `node_a:` commits in history,
-3. restore the node_c-owned code surface from the previous accepted measured commit before the next `node_b`.
+- if an experimental round regresses and there is no positive signal worth pursuing, the supervisor may restore the implementation surface from the current accepted measured commit before the next `node_b`
 
 Use:
 
@@ -119,11 +117,12 @@ python scripts/graph.py restore-implementation --source-commit <measured_commit_
 
 This command restores only the implementation surface (`src/kernels/*`, `src/runner/main.cpp`, `include/*`, `CMakeLists.txt`) and leaves the recorded lightweight state and run history intact.
 
-Applied policy for monotonic experiments:
+High-ceiling exploration policy:
 
-- if round `i` is worse than round `i-1`, keep round `i` recorded,
-- then start round `i+1` from the code of round `i-1`,
-- do not stack round `i+1` on top of the regressed code from round `i`.
+- if a direction family shows partial signal or is judged necessary for a large target gap, the supervisor may intentionally keep exploring that family across multiple rounds even before it beats the current accepted base
+- in that case, `node_b` should explicitly say whether the next round should continue the current exploration branch or return to the accepted base
+- the accepted measured commit in `state/round_loop_state.json` still remains the comparison anchor until a later `node_a` run genuinely beats it
+- use restoration selectively, not mechanically after every regressed round
 
 ## Audit rule
 
