@@ -1,15 +1,78 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_220618",
+  "status": "completed",
+  "created_at": "2026-04-19T22:06:18-07:00",
   "source_run_id": "20260419_220419_bf16_gemm_v1_1cfe453",
   "source_run_dir": "runs/20260419_220419_bf16_gemm_v1_1cfe453",
   "source_summary_json": "runs/20260419_220419_bf16_gemm_v1_1cfe453/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "auto-analysis",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Repair the A-side lookahead as an explicit fixed-shape row-pair preload, then revalidate correctness",
+      "hypothesis": "This run is not acceptable as-is because correctness failed on all three cases, but it is still informative: runtime improved from 30.592960 ms to 30.270464 ms and the hot-band kernel shortened from about 41.19 us to about 40.99 us. That combination suggests the A-side Ps2r idea may be directionally right while the recursive row-pair implementation is wrong. The best next move is therefore not to throw the family away immediately, but to rewrite the row-pair lookahead into a flatter fixed-shape sequence that preloads the second row-pair explicitly, removes the recursive fragment handoff, and checks whether the performance signal survives once correctness is restored.",
+      "expected_bottleneck": "Implementation / codegen risk in the current A-side lookahead path, plus residual shared-to-register A-feed latency if the idea survives repair.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_row_pair_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64_lookahead",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64"
+      ],
+      "risk": "Moderate. The rewrite is local and directly motivated by a real speed signal, but if correctness is restored only by undoing the additional overlap, the family may collapse back to the round-2 baseline.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Reject the A-side lookahead family if the flatter rewrite still fails correctness or if restoring correctness erases the hot-band/runtime improvement completely."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore the last correct round-2 branch `06eedc6` and continue from the validated streaming-B + B-lookahead surface",
+      "hypothesis": "If the A-side lookahead cannot be repaired quickly, the right fallback is to stop paying correctness risk and restore the last correct branch. Round 2 already recovered the streaming-B branch and added the one-fragment B-side Ps2r lookahead while keeping correctness. Resetting there preserves the strongest valid exploratory surface for the remaining rounds instead of continuing from a broken commit.",
+      "expected_bottleneck": "Not a direct micro-bottleneck attack; this is a branch repair to recover a correctness-valid baseline before the next experiment.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "risk": "Low. This is a known-good restore, but it spends a round on recovery rather than on a new ceiling-raising idea.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Use this immediately if the repaired A-lookahead branch still does not pass correctness."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea L2 cache clue: try a grouped CTA traversal only after the correctness path is stable again",
+      "hypothesis": "The user-provided L2-friendly CTA ordering idea is still worth keeping in the queue, but it should not outrank a correctness repair. The current invalid A-lookahead run still only shows about 19.45% L2 throughput, so launch-order / CTA swizzle remains a secondary structural experiment rather than the next critical fix.",
+      "expected_bottleneck": "Potential CTA traversal inefficiency and weak L2 locality across the hot-band grid once a correctness-valid branch is restored.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+      ],
+      "risk": "Moderate. The code change is relatively contained, but the upside is uncertain and block issue order remains only a hint to the scheduler.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
+      ],
+      "stop_condition": "Do not spend a round on this until the implementation surface is correctness-stable again."
+    }
+  ],
+  "notes": "Round 4/30 starts from a run that is faster but invalid. The approved A-side Ps2r lookahead improved measured runtime from 30.592960 ms to 30.270464 ms and shortened the hot-band kernel from about 41.19 us to about 40.99 us, which means the underlying overlap idea may have real upside. At the same time, correctness failed on all three cases, registers ticked up again to about 168/thread, `launch__occupancy_limit_registers` stayed pinned at 1, barrier stall jumped to about 19.84%, and `mio_throttle` rose back to about 2.50. That profile does not justify continuing to layer new optimization ideas on top of the broken branch. Recommended direction dir_01 therefore focuses on repairing or falsifying the A-lookahead family itself: keep the same concept, but flatten the row-pair preload into an explicit fixed-shape implementation that avoids the current recursive fragment handoff. Dir_02 is the safe fallback restore to the last correct round-2 surface, and dir_03 preserves the user-provided L2 traversal clue for later once the branch is valid again."
 }
