@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_231544_bf16_gemm_v1_1cc244f`
-- run dir: `runs/20260419_231544_bf16_gemm_v1_1cc244f`
-- kernel tag: `bf16_gemm_v1_1cc244f`
-- round label: `round 11/50`
+- run id: `20260419_232036_bf16_gemm_v1_0c0ee9b`
+- run dir: `runs/20260419_232036_bf16_gemm_v1_0c0ee9b`
+- kernel tag: `bf16_gemm_v1_0c0ee9b`
+- round label: `round 12/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `31.758848 ms`
-- p10 runtime: `31.313084 ms`
-- p90 runtime: `32.289377 ms`
-- TFLOP/s: `22.891870 TFLOP/s`
-- previous run id: `20260419_231125_bf16_gemm_v1_0a38a28`
-- runtime delta vs previous measured run: `+1.403392 ms`
-- TFLOP/s delta vs previous measured run: `-1.058336 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `30.695935 ms`
+- p10 runtime: `30.125363 ms`
+- p90 runtime: `31.698432 ms`
+- TFLOP/s: `23.684550 TFLOP/s`
+- previous run id: `20260419_231544_bf16_gemm_v1_1cc244f`
+- runtime delta vs previous measured run: `-1.062913 ms`
+- TFLOP/s delta vs previous measured run: `+0.792680 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the restored correct surface and let only half the CTA issue hot-band Pg2s async copies`
+- implemented direction name: `Restore the accepted-correct hot-band surface and trade paired c_shared scratch for a 3-stage A/B pipeline`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_231544_bf16_gemm_v1_1cc244f/summary.json`
-- measured commit: `1cc244fde41bb83706b3bc4840740c9715b54c41`
+- raw summary json: `runs/20260419_232036_bf16_gemm_v1_0c0ee9b/summary.json`
+- measured commit: `0c0ee9b007ed96d28f6b3c89a113cc8d68fe88c6`
 - new best custom: `no`
-- generated at: `2026-04-19T23:15:51-07:00`
+- generated at: `2026-04-19T23:20:44-07:00`
