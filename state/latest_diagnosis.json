@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_083324",
+  "status": "completed",
+  "created_at": "2026-04-20T08:33:24-07:00",
   "source_run_id": "20260420_083244_bf16_gemm_v1_66273be",
   "source_run_dir": "runs/20260420_083244_bf16_gemm_v1_66273be",
   "source_summary_json": "runs/20260420_083244_bf16_gemm_v1_66273be/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "PTX hot-band consume retime",
+      "hypothesis": "Warmup cp.async ordering is no longer the primary lever. With tensor active at 48.28, warps active at 16.57, barrier at 6.42, mio at 4.22, short scoreboard at 3.02, dram at 9.78, and lts at 30.67 on run 20260420_083244_bf16_gemm_v1_66273be (24.896433 ms), the next gain is a consumer-side retime at the PTX microkernel boundary: sweep the PTX-hot-band-local column order and lane consume order to improve register reuse and reduce bank conflict pressure instead of changing macro tiling or adding CTA repack.",
+      "expected_bottleneck": "PTX hot-band consumer ordering is leaving register reuse and shared-memory bank behavior suboptimal after the producer side has already been tuned.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu::PtxWmmaMirroredTileIndex64x64",
+        "src/kernels/bf16_gemm_v1.cu::PTX hot-band accumulate helper",
+        "src/kernels/bf16_gemm_v1.cu::PTX hot-band load helper"
+      ],
+      "risk": "Moderate. The retime may only reshuffle latency exposure without changing steady-state throughput if the hot band is already consumer-bound.",
+      "metrics_to_recheck": [
+        "tensor_active",
+        "warps_active",
+        "barrier",
+        "mio",
+        "short_scoreboard",
+        "dram",
+        "lts"
+      ],
+      "stop_condition": "If the PTX-hot-band-local consume order does not reduce short scoreboard or improves neither tensor active nor wall time, stop and switch to the next direction."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Steady-state cp.async wait/commit retime",
+      "hypothesis": "If dir_01 is too risky, the remaining headroom may still come from retiming wait/commit placement or handoff inside the active loop of the accepted K16 grouped-row=8 base. Warmup ordering is deferred and should not be reopened as the primary lever.",
+      "expected_bottleneck": "Producer/consumer handoff in the steady-state cp.async loop still has timing slack, but the warmup branch is no longer the main target.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu::active PTX hot-band main loop",
+        "src/kernels/bf16_gemm_v1.cu::cp.async helpers"
+      ],
+      "risk": "Moderate-to-high. Small schedule shifts may trade one stall class for another with limited net benefit.",
+      "metrics_to_recheck": [
+        "barrier",
+        "mio",
+        "short_scoreboard",
+        "tensor_active",
+        "warps_active"
+      ],
+      "stop_condition": "If wait/commit retime does not improve steady-state stall mix, keep the accepted base and move on."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Hot-band launch-order refinement",
+      "hypothesis": "Grouped-row locality has already paid off, so the next locality-only move is to retune hot-band block ordering and grouped-row count rather than revisit wide layout changes.",
+      "expected_bottleneck": "Launch-order locality across the hot band still leaves L2 reuse on the table even after the grouped-row baseline.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu::kFixedHotBandPtxGroupedRows",
+        "src/kernels/bf16_gemm_v1.cu::logical_block_y mapping",
+        "src/kernels/bf16_gemm_v1.cu::grouped-row mapping in the active PTX kernel"
+      ],
+      "risk": "Low-to-moderate. This is a locality-only change and is less likely to destabilize correctness, but it may have limited ceiling.",
+      "metrics_to_recheck": [
+        "lts",
+        "dram",
+        "tensor_active",
+        "warps_active"
+      ],
+      "stop_condition": "If launch-order retuning does not move L2 reuse or runtime, do not expand into wider layout changes."
+    }
+  ],
+  "notes": "Latest measured run: 20260420_083244_bf16_gemm_v1_66273be at 24.896433 ms. Accepted human-idea families for this round: Register Reuse: Right Left Right Left, Ps2r, Bank Conflict, and L2 Cache: swizzle access mode to increase L2 cache hit ratio. Deferred but still live: Async Copy, Pg2s, Stage. Rejected for this round: reopening the warmup-order branch, K32 cadence, extra-live B lookahead, unroll-1 base, and any CTA-level B repack or extra shared tile. dir_01 is the recommended direction because it targets the PTX hot-band consume boundary rather than macro tiling or CTA staging."
 }

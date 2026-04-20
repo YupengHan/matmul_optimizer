@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `PTX hot-band consume retime`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_083324`
 - round loop: `round 55/100`
+- hypothesis: `Warmup cp.async ordering is no longer the primary lever. With tensor active at 48.28, warps active at 16.57, barrier at 6.42, mio at 4.22, short scoreboard at 3.02, dram at 9.78, and lts at 30.67 on run 20260420_083244_bf16_gemm_v1_66273be (24.896433 ms), the next gain is a consumer-side retime at the PTX microkernel boundary: sweep the PTX-hot-band-local column order and lane consume order to improve register reuse and reduce bank conflict pressure instead of changing macro tiling or adding CTA repack.`
+- expected bottleneck: `PTX hot-band consumer ordering is leaving register reuse and shared-memory bank behavior suboptimal after the producer side has already been tuned.`
+- code locations: `src/kernels/bf16_gemm_v1.cu::PtxWmmaMirroredTileIndex64x64, src/kernels/bf16_gemm_v1.cu::PTX hot-band accumulate helper, src/kernels/bf16_gemm_v1.cu::PTX hot-band load helper`
+- risk: `Moderate. The retime may only reshuffle latency exposure without changing steady-state throughput if the hot band is already consumer-bound.`
+- metrics to re-check: `tensor_active, warps_active, barrier, mio, short_scoreboard, dram, lts`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
