@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_001707_bf16_gemm_v1_8a2834a`
-- run dir: `runs/20260420_001707_bf16_gemm_v1_8a2834a`
-- kernel tag: `bf16_gemm_v1_8a2834a`
-- round label: `round 25/50`
+- run id: `20260420_001930_bf16_gemm_v1_b4f4a28`
+- run dir: `runs/20260420_001930_bf16_gemm_v1_b4f4a28`
+- kernel tag: `bf16_gemm_v1_b4f4a28`
+- round label: `round 26/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.227264 ms`
-- p10 runtime: `26.692505 ms`
-- p90 runtime: `28.133362 ms`
-- TFLOP/s: `26.701890 TFLOP/s`
-- previous run id: `20260420_001545_bf16_gemm_v1_5ae2249`
-- runtime delta vs previous measured run: `-0.464255 ms`
-- TFLOP/s delta vs previous measured run: `+0.447664 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `31.002625 ms`
+- p10 runtime: `30.567322 ms`
+- p90 runtime: `31.999278 ms`
+- TFLOP/s: `23.450254 TFLOP/s`
+- previous run id: `20260420_001707_bf16_gemm_v1_8a2834a`
+- runtime delta vs previous measured run: `+3.775360 ms`
+- TFLOP/s delta vs previous measured run: `-3.251636 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep grouped_rows=8 and refine the compiler clue to a two-argument launch-bounds target of 2 resident CTAs`
+- implemented direction name: `Keep the current best branch and peel the fixed 452-tile K loop into steady-state plus epilogue`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_001707_bf16_gemm_v1_8a2834a/summary.json`
-- measured commit: `8a2834ad9966fb75ef7c310ad5850de8c925ec5e`
-- new best custom: `yes`
-- generated at: `2026-04-20T00:17:14-07:00`
+- raw summary json: `runs/20260420_001930_bf16_gemm_v1_b4f4a28/summary.json`
+- measured commit: `b4f4a28d3f4f13c71f287127a37f5fe71a5b930c`
+- new best custom: `no`
+- generated at: `2026-04-20T00:19:38-07:00`
