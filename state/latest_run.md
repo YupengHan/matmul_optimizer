@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_083244_bf16_gemm_v1_66273be`
-- run dir: `runs/20260420_083244_bf16_gemm_v1_66273be`
-- kernel tag: `bf16_gemm_v1_66273be`
-- round label: `round 54/100`
+- run id: `20260420_083902_bf16_gemm_v1_de7e8be`
+- run dir: `runs/20260420_083902_bf16_gemm_v1_de7e8be`
+- kernel tag: `bf16_gemm_v1_de7e8be`
+- round label: `round 55/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.896433 ms`
-- p10 runtime: `24.882704 ms`
-- p90 runtime: `26.077901 ms`
-- TFLOP/s: `29.201751 TFLOP/s`
-- previous run id: `20260420_082654_bf16_gemm_v1_1653a82`
-- runtime delta vs previous measured run: `-0.008207 ms`
-- TFLOP/s delta vs previous measured run: `+0.009623 TFLOP/s`
+- median runtime: `24.849423 ms`
+- p10 runtime: `24.665799 ms`
+- p90 runtime: `25.855795 ms`
+- TFLOP/s: `29.256994 TFLOP/s`
+- previous run id: `20260420_083244_bf16_gemm_v1_66273be`
+- runtime delta vs previous measured run: `-0.047009 ms`
+- TFLOP/s delta vs previous measured run: `+0.055243 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune the accepted B-first cp.async handoff inside the K16 hot band`
+- implemented direction name: `PTX hot-band consume retime`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_083244_bf16_gemm_v1_66273be/summary.json`
-- measured commit: `66273be4ab02d93dca25251ada08f52ec95cdfd9`
-- new best custom: `no`
-- generated at: `2026-04-20T08:32:51-07:00`
+- raw summary json: `runs/20260420_083902_bf16_gemm_v1_de7e8be/summary.json`
+- measured commit: `de7e8be6e77487fbeecd095db66faa31c991de1e`
+- new best custom: `yes`
+- generated at: `2026-04-20T08:39:09-07:00`

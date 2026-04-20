@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 55/100` with `46` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 56/100` with `45` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260420_083324`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Latest measured run: 20260420_083244_bf16_gemm_v1_66273be at 24.896433 ms. Accepted human-idea families for this round: Register Reuse: Right Left Right Left, Ps2r, Bank Conflict, and L2 Cache: swizzle access mode to increase L2 cache hit ratio. Deferred but still live: Async Copy, Pg2s, Stage. Rejected for this round: reopening the warmup-order branch, K32 cadence, extra-live B lookahead, unroll-1 base, and any CTA-level B repack or extra shared tile. dir_01 is the recommended direction because it targets the PTX hot-band consume boundary rather than macro tiling or CTA staging.`
-- dir_01: PTX hot-band consume retime | bottleneck: PTX hot-band consumer ordering is leaving register reuse and shared-memory bank behavior suboptimal after the producer side has already been tuned.
-- dir_02: Steady-state cp.async wait/commit retime | bottleneck: Producer/consumer handoff in the steady-state cp.async loop still has timing slack, but the warmup branch is no longer the main target.
-- dir_03: Hot-band launch-order refinement | bottleneck: Launch-order locality across the hot band still leaves L2 reuse on the table even after the grouped-row baseline.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

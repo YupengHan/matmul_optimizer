@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `66273be4ab02d93dca25251ada08f52ec95cdfd9`
-- plateau counter: `2`
-- round loop: `round 55/100`
-- rounds remaining: `46`
-- notes: `Node C build succeeded for round 55/100. Node A will now measure the new code path.`
+- latest measured commit: `de7e8be6e77487fbeecd095db66faa31c991de1e`
+- plateau counter: `0`
+- round loop: `round 56/100`
+- rounds remaining: `45`
+- notes: `Node A completed round 55/100. Run node_b to continue round 56/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_083244_bf16_gemm_v1_66273be`
-- run dir: `runs/20260420_083244_bf16_gemm_v1_66273be`
+- run id: `20260420_083902_bf16_gemm_v1_de7e8be`
+- run dir: `runs/20260420_083902_bf16_gemm_v1_de7e8be`
 - correctness: `PASS`
-- median runtime: `24.896433 ms`
-- TFLOP/s: `29.201751 TFLOP/s`
+- median runtime: `24.849423 ms`
+- TFLOP/s: `29.256994 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_083324`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Latest measured run: 20260420_083244_bf16_gemm_v1_66273be at 24.896433 ms. Accepted human-idea families for this round: Register Reuse: Right Left Right Left, Ps2r, Bank Conflict, and L2 Cache: swizzle access mode to increase L2 cache hit ratio. Deferred but still live: Async Copy, Pg2s, Stage. Rejected for this round: reopening the warmup-order branch, K32 cadence, extra-live B lookahead, unroll-1 base, and any CTA-level B repack or extra shared tile. dir_01 is the recommended direction because it targets the PTX hot-band consume boundary rather than macro tiling or CTA staging.`
-- dir_01: PTX hot-band consume retime | bottleneck: PTX hot-band consumer ordering is leaving register reuse and shared-memory bank behavior suboptimal after the producer side has already been tuned.
-- dir_02: Steady-state cp.async wait/commit retime | bottleneck: Producer/consumer handoff in the steady-state cp.async loop still has timing slack, but the warmup branch is no longer the main target.
-- dir_03: Hot-band launch-order refinement | bottleneck: Launch-order locality across the hot band still leaves L2 reuse on the table even after the grouped-row baseline.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-1.022401 ms`, `0.960552x` slower than CUTLASS
+- current best custom gap: `-1.068465 ms`, `0.958775x` slower than CUTLASS

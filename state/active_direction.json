@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "PTX hot-band consume retime",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T08:37:28-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_083324",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "PTX hot-band consume retime",
-    "hypothesis": "Warmup cp.async ordering is no longer the primary lever. With tensor active at 48.28, warps active at 16.57, barrier at 6.42, mio at 4.22, short scoreboard at 3.02, dram at 9.78, and lts at 30.67 on run 20260420_083244_bf16_gemm_v1_66273be (24.896433 ms), the next gain is a consumer-side retime at the PTX microkernel boundary: sweep the PTX-hot-band-local column order and lane consume order to improve register reuse and reduce bank conflict pressure instead of changing macro tiling or adding CTA repack.",
-    "expected_bottleneck": "PTX hot-band consumer ordering is leaving register reuse and shared-memory bank behavior suboptimal after the producer side has already been tuned.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu::PtxWmmaMirroredTileIndex64x64",
-      "src/kernels/bf16_gemm_v1.cu::PTX hot-band accumulate helper",
-      "src/kernels/bf16_gemm_v1.cu::PTX hot-band load helper"
-    ],
-    "risk": "Moderate. The retime may only reshuffle latency exposure without changing steady-state throughput if the hot band is already consumer-bound.",
-    "metrics_to_recheck": [
-      "tensor_active",
-      "warps_active",
-      "barrier",
-      "mio",
-      "short_scoreboard",
-      "dram",
-      "lts"
-    ],
-    "stop_condition": "If the PTX-hot-band-local consume order does not reduce short scoreboard or improves neither tensor active nor wall time, stop and switch to the next direction."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
