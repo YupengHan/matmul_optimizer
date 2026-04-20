@@ -718,6 +718,37 @@ __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64_ptx_microkernel
 }
 
 template <int RowPairBase, int Step = 0>
+__device__ __forceinline__
+    void ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead(
+        PtxWmmaAccTileSet64x64& acc_tiles,
+        const PtxWmmaBf16Fragment& a_frag0,
+        const PtxWmmaBf16Fragment& a_frag1,
+        const __nv_bfloat16* b_tile,
+        const PtxWmmaBf16Fragment& current_b_frag) {
+  static_assert(RowPairBase >= 0 &&
+                    RowPairBase + 1 < FixedHotBandTile128x128::kWarpMmaTilesM,
+                "The PTX hot-band microkernel expects valid 64x64 row pairs.");
+  if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
+    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+    if constexpr (Step + 1 < FixedHotBandTile128x128::kWarpMmaTilesN) {
+      PtxWmmaBf16Fragment next_b_frag;
+      // Keep a single mirrored-column B fragment lookahead live so the next
+      // shared-to-register feed can issue ahead of the current row-pair MMA.
+      ptx_wmma_load_col_fragment_64x64_ptx_microkernel<Step + 1>(
+          next_b_frag, b_tile);
+      ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+          acc_tiles, a_frag0, a_frag1, current_b_frag);
+      ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead<
+          RowPairBase,
+          Step + 1>(acc_tiles, a_frag0, a_frag1, b_tile, next_b_frag);
+    } else {
+      ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+          acc_tiles, a_frag0, a_frag1, current_b_frag);
+    }
+  }
+}
+
+template <int RowPairBase, int Step = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
@@ -727,15 +758,13 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microker
                     RowPairBase + 1 < FixedHotBandTile128x128::kWarpMmaTilesM,
                 "The PTX hot-band microkernel expects valid 64x64 row pairs.");
   if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
-    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
     PtxWmmaBf16Fragment b_frag;
-    // Reload the mirrored-column B fragment per row-pair so this PTX-only
-    // path keeps just the active pair of A fragments live across the sweep.
+    // Seed a one-fragment rolling window for B so this PTX-only row-pair sweep
+    // keeps just the active A pair plus current/next mirrored-column B live.
     ptx_wmma_load_col_fragment_64x64_ptx_microkernel<Step>(b_frag, b_tile);
-    ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
-        acc_tiles, a_frag0, a_frag1, b_frag);
-    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase, Step + 1>(
-        acc_tiles, a_frag0, a_frag1, b_tile);
+    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead<
+        RowPairBase,
+        Step>(acc_tiles, a_frag0, a_frag1, b_tile, b_frag);
   }
 }
 
