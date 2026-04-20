@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Try The 128x128x32 Staged Hot-Band Family`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_114200`
 - round loop: `round 78/100`
+- hypothesis: `The restored PTX baseline is back in the same source surface as the earlier round-74 code, but the present environment is still slower at 25.97375965 ms and the profile remains barrier- and scoreboard-heavy. The most concrete next family is to change staging granularity rather than relitigate dispatch promotion: the 128x128x32 path keeps the restored hot-band semantics but breaks the work into 32-K-slice stages. That gives a plausible route to lower live-range pressure and barrier cost without reopening the closed non-PTX default promotion family.`
+- expected bottleneck: `Barrier cost, short-scoreboard pressure, and register/occupancy pressure in the current 128x128 PTX hot-band cadence.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1667-1815, src/kernels/bf16_gemm_v1.cu:2070-2093`
+- risk: `Medium. This is a structural change, but it is still anchored to the restored baseline and is more defensible than another baseline-restore round.`
+- metrics to re-check: `median runtime, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

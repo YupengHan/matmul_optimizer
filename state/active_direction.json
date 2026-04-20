@@ -1,10 +1,30 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Try The 128x128x32 Staged Hot-Band Family",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T11:42:31-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_114200",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Try The 128x128x32 Staged Hot-Band Family",
+    "hypothesis": "The restored PTX baseline is back in the same source surface as the earlier round-74 code, but the present environment is still slower at 25.97375965 ms and the profile remains barrier- and scoreboard-heavy. The most concrete next family is to change staging granularity rather than relitigate dispatch promotion: the 128x128x32 path keeps the restored hot-band semantics but breaks the work into 32-K-slice stages. That gives a plausible route to lower live-range pressure and barrier cost without reopening the closed non-PTX default promotion family.",
+    "expected_bottleneck": "Barrier cost, short-scoreboard pressure, and register/occupancy pressure in the current 128x128 PTX hot-band cadence.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1667-1815",
+      "src/kernels/bf16_gemm_v1.cu:2070-2093"
+    ],
+    "risk": "Medium. This is a structural change, but it is still anchored to the restored baseline and is more defensible than another baseline-restore round.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "launch__occupancy_limit_registers",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop if the 128x128x32 variant does not reduce barrier/scoreboard pressure or if it has to reopen the closed non-PTX promotion family to function."
+  },
+  "notes": "Node C may now implement this one direction."
 }
