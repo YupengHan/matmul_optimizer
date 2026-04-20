@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_012953_bf16_gemm_v1_e26d834`
-- run dir: `runs/20260420_012953_bf16_gemm_v1_e26d834`
-- kernel tag: `bf16_gemm_v1_e26d834`
-- round label: `round 38/100`
+- run id: `20260420_013505_bf16_gemm_v1_98fb432`
+- run dir: `runs/20260420_013505_bf16_gemm_v1_98fb432`
+- kernel tag: `bf16_gemm_v1_98fb432`
+- round label: `round 39/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.974272 ms`
-- p10 runtime: `25.840742 ms`
-- p90 runtime: `27.509037 ms`
-- TFLOP/s: `27.989983 TFLOP/s`
-- previous run id: `20260420_011851_bf16_gemm_v1_f8e7058`
-- runtime delta vs previous measured run: `-0.176608 ms`
-- TFLOP/s delta vs previous measured run: `+0.189028 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.733056 ms`
+- p10 runtime: `26.300518 ms`
+- p90 runtime: `28.624179 ms`
+- TFLOP/s: `27.195522 TFLOP/s`
+- previous run id: `20260420_012953_bf16_gemm_v1_e26d834`
+- runtime delta vs previous measured run: `+0.758784 ms`
+- TFLOP/s delta vs previous measured run: `-0.794461 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim the active PTX export path and c_shared round-trip before touching feed again`
+- implemented direction name: `Keep the export-path gain and narrow the active PTX consumer-side B reuse`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_012953_bf16_gemm_v1_e26d834/summary.json`
-- measured commit: `e26d834e2583eaa041749b99e07234b9454d49e5`
-- new best custom: `yes`
-- generated at: `2026-04-20T01:29:59-07:00`
+- raw summary json: `runs/20260420_013505_bf16_gemm_v1_98fb432/summary.json`
+- measured commit: `98fb432463426a2c75c8fb1d07e6fbcb058ae55d`
+- new best custom: `no`
+- generated at: `2026-04-20T01:35:13-07:00`

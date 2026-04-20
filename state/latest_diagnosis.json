@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_013034",
-  "status": "completed",
-  "created_at": "2026-04-20T01:30:34-07:00",
-  "source_run_id": "20260420_012953_bf16_gemm_v1_e26d834",
-  "source_run_dir": "runs/20260420_012953_bf16_gemm_v1_e26d834",
-  "source_summary_json": "runs/20260420_012953_bf16_gemm_v1_e26d834/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_013505_bf16_gemm_v1_98fb432",
+  "source_run_dir": "runs/20260420_013505_bf16_gemm_v1_98fb432",
+  "source_summary_json": "runs/20260420_013505_bf16_gemm_v1_98fb432/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep the export-path gain and narrow the active PTX consumer-side B reuse",
-      "hypothesis": "Primary family for round 39/100: Bank Conflict plus Register Reuse plus Ps2r on the active 128x128 K16 PTX hot-band branch. Round 38 proved the padded PTX export scratch was real upside because runtime improved to 25.974272 ms, a new best custom result only 0.056383 ms behind the 25.917889 ms CUTLASS baseline. But the run still sat on top of the earlier consumer-side B-reuse changes, and the stall mix stayed awkward instead of cleanly better: tensor-active was 47.87%, barrier stayed high at 11.13%, short-scoreboard stayed high at 5.87%, and mio_throttle remained very low at 0.55%. That combination says the export-path win should be kept, but the current two-row-pair B-fragment fusion is still probably too wide for the active PTX branch. The next best move is therefore a narrower warp-local consumer fallback rather than another broad rewrite: keep the mirrored consume order and the export scratch improvement, but shorten B-fragment lifetime or reuse scope so the branch gives back some short-scoreboard and barrier cost without surrendering the mio-throttle win.",
-      "expected_bottleneck": "Warp-local dependency chains and synchronization exposure in the active PTX consume path, where the current B-fragment reuse shape keeps feed pressure low but still leaves short-scoreboard and barrier cost too high.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:708-758",
-        "src/kernels/bf16_gemm_v1.cu:1936-1960",
-        "src/kernels/bf16_gemm_v1.cu:1989-1990"
-      ],
-      "risk": "Medium. Narrowing the current reuse pattern is bounded and stays on the active PTX branch, but it can easily give back the mio-throttle win or reduce tensor issue if the fallback becomes too timid.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the narrower reuse fallback gives back most of the 0.55% mio-throttle result, or if runtime does not improve while short-scoreboard and barrier remain near the current 5.87% and 11.13% levels."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Refine the active PTX export path again without reopening feed",
-      "hypothesis": "Secondary family for round 39/100: continue export-path and c_shared work on the active PTX branch while leaving the current consumer path alone for one more bounded pass. The padded scratch already bought real wall-clock gain, which means export and shared-bank behavior were not secondary noise. But the active branch still exports through a paired two-stage per-warp c_shared round-trip with syncwarp between shared store and BF16 quad emission. A tighter follow-up can keep the new padding but trim the export machinery further: reduce scratch round-trip width, collapse part of the paired export recursion, or make the PTX-only export helper emit quads with fewer shared reads and less warp-local synchronization. This is materially different from dir_01 because it assumes the remaining cost is still mostly post-MMA shared/export overhead rather than consume sequencing.",
-      "expected_bottleneck": "Shared-memory export overhead after the MMA loop on the active PTX branch, especially c_shared bank traffic, LSU wavefront pressure, and warp-local synchronization inside the paired export helpers.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134-141",
-        "src/kernels/bf16_gemm_v1.cu:882-1009",
-        "src/kernels/bf16_gemm_v1.cu:1909-1910"
-      ],
-      "risk": "Medium-high. Export-only work is localized, but this path directly touches correctness-sensitive BF16 packing and shared scratch layout, and it can trade shared cost for extra registers or extra scalar instructions.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "launch__shared_mem_per_block_allocated",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if one more export-path pass cannot improve runtime or materially lower shared-bank or LSU pressure beyond the round 38 padded-scratch branch."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Do a fixed-shape PTX sequencing cleanup on the active hot loop",
-      "hypothesis": "Tertiary family for round 39/100: sequencing cleanup on the active PTX hot-band loop without changing macro tiling, without deepening stage count, and without another major feed rewrite. The 128x128 K16 PTX branch still uses a generic-looking per-tile pattern of future-tile staging, wait-group choice, and block-wide synchronization inside a fixed 452-tile loop. Now that the branch is within 0.056 ms of CUTLASS, a bounded control cleanup is worth keeping in reserve: split prologue, steady-state, and final iterations more explicitly, or tighten the placement of syncthreads and wait-group transitions so the fixed-shape path carries less orchestration overhead. This is materially different from dir_01 because it does not alter B reuse width, and different from dir_02 because it leaves c_shared/export helpers unchanged.",
-      "expected_bottleneck": "CTA-level orchestration overhead in the active PTX hot loop, where fixed-shape staging and synchronization may still be more generic than necessary and continue to surface as barrier cost.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1931-1985",
-        "src/kernels/bf16_gemm_v1.cu:1023-1090",
-        "src/kernels/bf16_gemm_v1.cu:2040-2046"
-      ],
-      "risk": "Medium. The branch is already near the current local baseline, so hot-loop sequencing changes can break overlap or correctness quickly and may have smaller upside than either dir_01 or dir_02.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if one bounded sequencing cleanup pass does not reduce barrier pressure or improve runtime without reopening the already-rejected deeper-stage failure mode."
-    }
-  ],
-  "notes": "Round 39/100 audits the human-idea families against the latest measured evidence as follows. Tiling: rejected for this round, because the true active 256x128 CTA plus 64x64 warp path already measured around 31.61 ms and is far behind the current 25.974272 ms active 128x128 K16 PTX branch. Coalescing Access: deferred, because the active branch already uses 16-byte cp.async global-to-shared movement and the current profile is not DRAM- or L2-led. Data Reuse: accepted only in a narrower warp-local form on the active PTX branch; CTA-side B repack remains rejected. Async Copy: deferred to the current working non-blocking two-stage baseline instead of reopening deeper pipeline work. Bank Conflict: accepted and promoted, because the export scratch change already paid off and the remaining issue mix still points at shared delivery and shared export behavior. L2 Cache: deferred; grouped launch ordering helped earlier, but the present stall mix points inside the active PTX branch before another L2-oriented pass. Register Reuse: accepted as the primary family, because the best current explanation is that feed pressure was improved while fragment lifetime and consume ordering stayed too expensive. Pg2s: deferred beyond the existing double-buffer baseline. Ps2r: accepted as part of the narrower consumer-side fallback and the sequencing-cleanup reserve path. Stage: rejected as a primary direction for this round, because deeper or alternative stage experiments already regressed badly. The goal remains 20 ms, not merely the 25.917889 ms CUTLASS baseline, so the ranking stays centered on the active 128x128 K16 PTX hot-band branch and recommends keeping the export-path gain while first testing a narrower consumer-side B-reuse fallback that may give back some of the current short-scoreboard and barrier cost."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
