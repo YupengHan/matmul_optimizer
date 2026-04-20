@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `50`
-- completed rounds: `32`
-- remaining rounds: `18`
-- current round label: `round 33/50`
+- completed rounds: `33`
+- remaining rounds: `17`
+- current round label: `round 34/50`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_002759_bf16_gemm_v1_1b9dbe3`
 - accepted base measured commit: `1b9dbe3d306090b4f1762f1e1a504c13d2ab5d92`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 33/50. Node A will measure the result next.`
+- notes: `Completed round 33/50. Continue with node_b for round 34/50. Accepted base: 20260420_002759_bf16_gemm_v1_1b9dbe3 at 26.924031 ms.`
 
 ## Last completed round
 
-- round: `32/50`
+- round: `33/50`
 - direction: `dir_01`
-- direction name: `Keep the current best branch and reduce grouped_rows one more step to 2`
+- direction name: `Rewrite the active 128x128 K16 hot-band steady-state around Pg2s/Stage orchestration instead of dead grouped_rows tuning`
 - verdict: `regressed`
-- runtime delta: `+0.206753 ms`
-- TFLOP/s delta: `-0.205776 TFLOP/s`
-- run dir: `runs/20260420_003403_bf16_gemm_v1_26d9819`
-- ncu rep path: `runs/20260420_003403_bf16_gemm_v1_26d9819/ncu_profile.ncu-rep`
+- runtime delta: `+4.553823 ms`
+- TFLOP/s delta: `-3.851337 TFLOP/s`
+- run dir: `runs/20260420_004325_bf16_gemm_v1_bbb7383`
+- ncu rep path: `runs/20260420_004325_bf16_gemm_v1_bbb7383/ncu_profile.ncu-rep`
