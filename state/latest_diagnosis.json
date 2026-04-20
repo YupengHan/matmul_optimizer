@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_104405",
-  "status": "completed",
-  "created_at": "2026-04-20T10:44:05-07:00",
-  "source_run_id": "20260420_095109_bf16_gemm_v1_885b82b",
-  "source_run_dir": "runs/20260420_095109_bf16_gemm_v1_885b82b",
-  "source_summary_json": "runs/20260420_095109_bf16_gemm_v1_885b82b/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_105019_bf16_gemm_v1_3a888bc",
+  "source_run_dir": "runs/20260420_105019_bf16_gemm_v1_3a888bc",
+  "source_summary_json": "runs/20260420_105019_bf16_gemm_v1_3a888bc/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
+  "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the exact accepted round-58 implementation surface first, then re-measure from that true base",
-      "hypothesis": "Goal remains below 20 ms, and the accepted best custom result is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd. Round 68 regressed to 25.85795212 ms, so the grouped_rows=8 snake launch-order mapping is closed-negative. More importantly, the current source no longer looks like a clean accepted-base anchor plus only the latest narrow experiment. The supervisor already diffed src/kernels/bf16_gemm_v1.cu against accepted commit 4e5579e and found surviving deltas beyond the snake mapping: the removed second syncwarp in ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel, the B-before-A stage order in advance_peeled_hot_stage_ptx, the 256x128 hot-band unroll changed from 1 to 2, the extra RowPairBase template parameter in ptx_wmma_load_col_fragment_64x64_ptx_microkernel, and the current snake mapping itself. That is auditable evidence that the loop may be exploring from a drifted surface rather than the true accepted base. The highest-value next move is therefore to restore the exact accepted implementation surface first, including undoing the snake mapping and any other non-accepted drift that can touch active paths, and then re-measure before spending another round on micro-optimizations.",
-      "expected_bottleneck": "Baseline drift and false-anchor risk rather than a single hot-path micro-bottleneck; the loop needs the true accepted surface back before further diagnosis is trustworthy.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:advance_peeled_hot_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel"
-      ],
-      "risk": "Moderate. This touches several places in one file, but it is still a bounded restore-to-known-surface change rather than another fresh speculative rewrite, and it directly resolves the current ambiguity about what base the loop is actually standing on.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against 25.85795212 ms and the accepted 24.57088089 ms result",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "correctness on all three fixed BF16 cases"
-      ],
-      "stop_condition": "Reject only if the exact-surface restore is verified and still does not recover toward the accepted round-58 runtime or stall mix; otherwise do not continue diagnosing from the current drifted surface."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "After exact-base restore, test only a very narrow one-sync handoff closure on the active PTX hot-band loop",
-      "hypothesis": "Once the exact accepted implementation surface is restored, the still-open stage family is a very small closure around the accepted one-sync steady-state handoff on the active PTX hot-band loop. This direction must keep the accepted base intact: grouped_rows=8, right-left 64x64 consume order, reversed PTX compute row-pair traversal, linear export traversal, B-first refill, and unroll 2 on the active loop. It must also explicitly avoid reopening A-first refill, fixed-K peeling, grouped_rows sweeps, K32 cadence, extra-live staging, or warmup-order experiments. The latest run still shows barrier at 6.48 with runtime above the accepted base, so a very narrow handoff closure remains open once the surface drift is removed, but only as a secondary family behind dir_01.",
-      "expected_bottleneck": "Residual one-sync consumer-to-refill overlap loss on the true accepted PTX hot-band base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel prologue staging",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel cp.async.wait_group/__syncthreads handoff",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel B-first refill sequence"
-      ],
-      "risk": "High. The same general area has already been perturbed by closed-negative stage variants, so this only makes sense as a minimal closure after dir_01 removes the implementation-surface drift.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the restored exact base",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness on all three fixed BF16 cases"
-      ],
-      "stop_condition": "Reject if the change becomes anything broader than a narrow handoff closure, or if it reopens A-first refill, fixed-K peeling, K32 cadence, extra-live staging, or grouped_rows/snake locality variants."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "After exact-base restore, probe a low-priority export-side lifetime closure that keeps linear export order",
-      "hypothesis": "Round 67 already showed that export-side second-sync removal is not a primary runtime lever: runtime stayed essentially flat even though long_scoreboard improved sharply. That means the export path is not where the loop should anchor next, but it does not completely rule out a smaller export-side lifetime or issue-order cleanup once the exact accepted surface is restored. This direction must keep linear export order and must not reopen export traversal reversal. It is a tertiary family because the measured evidence says export-side sync removal alone does not buy real time, so any further export-side work should be treated as a bounded low-upside cleanup rather than the main optimization thesis.",
-      "expected_bottleneck": "Residual export writeback and scratch-lifetime overhead on the exact accepted base, after accepting that second-sync removal alone is not a primary runtime lever.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile128x128PtxExportScratch",
-        "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64_ptx_microkernel"
-      ],
-      "risk": "Moderate. The path is correctness-sensitive, and the recent evidence already says its upside is capped, so it should stay strictly bounded and only be attempted from the restored exact base.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the restored exact base",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "l1tex__lsu_writeback_active.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "correctness on all three fixed BF16 cases"
-      ],
-      "stop_condition": "Reject immediately if the change drifts into export traversal changes or if it remains runtime-flat after the exact-base restore."
-    }
-  ],
-  "notes": "Round 69 diagnosis is anchored to run 20260420_095109_bf16_gemm_v1_885b82b at 25.85795212 ms. The target remains below 20 ms, and the accepted best custom result is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd. Round 68 closed the grouped_rows=8 snake launch-order mapping as a negative because runtime regressed, even though the measured metrics on that run were tensor 48.22, dram 10.38, lts 31.24, barrier 6.48, long_scoreboard 4.12, and mio 3.31. That stall mix is exactly why implementation-surface drift is the main concern for this round: the current source may not actually equal the accepted round-58 implementation surface plus only the intended later narrow closures. The supervisor already found surviving deltas beyond the just-failed snake mapping: the missing second syncwarp in ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel, the changed B-before-A stage order in advance_peeled_hot_stage_ptx, the changed unroll in bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel from 1 to 2, the extra RowPairBase template parameter in ptx_wmma_load_col_fragment_64x64_ptx_microkernel, and the current snake mapping itself. Human-idea audit: tiling is already accepted only as the existing hot-band tile hierarchy, so a new tiling reopen is deferred; coalescing and wide global access are already accepted through the current async-copy path; shared-memory reuse is already accepted; async copy is already accepted; bank-conflict handling is accepted only through the current right-left consume order and should not reopen consumer-order sweeps; L2 locality is now closed for snake mapping and for grouped_rows sweeps, so locality is not the next family; register reuse is already accepted in the current right-left consume order and should not reopen sweep variants; Pg2s is already accepted; Ps2r remains closed through the previously rejected extra-live, K32 cadence, and warmup-order families; stage work is accepted only as the narrow one-sync, B-first base, while fixed-K peeling is already closed-negative. Ranking rationale: dir_01 is the best next move because it removes the baseline ambiguity and restores an auditable foundation for every later micro-optimization. Dir_02 is the remaining still-open narrow stage-family move once the exact base is back. Dir_03 stays available only as a low-priority export-lifetime cleanup, explicitly treating round 67 as evidence that export-side second-sync removal is not a primary runtime lever."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

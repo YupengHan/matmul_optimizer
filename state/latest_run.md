@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_095109_bf16_gemm_v1_885b82b`
-- run dir: `runs/20260420_095109_bf16_gemm_v1_885b82b`
-- kernel tag: `bf16_gemm_v1_885b82b`
-- round label: `round 68/100`
+- run id: `20260420_105019_bf16_gemm_v1_3a888bc`
+- run dir: `runs/20260420_105019_bf16_gemm_v1_3a888bc`
+- kernel tag: `bf16_gemm_v1_3a888bc`
+- round label: `round 69/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.857952 ms`
-- p10 runtime: `25.343488 ms`
-- p90 runtime: `26.878381 ms`
-- TFLOP/s: `28.115893 TFLOP/s`
-- previous run id: `20260420_094558_bf16_gemm_v1_2fc3582`
-- runtime delta vs previous measured run: `+0.181151 ms`
-- TFLOP/s delta vs previous measured run: `-0.198359 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.499136 ms`
+- p10 runtime: `24.726529 ms`
+- p90 runtime: `26.568601 ms`
+- TFLOP/s: `28.511532 TFLOP/s`
+- previous run id: `20260420_095109_bf16_gemm_v1_885b82b`
+- runtime delta vs previous measured run: `-0.358816 ms`
+- TFLOP/s delta vs previous measured run: `+0.395638 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep The Accepted PTX Base And Close Within-Group Launch-Order Locality`
+- implemented direction name: `Restore the exact accepted round-58 implementation surface first, then re-measure from that true base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_095109_bf16_gemm_v1_885b82b/summary.json`
-- measured commit: `885b82bed9101254e2b9622f7ed493a9ffff7501`
+- raw summary json: `runs/20260420_105019_bf16_gemm_v1_3a888bc/summary.json`
+- measured commit: `3a888bc54495c13c7d85cfd5f98d2b64376e537f`
 - new best custom: `no`
-- generated at: `2026-04-20T09:51:16-07:00`
+- generated at: `2026-04-20T10:50:27-07:00`
