@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_153144_bf16_gemm_v1_c550d79`
-- run dir: `runs/20260420_153144_bf16_gemm_v1_c550d79`
-- kernel tag: `bf16_gemm_v1_c550d79`
-- round label: `single-run`
+- run id: `20260420_154403_bf16_gemm_v1_153bda2`
+- run dir: `runs/20260420_154403_bf16_gemm_v1_153bda2`
+- kernel tag: `bf16_gemm_v1_153bda2`
+- round label: `round 1/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.763329 ms`
-- p10 runtime: `25.184854 ms`
-- p90 runtime: `26.783107 ms`
-- TFLOP/s: `28.219157 TFLOP/s`
-- previous run id: `20260420_120552_bf16_gemm_v1_84de30b`
-- runtime delta vs previous measured run: `-0.181135 ms`
-- TFLOP/s delta vs previous measured run: `+0.197016 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.978816 ms`
+- p10 runtime: `26.526925 ms`
+- p90 runtime: `27.650343 ms`
+- TFLOP/s: `26.947788 TFLOP/s`
+- previous run id: `20260420_153144_bf16_gemm_v1_c550d79`
+- runtime delta vs previous measured run: `+1.215487 ms`
+- TFLOP/s delta vs previous measured run: `-1.271369 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-enter The PTX Hot-Band Path With A Mid-Width Grouping Control`
+- implemented direction name: `Retune PTX Hot-Band Group Traversal Around The 6-Row Window`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_153144_bf16_gemm_v1_c550d79/summary.json`
-- measured commit: `c550d7959d2a7f80c98ebb0a632629ff9d196656`
+- raw summary json: `runs/20260420_154403_bf16_gemm_v1_153bda2/summary.json`
+- measured commit: `153bda22f3d30b70b379e1ed0362d78c9f57f3f3`
 - new best custom: `no`
-- generated at: `2026-04-20T15:31:52-07:00`
+- generated at: `2026-04-20T15:44:12-07:00`

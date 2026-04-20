@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_154129",
-  "status": "completed",
-  "created_at": "2026-04-20T15:41:29-07:00",
-  "source_run_id": "20260420_153144_bf16_gemm_v1_c550d79",
-  "source_run_dir": "runs/20260420_153144_bf16_gemm_v1_c550d79",
-  "source_summary_json": "runs/20260420_153144_bf16_gemm_v1_c550d79/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_154403_bf16_gemm_v1_153bda2",
+  "source_run_dir": "runs/20260420_154403_bf16_gemm_v1_153bda2",
+  "source_summary_json": "runs/20260420_154403_bf16_gemm_v1_153bda2/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Retune PTX Hot-Band Group Traversal Around The 6-Row Window",
-      "hypothesis": "The move from the regressed non-PTX sibling back to the PTX microkernel recovered DRAM and runtime, so the live opportunity is now inside the grouped-row mapping itself rather than in broad kernel-family swaps. Keeping the mid-width 6-row window but changing how `physical_pid` is translated into `logical_block_x/logical_block_y` should preserve the recovered memory locality while reducing the residual long-scoreboard cost that still trails the earlier PTX baseline.",
-      "expected_bottleneck": "Hot-band orchestration locality and CTA traversal order inside the PTX microkernel, visible as long-scoreboard pressure with DRAM and L2 acting as guardrails.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153",
-        "src/kernels/bf16_gemm_v1.cu:1946-1963",
-        "src/kernels/bf16_gemm_v1.cu:2074-2083"
-      ],
-      "risk": "Low to medium. This stays inside the recovered PTX family and does not reopen a closed broad branch, but the upside may be limited if the remaining loss is no longer driven by CTA ordering.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness"
-      ],
-      "stop_condition": "Stop this line if one bounded traversal change keeps DRAM/L2 near the current run but still does not reduce long-scoreboard or improve runtime over 25.76332855 ms."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim PTX Export Syncs Without Reopening The Paired-Scratch Family",
-      "hypothesis": "The current PTX path already restored the single-stage zero-padding export scratch, but the helper still executes a `__syncwarp()` for every tile as it walks the 64x64 export recursion. A smaller helper rewrite that batches or reorders the per-row export inside the existing single-stage scratch could cut scoreboard and sync overhead without reintroducing the two-stage paired-scratch variant that already measured negative.",
-      "expected_bottleneck": "PTX export-side synchronization and shared-to-global store orchestration in the hot-band epilogue.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:925-947",
-        "src/kernels/bf16_gemm_v1.cu:1007-1047",
-        "src/kernels/bf16_gemm_v1.cu:2025-2027"
-      ],
-      "risk": "Medium. The surface is still bounded, but it is close to a previously closed family, so the implementation must avoid silently recreating the paired-lifetime path that already regressed.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "correctness"
-      ],
-      "stop_condition": "Abandon this family if the helper cleanup raises DRAM or barrier cost or drifts back toward the closed paired-export behavior without a runtime gain."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Retune PTX Prefetch Handoff In The K Loop",
-      "hypothesis": "With the PTX path restored and registers unchanged, the remaining gap may come from when the future tile is staged rather than from CTA grouping alone. A bounded retime of the `cp.async` wait/commit handoff or the A/B staging order in the PTX microkernel can test whether the lingering long-scoreboard is a feed-latency problem instead of a traversal problem.",
-      "expected_bottleneck": "Copy-pipeline depth and handoff timing in the PTX hot-band steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1975-1989",
-        "src/kernels/bf16_gemm_v1.cu:1991-2020",
-        "src/kernels/bf16_gemm_v1.cu:1056-1099"
-      ],
-      "risk": "Medium. This is a real alternative family, but a previous non-PTX cadence retime was weak, so the gain here depends on PTX-specific overlap rather than generic two-stage timing.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop after one bounded retime if the stall mix merely shifts between barrier and scoreboard without improving runtime."
-    }
-  ],
-  "notes": "Round 1/17 diagnosis for run 20260420_153144_bf16_gemm_v1_c550d79. Human-review mapping: accept narrow PTX-adjacent follow-ups on top of the restored zero-padding PTX baseline; defer pure baseline-restore work because the loop already anchored a new accepted base at 25.76332855 ms; reject reopening broad default-promotion, staged K32, paired export-lifetime, and helper-flattening families. The latest run recovered the PTX path and pulled DRAM back down to 11.52%, but it still trails the earlier PTX baseline because long-scoreboard rose to 7.79 while tensor activity stayed flat near 48%. That makes grouped traversal the best next move, with export-helper cleanup and PTX-specific prefetch retiming as the two secondary families."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
