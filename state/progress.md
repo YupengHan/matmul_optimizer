@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `af42390db4796a6bfb2b8e1b21751cf877ed7a86`
-- plateau counter: `24`
-- round loop: `round 83/100`
-- rounds remaining: `18`
-- notes: `Node C build succeeded for round 83/100. Node A will now measure the new code path.`
+- latest measured commit: `84de30b73776656fed997f60535082ce957bc002`
+- plateau counter: `25`
+- round loop: `round 84/100`
+- rounds remaining: `17`
+- notes: `Node A completed round 83/100. Run node_b to continue round 84/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_120349_bf16_gemm_v1_af42390`
-- run dir: `runs/20260420_120349_bf16_gemm_v1_af42390`
+- run id: `20260420_120552_bf16_gemm_v1_84de30b`
+- run dir: `runs/20260420_120552_bf16_gemm_v1_84de30b`
 - correctness: `PASS`
-- median runtime: `25.904127 ms`
-- TFLOP/s: `28.065776 TFLOP/s`
+- median runtime: `25.944464 ms`
+- TFLOP/s: `28.022141 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_120428`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 83/100 diagnosis for run 20260420_120349_bf16_gemm_v1_af42390. The bounded 128x128 two-stage cadence experiment is now effectively closed as a distinct next step: it was flat-to-slightly-negative versus the best PTX baseline, with runtime 25.90412712 ms, barrier 5.24, mio 3.00, but dram 30.18 and long scoreboard 7.22. The paired-export-lifetime variant remains closed-negative, and the best current baseline stays the PTX microkernel default with zero export padding. The next work should target long-scoreboard reduction at the PTX hot-band grouping / orchestration boundary or use another narrow PTX-adjacent control path, not reopen the closed broad families.`
-- dir_01: Tighten PTX Hot-Band Grouping For Long-Scoreboard | bottleneck: Long-scoreboard stalls caused by hot-band orchestration, grouped-row mapping, and tail handoff in the PTX microkernel path.
-- dir_02: Low-Risk PTX Export-Side Cleanup | bottleneck: Residual address-generation and scratch-lifetime overhead in the PTX store helpers.
-- dir_03: Use The Non-PTX 128x128 Sibling As A Control | bottleneck: PTX export/store complexity versus a simpler non-PTX 128x128 feed path.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `82`
-- remaining rounds: `18`
-- current round label: `round 83/100`
+- completed rounds: `83`
+- remaining rounds: `17`
+- current round label: `round 84/100`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_084915_bf16_gemm_v1_4e5579e`
 - accepted base measured commit: `4e5579ec72e9b1f05820c895c0315235d66f30cd`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 83/100. Node A will measure the result next.`
+- notes: `Completed round 83/100. Continue with node_b for round 84/100. Accepted base: 20260420_084915_bf16_gemm_v1_4e5579e at 24.570881 ms.`
 
 ## Last completed round
 
-- round: `82/100`
+- round: `83/100`
 - direction: `dir_01`
-- direction name: `Bound The 128x128 Two-Stage Feed Cadence`
+- direction name: `Tighten PTX Hot-Band Grouping For Long-Scoreboard`
 - verdict: `regressed`
-- runtime delta: `+0.066559 ms`
-- TFLOP/s delta: `-0.072299 TFLOP/s`
-- run dir: `runs/20260420_120349_bf16_gemm_v1_af42390`
-- ncu rep path: `runs/20260420_120349_bf16_gemm_v1_af42390/ncu_profile.ncu-rep`
+- runtime delta: `+0.040337 ms`
+- TFLOP/s delta: `-0.043635 TFLOP/s`
+- run dir: `runs/20260420_120552_bf16_gemm_v1_84de30b`
+- ncu rep path: `runs/20260420_120552_bf16_gemm_v1_84de30b/ncu_profile.ncu-rep`
