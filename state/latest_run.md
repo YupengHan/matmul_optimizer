@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_011121_bf16_gemm_v1_e0ebab7`
-- run dir: `runs/20260420_011121_bf16_gemm_v1_e0ebab7`
-- kernel tag: `bf16_gemm_v1_e0ebab7`
-- round label: `round 36/100`
+- run id: `20260420_011851_bf16_gemm_v1_f8e7058`
+- run dir: `runs/20260420_011851_bf16_gemm_v1_f8e7058`
+- kernel tag: `bf16_gemm_v1_f8e7058`
+- round label: `round 37/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.128304 ms`
-- p10 runtime: `25.891491 ms`
-- p90 runtime: `27.641546 ms`
-- TFLOP/s: `27.824976 TFLOP/s`
-- previous run id: `20260420_010120_bf16_gemm_v1_d52137a`
-- runtime delta vs previous measured run: `+0.034736 ms`
-- TFLOP/s delta vs previous measured run: `-0.037041 TFLOP/s`
+- median runtime: `26.150880 ms`
+- p10 runtime: `25.896847 ms`
+- p90 runtime: `27.822592 ms`
+- TFLOP/s: `27.800955 TFLOP/s`
+- previous run id: `20260420_011121_bf16_gemm_v1_e0ebab7`
+- runtime delta vs previous measured run: `+0.022576 ms`
+- TFLOP/s delta vs previous measured run: `-0.024022 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Rewrite active PTX hot-band B delivery at the consumer boundary without CTA repack`
+- implemented direction name: `Keep the active PTX B-fragment reuse, but rewrite warp-local sequencing to shrink the new short-scoreboard and barrier cost`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_011121_bf16_gemm_v1_e0ebab7/summary.json`
-- measured commit: `e0ebab7aeabd6cd1f0c37da10ad81e949407df7d`
+- raw summary json: `runs/20260420_011851_bf16_gemm_v1_f8e7058/summary.json`
+- measured commit: `f8e7058c29b7f3cee19fb36701f9b82e048961e5`
 - new best custom: `no`
-- generated at: `2026-04-20T01:11:27-07:00`
+- generated at: `2026-04-20T01:18:58-07:00`
