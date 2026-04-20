@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_201001_bf16_gemm_v1_b65fd6c`
-- run dir: `runs/20260419_201001_bf16_gemm_v1_b65fd6c`
-- kernel tag: `bf16_gemm_v1_b65fd6c`
-- round label: `round 20/20`
+- run id: `20260419_202711_bf16_gemm_v1_5135c1d`
+- run dir: `runs/20260419_202711_bf16_gemm_v1_5135c1d`
+- kernel tag: `bf16_gemm_v1_5135c1d`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.371328 ms`
-- p10 runtime: `29.872829 ms`
-- p90 runtime: `31.813370 ms`
-- TFLOP/s: `23.937689 TFLOP/s`
-- previous run id: `20260419_200457_bf16_gemm_v1_76622e3`
-- runtime delta vs previous measured run: `-0.966656 ms`
-- TFLOP/s delta vs previous measured run: `+0.738385 TFLOP/s`
+- median runtime: `30.310320 ms`
+- p10 runtime: `29.865677 ms`
+- p90 runtime: `30.875955 ms`
+- TFLOP/s: `23.985871 TFLOP/s`
+- previous run id: `20260419_201001_bf16_gemm_v1_b65fd6c`
+- runtime delta vs previous measured run: `-0.061008 ms`
+- TFLOP/s delta vs previous measured run: `+0.048182 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `dir_01`
-- implemented direction name: `Human idea 5 Bank conflict fallback: restore the accepted 64x384 base and try a warp-local B-consumer transform with zero extra CTA repack`
-- implemented selection mode: `recommended`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_201001_bf16_gemm_v1_b65fd6c/summary.json`
-- measured commit: `b65fd6c9b56a7711ee54102f33273f1dbf9c1f66`
+- raw summary json: `runs/20260419_202711_bf16_gemm_v1_5135c1d/summary.json`
+- measured commit: `5135c1d6edb580191a96d8c6d9b47cb3ec8b96be`
 - new best custom: `no`
-- generated at: `2026-04-19T20:10:10-07:00`
+- generated at: `2026-04-19T20:27:20-07:00`
