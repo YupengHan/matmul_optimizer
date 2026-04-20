@@ -6,57 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `22b4466b0ff3ca82c4a03efa03d07462cb5ca69c`
+- latest measured commit: `17a33b29fc2405c9fb3c5602d09a1c52bc42b32d`
 - plateau counter: `0`
-- round loop: `round 47/100`
-- rounds remaining: `54`
-- notes: `Node C build succeeded for round 47/100. Node A will now measure the new code path.`
+- round loop: `round 48/100`
+- rounds remaining: `53`
+- notes: `Node A completed round 47/100. Run node_b to continue round 48/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_073721_bf16_gemm_v1_22b4466`
-- run dir: `runs/20260420_073721_bf16_gemm_v1_22b4466`
+- run id: `20260420_074331_bf16_gemm_v1_17a33b2`
+- run dir: `runs/20260420_074331_bf16_gemm_v1_17a33b2`
 - correctness: `PASS`
-- median runtime: `25.677312 ms`
-- TFLOP/s: `28.313689 TFLOP/s`
+- median runtime: `25.529328 ms`
+- TFLOP/s: `28.477812 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 - result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_073749`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `- Context: round 46's grouped-row traversal moved the measured median runtime from 26.892288 ms to 25.677312 ms, set a new best custom run, and already beat the local CUTLASS baseline, but the user goal is still <20 ms so winning the baseline is only a waypoint.
-- Hotspot weighting: the dominant profile cost is still the grouped 128x128 PTX hot-band kernel; the peeled 64x384 and tiny tail kernel are much smaller, so diagnosis ranking stays focused on the hot band.
-- Headline delta read: tensor active 48.24 -> 48.22 was basically flat, warps active 16.68 -> 16.86 ticked up, barrier 8.48 -> 7.63 fell, short scoreboard 2.03 -> 1.91 fell, and long scoreboard 1.42 -> 1.29 fell. This says the gain came from cleaner feed/locality rather than a new compute schedule.
-- Coalescing Access: partially validated already. Grouped-row likely fixed the most important access-order waste, so I am not ranking generic vectorization/coalescing changes first.
-- Data Reuse: strongly supported. dram throughput dropping to 12.90% while lts throughput returned to 29.45% is the clearest sign that the grouped-row remap improved cross-CTA reuse, so dir_01 keeps pushing this family.
-- Async Copy: already present and functional through cp.async, so the question is not whether to add async copy but whether the cadence and recycle timing are still optimal. That makes Async Copy a lower-priority refinement, not the lead move.
-- Bank Conflict: still worth watching. The hot-band kernel shows non-trivial l1tex bank read/write activity, so some of the remaining feed pain may still be hidden as shared-bank friction rather than pure DRAM latency.
-- L2 Cache: the current profile most clearly endorses this family. Locality got better without raising tensor active, which is why the top recommendation stays on grouped-row/L2/feed refinement.
-- Register Reuse: still a live secondary family. The 128x128 PTX microkernel keeps tight accumulator/export state, but its mirrored-column B reload pattern suggests there is still room to trade a little register reuse for fewer ps2r/shared reloads if occupancy survives.
-- Pg2s: no longer the lead suspect. The global-to-shared path is already 16-byte cp.async based, and the dramatic DRAM drop says gross pg2s inefficiency is not the main thing blocking <20 ms.
-- Ps2r: still attractive. The PTX hot-band path reloads B fragments per row pair instead of using the lookahead pattern that exists elsewhere, so dir_02 explicitly re-tests this family under the new locality regime.
-- Stage: worth re-evaluating, but only third. Barrier improved enough that stage cadence no longer looks like the primary limiter, yet 7.63% barrier is still high enough to justify a controlled K16 vs K32 check after the higher-confidence feed and ps2r ideas.`
-- dir_01: Tighten Grouped-Row L2 Feed In The 128x128 PTX Hot Band | bottleneck: Residual hot-band L2-to-shared feed inefficiency in the dominant 128x128 PTX microkernel, showing up as remaining mio_throttle plus modest shared-bank pressure even after locality improved.
-- dir_02: Trim PTX Hot-Band Ps2r Live Range Without Losing Occupancy | bottleneck: Compute-side fragment feed and shared-to-register pressure inside the hot-band PTX microkernel, contributing to residual mio_throttle and leaving tensor active essentially flat even after the locality fix.
-- dir_03: Re-evaluate K16 Versus K32 Stage Cadence After Locality Recovery | bottleneck: Steady-state cp.async handoff cadence and CTA sync frequency in the 128x128 hot band, with risk that a deeper per-stage payload raises shared pressure faster than it reduces barriers.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-0.240577 ms`, `0.990718x` slower than CUTLASS
+- current best custom gap: `-0.388560 ms`, `0.985008x` slower than CUTLASS

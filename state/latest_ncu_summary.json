@@ -1,7 +1,7 @@
 {
   "status": "available",
-  "source_run_id": "20260420_073721_bf16_gemm_v1_22b4466",
-  "source_run_dir": "runs/20260420_073721_bf16_gemm_v1_22b4466",
+  "source_run_id": "20260420_074331_bf16_gemm_v1_17a33b2",
+  "source_run_dir": "runs/20260420_074331_bf16_gemm_v1_17a33b2",
   "kernel_name": null,
   "block_size": null,
   "grid_size": null,
@@ -9,19 +9,19 @@
   "shared_mem_per_block_allocated": null,
   "headline_metrics": {
     "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.22",
-    "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.62",
-    "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.38",
-    "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.90",
-    "lts__throughput.avg.pct_of_peak_sustained_elapsed": "29.45",
-    "sm__warps_active.avg.pct_of_peak_sustained_active": "16.86",
-    "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "7.63",
-    "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "1.29",
-    "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "1.91",
-    "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "4.67",
+    "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.61",
+    "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.37",
+    "dram__throughput.avg.pct_of_peak_sustained_elapsed": "10.37",
+    "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.02",
+    "sm__warps_active.avg.pct_of_peak_sustained_active": "16.64",
+    "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "7.18",
+    "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "1.30",
+    "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "1.89",
+    "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "4.77",
     "launch__occupancy_limit_registers": "2"
   },
-  "raw_csv_path": "runs/20260420_073721_bf16_gemm_v1_22b4466/ncu_metrics.csv",
-  "raw_rep_path": "runs/20260420_073721_bf16_gemm_v1_22b4466/ncu_profile.ncu-rep",
-  "raw_details_csv_path": "runs/20260420_073721_bf16_gemm_v1_22b4466/ncu_details.csv",
-  "generated_at": "2026-04-20T07:37:28-07:00"
+  "raw_csv_path": "runs/20260420_074331_bf16_gemm_v1_17a33b2/ncu_metrics.csv",
+  "raw_rep_path": "runs/20260420_074331_bf16_gemm_v1_17a33b2/ncu_profile.ncu-rep",
+  "raw_details_csv_path": "runs/20260420_074331_bf16_gemm_v1_17a33b2/ncu_details.csv",
+  "generated_at": "2026-04-20T07:43:38-07:00"
 }

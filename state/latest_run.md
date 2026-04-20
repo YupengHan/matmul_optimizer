@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_073721_bf16_gemm_v1_22b4466`
-- run dir: `runs/20260420_073721_bf16_gemm_v1_22b4466`
-- kernel tag: `bf16_gemm_v1_22b4466`
-- round label: `round 46/100`
+- run id: `20260420_074331_bf16_gemm_v1_17a33b2`
+- run dir: `runs/20260420_074331_bf16_gemm_v1_17a33b2`
+- kernel tag: `bf16_gemm_v1_17a33b2`
+- round label: `round 47/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.677312 ms`
-- p10 runtime: `25.255821 ms`
-- p90 runtime: `26.921430 ms`
-- TFLOP/s: `28.313689 TFLOP/s`
-- previous run id: `20260420_073148_bf16_gemm_v1_ed2153e`
-- runtime delta vs previous measured run: `-1.214976 ms`
-- TFLOP/s delta vs previous measured run: `+1.279194 TFLOP/s`
+- median runtime: `25.529328 ms`
+- p10 runtime: `25.279283 ms`
+- p90 runtime: `26.477443 ms`
+- TFLOP/s: `28.477812 TFLOP/s`
+- previous run id: `20260420_073721_bf16_gemm_v1_22b4466`
+- runtime delta vs previous measured run: `-0.147984 ms`
+- TFLOP/s delta vs previous measured run: `+0.164123 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Port Grouped-Row Traversal Into The Active PTX 128x128 Hot Band`
+- implemented direction name: `Tighten Grouped-Row L2 Feed In The 128x128 PTX Hot Band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_073721_bf16_gemm_v1_22b4466/summary.json`
-- measured commit: `22b4466b0ff3ca82c4a03efa03d07462cb5ca69c`
+- raw summary json: `runs/20260420_074331_bf16_gemm_v1_17a33b2/summary.json`
+- measured commit: `17a33b29fc2405c9fb3c5602d09a1c52bc42b32d`
 - new best custom: `yes`
-- generated at: `2026-04-20T07:37:28-07:00`
+- generated at: `2026-04-20T07:43:38-07:00`
