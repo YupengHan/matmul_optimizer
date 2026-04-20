@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_180238_bf16_gemm_v1_24b96ad`
-- run dir: `runs/20260419_180238_bf16_gemm_v1_24b96ad`
-- kernel tag: `bf16_gemm_v1_24b96ad`
-- round label: `round 7/20`
+- run id: `20260419_180828_bf16_gemm_v1_512448e`
+- run dir: `runs/20260419_180828_bf16_gemm_v1_512448e`
+- kernel tag: `bf16_gemm_v1_512448e`
+- round label: `round 8/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `35.853312 ms`
-- p10 runtime: `35.420058 ms`
-- p90 runtime: `36.710503 ms`
-- TFLOP/s: `20.277609 TFLOP/s`
-- previous run id: `20260419_174642_bf16_gemm_v1_52a3af6`
-- runtime delta vs previous measured run: `+2.136576 ms`
-- TFLOP/s delta vs previous measured run: `-1.284960 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `35.694593 ms`
+- p10 runtime: `35.171795 ms`
+- p90 runtime: `36.519927 ms`
+- TFLOP/s: `20.367774 TFLOP/s`
+- previous run id: `20260419_180238_bf16_gemm_v1_24b96ad`
+- runtime delta vs previous measured run: `-0.158718 ms`
+- TFLOP/s delta vs previous measured run: `+0.090166 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 10 Stage: structural pivot to a true deeper hot-band pipeline, budgeted around the export path`
+- implemented direction name: `Human idea 10 Stage: repair the 3-stage family with an explicit terminal CTA handoff before export overlay reuse`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_180238_bf16_gemm_v1_24b96ad/summary.json`
-- measured commit: `24b96ad3cf56a64238eb7c32cb3f4aa09b31aaca`
+- raw summary json: `runs/20260419_180828_bf16_gemm_v1_512448e/summary.json`
+- measured commit: `512448e87bfb00e777dbbd630fd73e756635f6c9`
 - new best custom: `no`
-- generated at: `2026-04-19T18:02:47-07:00`
+- generated at: `2026-04-19T18:08:37-07:00`

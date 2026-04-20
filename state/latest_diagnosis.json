@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_180512",
-  "status": "completed",
-  "created_at": "2026-04-19T18:05:12-07:00",
-  "source_run_id": "20260419_180238_bf16_gemm_v1_24b96ad",
-  "source_run_dir": "runs/20260419_180238_bf16_gemm_v1_24b96ad",
-  "source_summary_json": "runs/20260419_180238_bf16_gemm_v1_24b96ad/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_180828_bf16_gemm_v1_512448e",
+  "source_run_dir": "runs/20260419_180828_bf16_gemm_v1_512448e",
+  "source_summary_json": "runs/20260419_180828_bf16_gemm_v1_512448e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 10 Stage: repair the 3-stage family with an explicit terminal CTA handoff before export overlay reuse",
-      "hypothesis": "Mapping: this is a continue-family move on human idea 10, Stage multi-buffering. Round 7 is too strong to throw away: registers fell from 167 to 132, barrier from 14.30 to 4.63, long-scoreboard from 6.21 to 1.27, and mio from 2.30 to 0.68. That is far larger signal than any prior family. The current failure mode looks implementation-specific instead of conceptual: the hot kernel overlays export scratch on top of b_shared via `float* c_shared = reinterpret_cast<float*>(b_shared);` and then launches shared export immediately after the final accumulate sequence, but there is no dedicated CTA-wide handoff that proves every warp is finished reading the last B stage before any warp begins writing export scratch into the overlaid storage. The best next move is therefore to keep the 3-stage branch alive and repair that terminal ownership transition explicitly.",
-      "expected_bottleneck": "The main blocker looks like a correctness and data-handoff bug in the stage/export ownership transition, not a lack of stage-family upside.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:862-896",
-        "src/kernels/bf16_gemm_v1.cu:916-920",
-        "src/kernels/bf16_gemm_v1.cu:922-945",
-        "src/kernels/bf16_gemm_v1.cu:985-1009"
-      ],
-      "risk": "Medium risk. If the supervisor suspicion is right, this is a fixable bug and the family stays live. If the runtime remains poor after correctness is restored, then the family may be winning some stalls only by starving or deferring other work. Even so, this is the highest-ceiling move with the best measured signal on the table.",
-      "metrics_to_recheck": [
-        "correctness cases passed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if correctness is still not restored after an explicit terminal CTA handoff, or if correctness passes but the stage branch still remains materially slower than the accepted base while losing most of its stall advantages."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 10 Stage: keep the 3-stage pipeline but remove b_shared export aliasing as the ownership model",
-      "hypothesis": "Mapping: this is also human idea 10, but via a materially different mechanism from dir_01. If the overlay-on-b_shared model itself is the problem rather than just a missing fence, then the next stage-family repair is to keep the 3-stage hot loop and its overlap behavior, but stop using live B-stage storage as the export backing store. That can mean transferring export ownership onto a proven-dead backing region after the final stage is consumed, or using a different export path that no longer requires `reinterpret_cast<float*>(b_shared)` to be the scratch buffer. The point is to preserve the stage-family signal while removing the most suspicious aliasing pattern entirely.",
-      "expected_bottleneck": "The current stage branch may be corrupting correctness and performance through unsafe scratch ownership rather than through the stage depth itself.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:410-500",
-        "src/kernels/bf16_gemm_v1.cu:916-920",
-        "src/kernels/bf16_gemm_v1.cu:922-945",
-        "src/kernels/bf16_gemm_v1.cu:1003-1009"
-      ],
-      "risk": "High risk. This direction preserves the stage family but changes the export ownership model more deeply, which can erase part of the branch's shared-memory budget advantage. It stays high-ranked because the family signal is unusually strong, but it is a larger rewrite than dir_01.",
-      "metrics_to_recheck": [
-        "correctness cases passed",
-        "launch__shared_mem_per_block_allocated",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if correctness still fails after removing the b_shared alias model, or if the corrected branch gives back most of the stage-family stall improvements without recovering runtime."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 9 Ps2r: bounded fallback pivot to the last correct feed-path family",
-      "hypothesis": "Mapping: this direction is a pivot fallback to human idea 9, Ps2r. The reason to keep it in the ranked set is not because it has the highest ceiling, but because it is the last family that produced correct runs and one real stall improvement against the accepted base. If the stage branch turns out to be too fragile or too expensive to repair quickly, the practical alternative is to restore the accepted base surface and take one bounded Ps2r continuation that preserves the simple round-5 signal while avoiding the round-6 slice-local nesting that gave it back. This is intentionally a fallback, not the recommended path, because the target is 20 ms and the stage family is the first branch to show a genuinely structural stall shift.",
-      "expected_bottleneck": "Warp-local shared-to-register latency remains a real but lower-ceiling limiter that can still offer controlled gains if the stage branch is not repairable.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:279-305",
-        "src/kernels/bf16_gemm_v1.cu:394-408",
-        "src/kernels/bf16_gemm_v1.cu:807-825",
-        "src/kernels/bf16_gemm_v1.cu:968-1001"
-      ],
-      "risk": "Medium risk and intentionally lower ceiling. This is safer because it returns to a correct branch, but the measured evidence so far says Ps2r alone is unlikely to bridge the large gap to 20 ms.",
-      "metrics_to_recheck": [
-        "correctness cases passed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the family cannot recover at least the round-5 long-scoreboard gain on a correct run, or if it keeps moving only small stalls without producing a credible path toward larger speedups."
-    }
-  ],
-  "notes": "Audit of the 10 human idea families for round 8 on the current round-7 stage-branch source and measured run 24b96ad. Recommendation type: continue-family move. The diagnosis explicitly keeps human idea 10, Stage, alive for another round because the stall signature changed too dramatically to treat it as a dead family after one broken implementation. Per-idea status: (1) Tiling 256x128 block / 64x64 warp = defer, because it is a structural family with possible ceiling, but the live stage branch provides much stronger direct signal right now than abandoning the 64x384 PTX line before repairing correctness. (2) Coalescing Access = accept-now as already present in the current kernel through 16-byte wide accesses; not the current bottleneck. (3) Data Reuse through shared memory = accept-now as already core and directly relevant to the current export-storage ownership problem. (4) Async Copy = accept-now as already core; the stage family is its deepest current expression. (5) Bank Conflict = defer, because the current dominant issue is correctness/handoff on the stage branch, not bank behavior. (6) L2 Cache swizzle = reject-for-this-round, because the current measurements do not support cache locality as the main problem. (7) Register Reuse RLRL = defer, because it is plausible later but lower priority than repairing the live stage branch. (8) Pg2s = accept-now as already present and foundational to the stage family. (9) Ps2r = defer, not reject; it remains the bounded fallback family because it produced correct runs and one real signal, but it is not the primary branch while idea 10 still looks fixable. (10) Stage multi-buffer = accept-now and recommended again, because round 7 combined major reductions in barrier, long-scoreboard, mio, and registers with a suspicious correctness bug around overlaid export storage. Additional negative evidence still in force: no explicit half-panel mma.sync compute rewrite, no pair-compaction retry, no panelized B-load reorder, no helper/lifetime compaction as the main lever, and no near-neighbor handoff-retime retry."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
