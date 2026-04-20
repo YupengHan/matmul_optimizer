@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_223856_bf16_gemm_v1_9e7679d`
-- run dir: `runs/20260419_223856_bf16_gemm_v1_9e7679d`
-- kernel tag: `bf16_gemm_v1_9e7679d`
-- round label: `round 2/50`
+- run id: `20260419_224922_bf16_gemm_v1_797c137`
+- run dir: `runs/20260419_224922_bf16_gemm_v1_797c137`
+- kernel tag: `bf16_gemm_v1_797c137`
+- round label: `round 3/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.578688 ms`
-- p10 runtime: `30.112972 ms`
-- p90 runtime: `31.819577 ms`
-- TFLOP/s: `23.775364 TFLOP/s`
-- previous run id: `20260419_223649_bf16_gemm_v1_848bad7`
-- runtime delta vs previous measured run: `+0.222208 ms`
-- TFLOP/s delta vs previous measured run: `-0.174035 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `30.461472 ms`
+- p10 runtime: `29.642208 ms`
+- p90 runtime: `31.714817 ms`
+- TFLOP/s: `23.866852 TFLOP/s`
+- previous run id: `20260419_223856_bf16_gemm_v1_9e7679d`
+- runtime delta vs previous measured run: `-0.117216 ms`
+- TFLOP/s delta vs previous measured run: `+0.091488 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea bank conflict: increase the hot-band B shared-memory padding from +8 to +16 elements`
+- implemented direction name: `Restore the best surface and replace the last 64 hot rows with a dedicated 64x128 residual PTX kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_223856_bf16_gemm_v1_9e7679d/summary.json`
-- measured commit: `9e7679d84de81ed2499e78ee6e3285f74206a441`
+- raw summary json: `runs/20260419_224922_bf16_gemm_v1_797c137/summary.json`
+- measured commit: `797c137cc3c66a42beb82a28e0e8e5010cb2f59b`
 - new best custom: `no`
-- generated at: `2026-04-19T22:39:04-07:00`
+- generated at: `2026-04-19T22:49:30-07:00`

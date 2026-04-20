@@ -1,72 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_223942",
-  "status": "completed",
-  "created_at": "2026-04-19T22:39:42-07:00",
-  "source_run_id": "20260419_223856_bf16_gemm_v1_9e7679d",
-  "source_run_dir": "runs/20260419_223856_bf16_gemm_v1_9e7679d",
-  "source_summary_json": "runs/20260419_223856_bf16_gemm_v1_9e7679d/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_224922_bf16_gemm_v1_797c137",
+  "source_run_dir": "runs/20260419_224922_bf16_gemm_v1_797c137",
+  "source_summary_json": "runs/20260419_224922_bf16_gemm_v1_797c137/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the best surface and replace the last 64 hot rows with a dedicated 64x128 residual PTX kernel",
-      "hypothesis": "The recent hot-band micro-tuning attempts are mostly noise or regressions, and the latest best custom still comes from the restored pre-experiment surface. The largest untouched structural opportunity is no longer inside the 256x128 hot-band body, but in the last 64 hot rows that still fall back to the 384-wide peeled kernel. Those rows match one 64x128 warp-local PTX tile perfectly, so a dedicated residual-hot-band kernel can keep the same 64x64 warp microkernel and export path while avoiding the heavier 384 peeled path for that final strip.",
-      "expected_bottleneck": "Residual hot-row overhead from routing the last 64 rows through the generic 384 peeled kernel instead of a matching fixed-shape PTX path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile256x128",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Moderate to high. This is a larger structural change than the recent local tweaks, but it reuses the existing hot-band PTX machinery instead of inventing a new microkernel family.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "runs/*/ncu_details.csv peeled kernel gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Reject if the residual-hot-band kernel does not remove or materially reduce the peeled-kernel cost, or if correctness breaks."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore-only fallback to the current best surface",
-      "hypothesis": "If the residual-hot-band kernel grows too large or fails validation, the safest move is to restore the current best measured surface immediately instead of staying on the padded-B branch.",
-      "expected_bottleneck": "Not a bottleneck attack; this is the restore path after a negative bank-padding experiment.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. This keeps the loop aligned with the best measured branch.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime"
-      ],
-      "stop_condition": "Use this if the residual kernel does not validate quickly."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Later: revisit export trimming only after the residual path is specialized",
-      "hypothesis": "If the 64-row residual path becomes another PTX hot-band variant, the export helper becomes a more central shared component across both hot regions. That would be a better time to revisit export trimming than the earlier standalone export experiment.",
-      "expected_bottleneck": "Shared epilogue/export overhead after the residual path has been unified with the PTX hot-band family.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64"
-      ],
-      "risk": "Moderate. Deferred on purpose until the larger structural change is settled.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
-      ],
-      "stop_condition": "Do not spend a round here until the residual-hot-band path is resolved."
-    }
-  ],
-  "notes": "Round 3/50 starts from another small bank-padding regression. The hot-band path remains dominant, and the recent local layout/export tweaks have not produced a durable win. Recommended direction dir_01 therefore moves to a larger but still coherent structural change: restore the current best surface and replace the final 64 hot rows with a dedicated 64x128 residual PTX kernel so those rows stop paying the 384 peeled path. Dir_02 is the restore fallback if that kernel does not validate quickly, and dir_03 defers any more export work until the residual path is specialized."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
