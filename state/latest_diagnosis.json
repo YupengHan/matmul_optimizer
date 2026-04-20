@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_221629",
+  "status": "completed",
+  "created_at": "2026-04-19T22:16:29-07:00",
   "source_run_id": "20260419_221542_bf16_gemm_v1_6ae3d5d",
   "source_run_dir": "runs/20260419_221542_bf16_gemm_v1_6ae3d5d",
   "source_summary_json": "runs/20260419_221542_bf16_gemm_v1_6ae3d5d/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "human-idea",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea bank conflict: reverse the mirrored 64x64 B sweep into a `Right Left Right Left` order",
+      "hypothesis": "The current hot-band PTX path is still living on the B-consumer improvements: it keeps `mio_throttle` low, but short scoreboard is still about 6.77 and tensor active is still stuck around 38.57% with one-CTA occupancy. The user specifically asked to keep future bank-conflict work warp-local and avoid any extra shared-memory footprint. The cleanest next experiment is therefore to keep the same shared layout, same stage depth, and same one-fragment B lookahead, but replace the current edge-in mirrored order with the opposite `Right Left Right Left` sweep so the warp touches the right-most column tile first and alternates back across the 64x64 micro-tile.",
+      "expected_bottleneck": "Residual warp-local B delivery / bank behavior inside the 64x64 hot-band consumer path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64"
+      ],
+      "risk": "Moderate. The change is local and respects the no-extra-shared rule, but the current sweep is already measured and a different order can easily regress feed behavior.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if the alternate sweep raises `mio_throttle`, raises registers, or slows the hot-band kernel."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea stage: peel the hot-band K loop into fixed-shape prologue / steady-state / epilogue",
+      "hypothesis": "The hot-band kernel is already fully fixed-shape, but its inner loop still carries `future_tile_idx < FixedKTiles` and `next_tile_idx < FixedKTiles` branch logic every iteration under `#pragma unroll 1`. A second human-idea-aligned direction is to split the loop into prologue, steady-state, and epilogue so the common case stops paying those control branches and stage-transition checks on every K tile.",
+      "expected_bottleneck": "Fixed-shape control-flow and stage-transition overhead inside the hot-band pipeline.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "Moderate. The idea is structurally simple, but the hot-band kernel is already delicate and previous steady-state specialization attempts elsewhere were not clear wins.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if the hot-band time does not improve or if the peeled schedule increases barrier overhead."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea coalescing + async copy: retune hot-band cp.async ownership into contiguous warp stripes",
+      "hypothesis": "If the next gain is still on staging rather than consumer ordering, the remaining human-idea path is to preserve the current best shared layout but change which threads own which `cp.async` copies so each warp stages more contiguous A or B stripes. That can change LSU issue regularity without reopening the failed producer-only specialization branch.",
+      "expected_bottleneck": "Global-to-shared staging issue regularity and instruction ownership rather than raw bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "Moderate. The code surface is contained, but the copy rhythm can easily regress if the current ownership is already balanced.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if barrier stall or hot-band time gets worse."
+    }
+  ],
+  "notes": "Round 7/30 starts from the same implementation surface as the previously measured best custom, although the latest remeasurement landed closer to 30.30 ms than 29.43 ms. The code surface is therefore stable enough to continue experimentation without another restore-only round. Recommended direction dir_01 now follows the user-provided bank-conflict / register-reuse guidance directly: keep everything footprint-neutral and warp-local, but reverse the 64x64 B-consumer sweep into a `Right Left Right Left` order so the hot-band PTX path tests a different operand-delivery pattern. Dir_02 keeps the fixed-shape stage-peeling idea in reserve for the hot-band loop, and dir_03 captures the remaining coalescing / async-copy ownership experiment."
 }

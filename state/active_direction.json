@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Human idea bank conflict: reverse the mirrored 64x64 B sweep into a `Right Left Right Left` order",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T22:17:11-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_221629",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Human idea bank conflict: reverse the mirrored 64x64 B sweep into a `Right Left Right Left` order",
+    "hypothesis": "The current hot-band PTX path is still living on the B-consumer improvements: it keeps `mio_throttle` low, but short scoreboard is still about 6.77 and tensor active is still stuck around 38.57% with one-CTA occupancy. The user specifically asked to keep future bank-conflict work warp-local and avoid any extra shared-memory footprint. The cleanest next experiment is therefore to keep the same shared layout, same stage depth, and same one-fragment B lookahead, but replace the current edge-in mirrored order with the opposite `Right Left Right Left` sweep so the warp touches the right-most column tile first and alternates back across the 64x64 micro-tile.",
+    "expected_bottleneck": "Residual warp-local B delivery / bank behavior inside the 64x64 hot-band consumer path.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64"
+    ],
+    "risk": "Moderate. The change is local and respects the no-extra-shared rule, but the current sweep is already measured and a different order can easily regress feed behavior.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "launch__registers_per_thread"
+    ],
+    "stop_condition": "Reject if the alternate sweep raises `mio_throttle`, raises registers, or slows the hot-band kernel."
+  },
+  "notes": "Node C may now implement this one direction."
 }
