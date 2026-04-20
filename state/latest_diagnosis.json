@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_235321",
+  "status": "completed",
+  "created_at": "2026-04-19T23:53:21-07:00",
   "source_run_id": "20260419_233546_bf16_gemm_v1_b42811c",
   "source_run_dir": "runs/20260419_233546_bf16_gemm_v1_b42811c",
   "source_summary_json": "runs/20260419_233546_bf16_gemm_v1_b42811c/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Make the 128x128 hot-band stage reuse safe before the next cp.async overwrite",
+      "hypothesis": "The 128x128/128-thread hot-band family is already the highest-ceiling branch we have seen, but the incorrect 28.36 ms run shows a logic race rather than a bad tile shape. The local debug reproduction indicates that adding a CTA fence immediately after each MMA consume and before reusing the same shared stage restores correctness on the failing case, which matches the human-idea families around Async Copy, Pg2s, Ps2r, and Stage more than any new tiling or bank-conflict change. Round 16 should therefore formalize that stage-reuse fix in the 128x128 K16 kernel and validate the performance cost with a full node_a measurement.",
+      "expected_bottleneck": "Barrier / stage orchestration inside the hot-band mainloop. The goal is to trade a controlled barrier increase for removing the hidden producer-consumer race while preserving the much higher tensor utilization of the 128x128 branch.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1609",
+        "src/kernels/bf16_gemm_v1.cu:1662",
+        "src/kernels/bf16_gemm_v1.cu:1676",
+        "src/kernels/bf16_gemm_v1.cu:1692"
+      ],
+      "risk": "The full CTA barrier may give back part of the 28.36 ms speedup. If tensor active collapses or barrier stall spikes into the CUTLASS gap, the fix is correct but too blunt and we will need a narrower producer-consumer fence.",
+      "metrics_to_recheck": [
+        "correctness pass rate on all benchmark cases",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the kernel is still incorrect after the stage-reuse fence, or if correctness returns but runtime regresses to no better than the accepted 64x384 baseline."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Reintroduce the 128x128x32 steady-state once the 128x128 family is correct",
+      "hypothesis": "Human ideas around multi-stage overlap, wide access, and stage depth are still the right long-term path, but the K32 branch should only be resumed after the K16 version proves the stage contract. With correctness guarded, the next upside move is to bring back the 2xK16-per-stage steady-state in the 128x128 family so the branch can spend fewer cycles on loop/control overhead and more on tensor issue.",
+      "expected_bottleneck": "Pipeline depth and control overhead in the hot-band kernel. This targets stage efficiency rather than a new macro tile.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:929",
+        "src/kernels/bf16_gemm_v1.cu:1032",
+        "src/kernels/bf16_gemm_v1.cu:1072",
+        "src/kernels/bf16_gemm_v1.cu:1754"
+      ],
+      "risk": "This direction is lower confidence until the K16 stage contract is confirmed. If taken too early it can hide the same race under a more complex control flow.",
+      "metrics_to_recheck": [
+        "correctness pass rate",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the K16-correct branch has not yet been established, or if K32 increases control complexity without lifting tensor active over the corrected K16 path."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Add an L2-friendly block-order clue only after the hot-band kernel is correct and stable",
+      "hypothesis": "The user-provided L2-cache idea is worth keeping in reserve because the corrected 128x128 family already looks closer to CUTLASS in tensor utilization, and a friendlier block launch order could improve cross-CTA B reuse. The current evidence still says this is a secondary lever: dram and lts throughput are elevated but not the dominant failure mode, while the immediate issue is stage orchestration correctness.",
+      "expected_bottleneck": "L2 reuse / CTA launch order rather than shared-memory feed. This is a compiler-scheduling clue experiment, not a first-order correctness or tensor-pipeline fix.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1732",
+        "src/runner/main.cpp:135"
+      ],
+      "risk": "CUDA gives only weak control over block issue order, so this may add complexity without a reliable gain. It should not be attempted until the hot-band branch is both correct and repeatable.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the corrected 128x128 branch is still dominated by tensor/barrier behavior rather than cache traffic, or if the change cannot be expressed without a larger kernel refactor."
+    }
+  ],
+  "notes": "Human-idea reflection for round 16: accepted as primary for this round are Async Copy, Pg2s, Ps2r, Data Reuse, and Stage because the new 128x128 family already proved the macro shape and exposed a stage-reuse race. Deferred are Coalescing Access and Bank Conflict because the failing 28.36 ms run showed low mio-throttle and low scoreboard pressure, so feed width and bank fixes are not the immediate limiter. Register Reuse is also deferred because the 128x128 family already lifted tensor active materially without a new register scheme. The L2 cache / block-order clue stays alive as a later experiment, but only after the hot-band branch is correct."
 }
