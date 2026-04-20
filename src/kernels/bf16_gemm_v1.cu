@@ -1161,7 +1161,7 @@ void launch_tensor_core_region(
 int parse_fixed_main_tile_n_override() {
   const char* raw_value = std::getenv(kFixedMainTileEnvVar);
   if (raw_value == nullptr || raw_value[0] == '\0') {
-    return 0;
+    return kDefaultFixedMainTileN;
   }
 
   char* parse_end = nullptr;
