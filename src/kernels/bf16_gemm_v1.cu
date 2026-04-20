@@ -385,50 +385,20 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384
   }
 }
 
-template <int TileBase>
-__device__ __forceinline__ void ptx_wmma_accumulate_tile_slice_ping_pong_384(
-    PtxWmmaAccTileSet384& acc_tiles,
-    const PtxWmmaBf16Fragment& a_frag,
-    const __nv_bfloat16* b_tile) {
-  static_assert(TileBase >= 0 && (TileBase + 3) < TensorCoreTile384::kWarpMmaTilesN,
-                "Tile384 ping-pong slice index out of range.");
-  PtxWmmaBf16Fragment b_frag0;
-  PtxWmmaBf16Fragment b_frag1;
-
-  ptx_wmma_load_b_row(
-      b_frag0,
-      b_tile + (TileBase + 0) * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-  ptx_wmma_load_b_row(
-      b_frag1,
-      b_tile + (TileBase + 1) * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-
-  // Keep only two consumer-side B fragments live per local slice while one
-  // fragment is feeding mma and the other is being refreshed from shared.
-  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileBase + 0>(acc_tiles), a_frag, b_frag0);
-  ptx_wmma_load_b_row(
-      b_frag0,
-      b_tile + (TileBase + 2) * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-
-  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileBase + 1>(acc_tiles), a_frag, b_frag1);
-  ptx_wmma_load_b_row(
-      b_frag1,
-      b_tile + (TileBase + 3) * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-
-  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileBase + 2>(acc_tiles), a_frag, b_frag0);
-  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileBase + 3>(acc_tiles), a_frag, b_frag1);
-}
-
+template <int TileIdx = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
     PtxWmmaAccTileSet384& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag,
     const __nv_bfloat16* b_tile) {
-  ptx_wmma_accumulate_tile_slice_ping_pong_384<0>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_tile_slice_ping_pong_384<4>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_tile_slice_ping_pong_384<8>(acc_tiles, a_frag, b_tile);
+  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
+    PtxWmmaBf16Fragment b_frag;
+    ptx_wmma_load_b_row(
+        b_frag,
+        b_tile + TileIdx * kWmmaN,
+        TensorCoreTile384::kBSharedStride);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
+    ptx_wmma_accumulate_tile_set_384<TileIdx + 1>(acc_tiles, a_frag, b_tile);
+  }
 }
 
 template <typename TileConfig, int TileIdx = 0>
