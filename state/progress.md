@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `06ebe93a00afa1ff8f20c5f4b4c89ec9cf1bbe89`
-- plateau counter: `3`
-- round loop: `round 62/100`
-- rounds remaining: `39`
-- notes: `Node C build succeeded for round 62/100. Node A will now measure the new code path.`
+- latest measured commit: `1d9b03ebc40198067f1bec2628b1bc01be67b4e8`
+- plateau counter: `4`
+- round loop: `round 63/100`
+- rounds remaining: `38`
+- notes: `Node A completed round 62/100. Run node_b to continue round 63/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_090210_bf16_gemm_v1_06ebe93`
-- run dir: `runs/20260420_090210_bf16_gemm_v1_06ebe93`
+- run id: `20260420_091028_bf16_gemm_v1_1d9b03e`
+- run dir: `runs/20260420_091028_bf16_gemm_v1_1d9b03e`
 - correctness: `PASS`
-- median runtime: `25.634208 ms`
-- TFLOP/s: `28.361299 TFLOP/s`
+- median runtime: `25.281983 ms`
+- TFLOP/s: `28.756424 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_090253`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Anchored to run 20260420_090210_bf16_gemm_v1_06ebe93 at 25.634208 ms. Rejected this round: grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, broad shared-memory rewrites, and consumer-order variants that replace the accepted right-left sweep as the active base.`
-- dir_01: restore accepted base, then narrow locality window | bottleneck: Hot-band consumer-path locality and reuse window width on the accepted PTX sweep / handoff path.
-- dir_02: accepted base, then narrow overlap recovery | bottleneck: Refill-order overlap around the one-sync handoff and staged consumer refill path.
-- dir_03: final consumer-order closure | bottleneck: Residual consumer-order inefficiency in the hot-band PTX consumer path rather than grouping or refill layout.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

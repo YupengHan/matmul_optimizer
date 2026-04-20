@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "restore accepted base, then narrow locality window",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T09:08:55-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_090253",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "restore accepted base, then narrow locality window",
-    "hypothesis": "Restore the accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff base, then test whether reducing only kFixedHotBandPtxGroupedRows from 8 to 4 improves locality on the accepted consumer path without reopening the rejected grouped_rows=16 path.",
-    "expected_bottleneck": "Hot-band consumer-path locality and reuse window width on the accepted PTX sweep / handoff path.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:156",
-      "src/kernels/bf16_gemm_v1.cu:600-606",
-      "src/kernels/bf16_gemm_v1.cu:649-685",
-      "src/kernels/bf16_gemm_v1.cu:1407-1424",
-      "src/kernels/bf16_gemm_v1.cu:1934-1943"
-    ],
-    "risk": "Medium: shrinking the group size may be too small and lose the locality benefit that the accepted base already captures, but the change stays narrowly scoped.",
-    "metrics_to_recheck": [
-      "kernel runtime versus 25.634208 ms",
-      "cp.async wait / CTA handoff stall behavior",
-      "shared-memory replay or load conflict signals",
-      "correctness against the BF16 reference"
-    ],
-    "stop_condition": "Only accept if it beats 25.634208 ms and keeps the accepted sweep order and handoff behavior intact."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

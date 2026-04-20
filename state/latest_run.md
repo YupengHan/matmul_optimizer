@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_090210_bf16_gemm_v1_06ebe93`
-- run dir: `runs/20260420_090210_bf16_gemm_v1_06ebe93`
-- kernel tag: `bf16_gemm_v1_06ebe93`
-- round label: `round 61/100`
+- run id: `20260420_091028_bf16_gemm_v1_1d9b03e`
+- run dir: `runs/20260420_091028_bf16_gemm_v1_1d9b03e`
+- kernel tag: `bf16_gemm_v1_1d9b03e`
+- round label: `round 62/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.634208 ms`
-- p10 runtime: `25.393972 ms`
-- p90 runtime: `26.674464 ms`
-- TFLOP/s: `28.361299 TFLOP/s`
-- previous run id: `20260420_085928_bf16_gemm_v1_9ee9b48`
-- runtime delta vs previous measured run: `-0.187489 ms`
-- TFLOP/s delta vs previous measured run: `+0.205928 TFLOP/s`
+- median runtime: `25.281983 ms`
+- p10 runtime: `24.845107 ms`
+- p90 runtime: `25.991068 ms`
+- TFLOP/s: `28.756424 TFLOP/s`
+- previous run id: `20260420_090210_bf16_gemm_v1_06ebe93`
+- runtime delta vs previous measured run: `-0.352224 ms`
+- TFLOP/s delta vs previous measured run: `+0.395125 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore accepted base, then retime refill issue order`
+- implemented direction name: `restore accepted base, then narrow locality window`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_090210_bf16_gemm_v1_06ebe93/summary.json`
-- measured commit: `06ebe93a00afa1ff8f20c5f4b4c89ec9cf1bbe89`
+- raw summary json: `runs/20260420_091028_bf16_gemm_v1_1d9b03e/summary.json`
+- measured commit: `1d9b03ebc40198067f1bec2628b1bc01be67b4e8`
 - new best custom: `no`
-- generated at: `2026-04-20T09:02:17-07:00`
+- generated at: `2026-04-20T09:10:35-07:00`
