@@ -1,15 +1,68 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_002827",
+  "status": "completed",
+  "created_at": "2026-04-20T00:28:27-07:00",
   "source_run_id": "20260420_002759_bf16_gemm_v1_1b9dbe3",
   "source_run_dir": "runs/20260420_002759_bf16_gemm_v1_1b9dbe3",
   "source_summary_json": "runs/20260420_002759_bf16_gemm_v1_1b9dbe3/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Keep the current best branch and reduce grouped_rows one more step to 2",
+      "hypothesis": "Primary human-idea family for round 32: `L2 Cache`. Grouped CTA ordering is still actively moving in the newer `__launch_bounds__(128, 2)` plus unroll-2 regime: `grouped_rows=4` is now materially better than the earlier `8`. That means the L2 locality sweet spot may still be on the smaller-group side. The bounded next move is to take one more step down to `grouped_rows=2` while explicitly holding the already-accepted base families fixed: wide coalesced global access, shared-memory A/B reuse, async-copy Pg2s staging, the current stage depth, and the existing bank-conflict-safe shared layout.",
+      "expected_bottleneck": "Cross-CTA cache locality under the current best compiler-guided hot-band branch.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:145"
+      ],
+      "risk": "At some point the group gets too small and the B-reuse window collapses. This round is a direct check for that point.",
+      "metrics_to_recheck": [
+        "correctness pass rate on all benchmark cases",
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if grouped_rows=2 regresses versus the grouped_rows=4 best."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Freeze grouped_rows=4 as the new best hot-band setting and start trimming the smaller remainder only if grouped_rows=2 fails",
+      "hypothesis": "Primary fallback family: fixed-shape `Tiling`, but only on the smaller remainder path rather than reopening the proven-loser 256x128 main retile. If `grouped_rows=2` overshoots, `4` becomes the settled hot-band choice and the next rational move is to keep the winning 128x128 hot-band kernel intact while trimming secondary-region scheduling/control overhead outside the hot band.",
+      "expected_bottleneck": "Secondary-region overhead after hot-band tuning converges.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1784",
+        "src/kernels/bf16_gemm_v1.cu:1794"
+      ],
+      "risk": "Lower ceiling than hot-band work.",
+      "metrics_to_recheck": [
+        "median runtime"
+      ],
+      "stop_condition": "Stop if hot-band tuning still moves meaningfully."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Hold the current best branch fixed and revisit tiny barrier-side cleanup only after the grouped_rows=2 result is known",
+      "hypothesis": "Primary fallback family after the L2 check: `Stage` / `Async Copy` / `Pg2s` choreography, but only as a bounded cleanup under the current best base. If the L2 sweep finally stalls at 4, the remaining hot-band knob is to shave barrier-side control around the existing cp.async double-buffered pipeline without changing the accepted coalescing, shared-memory reuse, or register-reuse structure.",
+      "expected_bottleneck": "Residual barrier overhead in the current best hot-band kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1699",
+        "src/kernels/bf16_gemm_v1.cu:1712"
+      ],
+      "risk": "Very limited headroom.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if grouped_rows tuning still produces larger moves than barrier cleanup."
+    }
+  ],
+  "notes": "Human-idea reflection for round 32, reviewed family by family against the measured best run at 26.924 ms with tensor active 48.56, barrier stall 8.13, mio_throttle 4.44, long_scoreboard 1.31, and registers still limiting occupancy to 2 blocks/SM. Tiling: reject reopening the 256x128 / 64x64 main retile this round because the measured winner is still the 128x128 hot-band branch and prior 256x128/K32 attempts regressed. Coalescing Access: accept as already satisfied in the base via 16-byte aligned wide global-to-shared movement, so hold fixed. Data Reuse: accept the current shared-memory A/B reuse structure as base and do not perturb it first. Async Copy: accept as base via cp.async and non-blocking staging, but do not make it the primary knob yet. Bank Conflict: defer new padding/permuted-layout changes because the current run is not dominated by shared-feed failure; the existing layout is good enough for this round. L2 Cache: accept as the primary family because grouped CTA order is still producing real gains, so `grouped_rows=2` is the next best bounded move. Register Reuse: accept as fixed in the base through `__launch_bounds__(128, 2)` plus unroll-2; no further reuse rewrite is first. Pg2s: accept the current double-buffered global-to-shared pipeline as the base. Ps2r: defer deeper warp-local consumer pipelining because the simpler L2 locality knob is still moving the curve. Stage: accept the current multi-buffer pipeline as sufficient for now and only revisit small barrier cleanup after the grouped-order sweep stalls."
 }
