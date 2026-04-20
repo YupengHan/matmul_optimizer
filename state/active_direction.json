@@ -1,30 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Apply The Full PTX Prefetch Retime On The Accepted Export Base",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T16:41:56-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_163934",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Apply The Full PTX Prefetch Retime On The Accepted Export Base",
-    "hypothesis": "Round 15/17 closed the deeper seam shift: moving the pivot from 6144 to 5888 was worse, so the best seam member is already known. That leaves one last untested PTX family variant with a plausible upside: the full prefetch retime on top of the accepted export base, where both the initial two staging commits and the future refill use A-before-B ordering. Round 9 only tested the narrower future-refill retime. The full variant is the last meaningful scoreboard-oriented move still missing from the accepted export baseline.",
-    "expected_bottleneck": "Copy-pipeline handoff timing across both the initial stage prime and the future-tile refill in the PTX hot-band steady-state loop.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1995-2006",
-      "src/kernels/bf16_gemm_v1.cu:2031-2039"
-    ],
-    "risk": "Medium. The family already had mixed results, and a full retime can again trade lower scoreboard for higher barrier, but this exact variant has not been tested on the accepted export base.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "stop_condition": "Close the prefetch family if the full retime still fails to beat 24.84582424 ms or again just swaps scoreboard for barrier."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

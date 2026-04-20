@@ -1,80 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_163934",
-  "status": "completed",
-  "created_at": "2026-04-20T16:39:34-07:00",
-  "source_run_id": "20260420_163839_bf16_gemm_v1_fcc145b",
-  "source_run_dir": "runs/20260420_163839_bf16_gemm_v1_fcc145b",
-  "source_summary_json": "runs/20260420_163839_bf16_gemm_v1_fcc145b/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_164223_bf16_gemm_v1_436e9ff",
+  "source_run_dir": "runs/20260420_164223_bf16_gemm_v1_436e9ff",
+  "source_summary_json": "runs/20260420_164223_bf16_gemm_v1_436e9ff/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Apply The Full PTX Prefetch Retime On The Accepted Export Base",
-      "hypothesis": "Round 15/17 closed the deeper seam shift: moving the pivot from 6144 to 5888 was worse, so the best seam member is already known. That leaves one last untested PTX family variant with a plausible upside: the full prefetch retime on top of the accepted export base, where both the initial two staging commits and the future refill use A-before-B ordering. Round 9 only tested the narrower future-refill retime. The full variant is the last meaningful scoreboard-oriented move still missing from the accepted export baseline.",
-      "expected_bottleneck": "Copy-pipeline handoff timing across both the initial stage prime and the future-tile refill in the PTX hot-band steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1995-2006",
-        "src/kernels/bf16_gemm_v1.cu:2031-2039"
-      ],
-      "risk": "Medium. The family already had mixed results, and a full retime can again trade lower scoreboard for higher barrier, but this exact variant has not been tested on the accepted export base.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Close the prefetch family if the full retime still fails to beat 24.84582424 ms or again just swaps scoreboard for barrier."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Keep The 4-Row PTX Grouping As The Best Measured PTX Fallback",
-      "hypothesis": "If the full prefetch retime also stalls, the 4-row grouping remains the best measured PTX-adjacent fallback on top of the accepted export base. It still lost to the accepted base, but it outperformed the 2-row grouping, the broad controls, and the deeper seam shift.",
-      "expected_bottleneck": "Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:155-156",
-        "src/kernels/bf16_gemm_v1.cu:1969-1979",
-        "src/kernels/bf16_gemm_v1.cu:2097-2104"
-      ],
-      "risk": "Medium. The family already failed to beat the accepted base, so it should stay secondary behind the last untested prefetch variant.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Only revisit if the full prefetch retime fails, and close it again immediately if it remains slower than the accepted base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Hold The 6144 Seam Variant As The Best Launch-Split Fallback",
-      "hypothesis": "The seam family already showed a local optimum at 6144 and then regressed at 5888. That makes the 6144 variant the best launch-split fallback if both the full prefetch retime and the 4-row grouping fail over the last rounds.",
-      "expected_bottleneck": "Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-154",
-        "src/kernels/bf16_gemm_v1.cu:2097-2114"
-      ],
-      "risk": "Medium. The family has already produced its local best measured member, so it should stay tertiary rather than continue line-searching blindly.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Only revisit this seam if the higher-ranked directions fail and avoid widening the change beyond the known 6144 local best."
-    }
-  ],
-  "notes": "Round 16/17 diagnosis for run 20260420_163839_bf16_gemm_v1_fcc145b. Human-review mapping for this round: keep the broad 64x384 control and non-PTX 128x128 control closed, and now also stop line-searching deeper into the seam family because 5888 regressed relative to the 6144 pivot. The fresh evidence is that the seam family has a local best already, while the accepted export base still has one meaningful untested prefetch variant left: the full A-before-B retime across both prime and refill. No new explicit human idea family is queued in state/human_review.md, so the ranking for the penultimate round is: accept the full prefetch retime first, keep the 4-row grouping as the best measured PTX fallback, and retain the 6144 seam only as the best measured launch-split fallback."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
