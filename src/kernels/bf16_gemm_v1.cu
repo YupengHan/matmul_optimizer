@@ -715,7 +715,7 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
   ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
 }
 
-template <int RowPairBase, int Step>
+template <int Step>
 __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64_ptx_microkernel(
     PtxWmmaBf16Fragment& b_frag,
     const __nv_bfloat16* b_tile) {
@@ -738,7 +738,10 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microker
   if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
     constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<Step>::kValue;
     PtxWmmaBf16Fragment b_frag;
-    ptx_wmma_load_col_fragment_64x64_ptx_microkernel<RowPairBase, Step>(b_frag, b_tile);
+    // Reload the PTX-hot-band-local B fragment per row-pair so this PTX-only
+    // path can test a right-left consume order while keeping just the active
+    // pair of A fragments live across the sweep.
+    ptx_wmma_load_col_fragment_64x64_ptx_microkernel<Step>(b_frag, b_tile);
     ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
         acc_tiles, a_frag0, a_frag1, b_frag);
     ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase, Step + 1>(
@@ -1000,6 +1003,7 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64_ptx_microker
 
     ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, TileCol>(
         warp_c_tile, c_tile_base, lane_id);
+    __syncwarp();
 
     ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel<
         TileRow,
@@ -1410,12 +1414,12 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
   cp_async_wait_group_0();
   __syncthreads();
 
+  stage_a_shared_tile_async<TileConfig>(
+      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
   stage_b_shared_tile_async<TileConfig>(
       b_shared[curr_stage],
       b_block + future_tile_k * kFixedBenchmarkN,
       kFixedBenchmarkN);
-  stage_a_shared_tile_async<TileConfig>(
-      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
   cp_async_commit_group();
 
   const int consumed_stage = curr_stage;
@@ -1586,7 +1590,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   cp_async_wait_group_1();
   __syncthreads();
 
-  #pragma unroll 2
+  #pragma unroll 1
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
@@ -1938,11 +1942,8 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
           ? kFixedHotBandPtxGroupedRows
           : (hot_band_tiles_m - first_block_y);
   const int pid_in_group = physical_pid % pids_per_group;
-  const int block_x_in_group = pid_in_group / group_size_y;
   const int logical_block_y = first_block_y + (pid_in_group % group_size_y);
-  const int logical_block_x =
-      (group_id & 1) ? (hot_band_tiles_n - 1 - block_x_in_group)
-                     : block_x_in_group;
+  const int logical_block_x = pid_in_group / group_size_y;
 
   const int block_row = logical_block_y * FixedHotBandTile128x128::kTensorBlockM;
   const int block_col = logical_block_x * FixedHotBandTile128x128::kTensorBlockN;
