@@ -726,8 +726,8 @@ __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64_ptx_microkernel
       FixedHotBandTile128x128::kBSharedStride);
 }
 
-template <int RowPairBase, int Step>
-__device__ __forceinline__ void ptx_wmma_issue_col_tile_64x64_ptx_microkernel(
+template <int RowPairBase, int Step = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
@@ -744,23 +744,9 @@ __device__ __forceinline__ void ptx_wmma_issue_col_tile_64x64_ptx_microkernel(
     ptx_wmma_load_col_fragment_64x64_ptx_microkernel<Step>(b_frag, b_tile);
     ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
         acc_tiles, a_frag0, a_frag1, b_frag);
+    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase, Step + 1>(
+        acc_tiles, a_frag0, a_frag1, b_tile);
   }
-}
-
-template <int RowPairBase>
-__device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
-    PtxWmmaAccTileSet64x64& acc_tiles,
-    const PtxWmmaBf16Fragment& a_frag0,
-    const PtxWmmaBf16Fragment& a_frag1,
-    const __nv_bfloat16* b_tile) {
-  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 0>(
-      acc_tiles, a_frag0, a_frag1, b_tile);
-  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 1>(
-      acc_tiles, a_frag0, a_frag1, b_tile);
-  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 2>(
-      acc_tiles, a_frag0, a_frag1, b_tile);
-  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 3>(
-      acc_tiles, a_frag0, a_frag1, b_tile);
 }
 
 template <int RowPairBase = 0>
@@ -1017,7 +1003,6 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64_ptx_microker
 
     ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, TileCol>(
         warp_c_tile, c_tile_base, lane_id);
-    __syncwarp();
 
     ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel<
         TileRow,
