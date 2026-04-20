@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_204427_bf16_gemm_v1_d777e9e`
-- run dir: `runs/20260419_204427_bf16_gemm_v1_d777e9e`
-- kernel tag: `bf16_gemm_v1_d777e9e`
-- round label: `round 2/10`
+- run id: `20260419_205932_bf16_gemm_v1_1128e91`
+- run dir: `runs/20260419_205932_bf16_gemm_v1_1128e91`
+- kernel tag: `bf16_gemm_v1_1128e91`
+- round label: `round 3/10`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.644224 ms`
-- p10 runtime: `30.317596 ms`
-- p90 runtime: `31.536579 ms`
-- TFLOP/s: `23.724517 TFLOP/s`
-- previous run id: `20260419_203259_bf16_gemm_v1_786b3e4`
-- runtime delta vs previous measured run: `+0.228929 ms`
-- TFLOP/s delta vs previous measured run: `-0.178569 TFLOP/s`
+- median runtime: `31.486465 ms`
+- p10 runtime: `30.692455 ms`
+- p90 runtime: `32.289996 ms`
+- TFLOP/s: `23.089903 TFLOP/s`
+- previous run id: `20260419_204427_bf16_gemm_v1_d777e9e`
+- runtime delta vs previous measured run: `+0.842240 ms`
+- TFLOP/s delta vs previous measured run: `-0.634614 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7/9 Register reuse + Ps2r: move the 64x32 local-half live-set cut onto the true 256x128 hot-band kernel`
+- implemented direction name: `Human idea 7 sparse-error repair: keep the half-panel branch, but fix the remaining nondeterministic ownership/overlap bug end to end`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_204427_bf16_gemm_v1_d777e9e/summary.json`
-- measured commit: `d777e9e7089a038cf09cb966e7ee5ea458717dd4`
+- raw summary json: `runs/20260419_205932_bf16_gemm_v1_1128e91/summary.json`
+- measured commit: `1128e91796b4c957cc60438bdbf761cd725cb821`
 - new best custom: `no`
-- generated at: `2026-04-19T20:44:35-07:00`
+- generated at: `2026-04-19T20:59:40-07:00`
