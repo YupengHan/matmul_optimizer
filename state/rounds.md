@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `39`
-- remaining rounds: `61`
-- current round label: `round 40/100`
+- completed rounds: `40`
+- remaining rounds: `60`
+- current round label: `round 41/100`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_012953_bf16_gemm_v1_e26d834`
 - accepted base measured commit: `e26d834e2583eaa041749b99e07234b9454d49e5`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 40/100. Node A will measure the result next.`
+- notes: `Completed round 40/100. Continue with node_b for round 41/100. Accepted base: 20260420_012953_bf16_gemm_v1_e26d834 at 25.974272 ms.`
 
 ## Last completed round
 
-- round: `39/100`
+- round: `40/100`
 - direction: `dir_01`
-- direction name: `Keep the export-path gain and narrow the active PTX consumer-side B reuse`
+- direction name: `Restore The Accepted PTX B-Reuse Branch And Clean Up Warp-Local Sequencing`
 - verdict: `regressed`
-- runtime delta: `+0.758784 ms`
-- TFLOP/s delta: `-0.794461 TFLOP/s`
-- run dir: `runs/20260420_013505_bf16_gemm_v1_98fb432`
-- ncu rep path: `runs/20260420_013505_bf16_gemm_v1_98fb432/ncu_profile.ncu-rep`
+- runtime delta: `+0.355328 ms`
+- TFLOP/s delta: `-0.356733 TFLOP/s`
+- run dir: `runs/20260420_014458_bf16_gemm_v1_09d3544`
+- ncu rep path: `runs/20260420_014458_bf16_gemm_v1_09d3544/ncu_profile.ncu-rep`
