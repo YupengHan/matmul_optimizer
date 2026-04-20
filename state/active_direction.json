@@ -1,10 +1,30 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Reopen PTX Prefetch Handoff On Top Of The New Export Base",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T16:23:55-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_160829",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Reopen PTX Prefetch Handoff On Top Of The New Export Base",
+    "hypothesis": "Round 8/17 closed the deeper row-pair export cleanup, but round 7/17 established a much better accepted base at 24.84582424 ms by simplifying the PTX export helper. That materially changes the ranking of the remaining families. The earlier prefetch-handoff experiment was negative on the older base, but it also drove long-scoreboard down much harder than the grouping-window attempt. Now that export overhead has been reduced, the next best move is to re-open the PTX prefetch family with a narrower retime on top of the new accepted export base instead of digging deeper into export cleanup again.",
+    "expected_bottleneck": "Copy-pipeline handoff timing and future-tile refill cadence in the PTX hot-band steady-state loop.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1994-2006",
+      "src/kernels/bf16_gemm_v1.cu:2027-2039"
+    ],
+    "risk": "Medium. The family already had one losing attempt, so this should be a narrower retime than round 4/17, but it now sits on a cleaner export baseline that may change the tradeoff.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop this reopened family if one bounded retime still fails to beat 24.84582424 ms or merely trades scoreboard for barrier again."
+  },
+  "notes": "Node C may now implement this one direction."
 }
