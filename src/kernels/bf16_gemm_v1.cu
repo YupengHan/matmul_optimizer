@@ -113,6 +113,7 @@ constexpr int kFixedHotBandN = kFixedBenchmarkN - kFixedTailRegionN;
 constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
+constexpr int kGroupedBlockOrderRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1210,6 +1211,30 @@ __device__ __forceinline__ void advance_hot_band_stage_ptx(
   next_stage = consumed_stage;
 }
 
+struct GroupedBlockCoords {
+  int tile_m;
+  int tile_n;
+};
+
+__device__ __forceinline__ GroupedBlockCoords grouped_block_coords(
+    int grid_tiles_m,
+    int grid_tiles_n) {
+  const int linear_block =
+      static_cast<int>(blockIdx.x) + static_cast<int>(gridDim.x) * static_cast<int>(blockIdx.y);
+  const int tiles_per_group = kGroupedBlockOrderRows * grid_tiles_n;
+  const int group_id = linear_block / tiles_per_group;
+  const int first_tile_m = group_id * kGroupedBlockOrderRows;
+  const int remaining_tiles_m = grid_tiles_m - first_tile_m;
+  const int group_tiles_m =
+      remaining_tiles_m < kGroupedBlockOrderRows ? remaining_tiles_m : kGroupedBlockOrderRows;
+  const int local_block = linear_block % tiles_per_group;
+
+  GroupedBlockCoords coords{};
+  coords.tile_m = first_tile_m + (local_block % group_tiles_m);
+  coords.tile_n = local_block / group_tiles_m;
+  return coords;
+}
+
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
@@ -1236,8 +1261,13 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     return;
   }
 
-  const int block_row = (blockIdx.y + block_row_tile_base) * TileConfig::kTensorBlockM;
-  const int block_col = blockIdx.x * TileConfig::kTensorBlockN;
+  // Group neighboring row tiles together so adjacent CTAs reuse the same B slab
+  // for longer before advancing to the next hot-band column tile.
+  const GroupedBlockCoords logical_block =
+      grouped_block_coords(static_cast<int>(gridDim.y), static_cast<int>(gridDim.x));
+  const int block_row =
+      (logical_block.tile_m + block_row_tile_base) * TileConfig::kTensorBlockM;
+  const int block_col = logical_block.tile_n * TileConfig::kTensorBlockN;
   const int warp_tile_m = warp_id / TileConfig::kWarpTilesN;
   const int warp_tile_n = warp_id % TileConfig::kWarpTilesN;
   const int row = block_row + warp_tile_m * kWmmaM;
@@ -1345,8 +1375,10 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
     return;
   }
 
-  const int block_row = blockIdx.y * FixedHotBandTile256x128::kTensorBlockM;
-  const int block_col = blockIdx.x * FixedHotBandTile256x128::kTensorBlockN;
+  const GroupedBlockCoords logical_block =
+      grouped_block_coords(static_cast<int>(gridDim.y), static_cast<int>(gridDim.x));
+  const int block_row = logical_block.tile_m * FixedHotBandTile256x128::kTensorBlockM;
+  const int block_col = logical_block.tile_n * FixedHotBandTile256x128::kTensorBlockN;
   const int warp_tile_m = warp_id / FixedHotBandTile256x128::kWarpTilesN;
   const int warp_tile_n = warp_id % FixedHotBandTile256x128::kWarpTilesN;
   const int row = block_row + warp_tile_m * FixedHotBandTile256x128::kWarpTileM;
