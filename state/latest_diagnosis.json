@@ -1,15 +1,80 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_215602",
+  "status": "completed",
+  "created_at": "2026-04-19T21:56:02-07:00",
   "source_run_id": "20260419_215456_bf16_gemm_v1_13caa86",
   "source_run_dir": "runs/20260419_215456_bf16_gemm_v1_13caa86",
   "source_summary_json": "runs/20260419_215456_bf16_gemm_v1_13caa86/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "human-idea+auto-analysis",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "notes": "Round 2/30 starts from a recovered and credible exploratory anchor again. Restoring the round-8 streaming-B branch recovered runtime to 30.618112 ms and restored the better feed-side profile: tensor active back up to about 38.56, barrier stall back down to about 6.56, short scoreboard about 6.72, `mio_throttle` about 0.33, and registers back to the pre-producer level. That confirms the loop should keep working from this branch rather than keep spending rounds on resets. The shared-permutation and producer-only staging variants are already known negatives, so the next best move is the next remaining high-ceiling step on top of the streaming-B consumer path: a one-fragment Ps2r lookahead. Dir_02 keeps the stronger global baseline option (`b13027c`) in reserve if this branch stalls again. Dir_03 covers the next non-feed family on the same branch by trimming the export path.",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea Ps2r: one-fragment shared-to-register lookahead on the restored streaming-B branch",
+      "hypothesis": "The restored round-8 branch already cleaned up the B consumer issue order enough to collapse `mio_throttle` without increasing registers or shared memory, but tensor active is still only about 38.56% and occupancy remains register-limited at one block. The next direct feed-side step is to overlap the next B fragment load from shared to registers with the current MMA issue chain inside the 64x64 hot-band micro-tile. Because the branch now already streams one B fragment at a time in mirrored order, a one-step Ps2r lookahead is a cleaner and more targeted experiment than further shared permutations.",
+      "expected_bottleneck": "Residual shared-to-register feed latency inside the hot-band 64x64 micro-tile after the streaming consumer cleanup.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "Moderate to high. This branch is already near the register wall, so the lookahead has to be very small and local. If registers climb meaningfully, the win is probably lost immediately.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if registers rise materially, occupancy worsens, or the hot-band time stays flat."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Reset to the best measured custom commit `b13027c` and port future experiments from there",
+      "hypothesis": "If the restored streaming-B branch plateaus quickly, the better long-horizon move is to stop paying the 0.56 ms gap versus the repo's best custom and re-anchor the loop at `b13027c`. That does not give the next feed-side experiment by itself, but it may provide a stronger starting surface for the remaining 28 rounds.",
+      "expected_bottleneck": "Not an immediate micro-bottleneck attack; this is a better global baseline reset for later rounds.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "risk": "Low to moderate. The restore itself is safe, but it delays direct experimentation by one round and may disconnect the loop from the recent B-feed family context.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if the restored result does not match the previously recorded `b13027c` behavior closely."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Trim the hot-band export path on top of the restored streaming-B branch",
+      "hypothesis": "If the next gain is no longer on the way in, the remaining tax may be on the way out. The current hot-band kernel still exports through the shared-memory scratch path, so another orthogonal move is to keep the restored streaming-B branch intact and trim the `c_shared` export helper path or writeback mechanics to reduce LSU/shared round-trip overhead without reopening B staging.",
+      "expected_bottleneck": "Epilogue/export LSU and shared-memory round-trip overhead after the feed path has already been partially improved.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_d_row_shared",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "High. The export path is correctness-sensitive and easy to make more register-heavy. This is better treated as the second alternative after the more directly relevant Ps2r branch.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_elapsed",
+        "launch__registers_per_thread",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Reject if the export rewrite raises registers or leaves hot-band time flat."
+    }
+  ]
 }
