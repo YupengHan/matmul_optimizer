@@ -460,29 +460,6 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_384(
   }
 }
 
-template <int TileIdx = 0>
-__device__ __forceinline__ void ptx_wmma_store_tile_set_single_stage_384(
-    const PtxWmmaAccTileSet384& acc_tiles,
-    float* c_shared,
-    __nv_bfloat16* c_tile_base,
-    int warp_id,
-    int lane_id) {
-  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
-    float* warp_c_tile =
-        c_shared + warp_id * TensorCoreTile384::kCSharedTileElemsPerWarp;
-    ptx_wmma_store_d_row_shared(
-        warp_c_tile, ptx_wmma_acc_tile<TileIdx>(acc_tiles), kWmmaN);
-    __syncwarp();
-
-    ptx_export_shared_tile_quads_384<TileIdx>(
-        warp_c_tile, c_tile_base, lane_id);
-    __syncwarp();
-
-    ptx_wmma_store_tile_set_single_stage_384<TileIdx + 1>(
-        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  }
-}
-
 template <typename TileConfig, int TilePairBase = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
     const PtxWmmaAccTileSet384& acc_tiles,
@@ -892,7 +869,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
   __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
   __shared__ __align__(16)
-      float c_shared[TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp];
+      float c_shared[TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
+                     TileConfig::kCSharedTileElemsPerWarp];
 
   const int warp_id = threadIdx.x / kWarpSize;
   const int lane_id = threadIdx.x % kWarpSize;
@@ -970,8 +948,13 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
       acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_store_tile_set_single_stage_384(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  if constexpr (TileConfig::kCSharedStageCount == 2) {
+    ptx_wmma_store_tile_pairs_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  } else {
+    ptx_wmma_store_tile_set_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 #else
   (void)a;
   (void)b;
