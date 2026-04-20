@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_163143_bf16_gemm_v1_6821ef5`
-- run dir: `runs/20260420_163143_bf16_gemm_v1_6821ef5`
-- kernel tag: `bf16_gemm_v1_6821ef5`
-- round label: `round 12/17`
+- run id: `20260420_163357_bf16_gemm_v1_a64854a`
+- run dir: `runs/20260420_163357_bf16_gemm_v1_a64854a`
+- kernel tag: `bf16_gemm_v1_a64854a`
+- round label: `round 13/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.066944 ms`
-- p10 runtime: `25.632767 ms`
-- p90 runtime: `26.751385 ms`
-- TFLOP/s: `27.890474 TFLOP/s`
-- previous run id: `20260420_163016_bf16_gemm_v1_48ee4f9`
-- runtime delta vs previous measured run: `+0.660496 ms`
-- TFLOP/s delta vs previous measured run: `-0.725073 TFLOP/s`
+- median runtime: `33.964544 ms`
+- p10 runtime: `33.493709 ms`
+- p90 runtime: `35.051041 ms`
+- TFLOP/s: `21.405246 TFLOP/s`
+- previous run id: `20260420_163143_bf16_gemm_v1_6821ef5`
+- runtime delta vs previous measured run: `+7.897600 ms`
+- TFLOP/s delta vs previous measured run: `-6.485228 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Tighten PTX Hot-Band Grouping Further To A 2-Row Window`
+- implemented direction name: `Reopen The Measured 64x384 Fixed-Main-Tile Control Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_163143_bf16_gemm_v1_6821ef5/summary.json`
-- measured commit: `6821ef5bfd8f089ea59938238f7d8375903a005e`
+- raw summary json: `runs/20260420_163357_bf16_gemm_v1_a64854a/summary.json`
+- measured commit: `a64854a656796209b16d18c89ea94794379b4ed6`
 - new best custom: `no`
-- generated at: `2026-04-20T16:31:52-07:00`
+- generated at: `2026-04-20T16:34:06-07:00`

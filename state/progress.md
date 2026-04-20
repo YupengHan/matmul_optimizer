@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `6821ef5bfd8f089ea59938238f7d8375903a005e`
-- plateau counter: `38`
-- round loop: `round 13/17`
-- rounds remaining: `5`
-- notes: `Node C build succeeded for round 13/17. Node A will now measure the new code path.`
+- latest measured commit: `a64854a656796209b16d18c89ea94794379b4ed6`
+- plateau counter: `39`
+- round loop: `round 14/17`
+- rounds remaining: `4`
+- notes: `Node A completed round 13/17. Run node_b to continue round 14/17.`
 
 ## Latest measured custom run
 
-- run id: `20260420_163143_bf16_gemm_v1_6821ef5`
-- run dir: `runs/20260420_163143_bf16_gemm_v1_6821ef5`
+- run id: `20260420_163357_bf16_gemm_v1_a64854a`
+- run dir: `runs/20260420_163357_bf16_gemm_v1_a64854a`
 - correctness: `PASS`
-- median runtime: `26.066944 ms`
-- TFLOP/s: `27.890474 TFLOP/s`
+- median runtime: `33.964544 ms`
+- TFLOP/s: `21.405246 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_163231`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 13/17 diagnosis for run 20260420_163143_bf16_gemm_v1_6821ef5. Human-review mapping for this round: keep non-PTX 128x128, reopened prefetch-handoff, and deeper export cleanup closed, and now mostly close the grouping family too. The fresh evidence is that 4 rows was the best member of the grouping family on top of the accepted export base, while 2 rows regressed back to 26.06694412 ms and raised DRAM to 21.47. That means the grouping family has likely plateaued below the accepted base. No new explicit human idea family is queued in state/human_review.md, so the ranking shifts to the remaining measured control paths: accept the older 64x384 fixed-main-tile control first, keep the hot-band / peeled seam as the next bounded launch-path fallback, and retain the 4-row grouping only as a last PTX retry if the broader controls are worse.`
-- dir_01: Reopen The Measured 64x384 Fixed-Main-Tile Control Path | bottleneck: Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX helper overhead.
-- dir_02: Probe Only The Hot-Band / Peeled Seam | bottleneck: Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.
-- dir_03: Keep The 4-Row PTX Grouping As The Last PTX Retry | bottleneck: Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

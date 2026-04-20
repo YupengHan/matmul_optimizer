@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_163231",
-  "status": "completed",
-  "created_at": "2026-04-20T16:32:31-07:00",
-  "source_run_id": "20260420_163143_bf16_gemm_v1_6821ef5",
-  "source_run_dir": "runs/20260420_163143_bf16_gemm_v1_6821ef5",
-  "source_summary_json": "runs/20260420_163143_bf16_gemm_v1_6821ef5/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_163357_bf16_gemm_v1_a64854a",
+  "source_run_dir": "runs/20260420_163357_bf16_gemm_v1_a64854a",
+  "source_summary_json": "runs/20260420_163357_bf16_gemm_v1_a64854a/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Reopen The Measured 64x384 Fixed-Main-Tile Control Path",
-      "hypothesis": "Round 12/17 closes the grouping family for now: the 4-row retry was the best member of that family on the accepted export base, but tightening further to 2 rows regressed back to 26.06694412 ms and pushed DRAM up to 21.47. That means the local PTX-adjacent grouping lever has likely plateaued. The next best move is to reopen the older but directly measured `64x384` fixed-main-tile control path, which is the strongest remaining alternate family with explicit ranking evidence in the repo.",
-      "expected_bottleneck": "Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX helper overhead.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1180-1248",
-        "src/kernels/bf16_gemm_v1.cu:2076-2116",
-        "src/kernels/bf16_gemm_v1.cu:151-159"
-      ],
-      "risk": "Medium. The family has explicit sweep ancestry, but it is a broad branch change that can easily give back the wins from the accepted PTX/export base.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop immediately if the 64x384 control path remains materially slower than 24.84582424 ms or clearly reopens a broad-family regression."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Probe Only The Hot-Band / Peeled Seam",
-      "hypothesis": "If the 64x384 control path also fails, the most bounded remaining family inside the current default launch path is the seam between the PTX hot-band kernel and the peeled 384-row band. This direction keeps the accepted PTX microkernel itself intact and looks only at whether the split point or follow-on peeled launch is where the remaining loss sits.",
-      "expected_bottleneck": "Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1200-1248",
-        "src/kernels/bf16_gemm_v1.cu:2097-2114"
-      ],
-      "risk": "Medium. This stays within the default fixed-shape path, but it has less direct prior measurement support than the 64x384 control family.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Only pursue this seam while it stays a narrow launch-path adjustment; stop if it broadens into a multi-family rewrite."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Keep The 4-Row PTX Grouping As The Last PTX Retry",
-      "hypothesis": "The grouping family is mostly closed after the 2-row miss, but the 4-row window was still the strongest measured member of that family on top of the accepted export base. If the broader controls fail, the 4-row grouping remains the only PTX-adjacent retry with recent positive directional evidence.",
-      "expected_bottleneck": "Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:155-156",
-        "src/kernels/bf16_gemm_v1.cu:1969-1979",
-        "src/kernels/bf16_gemm_v1.cu:2097-2104"
-      ],
-      "risk": "Medium. The family already failed to beat the accepted base, so it should stay tertiary unless the broader controls are worse.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Revisit only if the higher-ranked controls stall, and close it again immediately if it remains slower than the accepted PTX base."
-    }
-  ],
-  "notes": "Round 13/17 diagnosis for run 20260420_163143_bf16_gemm_v1_6821ef5. Human-review mapping for this round: keep non-PTX 128x128, reopened prefetch-handoff, and deeper export cleanup closed, and now mostly close the grouping family too. The fresh evidence is that 4 rows was the best member of the grouping family on top of the accepted export base, while 2 rows regressed back to 26.06694412 ms and raised DRAM to 21.47. That means the grouping family has likely plateaued below the accepted base. No new explicit human idea family is queued in state/human_review.md, so the ranking shifts to the remaining measured control paths: accept the older 64x384 fixed-main-tile control first, keep the hot-band / peeled seam as the next bounded launch-path fallback, and retain the 4-row grouping only as a last PTX retry if the broader controls are worse."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
