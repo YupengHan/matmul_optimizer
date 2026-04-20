@@ -933,6 +933,9 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64_ptx_microkern
                 "PTX 64x64 export tile col index out of range.");
   constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
   constexpr int kQuadsPerTile = kWmmaM * kQuadsPerRow;
+  static_assert(FixedHotBandTile128x128PtxExportScratch::kPadFloatsPerRow == 0,
+                "Linear PTX export quad indexing expects tightly packed rows.");
+  const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
   __nv_bfloat16* c_tile_row_base =
       c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN + TileCol * kWmmaN;
 
@@ -940,11 +943,9 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64_ptx_microkern
   for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
     const int local_row = quad_idx / kQuadsPerRow;
     const int local_quad = quad_idx % kQuadsPerRow;
-    const float4* warp_c_tile_row_quads = reinterpret_cast<const float4*>(
-        warp_c_tile + local_row * FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
     store_bfloat164_quad(
         c_tile_row_base + local_row * kFixedBenchmarkN + local_quad * kEpilogueQuadElems,
-        warp_c_tile_row_quads[local_quad]);
+        warp_c_tile_quads[quad_idx]);
   }
 }
 
