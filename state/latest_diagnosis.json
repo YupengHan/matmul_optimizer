@@ -1,76 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_230948",
-  "status": "completed",
-  "created_at": "2026-04-19T23:09:48-07:00",
-  "source_run_id": "20260419_230856_bf16_gemm_v1_a80b5af",
-  "source_run_dir": "runs/20260419_230856_bf16_gemm_v1_a80b5af",
-  "source_summary_json": "runs/20260419_230856_bf16_gemm_v1_a80b5af/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_231125_bf16_gemm_v1_0a38a28",
+  "source_run_dir": "runs/20260419_231125_bf16_gemm_v1_0a38a28",
+  "source_summary_json": "runs/20260419_231125_bf16_gemm_v1_0a38a28/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human+auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the accepted-correct surface and try a light 4-column serpentine CTA swizzle on the hot-band grid",
-      "hypothesis": "Warp-local fragment-residency experiments have now failed correctness twice, so the next safe branch should move away from register choreography and toward cache locality. The user's L2 idea is the cleanest option: restore the accepted-correct implementation surface first, then apply a very light logical CTA swizzle that only reorders hot-band block_col mapping inside small groups. That keeps the inner microkernel untouched and tests whether the scheduler can get a little more B-tile locality from a serpentine launch order.",
-      "expected_bottleneck": "Inter-CTA L2 locality across neighboring hot-band B tiles rather than warp-local tensor scheduling.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1",
-        "python scripts/graph.py restore-implementation --source-commit 0d78758"
-      ],
-      "risk": "Moderate. The restore is low-risk, and the swizzle is intentionally lightweight, but the earlier heavier grouped traversal was negative.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if the swizzle leaves L2 throughput flat or regresses runtime on the restored surface."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore the accepted-correct surface and try warp-specialized Pg2s staging without changing the tile shape",
-      "hypothesis": "If cache-locality remains flat, the next remaining human-idea family is Pg2s orchestration. Even on the accepted-correct surface, all eight warps still share staging duties in the hot-band loop. A minimal producer/consumer split that leaves the tile shape and export path alone would test whether some tensor issue is still being diluted by CTA-wide staging work.",
-      "expected_bottleneck": "CTA-level staging orchestration and barrier dilution inside the hot-band loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "High. Producer/consumer split can easily hurt tensor issue or blow up synchronization if the ownership boundary is wrong.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Reject if barrier falls but tensor activity and main-kernel time do not improve."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore-only fallback to the accepted best surface",
-      "hypothesis": "If the swizzle or producer/staging paths do not validate quickly, the safest move is to stay on the fastest known correct implementation instead of keeping the recent incorrect experiments live.",
-      "expected_bottleneck": "Not a bottleneck attack; this is the fallback reset path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu",
-        "python scripts/graph.py restore-implementation --source-commit 0d78758"
-      ],
-      "risk": "Low.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime"
-      ],
-      "stop_condition": "Use this if the higher-ranked directions fail validation or correctness."
-    }
-  ],
-  "notes": "Round 10/50 pivots away from warp-local fragment-residency experiments because they have been too fragile on correctness. The recommended next move is therefore dir_01: restore the accepted-correct surface and test a light L2-friendly CTA swizzle, which is the safest remaining human-idea branch with a plausible upside."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
