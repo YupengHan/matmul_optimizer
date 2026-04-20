@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_182858",
+  "status": "completed",
+  "created_at": "2026-04-19T18:28:58-07:00",
   "source_run_id": "20260419_182615_bf16_gemm_v1_b11ebbb",
   "source_run_dir": "runs/20260419_182615_bf16_gemm_v1_b11ebbb",
   "source_summary_json": "runs/20260419_182615_bf16_gemm_v1_b11ebbb/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea 7 Register reuse: demote Stage, restore the accepted hot-band control surface, then reorder the 12-fragment PTX sweep",
+      "hypothesis": "Stage no longer has enough measured evidence to remain primary. After four rounds, the family has one incorrect run, one catastrophic codegen miss, and two correct runs that both sit in the same ~35.7 ms neighborhood. Those correct runs slash barrier, long-scoreboard, and mio, yet still lose badly to the accepted base at 33.12844658 ms. That means feed/orchestration is not the limiting factor anymore. The better next family is warp-internal register reuse and issue order: restore the accepted 9bdc160-style hot-band control surface first, then change only the 12 named PTX accumulator traversal from the current monotone sweep to a right-left-right-left style order that tries to raise tensor issue efficiency without paying the Stage-family tax.",
+      "expected_bottleneck": "Warp-local tensor issue efficiency and short-latency scheduling waste inside the 64x384 PTX hot sweep, not CTA-level pipeline overlap.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:323-408",
+        "src/kernels/bf16_gemm_v1.cu:592-646",
+        "src/kernels/bf16_gemm_v1.cu:898-1015"
+      ],
+      "risk": "This direction requires demoting the current Stage control surface before the reuse-order change is even measurable. If the restore step is sloppy, the comparison becomes muddy. There is also a real chance that traversal order alone only buys a small gain if the accepted base is already near the local optimum for the current tile hierarchy.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "median runtime",
+        "correctness"
+      ],
+      "stop_condition": "Stop if the restored accepted-base branch plus the new traversal order does not improve tensor active or short-scoreboard while runtime stays at or above the accepted base. Then Idea 7 is not the main missing lever."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea 1 Tiling: open a true 256x128 CTA and 64x64 warp hot-band branch",
+      "hypothesis": "The target is still 20 ms, and the last four Stage rounds show that squeezing the current 64x384 PTX branch harder can radically change stall metrics without creating a runtime win. That is evidence that the existing tile hierarchy may itself be the ceiling. The old tile sweep only proved that 64x384 was the sweet spot inside the current 64-row CTA family; it did not disprove a genuinely different 256x128 CTA with 64x64 warp tiling. This is the highest-ceiling pivot still connected to the user ideas, but it is intentionally ranked behind Idea 7 because it is a much larger rewrite.",
+      "expected_bottleneck": "CTA and warp tile hierarchy ceiling: insufficient arithmetic density and/or poor warp-level work partitioning inside the current 64x384 family.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:26-77",
+        "src/kernels/bf16_gemm_v1.cu:592-646",
+        "src/kernels/bf16_gemm_v1.cu:688-1015"
+      ],
+      "risk": "Very high implementation risk. This direction throws away the measured 64x384 sweet spot inside the current family and replaces it with a structurally different branch. It can easily lose correctness, occupancy, or tensor issue before it shows any upside.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "correctness",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if precheck or the first full measurement shows clear correctness trouble or a runtime far worse than the accepted base with no compensating tensor-active gain. Then the structural rewrite is not paying for its complexity."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea 10 Stage: keep the family only as a demoted closure experiment by collapsing the hot pipeline back toward two stages",
+      "hypothesis": "If Stage is kept alive at all, it should no longer be the mainline. Two correct 3-stage runs at 35.69459343 ms and 35.80307198 ms already show that the family has a stable but inferior runtime neighborhood. The only remaining measured reason to touch it is to answer a bounded question: is the loss coming from stage depth itself rather than from overlap mechanics in general? A demoted follow-up that collapses the hot-band pipeline back toward two stages while preserving the PTX hot kernel and export path would test whether the third stage is pure tax on this GPU.",
+      "expected_bottleneck": "Stage-depth overhead and extra CTA handoff cost that lower tensor issue even when barrier, long-scoreboard, and mio look good.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:509-536",
+        "src/kernels/bf16_gemm_v1.cu:827-896",
+        "src/kernels/bf16_gemm_v1.cu:898-1015"
+      ],
+      "risk": "This can easily just rediscover the already faster accepted base while still consuming another round on a family that has weak runtime evidence. It is useful only as closure, not as a mainline bet.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread",
+        "correctness"
+      ],
+      "stop_condition": "Stop if the reduced-stage variant remains in the same 35.5-36.0 ms neighborhood or still trails the accepted base clearly. At that point Stage should be closed as a primary exploration family."
+    }
+  ],
+  "notes": "Round 11 is a pivot, not a continue-family move. Idea 10 / Stage should now be demoted and should no longer remain primary. The measured reason is straightforward: after four rounds, the family has already shown both its upside and its limit. Round 7 and round 8 proved that Stage can dramatically cut barrier, long-scoreboard, and mio. Round 9 proved that pushing the family through codegen surgery can explode catastrophically. Round 10 restored the stable Stage shape and essentially reproduced the round-8 runtime neighborhood at 35.80307198 ms. That is enough evidence to say the family is real, but stalled: it changes machine behavior without beating the accepted base, and it is nowhere near the 20 ms target.\n\nHuman idea audit for this round:\n1. Tiling (256x128 block, 64x64 warp): accept-now as a structural pivot family, but not as the top recommendation. It is higher ceiling than more micro-tunes, yet also much riskier than an Idea 7 pivot.\n2. Coalescing Access: defer. Wide 16-byte accesses are already present, so this is not the next main lever.\n3. Data Reuse: accept-now only as already-adopted baseline behavior. Shared reuse is present in both the accepted base and the Stage branch.\n4. Async Copy: accept-now only as already-adopted baseline behavior. Async staging is not what is missing after the Stage plateau.\n5. Bank Conflict: reject-for-this-round. Prior B-feed and bank-shaping paths were negative, and current measured signatures do not point there.\n6. L2 Cache: reject-for-this-round. Nothing in the accepted base or the Stage plateau suggests an L2-hit-ratio bottleneck is deciding the result.\n7. Register Reuse: accept-now and rank first. The best remaining measured hypothesis is that warp-local fragment order and issue efficiency matter more than deeper feed overlap.\n8. Pg2s: accept-now only as baseline behavior. Global-to-shared double buffering already exists and is not the current decision point.\n9. Ps2r: defer. It showed earlier positive-but-insufficient signal, but the Stage family already proved that knocking down latency stalls alone is not enough to win, so Ps2r is not the strongest pivot now.\n10. Stage: accept-now only as a demoted closure family. It no longer has a strong enough measured reason to remain primary after rounds 7-10."
 }
