@@ -1,121 +1,31 @@
 # matmul_optimizer
 
-Shape-specialized, script-first CUDA kernel optimization for one fixed BF16 GEMM on a single RTX 3070 Laptop GPU.
+## Harness Engineering + Human-in-the-Loop: a weekend CUDA matmul project from 800 ms to ~30 ms
 
-## Goal
+This repo is the working harness behind a narrow CUDA optimization experiment:
 
-This repo is intentionally narrow:
+- one fixed BF16 GEMM
+- one RTX 3070 Laptop GPU
+- one custom kernel path
+- one local CUTLASS baseline
+- one human-in-the-loop optimization loop
 
-- benchmark one fixed BF16 GEMM shape
-- optimize a custom CUDA kernel for that exact shape
-- measure correctness, runtime, and Nsight Compute data locally
-- use Codex as a diagnosis / implementation agent inside a reproducible workflow
-- beat the local CUTLASS baseline on this fixed shape
+The goal is not to solve general matmul. The goal is to see how far a single engineer can push a shape-specialized kernel, locally, with strong profiling, short iteration loops, and LLM assistance used inside a disciplined harness.
 
-The workflow is now a lightweight, LangGraph-inspired loop:
+## Repo Snapshot
 
-```text
-node_a -> node_b -> node_c -> node_a
-```
+- benchmark target: `fixed_bf16_gemm_v1`
+- shape: `m=6464`, `n=7776`, `k=7232`
+- dtype: BF16 inputs, FP32 accumulation, BF16 output reference
+- current official best custom runtime: `30.052768 ms`
+- current local CUTLASS baseline: `25.917889 ms`
+- current gap: `4.134879 ms`, or `1.159538x` slower than CUTLASS
+- execution model: local and script-first, with Codex used for diagnosis and implementation
+- runtime dependencies: no OpenAI API key, cloud service, or LangGraph runtime required
 
-It borrows only the concepts of nodes, edges, and state. It does **not** depend on LangGraph, OpenAI API keys, or any cloud runtime.
+The authoritative benchmark snapshot lives in [state/benchmark_baselines.md](state/benchmark_baselines.md). The exact workload definition lives in [docs/benchmark_spec.md](docs/benchmark_spec.md).
 
-Codex now has an explicit supervisor layer above that loop:
-
-- the main Codex agent owns graph dispatch and loop control
-- `node_a` stays direct and script-first
-- `node_b` and `node_c` are intended to run through one Codex `sub-agent` each
-- the repo exposes the dispatch contract through `state/supervisor_task.json` and `docs/supervisor_protocol.md`
-
-## Fixed benchmark target
-
-`fixed_bf16_gemm_v1`
-
-- `m = 6464`
-- `n = 7776`
-- `k = 7232`
-- all dims are multiples of 32
-- none are multiples of 128
-- BF16 inputs
-- FP32 reference accumulation
-- BF16 output reference also stored
-
-## What is script-first vs agent-driven
-
-Script-first:
-
-- dataset generation
-- configure / build
-- kernel evaluation
-- Nsight Compute capture
-- machine-readable state updates
-- lightweight state commits
-
-Codex-friendly agent nodes:
-
-- `node_b`: diagnose the latest measured run and output exactly three directions
-- `node_c`: implement one selected direction, prove the code still builds, then hand back to `node_a`
-
-Supervisor-only orchestration:
-
-- the main agent reads `state/supervisor_task.json`
-- it decides whether to run a node directly or dispatch a `sub-agent`
-- it always runs the finalize command after a `sub-agent` returns
-
-## Repository layout
-
-```text
-matmul_optimizer/
-├── AGENTS.md
-├── README.md
-├── CMakeLists.txt
-├── .gitignore
-├── .gitmessage
-├── configs/
-│   ├── fixed_bf16_gemm_v1.json
-│   └── ncu_metrics_core.txt
-├── docs/
-│   ├── commit_convention.md
-│   ├── heuristics.md
-│   ├── node_b_protocol.md
-│   ├── node_c_protocol.md
-│   ├── supervisor_protocol.md
-│   └── pipeline_graph.md
-├── include/
-├── scripts/
-│   ├── eval_kernel.py
-│   ├── generate_fixed_bf16_dataset.py
-│   ├── graph.py
-│   ├── run_cutlass_baseline.py
-│   └── state_lib.py
-├── src/
-│   ├── kernels/
-│   └── runner/
-├── state/
-│   ├── README.md
-│   ├── graph_state.json
-│   ├── latest_run.json
-│   ├── latest_ncu_summary.json
-│   ├── latest_diagnosis.json
-│   ├── active_direction.json
-│   ├── benchmark_state.json
-│   ├── latest_run.md
-│   ├── latest_ncu_summary.md
-│   ├── progress.md
-│   ├── current_focus.md
-│   ├── human_review.md
-│   ├── benchmark_baselines.md
-│   ├── round_loop_state.json
-│   ├── round_history.jsonl
-│   ├── node_b_context.md
-│   ├── node_c_context.md
-│   ├── supervisor_task.json
-│   └── supervisor_context.md
-├── artifacts/
-└── runs/
-```
-
-## Main-loop commands
+## Quick Start
 
 Generate the fixed dataset once:
 
@@ -123,244 +33,282 @@ Generate the fixed dataset once:
 python scripts/generate_fixed_bf16_dataset.py
 ```
 
-Inspect workflow state:
-
-```bash
-python scripts/graph.py status
-python scripts/graph.py supervisor
-```
-
-Run the current actionable node from `state/graph_state.json`:
-
-```bash
-python scripts/graph.py cycle
-```
-
-Inspect or arm a multi-round loop:
-
-```bash
-python scripts/graph.py rounds --status
-python scripts/graph.py rounds --count N --auto-use-recommended
-```
-
-Run the fully script-first measurement node:
-
-```bash
-python scripts/graph.py node_a
-```
-
-Prepare node_b context:
-
-```bash
-python scripts/graph.py node_b
-```
-
-After Codex writes exactly three directions into `state/latest_diagnosis.json`, finalize node_b:
-
-```bash
-python scripts/graph.py node_b --finalize
-```
-
-Select a direction:
-
-```bash
-python scripts/graph.py approve --direction dir_02
-```
-
-or continue with the recommended direction:
-
-```bash
-python scripts/graph.py use-recommended-direction
-```
-
-Prepare node_c:
-
-```bash
-python scripts/graph.py node_c
-```
-
-After editing code for exactly one direction, finalize node_c:
-
-```bash
-python scripts/graph.py node_c --finalize
-```
-
-By default, node_c finalize auto-runs node_a, which closes the loop.
-
-## Multi-round workflow
-
-The repo now supports a round budget for Codex-driven optimization loops.
-
-Example:
-
-```bash
-python scripts/graph.py rounds --count N --auto-use-recommended
-```
-
-This means:
-
-- plan `N` rounds
-- each round is `node_b -> node_c -> node_a`
-- the main Codex agent stays in charge for the whole loop
-- `node_b` and `node_c` can each use one dedicated `sub-agent`
-- `--auto-use-recommended` is the explicit low-human-friction flag that allows the loop to keep moving with the rank-1 direction
-- each completed round is appended to `state/round_history.jsonl`
-- current loop status lives in `state/round_loop_state.json`
-- current supervisor dispatch lives in `state/supervisor_task.json`
-- human-readable loop status lives in `state/rounds.md`
-
-The round-level performance record is written by the `node_a:` commit after the re-measurement step. That commit now carries:
-
-- the implementation idea / hypothesis
-- runtime delta vs the previous measured run
-- TFLOP/s delta
-- the run directory
-- the Nsight Compute summary path
-- the `.ncu-rep` path
-
-## Build behavior
-
-The main loop should not depend on CUTLASS.
-
-Main-loop configure/build:
+Build the main custom-kernel runner:
 
 ```bash
 cmake -S . -B build -DENABLE_CUTLASS_RUNNER=OFF
 cmake --build build -j 4 --target custom_runner
 ```
 
-This keeps `node_a` and `node_c` from blocking on CUTLASS setup or network fetches.
+Run the local measurement loop entrypoint:
 
-## CUTLASS baseline is a side node
+```bash
+python scripts/graph.py status
+python scripts/graph.py supervisor
+python scripts/graph.py node_a
+```
 
-CUTLASS remains part of the repo, but it is intentionally off the main loop.
-
-To build the baseline runner:
+Build and measure the optional CUTLASS side-path baseline:
 
 ```bash
 cmake -S . -B build -DENABLE_CUTLASS_RUNNER=ON -DCUTLASS_ROOT=/path/to/cutlass
 cmake --build build -j 4 --target cutlass_runner
+python scripts/run_cutlass_baseline.py --runner ./build/cutlass_runner --kernel-tag cutlass_ref_v1
 ```
 
-To record a CUTLASS baseline run:
+If you are operating this repo through Codex or another local agent, the workflow guide now lives outside this README:
 
-```bash
-python scripts/run_cutlass_baseline.py \
-  --runner ./build/cutlass_runner \
-  --kernel-tag cutlass_ref_v1
-```
+- [AGENTS.md](AGENTS.md)
+- [docs/codex_workflow.md](docs/codex_workflow.md)
+- [docs/supervisor_protocol.md](docs/supervisor_protocol.md)
+- [state/README.md](state/README.md)
 
-Use CUTLASS as:
+## Why I Built It
 
-- the target to beat
-- a periodic refresh point after plateaus
-- a comparison source for NCU differences
+This started as a weekend project, but it was really a concrete question I wanted to test:
 
-Do **not** let CUTLASS setup block the main custom-kernel loop.
+**How far can I push a shape-specialized CUDA kernel in two days, on my own machine, with modern LLMs inside a tight harness?**
 
-## Current workflow semantics
+I am a GPU performance engineer, not part of NVIDIA, and I did not start by reading CUTLASS internals. I wanted to try something narrower and more practical: pick one fixed BF16 GEMM, on one RTX 3070 Laptop GPU, build a reproducible human-in-the-loop optimization loop, and see how close I could get to a strong reference implementation with limited weekend time.
 
-### main supervisor
+So far, the result is already interesting enough to share. The custom kernel moved from roughly `800 ms` at the beginning to about `30 ms`, while the current local CUTLASS baseline on the same benchmark is `25.917889 ms`.
 
-- reads `state/supervisor_task.json`
-- dispatches `node_a` directly
-- dispatches `node_b` and `node_c` through one `sub-agent` each
-- runs finalize commands after `sub-agent` completion
-- re-reads graph state before starting the next node
+That is not a "we beat CUTLASS" story. Not yet. It is a proof of concept about harness engineering: with a strong evaluation loop, good profiling, short-context iteration, and human steering at the right moments, a single engineer can move surprisingly far, surprisingly fast.
 
-Repo-local Python prepares and validates this handoff, but does **not** try to spawn Codex agents itself.
+I care a lot about harness engineering because once models get strong enough, a large part of the problem becomes how to use them well.
 
-### node_a
+For kernel optimization, that means building the surrounding loop:
 
-- builds `custom_runner` when needed
-- runs `scripts/eval_kernel.py`
-- writes raw run artifacts under `runs/`
-- writes lightweight summaries under `state/`
-- updates graph state to point at `node_b`
-- creates a `node_a:` commit with state only
+- fixed benchmark
+- reproducible correctness checks
+- repeatable runtime measurement
+- profiling capture
+- structured diagnosis
+- controlled implementation attempts
+- explicit state tracking across many rounds
 
-### node_b
+That is what this repo is really about. The kernel matters, but the harness matters just as much.
 
-- reads the latest lightweight summaries, heuristics, kernel, and state
-- normally runs inside one diagnosis `sub-agent`
-- outputs exactly 3 ranked directions
-- updates review state and graph state
-- creates a `node_b:` commit with state only
-- points the workflow at `node_c`
+I also think this mirrors a broader engineering trend. Many real workflows are not "solve the general problem." They look more like:
 
-### node_c
+> fixed hardware + fixed workload + fixed objective + limited time + repeated local decisions
 
-- reads the selected direction
-- normally runs inside one implementation `sub-agent`
-- implements exactly one direction
-- proves the build still passes
-- creates a `node_c:` commit only after build success
-- auto-runs `node_a` by default
+That is exactly where a good harness can make LLMs much more useful.
 
-## State model
+## What I Learned So Far
 
-Machine-readable:
+This project started as a weekend practice, but the part I care about most is not only the final number. It is what this workflow taught me.
 
-- `state/graph_state.json`
-- `state/latest_run.json`
-- `state/latest_ncu_summary.json`
-- `state/latest_diagnosis.json`
-- `state/active_direction.json`
-- `state/benchmark_state.json`
-- `state/run_registry.jsonl`
-- `state/round_loop_state.json`
-- `state/round_history.jsonl`
-- `state/supervisor_task.json`
+### 1. Harness engineering turns raw model capability into engineering progress
 
-Human-readable:
+Modern LLMs are already powerful. But a powerful model by itself is not the same thing as a productive engineering system.
 
-- `state/latest_run.md`
-- `state/latest_ncu_summary.md`
-- `state/progress.md`
-- `state/current_focus.md`
-- `state/human_review.md`
-- `state/benchmark_baselines.md`
-- `state/rounds.md`
-- `state/node_b_context.md`
-- `state/node_c_context.md`
-- `state/supervisor_context.md`
+For this kind of kernel optimization, the leverage comes from the surrounding loop:
 
-## Git and artifact policy
+- fixed benchmark
+- correctness checks
+- stable measurement
+- profiling capture
+- branch tracking
+- rollback
+- comparison across rounds
 
-Commit:
+The harness is not an accessory around the model. In many cases, it is the layer that turns raw capability into useful work.
 
-- lightweight state
-- code changes
-- docs / protocol changes
+### 2. Harness engineering is also memory management
 
-Do not commit:
+The more rounds I ran, the more I felt that harness engineering is also a memory-management problem.
 
-- `runs/`
-- `artifacts/` dataset binaries
-- `build/`
-- `*.ncu-rep`
-- raw NCU CSV/log files
+On the human side, the harness reduces how much state I need to keep in my head:
 
-Commit categories:
+- which branch tried what
+- what regressed
+- what plateaued
+- what is worth restoring
+- what is worth abandoning
 
-- `node_a:`
-- `node_b:`
-- `node_c:`
+On the model side, the harness determines how much useful context the model needs to carry, and how much irrelevant history it can safely forget.
 
-See:
+So for me, harness engineering is not just automation. It is also memory management for the engineer and for the model.
 
-- `AGENTS.md`
-- `docs/commit_convention.md`
-- `.gitmessage`
+### 3. Current LLMs are genuinely useful for incremental optimization
 
-## Where Codex should look first
+I do not think the right conclusion is "LLMs cannot do performance engineering." My experience here was the opposite in a narrower setting.
 
-If you are operating this repo through Codex CLI, start with:
+Current models are already very helpful for:
 
-1. `AGENTS.md`
-2. `python scripts/graph.py status`
-3. `python scripts/graph.py supervisor`
-4. the protocol doc for the current node:
-   - `docs/supervisor_protocol.md`
-   - `docs/node_b_protocol.md`
-   - `docs/node_c_protocol.md`
+- incremental improvements
+- implementation work
+- local diagnosis
+- turning profiler observations into code changes
+- iterating quickly inside a bounded branch
+
+That part is real.
+
+### 4. But they can still get trapped in local minima
+
+The models can keep improving the wrong area.
+
+They can spend many rounds fine-tuning a non-pivot issue, collect a few smaller wins, and still end up on a plateau that is not strategically helpful. In other words, the model may still be "improving," but not in a way that changes the overall outcome very much.
+
+That is why I kept using human idea changes and broader out-of-box discussion to keep the search moving forward.
+
+One of my strongest takeaways is this: today's models are already good at local optimization, but they are not automatically good at choosing the right optimization direction.
+
+### 5. Profiling tools feel like pre-harness LLMs
+
+Before people figured out how to use modern LLMs well, the models were already powerful. They just lacked the right harness.
+
+Profiling tools feel similar to me:
+
+- already powerful
+- historically aimed at human-only use
+- high learning curve
+- plenty of signal that is still underused
+
+So profiling tools today feel a bit like LLMs before better harness engineering: already strong, still waiting for better frameworks to make them even more useful.
+
+### 6. One future user of the profiler may be the model
+
+If the profiler already exposes rich signals, and we now understand much more about building loops around powerful models, one obvious next step is that the model becomes an active user of the profiling tool.
+
+Concretely, that means:
+
+- read the profiler output
+- connect it to hardware utilization
+- estimate likely bottlenecks
+- prioritize branches
+- reject low-upside directions
+- propose the next implementation move
+
+That is one reason this area feels so interesting right now.
+
+### 7. Short context often helps more than long context
+
+Longer context is not automatically better.
+
+For this kind of project, long context often does not add more useful information. Sometimes it hurts:
+
+- too many stale ideas
+- too many mixed branches
+- diluted priorities
+- harder handoff
+- weaker decisions
+
+Short context with the right summary is often much better. For many optimization loops, the better default is: compress hard, keep the signal, drop the rest.
+
+### 8. Critical thinking matters more, not less
+
+As models get stronger, I do not think the engineer becomes less important. I think the engineer's role becomes more centered on critical thinking.
+
+Especially:
+
+- building the evaluation matrix
+- deciding what to measure
+- deciding what to trust
+- separating real bottlenecks from side signals
+- deciding when to continue, branch, revert, or stop
+
+The model can generate options. The engineer still needs to judge which options are worth spending time on.
+
+### 9. Tool setup matters, and I intentionally kept this one narrow
+
+Part of the point of this project is that I wanted the setup to be constrained and honest.
+
+For transparency:
+
+- I did not start by reading CUTLASS code
+- I mainly used `GPT-5.4` and Codex CLI
+- I also used `GPT-5.4 Pro` in chat for discussion and idea exploration
+- the main optimization workflow was not "just ask a model to solve everything"
+
+I wanted to see what happens when a strong model is placed inside a good harness, on a very specific problem, with a human still steering direction.
+
+### 10. Better models may create more engineering surface, not less
+
+The current level of CUDA optimization is already the result of strong engineers pushing close to the limit of human working memory.
+
+A lot of this work is difficult not because the machine is mysterious, but because the optimization stack is deep and people cannot keep every layer active in their head at once.
+
+That is why abstraction matters. We need different levels of abstraction to preserve key principles while making the problem tractable.
+
+In that sense, I do not see better models as reducing the need for engineers. I can easily imagine the opposite: engineers get more opportunities because the system makes it possible to work at more layers and search more paths.
+
+### 11. CUDA is only one layer; future loops may move closer to PTX
+
+CUDA is already an abstraction layer. Under it there is PTX, and below that there is even more hardware reality.
+
+If stronger harnesses and better model-tool loops make lower-level work more tractable, then one interesting direction is human-in-the-loop PTX optimization.
+
+Not because abstraction is bad, but because better abstractions may finally let more people operate closer to the machine without losing the global reasoning.
+
+### 12. The optimization history itself became useful
+
+Once the project accumulated many rounds, the history itself started to carry structure.
+
+The rounds are not just a log. They reveal families of attempts:
+
+- tiling and CTA-shape ideas
+- staging, async-copy, and pipeline ideas
+- shared-memory layout ideas
+- epilogue and writeback ideas
+- fixed-shape specialization ideas
+- human idea changes
+
+That is why I wanted the optimization tree in the write-up. It is not decoration. It makes the search process visible.
+
+### 13. The next bottleneck may be search policy
+
+In human-in-the-loop kernel optimization, the search space is huge, and the real cost is not only kernel coding speed. It is the time spent deciding which path to explore next.
+
+Looking at the optimization tree, I realized that my current workflow is still basically a single-path search with rollback: push one direction until it plateaus, step back, then try another branch.
+
+That works, but it is not an efficient way to use the information accumulated across the whole search.
+
+So the next step is probably not only "write better kernels faster." It is to make better choices about which path to explore next while keeping multiple candidate states alive instead of collapsing too early onto one branch.
+
+That is why I want to explore ideas like:
+
+- keeping multiple kernel variants in a queue
+- estimating upper and lower bounds from profiler signals
+- using heuristic planning
+- using A-star-like search structures
+- using RL-style search policies to allocate iteration effort more intelligently
+
+In other words, the next layer is not only kernel optimization. It is optimization of the optimization process itself.
+
+## Current Snapshot
+
+![Optimization tree](blog/harness-engineering-human-in-the-loop-cuda-matmul/matmul_optimization_tree_pretty.svg)
+
+This repo is intentionally narrow:
+
+- one fixed BF16 GEMM shape
+- one machine
+- one custom kernel path
+- one local CUTLASS baseline
+- one evolving optimization tree
+
+That narrowness is the point.
+
+I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
+
+At the moment, the official benchmark snapshot in the repo is:
+
+- custom kernel: `30.052768 ms`
+- local CUTLASS baseline: `25.917889 ms`
+- result: already close enough to be interesting, still far enough to leave real room for better ideas
+
+## Document Map
+
+This README is intentionally public-facing now. The workflow-specific and Codex-specific operating details live in narrower docs:
+
+- [AGENTS.md](AGENTS.md): repo-local instructions for Codex and other coding agents
+- [docs/codex_workflow.md](docs/codex_workflow.md): operator quickstart for the local optimization loop
+- [docs/supervisor_protocol.md](docs/supervisor_protocol.md): supervisor dispatch contract
+- [docs/node_b_protocol.md](docs/node_b_protocol.md): diagnosis-node protocol
+- [docs/node_c_protocol.md](docs/node_c_protocol.md): implementation-node protocol
+- [docs/pipeline_graph.md](docs/pipeline_graph.md): workflow graph semantics
+- [docs/benchmark_spec.md](docs/benchmark_spec.md): fixed benchmark definition
+- [state/README.md](state/README.md): state file meanings and update rules
+- [blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md](blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md): original blog draft stored in-repo
