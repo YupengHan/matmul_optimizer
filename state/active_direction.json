@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Human idea 10 Stage: keep the corrected 3-stage hot band, but squeeze it under the 128-reg cliff",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T18:15:10-07:00",
+  "source_diagnosis_id": "node_b_20260419_181340_round09_512448e",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Human idea 10 Stage: keep the corrected 3-stage hot band, but squeeze it under the 128-reg cliff",
+    "hypothesis": "Round 8 is the first correct 3-stage result, and the machine-level shift is too large to dismiss: barrier dropped from 14.30 to 4.60, long scoreboard from 6.21 to 1.21, mio from 2.30 to 0.71, registers/thread from 167 to 132, and shared/block from 46.6 KB to 44.8 KB. That says the Stage family is real, but it is not yet cashing out into runtime because tensor issue stayed middling and occupancy is still pinned at 1 block/SM. The next move should stay inside Idea 10 and target the concrete cliff that is now close enough to matter: trim stage/export bookkeeping live ranges so the hot 64x384 PTX kernel can get from 132 regs/thread to 128 or below without giving back the new low-stall signature. If that works, the Stage family finally has a plausible path to convert overlap into more resident work and real runtime wins.",
+    "expected_bottleneck": "launch__occupancy_limit_registers and residual tensor underfill after overlap gains; short scoreboard is the next stall to watch once barrier, long scoreboard, and mio are already low.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:410-500",
+      "src/kernels/bf16_gemm_v1.cu:862-896",
+      "src/kernels/bf16_gemm_v1.cu:939-1014"
+    ],
+    "risk": "If the live-range split is attempted by adding helper state or extra fences, ptxas can re-inflate registers or erase the Stage-family overlap win. If this branch still cannot clear the 128-reg cliff, it loses its best concrete reason to continue as the primary family.",
+    "metrics_to_recheck": [
+      "launch__registers_per_thread",
+      "launch__occupancy_limit_registers",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "median runtime"
+    ],
+    "stop_condition": "Stop if registers/thread stays above 128 or runtime is still clearly slower than the 33.12844658 ms accepted base without a clear tensor-active gain; at that point the Stage family is not converting its overlap advantage."
+  },
+  "notes": "Node C may now implement this one direction."
 }
