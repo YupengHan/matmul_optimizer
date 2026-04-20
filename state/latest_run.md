@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_091644_bf16_gemm_v1_96154e3`
-- run dir: `runs/20260420_091644_bf16_gemm_v1_96154e3`
-- kernel tag: `bf16_gemm_v1_96154e3`
-- round label: `round 64/100`
+- run id: `20260420_092926_bf16_gemm_v1_8c2a778`
+- run dir: `runs/20260420_092926_bf16_gemm_v1_8c2a778`
+- kernel tag: `bf16_gemm_v1_8c2a778`
+- round label: `round 65/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.560576 ms`
-- p10 runtime: `25.009152 ms`
-- p90 runtime: `26.244404 ms`
-- TFLOP/s: `28.442998 TFLOP/s`
-- previous run id: `20260420_091330_bf16_gemm_v1_863f60f`
-- runtime delta vs previous measured run: `-0.373759 ms`
-- TFLOP/s delta vs previous measured run: `+0.409913 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.692160 ms`
+- p10 runtime: `25.203405 ms`
+- p90 runtime: `26.258842 ms`
+- TFLOP/s: `28.297326 TFLOP/s`
+- previous run id: `20260420_091644_bf16_gemm_v1_96154e3`
+- runtime delta vs previous measured run: `+0.131583 ms`
+- TFLOP/s delta vs previous measured run: `-0.145672 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore accepted grouped_rows=8 base, then test 8->6 hot-band narrowing`
+- implemented direction name: `Restore grouped_rows=8, then align PTX export order with the reversed compute row-pair traversal`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_091644_bf16_gemm_v1_96154e3/summary.json`
-- measured commit: `96154e330bd119b7572aeb4ff4722232a73b2a80`
+- raw summary json: `runs/20260420_092926_bf16_gemm_v1_8c2a778/summary.json`
+- measured commit: `8c2a778a7ff52bec9a777c667ae4be6ac96ce39f`
 - new best custom: `no`
-- generated at: `2026-04-20T09:16:52-07:00`
+- generated at: `2026-04-20T09:29:33-07:00`

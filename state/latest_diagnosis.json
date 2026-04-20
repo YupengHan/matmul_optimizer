@@ -1,83 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_091814",
-  "status": "completed",
-  "created_at": "2026-04-20T09:18:14-07:00",
-  "source_run_id": "20260420_091644_bf16_gemm_v1_96154e3",
-  "source_run_dir": "runs/20260420_091644_bf16_gemm_v1_96154e3",
-  "source_summary_json": "runs/20260420_091644_bf16_gemm_v1_96154e3/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_092926_bf16_gemm_v1_8c2a778",
+  "source_run_dir": "runs/20260420_092926_bf16_gemm_v1_8c2a778",
+  "source_summary_json": "runs/20260420_092926_bf16_gemm_v1_8c2a778/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore grouped_rows=8, then align PTX export order with the reversed compute row-pair traversal",
-      "hypothesis": "Goal remains sub-20 ms, but the accepted best is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd. The current source run is round 64 at 25.56057644 ms only because kFixedHotBandPtxGroupedRows moved from the accepted 8 down to 6; it is a regression family, not a new base. Compared with round 58, the hot PTX 128x128 microkernel kept the same occupancy shape and resource footprint while regressing kernel time from 32.715296 ms to 32.925664 ms and raising DRAM from 9.75 to 11.58, barrier stall from 5.04 to 5.35, and long scoreboard from 7.31 to 7.69. The accepted base characteristics should therefore be restored first: grouped_rows=8, PTX hot-band right-left 64x64 consume order, reversed PTX row-pair traversal, one-sync steady-state handoff, B-first refill, and active-loop unroll 2. Once that accepted base is back, the cleanest bounded next move is to align the PTX export/live-range order with the already reversed compute traversal. The current compute helper visits higher row-pairs first, but the PTX store helper still exports TileRow 0, then 1, then 2, then 3. Reversing or pairing the export traversal to match compute order is a local epilogue/live-range experiment that stays on the accepted base without reopening grouped_rows retunes, feed-path rewrites, or extra-live Ps2r branches.",
-      "expected_bottleneck": "PTX hot-band export/writeback ordering and accumulator live-range mismatch after the accepted grouped_rows=8 locality base is restored.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156",
-        "src/kernels/bf16_gemm_v1.cu:750-778",
-        "src/kernels/bf16_gemm_v1.cu:983-1023",
-        "src/kernels/bf16_gemm_v1.cu:1934-2014"
-      ],
-      "risk": "Moderate. The change is correctness-sensitive because it touches export order, but it is still a bounded, code-local move that leaves shared layout, 64x64 warp ownership, B-first refill, stage depth, and unroll 2 intact.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against both 25.56057644 ms and the accepted 24.57088089 ms base",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "correctness on all fixed BF16 cases"
-      ],
-      "stop_condition": "Reject if restoring grouped_rows=8 plus export-order alignment does not recover toward the round-58 baseline, or if correctness / writeback-side stalls worsen."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore grouped_rows=8, then retime the accepted one-sync B-first handoff without reopening closed refill branches",
-      "hypothesis": "The human stage/multi-buffer family is already partially accepted in the active base through Pg2s double buffering, async copy, the one-sync steady-state handoff, B-first refill, and unroll 2. The latest run shows only moderate feed stalls and unchanged occupancy, so the next non-closed stage family is not a broader pipeline rewrite; it is a very narrow retime inside the accepted PTX hot-band handoff. After grouped_rows=8 is restored, the kernel still drains the current K16 tile, executes cp.async.wait_group_0 plus one __syncthreads, then refills B before A. A small retime inside that exact contract may recover overlap that is still surfacing as long scoreboard, while keeping A-first refill, unroll 1, K32 cadence, warmup-order reopen, CTA-level B repack, and extra-live B lookahead closed.",
-      "expected_bottleneck": "Residual producer-consumer overlap loss in the accepted one-sync steady-state handoff rather than consumer order or global-memory vectorization.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156",
-        "src/kernels/bf16_gemm_v1.cu:1958-1975",
-        "src/kernels/bf16_gemm_v1.cu:1991-2007"
-      ],
-      "risk": "Moderate to high. This family is easy to overfit and can drift back into the explicitly closed A-first refill, warmup-order, K32 cadence, or broad stage-rewrite space if it stops being a minimal retime.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the restored grouped_rows=8 base",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "correctness on all fixed BF16 cases"
-      ],
-      "stop_condition": "Reject immediately if the change adds syncs, changes the accepted B-first refill contract, or behaves like a reopen of A-first, warmup-order, K32, or extra-live Ps2r branches."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore grouped_rows=8, then try an intra-group launch-order closure without changing the group size",
-      "hypothesis": "The human L2 cache / launch-order locality family is already accepted only in one narrow form: grouped_rows=8. The evidence is now strong that grouped_rows=16, grouped_rows=4, and grouped_rows=6 are all closed negatives for this round. That leaves only one locality family still plausibly open: keep grouped_rows fixed at the accepted 8 and change only the within-group logical traversal, for example how pid_in_group maps to logical_block_x and logical_block_y. Because round 64 regressed mainly through higher DRAM and slightly worse barrier / long-scoreboard behavior while occupancy and the PTX compute path stayed flat, there may still be a small locality closure inside the grouped_rows=8 dispatch order itself. This is materially different from dir_01's export-order alignment and dir_02's handoff retime, but it should remain a fallback because the grouped_rows family has already consumed several rounds and broad swizzle rewrites are not justified by the current evidence.",
-      "expected_bottleneck": "Residual hot-band L2 / launch-order locality loss inside the accepted grouped_rows=8 dispatch path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156",
-        "src/kernels/bf16_gemm_v1.cu:1933-1946",
-        "src/kernels/bf16_gemm_v1.cu:1955-1956"
-      ],
-      "risk": "High. The upside is probably smaller than dir_01 and dir_02, and the branch can easily degenerate into a disguised reopen of grouped_rows=16, grouped_rows=4, or grouped_rows=6 instead of a true within-group closure.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the restored grouped_rows=8 base",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "correctness on all fixed BF16 cases"
-      ],
-      "stop_condition": "Reject if the experiment needs any group-size change away from the accepted 8-row base, or if it fails to beat the restored grouped_rows=8 branch."
-    }
-  ],
-  "notes": "Round 65/100 diagnosis is anchored to run 20260420_091644_bf16_gemm_v1_96154e3 at 25.56057644 ms, but the optimization target remains under 20 ms. The accepted best custom kernel is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd, so the round-64 source is explicitly treated as a regression family rather than a new base because it changed kFixedHotBandPtxGroupedRows from the accepted 8 to 6. Audit against the human idea families: tiling is already accepted only as the current 64x64 warp microtile, while any broader 256x128 macro-tiling reopen is rejected for this round; coalescing / wide global access is already accepted in the 16-byte cp.async path; shared-memory reuse is already accepted in the staged A/B tiles; async copy is already accepted; bank-conflict handling is accepted only through the current right-left PTX 64x64 consume order plus the existing padded export scratch, while the row-pair-dependent split sweep and the fully mirrored sweep are closed negatives; L2 cache / launch-order locality is accepted only as grouped_rows=8, while grouped_rows=16, grouped_rows=4, and grouped_rows=6 are all rejected for this round; register reuse Right-Left-Right-Left is already accepted in the base and should not be reopened as a new broad family; Pg2s double buffer is already accepted in the base; Ps2r double buffer is rejected for this round because extra-live B lookahead, K32 cadence, and warmup-order reopen are already closed; stage/multi-buffer is accepted only in the current one-sync steady-state handoff with B-first refill and unroll 2, while A-first refill, unroll 1, CTA-level B repack, and broader pipeline rewrites are rejected. The measured evidence supports that ranking: round 64 keeps the same hot-kernel occupancy/resource shape as round 58, but loses time while DRAM rises from 9.75 to 11.58, barrier rises from 5.04 to 5.35, and long scoreboard rises from 7.31 to 7.69, so the next best single node_c is not another feed-path or grouped_rows rewrite. Dir_01 is recommended because it first restores the accepted grouped_rows=8 base and then makes the smallest auditable new change still attached to that accepted PTX hot-band branch: align PTX export/live-range order with the reversed compute row-pair traversal. Dir_02 keeps the accepted stage family open but is riskier because handoff retiming can easily drift into already closed refill branches. Dir_03 is the remaining locality family, but only as a fixed-group-size closure and not as another grouped_rows sweep."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
