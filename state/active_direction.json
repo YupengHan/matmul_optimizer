@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "PTX accumulator and export lifetime compaction to attack the 167-register wall",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T17:02:56-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_165923",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "PTX accumulator and export lifetime compaction to attack the 167-register wall",
-    "hypothesis": "Round 1 already gave the key negative evidence for this branch point: tightening full-width tile-pair fragment issue order by itself moved runtime only from 33.12844658 ms to 33.15251350 ms, with tensor, active warps, barrier, mio, and occupancy all essentially flat. That means the next sustainable move is not more issue-order massaging, but a change in compiler-visible live state. Keep the same 64x384 hot-band PTX microkernel and unchanged 64x96 tail, but compact the accumulator/export helper surface so fewer accumulator, B-fragment, and export temporaries stay live across the compute-to-store boundary. Concretely, shrink recursive/template helper lifetime, narrow temporary scope around the 12 named accumulator tiles, and make the paired export path drain smaller explicit slices instead of letting the whole tile-set and export helpers stay resident together.",
-    "expected_bottleneck": "Register-limited occupancy and weak latency hiding are the main remaining bottlenecks; long scoreboard is now the more meaningful residual stall because barrier and mio are already low.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:239-402",
-      "src/kernels/bf16_gemm_v1.cu:442-495",
-      "src/kernels/bf16_gemm_v1.cu:801-818",
-      "src/kernels/bf16_gemm_v1.cu:950-956"
-    ],
-    "risk": "Medium risk. If the refactor is only cosmetic, ptxas may still allocate about 167 registers and nothing material will move. This direction also has to stay away from the already-unhelpful tile-pair issue-order retightening, the prechecked pair-compaction path, and the regressed explicit half-panel compute split.",
-    "metrics_to_recheck": [
-      "launch__registers_per_thread",
-      "launch__occupancy_limit_registers",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if registers stay effectively flat and active warps do not improve, because then the branch needs a more direct export/dataflow change rather than more helper reshaping."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

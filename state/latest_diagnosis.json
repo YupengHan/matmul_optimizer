@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_165923",
-  "status": "completed",
-  "created_at": "2026-04-19T16:59:23-07:00",
-  "source_run_id": "20260419_142929_bf16_gemm_v1_a34f072",
-  "source_run_dir": "runs/20260419_142929_bf16_gemm_v1_a34f072",
-  "source_summary_json": "runs/20260419_142929_bf16_gemm_v1_a34f072/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_170714_bf16_gemm_v1_1930e3f",
+  "source_run_dir": "runs/20260419_170714_bf16_gemm_v1_1930e3f",
+  "source_summary_json": "runs/20260419_170714_bf16_gemm_v1_1930e3f/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "PTX accumulator and export lifetime compaction to attack the 167-register wall",
-      "hypothesis": "Round 1 already gave the key negative evidence for this branch point: tightening full-width tile-pair fragment issue order by itself moved runtime only from 33.12844658 ms to 33.15251350 ms, with tensor, active warps, barrier, mio, and occupancy all essentially flat. That means the next sustainable move is not more issue-order massaging, but a change in compiler-visible live state. Keep the same 64x384 hot-band PTX microkernel and unchanged 64x96 tail, but compact the accumulator/export helper surface so fewer accumulator, B-fragment, and export temporaries stay live across the compute-to-store boundary. Concretely, shrink recursive/template helper lifetime, narrow temporary scope around the 12 named accumulator tiles, and make the paired export path drain smaller explicit slices instead of letting the whole tile-set and export helpers stay resident together.",
-      "expected_bottleneck": "Register-limited occupancy and weak latency hiding are the main remaining bottlenecks; long scoreboard is now the more meaningful residual stall because barrier and mio are already low.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:239-402",
-        "src/kernels/bf16_gemm_v1.cu:442-495",
-        "src/kernels/bf16_gemm_v1.cu:801-818",
-        "src/kernels/bf16_gemm_v1.cu:950-956"
-      ],
-      "risk": "Medium risk. If the refactor is only cosmetic, ptxas may still allocate about 167 registers and nothing material will move. This direction also has to stay away from the already-unhelpful tile-pair issue-order retightening, the prechecked pair-compaction path, and the regressed explicit half-panel compute split.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if registers stay effectively flat and active warps do not improve, because then the branch needs a more direct export/dataflow change rather than more helper reshaping."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Register-first PTX pair export that trims float c_shared dependence",
-      "hypothesis": "The current paired export was a real win, but the hot-band PTX branch still routes each accumulator pair through float shared scratch before BF16 packing. With round 1 showing that compute issue-order tightening alone is not enough, the next stronger PTX-local lever is to continue down the export path: keep the same 64x384 compute body and unchanged tail, but make the paired export more register-first so fewer float shared writes and fewer shared-backed export temporaries sit on the critical path. Even a partial shift here can reduce LSU pressure and may ease the live-state overlap between accumulators and epilogue state.",
-      "expected_bottleneck": "Export-side shared traffic and shared-backed epilogue temporaries are now a secondary limiter that can still feed into register pressure, LSU pressure, and short/long scoreboard exposure.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:212-229",
-        "src/kernels/bf16_gemm_v1.cu:301-315",
-        "src/kernels/bf16_gemm_v1.cu:442-495",
-        "src/kernels/bf16_gemm_v1.cu:950-956"
-      ],
-      "risk": "Higher risk than dir_01. A more direct register-packed export can easily raise registers, complicate correctness, or save shared traffic without improving the one-block occupancy wall. It should be treated as the next lever if lifetime compaction alone is too weak.",
-      "metrics_to_recheck": [
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if export changes lower shared/LSU traffic only marginally or raise registers, because that would mean the remaining limit is still occupancy/live-state rather than the export path."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "PTX two-stage handoff retime for long-scoreboard hiding without new barriers",
-      "hypothesis": "The fixed-K orchestration retime already paid off and should not be thrown away, but the residual stall mix still leaves long scoreboard noticeably above short scoreboard and mio. A bounded follow-up is to keep the same two-stage PTX pipeline, the same 64x384 hot-band shape, and the unchanged 64x96 tail, while retiming when future A/B copies are launched and when the stage swap occurs inside advance_peeled_hot_stage_ptx(). The goal is not another producer-specialization rewrite or named-barrier experiment; it is a smaller PTX-local handoff adjustment that tries to stretch useful compute between wait and next consume so more latency is hidden without reopening barrier pressure.",
-      "expected_bottleneck": "Residual long-scoreboard latency from the current wait/commit/consume placement may still be leaving tensor issue underfed even after barrier and mio were pushed down.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:503-529",
-        "src/kernels/bf16_gemm_v1.cu:821-854",
-        "src/kernels/bf16_gemm_v1.cu:895-948"
-      ],
-      "risk": "Medium risk with limited ceiling. The current orchestration layout is already one of the proven wins on this branch, so careless retiming can easily give back that gain. This should stay behind the state/export directions and must not drift into named-barrier, producer-specialized, or issue-order retry territory.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if long-scoreboard does not come down or if barrier rises, because then the retime is just perturbing a working steady-state without opening new overlap."
-    }
-  ],
-  "notes": "All three directions stay strictly inside the 64x384 hot-band PTX microkernel mainline and keep the 64x96 tail unchanged. Ranking is anchored on the latest measured run 20260419_142929_bf16_gemm_v1_a34f072 and the restored accepted base 20260419_142213_bf16_gemm_v1_9bdc160: the round-1 full-width tile-pair fragment issue-order tightening was basically negative evidence, regressing by about 0.024 ms while leaving tensor active, active warps, barrier, mio, and occupancy effectively unchanged. Because barrier and mio are already low, the recommendation shifts toward actual live-state/register relief and export-lifetime cleanup, with orchestration retime kept only as a bounded third option. Previously bad lines remain excluded: no explicit mma.sync half-panel compute, no pair-compaction retry, and no panelized B-load reorder."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
