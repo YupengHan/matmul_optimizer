@@ -1,15 +1,85 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_110400",
+  "status": "completed",
+  "created_at": "2026-04-20T11:04:00-07:00",
   "source_run_id": "20260420_110307_bf16_gemm_v1_11e5dae",
   "source_run_dir": "runs/20260420_110307_bf16_gemm_v1_11e5dae",
   "source_summary_json": "runs/20260420_110307_bf16_gemm_v1_11e5dae/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore Exact Round-69 Base And Recheck Export Lifetime From There",
+      "hypothesis": "Round 71 changed PTX issue grouping inside the 64x64 compute helpers by flattening the recursive right-left column issue into an explicit Step 0/1/2/3 sequence, then remeasured 25.7464323 ms. That improved relative to round 70 but stayed slower than the exact round-69 base at 25.49913597 ms, so this explicit PTX helper issue-grouping variant is not a win on the exact base and should be closed negative. With grouped_rows sweeps, snake launch-order locality, fixed-K peeling, export traversal changes, A-first refill, consumer-order sweeps, broad stage overexpansions, and the narrow handoff-closure family already closed, the best remaining bounded family on the active default path is a low-rank export-lifetime recheck from the exact round-69 base. This keeps grouped_rows=8, the accepted right-left 64x64 consume order, reversed row-pair traversal, linear export traversal, one-sync steady-state handoff, B-first refill, and accepted helper shapes fixed, and only asks whether a carefully re-scoped export-lifetime edit can move runtime from the true reproducible base rather than from a drifted branch.",
+      "expected_bottleneck": "Residual shared export lifetime and barrier cost on the active PTX hot-band path. This is no longer a high-ceiling family, but it is still the cleanest bounded move that touches the exact default path without reopening any already-closed PTX compute-order experiments.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:134 FixedHotBandTile128x128PtxExportScratch",
+        "src/kernels/bf16_gemm_v1.cu:1000 ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel",
+        "src/kernels/bf16_gemm_v1.cu:1016 export-side sync sequence on the exact base",
+        "src/kernels/bf16_gemm_v1.cu:2025 ptx_wmma_store_tile_pairs_64x64_ptx_microkernel call site in the active PTX kernel"
+      ],
+      "risk": "Medium. Round 67 already showed that one obvious export-side sync removal is not a primary runtime lever, so this family can easily consume a round without moving the needle. Any recheck must keep linear export traversal intact and avoid reopening the already-closed traversal family.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if an export-lifetime recheck from the exact round-69 base does not beat that 25.49913597 ms baseline or if it requires changing export traversal semantics."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Isolate The 256x128 Auxiliary Path And Retune Its Local Schedule",
+      "hypothesis": "Because many active PTX microkernel variants are now closed negative, the next materially different family worth considering is an isolated auxiliary-path retune. The most obvious candidate is the non-PTX fixed-hot-band 256x128 kernel, which currently keeps its exact accepted local schedule at unroll 1. This is ranked below the export-lifetime recheck because it is not the default fixed-shape dispatch path, so its leverage on the current benchmark path is inherently lower unless the implementation intentionally isolates and exercises it. Still, it remains a valid bounded family to queue because it is distinct from the PTX microkernel churn that has already closed out many variants.",
+      "expected_bottleneck": "Auxiliary-path local scheduling and latency hiding inside the non-PTX 256x128 kernel, especially the exact K-loop unroll choice and its local sync cadence. This is not a claim that tiling itself should be reopened; it is a narrow schedule retune on an already-existing auxiliary kernel surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1174 launch_fixed_hot_band_by_tile_n auxiliary dispatch path",
+        "src/kernels/bf16_gemm_v1.cu:1554 bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:1607 exact unroll-1 K loop in the 256x128 auxiliary kernel",
+        "src/kernels/bf16_gemm_v1.cu:2056 fixed-shape dispatch gate for override-driven auxiliary paths"
+      ],
+      "risk": "Medium to high. This family is easy to overrank because it is cleanly isolated, but it is not the current default hot-band dispatch. If the implementation does not stay explicitly auxiliary and auditable, it can burn a round without affecting the main measured path.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the 256x128 auxiliary-path retune cannot be kept isolated and auditable, or if it does not offer a plausible route to improve the measured path beyond the exact round-69 base."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Preserve Exact Accepted Order And Try A Smaller PTX Helper-Shape Move",
+      "hypothesis": "Round 71 only closed one specific PTX helper-shape experiment: flattening the accepted recursive column issue into an explicit Step 0/1/2/3 sequence. That does not automatically close every bounded PTX helper-shape move, but it does force this family to rank low. If another PTX-side direction is tried at all, it should restore the exact round-69 base first and then make a much smaller helper-boundary or inlining change that preserves the accepted right-left column order and reversed row-pair traversal exactly, rather than changing issue grouping again. This remains materially different from both export-lifetime and auxiliary-path schedule retunes, but it is clearly higher risk after round 71.",
+      "expected_bottleneck": "Warp-level helper overhead and instruction locality inside the PTX 64x64 compute stack, not a new consume-order search. The target would be helper shape, call layering, or inlining boundaries while preserving the exact accepted order semantics.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:609 PtxWmmaHotBandTileIndex64x64 accepted right-left order",
+        "src/kernels/bf16_gemm_v1.cu:729 ptx_wmma_issue_col_tile_64x64_ptx_microkernel just-tested explicit issue helper",
+        "src/kernels/bf16_gemm_v1.cu:751 ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel",
+        "src/kernels/bf16_gemm_v1.cu:767 ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel"
+      ],
+      "risk": "High. This can easily become a disguised reopen of the already-closed explicit issue-grouping variant, or drift into consumer-order sweeps and row-pair restructuring that are already negative. It should stay low rank unless the active-path fallback families are exhausted.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the PTX helper-shape move changes accepted traversal semantics, starts to resemble the closed explicit issue-grouping variant, or fails to beat the exact round-69 base."
+    }
+  ],
+  "notes": "Goal remains below 20 ms. The current reproducible exact base remains round 69 at 25.49913597 ms. Round 71 changed PTX issue grouping inside the 64x64 compute helpers by flattening the recursive column issue into an explicit Step 0/1/2/3 sequence while restoring the round-69 base. That improved relative to round 70 but still measured 25.7464323 ms, with tensor 47.67, dram 10.31, lts 30.78, barrier 6.47, long_scoreboard 4.18, and mio 3.24. That is sufficient evidence that this explicit PTX helper issue-grouping variant is not a win on the exact base and should now be treated as closed negative. Closed-negative families for this round therefore include: grouped_rows sweeps, snake launch-order locality, fixed-K peeling, export traversal changes, A-first refill, consumer-order sweeps, broad stage overexpansions, the narrow handoff-closure family, and the explicit helper issue-grouping variant just tested. Export-side second-sync removal remains non-primary, but export-lifetime from the exact base is still available as a bounded low-rank family. The accepted active exact-base surface remains: grouped_rows=8, right-left 64x64 PTX consume order, reversed PTX compute row-pair traversal, linear export traversal, one-sync steady-state handoff, B-first refill, active-loop unroll 2, and accepted helper shapes. Human-idea audit for this round: tiling is rejected as a main search family because grouped_rows retunes and broader tile changes are already closed negative, but an isolated 256x128 auxiliary-path schedule retune remains acceptable as a bounded side-path experiment rather than a reopened tile search; coalescing and wide global access are accepted as already implemented through the existing 16-byte async staging path; shared-memory reuse is accepted as the current base; async copy is accepted only in the exact K16 two-stage B-first form, while broad stage or handoff expansions remain closed negative; bank-conflict handling remains available only through a low-rank export-lifetime recheck on the exact base; L2 locality is rejected for ranking because snake launch-order locality is already closed negative; register reuse Right-Left-Right-Left is accepted as fixed exact-base behavior, while the explicit helper issue-grouping variant is now closed negative; Pg2s double buffer is accepted as already in place; Ps2r double buffer is accepted in the current helper stack and any remaining PTX helper-shape work must preserve exact accepted traversal semantics; stage and multi-buffer remain closed beyond the present exact baseline."
 }
