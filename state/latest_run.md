@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_210551_bf16_gemm_v1_61be2e8`
-- run dir: `runs/20260419_210551_bf16_gemm_v1_61be2e8`
-- kernel tag: `bf16_gemm_v1_61be2e8`
-- round label: `round 5/10`
+- run id: `20260419_212123_bf16_gemm_v1_b276585`
+- run dir: `runs/20260419_212123_bf16_gemm_v1_b276585`
+- kernel tag: `bf16_gemm_v1_b276585`
+- round label: `round 6/10`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.570496 ms`
-- p10 runtime: `30.010240 ms`
-- p90 runtime: `31.023932 ms`
-- TFLOP/s: `23.781735 TFLOP/s`
-- previous run id: `20260419_210303_bf16_gemm_v1_3be0a8e`
-- runtime delta vs previous measured run: `-0.023553 ms`
-- TFLOP/s delta vs previous measured run: `+0.018308 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.765568 ms`
+- p10 runtime: `30.404812 ms`
+- p90 runtime: `31.385191 ms`
+- TFLOP/s: `23.630944 TFLOP/s`
+- previous run id: `20260419_210551_bf16_gemm_v1_61be2e8`
+- runtime delta vs previous measured run: `+0.195072 ms`
+- TFLOP/s delta vs previous measured run: `-0.150790 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 5/7 Bank conflict + internal-tile order: keep the correct 256x128 hot kernel, but change the 64x64 warp-consumer order to Right/Left/Right/Left`
+- implemented direction name: `Human idea 10 Stage: keep the correct hot kernel, but specialize the fixed 452-tile loop into explicit prologue / steady-state / epilogue control`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_210551_bf16_gemm_v1_61be2e8/summary.json`
-- measured commit: `61be2e8be6b96d4f3c3424f3e8f2b3b307b7293e`
+- raw summary json: `runs/20260419_212123_bf16_gemm_v1_b276585/summary.json`
+- measured commit: `b276585d1116d0596c9d17f02c48868f0c3edbca`
 - new best custom: `no`
-- generated at: `2026-04-19T21:06:00-07:00`
+- generated at: `2026-04-19T21:21:31-07:00`

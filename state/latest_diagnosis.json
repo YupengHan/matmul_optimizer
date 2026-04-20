@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_210902",
-  "status": "completed",
-  "created_at": "2026-04-19T21:09:02-07:00",
-  "source_run_id": "20260419_210551_bf16_gemm_v1_61be2e8",
-  "source_run_dir": "runs/20260419_210551_bf16_gemm_v1_61be2e8",
-  "source_summary_json": "runs/20260419_210551_bf16_gemm_v1_61be2e8/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_212123_bf16_gemm_v1_b276585",
+  "source_run_dir": "runs/20260419_212123_bf16_gemm_v1_b276585",
+  "source_summary_json": "runs/20260419_212123_bf16_gemm_v1_b276585/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 10 Stage: keep the correct hot kernel, but specialize the fixed 452-tile loop into explicit prologue / steady-state / epilogue control",
-      "hypothesis": "Round 5 proved that changing only the internal 64x64 tile order on the correct branch is too low-signal: overall runtime improved by only about 0.024 ms and the hot-band kernel itself actually moved the wrong way to about 41.11 us. That says the current bottleneck is not a tiny per-fragment order tweak. The better next move is the user's fixed-shape Stage idea: keep the correct 256x128 / 64x64 kernel and the same layout, but rewrite the 452-tile hot loop so most iterations execute in a simpler steady-state form with fewer generic branch checks and cleaner cp.async handoff. This directly targets hot-loop orchestration tax while preserving correctness and shared/register budgets.",
-      "expected_bottleneck": "Generic steady-state loop control and stage-transition overhead in the true hot-band kernel rather than operand layout.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
-      ],
-      "risk": "The upside is moderate. If the actual wall is still register-limited feed rather than control overhead, this can become a refactor with little runtime impact.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if hot-band runtime and tensor/barrier metrics remain essentially flat after the control specialization."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 9 Ps2r: add a one-fragment shared-to-register lookahead inside the correct full-width sweep",
-      "hypothesis": "If the loop still wants a feed-path change on the correct branch, the next aggressive option is shared-to-register lookahead inside the full-width 64x64 sweep. Keep the same tiling and shared layout, but overlap the next B-fragment load with the current MMA issue chain. This is a legitimate Ps2r direction, but it is riskier than dir_01 because the correct branch is already at 167 registers/thread.",
-      "expected_bottleneck": "Warp-local shared-to-register delivery latency inside the full-width hot-band sweep.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "High register risk on an already register-limited branch. This can easily worsen occupancy with little benefit.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if registers climb or occupancy worsens with no clear hot-band runtime improvement."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 5 bank-conflict follow-through: keep the correct branch and retune the warp-local B consumer again, but on a different pair schedule",
-      "hypothesis": "If the loop wants to stay on the Bank Conflict family despite round 5's weak result, the only reasonable version is another bounded consumer-schedule retune with the same shared footprint and no CTA repack. That is lower-risk than Ps2r, but it is also lower-ceiling after round 5 already showed minimal signal for the first order reshuffle.",
-      "expected_bottleneck": "Warp-local B-fragment order and bank behavior on the correct hot-band kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_mma_row_pair_col_pair_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64"
-      ],
-      "risk": "Round 5 already spent budget on this family and got almost no signal. Another small schedule variant can easily be pure noise.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if the hot-band runtime stays flat again. After that, this family is exhausted on the correct branch."
-    }
-  ],
-  "notes": "Round 6 human-idea audit against the latest correct-branch evidence: Tiling stays accepted and fixed at 256x128 / 64x64; Coalescing Access, Data Reuse, Async Copy, and Pg2s stay accepted as baseline infrastructure already present in the kernel; Bank Conflict is still a valid correct-branch family, but round 5 showed that a first issue-order retune had only tiny overall signal and no hot-band win, so it is no longer the top choice; L2 Cache remains deferred because the branch is not L2-bound; Register Reuse is accepted only in the narrow internal-order sense on the correct branch, not as a return to half-panel; Ps2r remains a valid but higher-risk family because the branch is already at 167 regs/thread; Stage becomes the primary idea this round because the shape is fixed, the current loop still carries generic control, and the lower-risk layout/order experiments have not moved the true hotspot enough. Recommended direction dir_01 therefore specializes the fixed 452-tile hot loop before spending more rounds on higher-register feed tricks."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
