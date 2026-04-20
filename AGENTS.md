@@ -78,6 +78,17 @@ Supervisor rule:
 3. if `dispatch_mode = sub_agent`, prepare the node context, spawn exactly one sub-agent for that node, then run the finalize command from the main agent
 4. after every node completion, re-read `state/supervisor_task.json` before dispatching the next node
 
+Supervisor no-stop rule:
+
+1. if `state/round_loop_state.json` reports `active = true` and `remaining_rounds > 0`, the main agent must treat the workflow as still running
+2. `ready_for_node_b`, `ready_for_node_c`, and `ready_for_node_a` are continue states during an active loop, not natural summary or stop points
+3. during an active loop, the main agent may emit only progress updates and must keep dispatching the next node
+4. the main agent must not stop merely because one round finished, a new node became ready, or there is a useful intermediate summary to report
+5. the main agent may stop only when:
+   - `remaining_rounds = 0`, or
+   - the graph enters a failure / paused state, or
+   - a required permission or environment dependency blocks further execution
+
 ## Natural-language command mapping
 
 When the user says `开始运行 node_a`:
@@ -128,6 +139,7 @@ When the user says `开始运行N圈`:
    - modification idea
    - performance delta
    - profile paths
+9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
 
 When the user says `连续工作N圈`:
 

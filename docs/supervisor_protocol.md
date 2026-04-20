@@ -29,6 +29,7 @@ The main Codex agent owns:
 - deciding whether the next step is direct script execution or a `sub-agent`
 - running node finalize commands after a `sub-agent` returns
 - verifying the workflow moves to the next graph node
+- not prematurely terminating an active round loop just because a node finished and the next node is ready
 
 The main Codex agent does **not**:
 
@@ -51,6 +52,31 @@ If `state/supervisor_task.json` says:
   - after the sub-agent returns, run `finalize_command` from the main agent
 
 After every node completion, re-read `state/supervisor_task.json` before dispatching the next node.
+
+## No-stop rule during active loops
+
+If `state/round_loop_state.json` reports:
+
+- `active = true`, and
+- `remaining_rounds > 0`
+
+then the supervisor must treat the workflow as still in-flight.
+
+Operational consequences:
+
+- `ready_for_node_b`, `ready_for_node_c`, and `ready_for_node_a` are continue states, not summary points
+- a completed `node_a` that hands control back to `node_b` does not end the run
+- the supervisor may emit progress updates, but must keep dispatching the next node
+- the supervisor must not stop only because:
+  - one round finished
+  - a new node became ready
+  - there is a useful intermediate performance summary to report
+
+The supervisor may stop only when:
+
+- `remaining_rounds = 0`
+- the graph enters a failure / paused state
+- a required permission or environment dependency blocks further execution
 
 ## Node-specific sub-agent use
 
@@ -94,6 +120,7 @@ Then the supervisor repeats this control flow:
 5. stop only when:
    - `state/round_loop_state.json` reports `remaining_rounds = 0`, or
    - the graph enters a failure state that pauses the loop
+6. otherwise continue immediately into the next dispatch step instead of treating the round boundary as a natural stopping point
 
 One completed round is always:
 
