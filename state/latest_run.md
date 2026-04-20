@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_014458_bf16_gemm_v1_09d3544`
-- run dir: `runs/20260420_014458_bf16_gemm_v1_09d3544`
-- kernel tag: `bf16_gemm_v1_09d3544`
-- round label: `round 40/100`
+- run id: `20260420_015358_bf16_gemm_v1_80ceab7`
+- run dir: `runs/20260420_015358_bf16_gemm_v1_80ceab7`
+- kernel tag: `bf16_gemm_v1_80ceab7`
+- round label: `round 41/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.088384 ms`
-- p10 runtime: `26.448983 ms`
-- p90 runtime: `28.108698 ms`
-- TFLOP/s: `26.838789 TFLOP/s`
-- previous run id: `20260420_013505_bf16_gemm_v1_98fb432`
-- runtime delta vs previous measured run: `+0.355328 ms`
-- TFLOP/s delta vs previous measured run: `-0.356733 TFLOP/s`
+- median runtime: `27.261951 ms`
+- p10 runtime: `26.920858 ms`
+- p90 runtime: `28.611482 ms`
+- TFLOP/s: `26.667916 TFLOP/s`
+- previous run id: `20260420_014458_bf16_gemm_v1_09d3544`
+- runtime delta vs previous measured run: `+0.173568 ms`
+- TFLOP/s delta vs previous measured run: `-0.170874 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Accepted PTX B-Reuse Branch And Clean Up Warp-Local Sequencing`
+- implemented direction name: `Keep The Accepted PTX Branch And Make The Steady-State Sequence More Explicit`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_014458_bf16_gemm_v1_09d3544/summary.json`
-- measured commit: `09d3544344eb23a0e677f36d712e788b0164208e`
+- raw summary json: `runs/20260420_015358_bf16_gemm_v1_80ceab7/summary.json`
+- measured commit: `80ceab789912da1c2cad1e92a16a158dfc2d6448`
 - new best custom: `no`
-- generated at: `2026-04-20T01:45:05-07:00`
+- generated at: `2026-04-20T01:54:05-07:00`
