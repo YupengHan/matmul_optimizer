@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - round loop: `single-run` with `17` rounds remaining
 
 ## Direction approval policy
@@ -27,19 +27,5 @@
 
 - selected direction: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
-
-## Human ideas for future node_b
-
-- For the next `node_b` diagnosis and later rounds, combine measured evidence with these user-provided priors instead of relying on auto-analysis alone.
-- Starting from `round 5`, every `node_b` must reflect these items one by one, then pick one primary idea family for the recommended direction.
-- The diagnosis `notes` should explicitly record which items were accepted, deferred, or rejected for that round and why the measurement evidence supports that choice.
-- Tiling prior: prefer directions that seriously evaluate `256x128` block tiling with `64x64` warp tiling when the code path and shared/register budget make that plausible.
-- Global-memory feed prior: favor wide, coalesced global-memory access patterns and non-blocking async-copy usage.
-- Reuse prior: keep leaning on shared-memory reuse for both A and B, and evaluate stronger `Pg2s` double-buffer prefetching from global to shared plus `Ps2r` double-buffer prefetching from shared to registers.
-- Pipeline prior: consider deeper stage or multi-buffer algorithms for global-to-shared prefetch only when the shared/register budget closes in measured code.
-- Bank-conflict prior: for WMMA-oriented paths, consider padding-based shared layouts; for MMA PTX-oriented paths, consider permuted or swizzled shared layouts that eliminate bank conflicts.
-- Cache prior: evaluate swizzled access modes that can improve L2 hit ratio on the fixed benchmark shape.
-- Register-reuse prior: consider internal warp-tile schedules that reuse registers in a `Right Left Right Left` pattern if that can be implemented without reopening already-rejected branches.
-- Diagnosis ranking rule: future `node_b` directions should explicitly say whether they align with or reject these human ideas, and why the measured evidence supports that choice.
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
