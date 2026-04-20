@@ -1,15 +1,81 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_163042",
+  "status": "completed",
+  "created_at": "2026-04-20T16:30:42-07:00",
   "source_run_id": "20260420_163016_bf16_gemm_v1_48ee4f9",
   "source_run_dir": "runs/20260420_163016_bf16_gemm_v1_48ee4f9",
   "source_summary_json": "runs/20260420_163016_bf16_gemm_v1_48ee4f9/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Tighten PTX Hot-Band Grouping Further To A 2-Row Window",
+      "hypothesis": "Round 11/17 showed that reopening the grouping family on top of the accepted export base was the right move: the 4-row window cut long-scoreboard to 6.14 and pulled runtime down to 25.40644836 ms, substantially better than the 6-row and 5-row variants, but still short of the accepted base. That makes the next best bounded step a tighter 2-row grouping, which divides the 50 hot-band CTA rows evenly and may preserve the scoreboard gain while reducing the remaining orchestration noise more cleanly than the 4-row remainder case.",
+      "expected_bottleneck": "Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:155-156",
+        "src/kernels/bf16_gemm_v1.cu:1969-1979",
+        "src/kernels/bf16_gemm_v1.cu:2097-2104"
+      ],
+      "risk": "Medium. The grouping family is trending in the right direction, but over-tightening the window may just swap one orchestration cost for another without beating the accepted base.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Close the grouping family if the 2-row window still fails to beat 24.84582424 ms or pushes barrier / DRAM in the wrong direction."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Reopen The Measured 64x384 Fixed-Main-Tile Control Path",
+      "hypothesis": "If the grouping family stalls again, the older `64x384` fixed-main-tile sweep remains the main broader fallback with direct measured ancestry. It still trails the 2-row grouping retry because the grouping family now has fresh positive evidence on the current accepted base.",
+      "expected_bottleneck": "Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX helper overhead.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1180-1246",
+        "src/kernels/bf16_gemm_v1.cu:2076-2113",
+        "src/kernels/bf16_gemm_v1.cu:151-159"
+      ],
+      "risk": "Medium. The family has sweep evidence, but it is a much broader branch change than the accepted PTX/export base and can easily give back recent wins.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop immediately if the 64x384 control path remains materially slower than the accepted PTX base or reopens a broad-family regression."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Freeze PTX Grouping And Probe Only The Hot-Band / Peeled Seam",
+      "hypothesis": "If both grouping and the 64x384 control stall, the only bounded family still inside the accepted fixed-shape launch path is the seam between the PTX hot-band kernel and the peeled 384-row band. That seam remains tertiary because current evidence points more strongly at the grouping lever than at the launch split itself.",
+      "expected_bottleneck": "Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1200-1246",
+        "src/kernels/bf16_gemm_v1.cu:2097-2114"
+      ],
+      "risk": "Medium. This stays inside the default fixed-shape launch path, but it is less directly supported by the fresh measurements than the grouping retry.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Only revisit this seam if the higher-ranked directions stall, and stop immediately if it broadens beyond a narrow handoff change."
+    }
+  ],
+  "notes": "Round 12/17 diagnosis for run 20260420_163016_bf16_gemm_v1_48ee4f9. Human-review mapping for this round: keep the non-PTX 128x128 control closed after its clear DRAM regression, and keep deeper export cleanup plus reopened prefetch closed. The fresh evidence is that the grouping family is the only family still moving in the right direction on top of the accepted export base: the 4-row window brought runtime down to 25.40644836 ms with correctness intact and long-scoreboard down to 6.14, materially better than the earlier 5-row and 6-row variants. No new explicit human idea family is queued in state/human_review.md, so the ranking stays narrow: accept one more grouping-window retune at 2 rows, defer the older 64x384 control as the broader fallback, and keep the hot-band / peeled seam only as a tertiary bounded option."
 }
