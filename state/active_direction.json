@@ -1,30 +1,26 @@
 {
-  "direction_id": "dir_01",
-  "name": "Human idea stage: restore the pre-sweep best surface and peel the hot-band K loop into steady-state",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T22:19:17-07:00",
+  "direction_id": "dir_03",
+  "name": "Restore the pre-sweep best surface without adding a new experiment",
+  "selection_mode": "approved",
+  "selected_at": "2026-04-19T22:21:13-07:00",
   "source_diagnosis_id": "diagnosis_20260419_221835",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Human idea stage: restore the pre-sweep best surface and peel the hot-band K loop into steady-state",
-    "hypothesis": "The reversed B sweep is a clear negative and should not be the surface for further work. The next human-idea direction is therefore to restore the pre-sweep best hot-band consumer order and then specialize the 452-tile hot-band K loop into prologue, steady-state, and epilogue so the common path no longer pays `future_tile_idx` / `next_tile_idx` branch logic every iteration. Because the hot-band kernel is already fully fixed-shape and uses `#pragma unroll 1`, this is the cleanest remaining control-side experiment on top of the best-known warp-local consumer path.",
-    "expected_bottleneck": "Fixed-shape control-flow and stage-transition overhead inside the hot-band K loop.",
+    "direction_id": "dir_03",
+    "rank": 3,
+    "name": "Restore the pre-sweep best surface without adding a new experiment",
+    "hypothesis": "If the loop needs to recover immediately before spending another experimental round, the safest move is simply to restore the pre-sweep best custom surface. This keeps the remaining rounds anchored on the best measured family and discards the proven-negative `Right Left Right Left` order.",
+    "expected_bottleneck": "Not a direct bottleneck attack; this is a branch repair after a negative warp-local consumer experiment.",
     "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
-      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      "src/kernels/bf16_gemm_v1.cu"
     ],
-    "risk": "Moderate. The idea is mechanically straightforward, but the hot-band pipeline is delicate and the specialization must preserve the proven pre-sweep consumer order while removing only the generic loop branches.",
+    "risk": "Low. The restore is simple and correctness-stable, but it spends a round on recovery rather than on a new idea.",
     "metrics_to_recheck": [
       "correctness",
       "median runtime",
-      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-      "launch__registers_per_thread"
+      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
     ],
-    "stop_condition": "Reject if the restored + peeled loop does not beat the pre-sweep best surface or if barrier / hot-band time fail to improve."
+    "stop_condition": "Use this immediately if the stage-peeling implementation becomes too invasive for the current round."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

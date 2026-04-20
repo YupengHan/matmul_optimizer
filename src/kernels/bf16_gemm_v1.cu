@@ -513,10 +513,9 @@ template <int Step>
 struct PtxWmmaMirroredTileIndex64x64 {
   static_assert(Step >= 0 && Step < FixedHotBandTile256x128::kWarpMmaTilesN,
                 "64x64 mirrored sweep step out of range.");
-  // Try the opposite edge-in sweep so the warp touches the right-most 16x16
-  // tile first while keeping the same one-fragment streaming consumer shape.
   static constexpr int kValue =
-      Step == 0 ? 3 : (Step == 1 ? 0 : (Step == 2 ? 2 : 1));
+      (Step & 1) == 0 ? (Step / 2)
+                      : (FixedHotBandTile256x128::kWarpMmaTilesN - 1 - (Step / 2));
 };
 
 template <int RowPairBase, int ColIdx>

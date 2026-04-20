@@ -4,16 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Human idea stage: restore the pre-sweep best surface and peel the hot-band K loop into steady-state`
-- selection mode: `recommended`
+- direction id: `dir_03`
+- direction name: `Restore the pre-sweep best surface without adding a new experiment`
+- selection mode: `approved`
 - source diagnosis id: `diagnosis_20260419_221835`
 - round loop: `round 8/30`
-- hypothesis: `The reversed B sweep is a clear negative and should not be the surface for further work. The next human-idea direction is therefore to restore the pre-sweep best hot-band consumer order and then specialize the 452-tile hot-band K loop into prologue, steady-state, and epilogue so the common path no longer pays `future_tile_idx` / `next_tile_idx` branch logic every iteration. Because the hot-band kernel is already fully fixed-shape and uses `#pragma unroll 1`, this is the cleanest remaining control-side experiment on top of the best-known warp-local consumer path.`
-- expected bottleneck: `Fixed-shape control-flow and stage-transition overhead inside the hot-band K loop.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64, src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel`
-- risk: `Moderate. The idea is mechanically straightforward, but the hot-band pipeline is delicate and the specialization must preserve the proven pre-sweep consumer order while removing only the generic loop branches.`
-- metrics to re-check: `correctness, median runtime, runs/*/ncu_details.csv hot-band gpu__time_duration.sum, smsp__warp_issue_stalled_barrier_per_warp_active.pct, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed, launch__registers_per_thread`
+- hypothesis: `If the loop needs to recover immediately before spending another experimental round, the safest move is simply to restore the pre-sweep best custom surface. This keeps the remaining rounds anchored on the best measured family and discards the proven-negative `Right Left Right Left` order.`
+- expected bottleneck: `Not a direct bottleneck attack; this is a branch repair after a negative warp-local consumer experiment.`
+- code locations: `src/kernels/bf16_gemm_v1.cu`
+- risk: `Low. The restore is simple and correctness-stable, but it spends a round on recovery rather than on a new idea.`
+- metrics to re-check: `correctness, median runtime, runs/*/ncu_details.csv hot-band gpu__time_duration.sum`
 
 ## Allowed edit surface
 
@@ -31,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `src/kernels/bf16_gemm_v1.cu`
