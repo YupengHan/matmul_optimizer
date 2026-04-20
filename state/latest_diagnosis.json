@@ -1,15 +1,70 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_001618",
+  "status": "completed",
+  "created_at": "2026-04-20T00:16:18-07:00",
   "source_run_id": "20260420_001545_bf16_gemm_v1_5ae2249",
   "source_run_dir": "runs/20260420_001545_bf16_gemm_v1_5ae2249",
   "source_summary_json": "runs/20260420_001545_bf16_gemm_v1_5ae2249/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Keep grouped_rows=8 and refine the compiler clue to a two-argument launch-bounds target of 2 resident CTAs",
+      "hypothesis": "Round 24 proved that the grouped_rows=8 base plus a single-argument `__launch_bounds__(128)` materially improves codegen: runtime dropped by 1.49 ms, tensor active rose, and the register-limited occupancy signature moved to 2. That makes a two-argument `__launch_bounds__(128, 2)` the most coherent next step. It matches the resident-CTA regime the compiler already appears to prefer, but states it explicitly, which may let ptxas tighten scheduling and allocation a bit further without the catastrophic over-constraint from round 19.",
+      "expected_bottleneck": "Compiler allocation / instruction scheduling quality on the accepted grouped-order hot-band kernel, now that the preferred 2-CTA regime is visible in measured data.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1611"
+      ],
+      "risk": "Even though `2` matches the current measured regime, explicit minimum-block guidance can still perturb codegen negatively. The risk is much smaller than the old `4` target but is not zero.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "correctness pass rate"
+      ],
+      "stop_condition": "Stop if the explicit 2-CTA target regresses runtime or leaves codegen effectively unchanged relative to the new best branch."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Keep the new best grouped-order base unchanged and return to conservative barrier-side cleanup",
+      "hypothesis": "If the explicit 2-CTA launch-bounds does not help, the next safest move is still tiny Stage-side cleanup under the improved compiler codegen branch. The current best kernel already has stronger tensor activity, so any further gain here would likely come from removing residual barrier work without touching the code shape that just won.",
+      "expected_bottleneck": "Residual barrier overhead under the new best grouped-order + launch-bounds base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1689",
+        "src/kernels/bf16_gemm_v1.cu:1694"
+      ],
+      "risk": "Small headroom and correctness sensitivity remain the main dangers.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "correctness pass rate"
+      ],
+      "stop_condition": "Stop if the change does not beat the round-24 branch."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Freeze the current best branch and revisit a neighboring grouped-order value only if compiler refinement stalls",
+      "hypothesis": "The grouped-order search is already mostly bracketed, but if compiler refinement stalls completely, a neighboring group size can still be revisited as a low-effort cache-locality check.",
+      "expected_bottleneck": "Fine-grained L2-order tuning around the current best base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:141"
+      ],
+      "risk": "Likely diminishing returns after the grouped-order bracketing rounds.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the grouped_rows=8 plus launch-bounds base keeps winning."
+    }
+  ],
+  "notes": "Human-idea reflection for round 25: Register Reuse / compiler guidance is promoted again because the mild launch-bounds clue produced the largest single-round gain in this recent stretch, while the grouped-order L2 tuning has already identified a strong base at grouped_rows=8. L2 Cache remains accepted and now effectively baked into the base branch. Stage, Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted background infrastructure. Tiling 256x128 stays rejected, and aggressive launch-bounds remains rejected, but the measured 2-CTA regime makes `launch_bounds(128, 2)` the next sensible refinement."
 }

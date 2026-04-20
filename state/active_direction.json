@@ -1,10 +1,29 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Keep grouped_rows=8 and refine the compiler clue to a two-argument launch-bounds target of 2 resident CTAs",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T00:16:50-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_001618",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Keep grouped_rows=8 and refine the compiler clue to a two-argument launch-bounds target of 2 resident CTAs",
+    "hypothesis": "Round 24 proved that the grouped_rows=8 base plus a single-argument `__launch_bounds__(128)` materially improves codegen: runtime dropped by 1.49 ms, tensor active rose, and the register-limited occupancy signature moved to 2. That makes a two-argument `__launch_bounds__(128, 2)` the most coherent next step. It matches the resident-CTA regime the compiler already appears to prefer, but states it explicitly, which may let ptxas tighten scheduling and allocation a bit further without the catastrophic over-constraint from round 19.",
+    "expected_bottleneck": "Compiler allocation / instruction scheduling quality on the accepted grouped-order hot-band kernel, now that the preferred 2-CTA regime is visible in measured data.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1611"
+    ],
+    "risk": "Even though `2` matches the current measured regime, explicit minimum-block guidance can still perturb codegen negatively. The risk is much smaller than the old `4` target but is not zero.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "launch__registers_per_thread",
+      "launch__occupancy_limit_registers",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "correctness pass rate"
+    ],
+    "stop_condition": "Stop if the explicit 2-CTA target regresses runtime or leaves codegen effectively unchanged relative to the new best branch."
+  },
+  "notes": "Node C may now implement this one direction."
 }
