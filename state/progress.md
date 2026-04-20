@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `81bde72e538f33c457ea3cac1335513761c90fd6`
 - plateau counter: `40`
 - round loop: `round 15/17`
 - rounds remaining: `3`
-- notes: `Node A completed round 14/17. Run node_b to continue round 15/17.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 15/17.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_163723`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 15/17 diagnosis for run 20260420_163637_bf16_gemm_v1_81bde72. Human-review mapping for this round: keep the broad 64x384 control closed, keep non-PTX 128x128 closed, and keep deeper export cleanup closed. The fresh evidence is that the seam family is the cleanest remaining direction after the broad controls failed: shifting the pivot from 6400 to 6144 recovered the runtime to 25.65470409 ms with DRAM held to 11.25 and long-scoreboard at 5.91. No new explicit human idea family is queued in state/human_review.md, so the ranking now stays narrow for the last rounds: accept one more seam shift first, keep the 4-row grouping as the secondary PTX fallback, and leave prefetch only as a tertiary scoreboard tradeoff.`
+- dir_01: Shift The Hot-Band / Peeled Seam Down One More 256-Row Chunk | bottleneck: Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.
+- dir_02: Keep The 4-Row PTX Grouping As The Last PTX Retry | bottleneck: Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.
+- dir_03: Retry PTX Prefetch Only As A Final Scoreboard Tradeoff | bottleneck: Copy-pipeline handoff timing and future-tile refill cadence in the PTX hot-band steady-state loop.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
