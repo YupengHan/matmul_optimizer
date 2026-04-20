@@ -1975,7 +1975,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   __syncthreads();
 
   #pragma unroll 2
-  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
+  for (int tile_idx = 0; tile_idx < FixedKTiles - 1; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
     const int future_tile_idx = tile_idx + 2;
@@ -1991,21 +1991,35 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
 
-    if (next_tile_idx < FixedKTiles) {
-      cp_async_wait_group_0();
-      __syncthreads();
-      if (future_tile_idx < FixedKTiles) {
-        stage_b_shared_tile_async<FixedHotBandTile128x128>(
-            b_shared[curr_stage],
-            b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
-            kFixedBenchmarkN);
-        stage_a_shared_tile_async<FixedHotBandTile128x128>(
-            a_shared[curr_stage],
-            a_block + future_tile_idx * kWmmaK,
-            kFixedBenchmarkK);
-        cp_async_commit_group();
-      }
+    cp_async_wait_group_0();
+    __syncthreads();
+    if (future_tile_idx < FixedKTiles) {
+      stage_b_shared_tile_async<FixedHotBandTile128x128>(
+          b_shared[curr_stage],
+          b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
+          kFixedBenchmarkN);
+      stage_a_shared_tile_async<FixedHotBandTile128x128>(
+          a_shared[curr_stage],
+          a_block + future_tile_idx * kWmmaK,
+          kFixedBenchmarkK);
+      cp_async_commit_group();
     }
+  }
+
+  {
+    constexpr int kFinalTileIdx = FixedKTiles - 1;
+    const int curr_stage = kFinalTileIdx & 1;
+
+    const __nv_bfloat16* a_tile =
+        a_shared[curr_stage] +
+        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] +
+        b_shared_col_from_logical<FixedHotBandTile128x128>(
+            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+
+    ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
+        acc_tiles, a_tile, b_tile);
   }
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
