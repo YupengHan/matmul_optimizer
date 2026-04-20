@@ -62,6 +62,7 @@ If you are operating this repo through Codex or another local agent, the workflo
 - [docs/codex_workflow.md](docs/codex_workflow.md)
 - [docs/supervisor_protocol.md](docs/supervisor_protocol.md)
 - [state/README.md](state/README.md)
+- [heuristic_dataset/README.md](heuristic_dataset/README.md) for the structured optimization-history dataset that will support heuristic or A*-style search over future tuning directions
 
 ## Why I Built It
 
