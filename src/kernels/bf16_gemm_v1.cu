@@ -29,6 +29,8 @@ constexpr int kTensorWarpTilesM = 4;
 constexpr int kTensorWarpTilesN = 2;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
+constexpr int kPtxWarpMmaTilesM = 4;
+constexpr int kPtxWarpMmaTilesN = 4;
 
 template <int WarpMmaTilesNValue>
 struct TensorCoreTileConfig {
@@ -94,7 +96,35 @@ struct FixedHotBandTile256x128 {
   static constexpr int kASharedBytes = 2 * kASharedTileElems * sizeof(__nv_bfloat16);
   static constexpr int kCSharedTileBytesPerWarp = kCSharedTileElemsPerWarp * sizeof(float);
   static constexpr int kWarpGroupCols = kWarpTileN;
-  static constexpr int kBSharedSkewElems = 2 * kAsyncCopyElems;
+  static constexpr int kBSharedSkewElems = kAsyncCopyElems;
+  static constexpr int kBSharedStride = kTensorBlockN + kBSharedSkewElems;
+  static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
+  static constexpr int kBSharedBytes = 2 * kBSharedTileElems * sizeof(__nv_bfloat16);
+  static constexpr int kCSharedStageCount = 2;
+  static constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
+  static constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
+  static constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
+  static constexpr int kAAsyncCopiesPerTile = kASharedTileElems / kAsyncCopyElems;
+  static constexpr int kBAsyncCopiesPerTile = kBStagedTileElems / kAsyncCopyElems;
+};
+
+struct FixedResidualHotBandTile64x128 {
+  static constexpr int kWarpTilesM = 1;
+  static constexpr int kWarpTilesN = 2;
+  static constexpr int kWarpMmaTilesM = kPtxWarpMmaTilesM;
+  static constexpr int kWarpMmaTilesN = kPtxWarpMmaTilesN;
+  static constexpr int kWarpsPerBlock = kWarpTilesM * kWarpTilesN;
+  static constexpr int kWarpTileM = kWarpMmaTilesM * kWmmaM;
+  static constexpr int kWarpTileN = kWarpMmaTilesN * kWmmaN;
+  static constexpr int kTensorBlockM = kWarpTilesM * kWarpTileM;
+  static constexpr int kTensorBlockN = kWarpTilesN * kWarpTileN;
+  static constexpr int kASharedTileElems = kTensorBlockM * kWmmaK;
+  static constexpr int kCSharedTileElemsPerWarp = kWmmaM * kWmmaN;
+  static constexpr int kStaticSharedByteBudget = 48 * 1024;
+  static constexpr int kASharedBytes = 2 * kASharedTileElems * sizeof(__nv_bfloat16);
+  static constexpr int kCSharedTileBytesPerWarp = kCSharedTileElemsPerWarp * sizeof(float);
+  static constexpr int kWarpGroupCols = kWarpTileN;
+  static constexpr int kBSharedSkewElems = kAsyncCopyElems;
   static constexpr int kBSharedStride = kTensorBlockN + kBSharedSkewElems;
   static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
   static constexpr int kBSharedBytes = 2 * kBSharedTileElems * sizeof(__nv_bfloat16);
@@ -144,12 +174,32 @@ static_assert(FixedHotBandTile256x128::kTensorBlockN == 128,
               "The fixed-shape pivot branch expects a 128-column CTA tile.");
 static_assert(FixedHotBandTile256x128::kWarpsPerBlock == 8,
               "The fixed-shape pivot branch expects an 8-warp CTA.");
+static_assert(FixedHotBandTile256x128::kWarpMmaTilesM == kPtxWarpMmaTilesM,
+              "The pivot branch must stay on the shared 64x64 PTX microkernel shape.");
+static_assert(FixedHotBandTile256x128::kWarpMmaTilesN == kPtxWarpMmaTilesN,
+              "The pivot branch must stay on the shared 64x64 PTX microkernel shape.");
 static_assert(FixedHotBandTile256x128::kWarpTileM == 64,
               "The fixed-shape pivot branch expects a 64x64 warp tile.");
 static_assert(FixedHotBandTile256x128::kWarpTileN == 64,
               "The fixed-shape pivot branch expects a 64x64 warp tile.");
 static_assert(FixedHotBandTile256x128::kCSharedStageCount == 2,
               "The pivot branch expects paired per-warp export scratch tiles.");
+static_assert(FixedResidualHotBandTile64x128::kTensorBlockM == 64,
+              "The residual hot-band branch expects a single 64-row CTA tile.");
+static_assert(FixedResidualHotBandTile64x128::kTensorBlockN == 128,
+              "The residual hot-band branch expects a 128-column CTA tile.");
+static_assert(FixedResidualHotBandTile64x128::kWarpsPerBlock == 2,
+              "The residual hot-band branch expects a 2-warp CTA.");
+static_assert(FixedResidualHotBandTile64x128::kWarpMmaTilesM == kPtxWarpMmaTilesM,
+              "The residual branch must reuse the shared 64x64 PTX microkernel shape.");
+static_assert(FixedResidualHotBandTile64x128::kWarpMmaTilesN == kPtxWarpMmaTilesN,
+              "The residual branch must reuse the shared 64x64 PTX microkernel shape.");
+static_assert(FixedResidualHotBandTile64x128::kWarpTileM == 64,
+              "The residual hot-band branch expects a 64x64 warp tile.");
+static_assert(FixedResidualHotBandTile64x128::kWarpTileN == 64,
+              "The residual hot-band branch expects a 64x64 warp tile.");
+static_assert(FixedResidualHotBandTile64x128::kCSharedStageCount == 2,
+              "The residual branch expects paired per-warp export scratch tiles.");
 static_assert(TensorCoreTile32::kTensorBlockN == 32, "Autotune candidates expect a 64x32 CTA tile.");
 static_assert(TensorCoreTile64::kTensorBlockN == 64, "Autotune candidates expect a 64x64 CTA tile.");
 static_assert(TensorCoreTile256::kTensorBlockN == 256, "Autotune candidates expect a 64x256 CTA tile.");
@@ -169,6 +219,8 @@ static_assert((TensorCoreTile384::kTensorBlockN % kAsyncCopyElems) == 0, "Main B
 static_assert((TensorCoreTile480::kTensorBlockN % kAsyncCopyElems) == 0, "Main B tile width must stay 16-byte aligned.");
 static_assert((FixedHotBandTile256x128::kTensorBlockN % kAsyncCopyElems) == 0,
               "The pivot hot-band B tile width must stay 16-byte aligned.");
+static_assert((FixedResidualHotBandTile64x128::kTensorBlockN % kAsyncCopyElems) == 0,
+              "The residual hot-band B tile width must stay 16-byte aligned.");
 static_assert((TensorCoreTile32::kWarpGroupCols % kAsyncCopyElems) == 0, "Main warp-group span must stay 16-byte aligned.");
 static_assert((TensorCoreTile64::kWarpGroupCols % kAsyncCopyElems) == 0, "Main warp-group span must stay 16-byte aligned.");
 static_assert((TensorCoreTile128::kWarpGroupCols % kAsyncCopyElems) == 0, "Middle warp-group span must stay 16-byte aligned.");
@@ -181,6 +233,8 @@ static_assert((TensorCoreTile384::kWarpGroupCols % kAsyncCopyElems) == 0, "Main 
 static_assert((TensorCoreTile480::kWarpGroupCols % kAsyncCopyElems) == 0, "Main warp-group span must stay 16-byte aligned.");
 static_assert((FixedHotBandTile256x128::kWarpGroupCols % kAsyncCopyElems) == 0,
               "The pivot hot-band warp-group span must stay 16-byte aligned.");
+static_assert((FixedResidualHotBandTile64x128::kWarpGroupCols % kAsyncCopyElems) == 0,
+              "The residual hot-band warp-group span must stay 16-byte aligned.");
 static_assert((TensorCoreTile32::kBSharedStride % kAsyncCopyElems) == 0, "Main B shared stride must stay 16-byte aligned.");
 static_assert((TensorCoreTile64::kBSharedStride % kAsyncCopyElems) == 0, "Main B shared stride must stay 16-byte aligned.");
 static_assert((TensorCoreTile128::kBSharedStride % kAsyncCopyElems) == 0, "Middle B shared stride must stay 16-byte aligned.");
@@ -193,9 +247,13 @@ static_assert((TensorCoreTile384::kBSharedStride % kAsyncCopyElems) == 0, "Main 
 static_assert((TensorCoreTile480::kBSharedStride % kAsyncCopyElems) == 0, "Main B shared stride must stay 16-byte aligned.");
 static_assert((FixedHotBandTile256x128::kBSharedStride % kAsyncCopyElems) == 0,
               "The pivot hot-band B shared stride must stay 16-byte aligned.");
+static_assert((FixedResidualHotBandTile64x128::kBSharedStride % kAsyncCopyElems) == 0,
+              "The residual hot-band B shared stride must stay 16-byte aligned.");
 static_assert((TensorCoreTile96::kASharedTileElems % kAsyncCopyElems) == 0, "A tile must be divisible by async copy width.");
 static_assert((FixedHotBandTile256x128::kASharedTileElems % kAsyncCopyElems) == 0,
               "The pivot hot-band A tile must be divisible by async copy width.");
+static_assert((FixedResidualHotBandTile64x128::kASharedTileElems % kAsyncCopyElems) == 0,
+              "The residual hot-band A tile must be divisible by async copy width.");
 static_assert((TensorCoreTile32::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
 static_assert((TensorCoreTile64::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
 static_assert((TensorCoreTile128::kBSharedTileElems % kAsyncCopyElems) == 0, "Middle B tile must be divisible by async copy width.");
@@ -208,6 +266,8 @@ static_assert((TensorCoreTile384::kBSharedTileElems % kAsyncCopyElems) == 0, "Ma
 static_assert((TensorCoreTile480::kBSharedTileElems % kAsyncCopyElems) == 0, "Main B tile must be divisible by async copy width.");
 static_assert((FixedHotBandTile256x128::kBSharedTileElems % kAsyncCopyElems) == 0,
               "The pivot hot-band B tile must be divisible by async copy width.");
+static_assert((FixedResidualHotBandTile64x128::kBSharedTileElems % kAsyncCopyElems) == 0,
+              "The residual hot-band B tile must be divisible by async copy width.");
 static_assert((kLegacyFixedMainRegionN % TensorCoreTile192::kTensorBlockN) == 0, "Legacy fixed-shape main region must be an even count of 64x192 CTAs.");
 static_assert((kLegacyFixedMiddleRegionN % TensorCoreTile128::kTensorBlockN) == 0, "Legacy fixed-shape middle region must be an even count of 64x128 CTAs.");
 static_assert(kLegacyFixedMainRegionN == 38 * TensorCoreTile192::kTensorBlockN, "Legacy fixed-shape main region must cover 38 64x192 CTAs.");
@@ -228,10 +288,14 @@ static_assert((kFixedHotBandN % TensorCoreTile384::kTensorBlockN) == 0, "64x384 
 static_assert((kFixedHotBandN % TensorCoreTile480::kTensorBlockN) == 0, "64x480 main tile must divide the fixed hot band.");
 static_assert((kFixedHotBandN % FixedHotBandTile256x128::kTensorBlockN) == 0,
               "The pivot hot-band CTA width must divide the fixed hot band.");
+static_assert((kFixedHotBandN % FixedResidualHotBandTile64x128::kTensorBlockN) == 0,
+              "The residual hot-band CTA width must divide the fixed hot band.");
 static_assert((kFixedPivotHotRows % FixedHotBandTile256x128::kTensorBlockM) == 0,
               "The pivot hot-band CTA height must divide the first 6400 rows exactly.");
 static_assert((kFixedResidualHotRows % TensorCoreTile384::kTensorBlockM) == 0,
               "The stable remainder path must cover the last 64 rows exactly.");
+static_assert((kFixedResidualHotRows % FixedResidualHotBandTile64x128::kTensorBlockM) == 0,
+              "The residual hot-band CTA height must cover the last 64 rows exactly.");
 static_assert(FixedHotBandTile256x128::kASharedBytes +
                       FixedHotBandTile256x128::kBSharedBytes +
                       FixedHotBandTile256x128::kCSharedStageCount *
@@ -239,6 +303,13 @@ static_assert(FixedHotBandTile256x128::kASharedBytes +
                           FixedHotBandTile256x128::kCSharedTileBytesPerWarp <=
                   FixedHotBandTile256x128::kStaticSharedByteBudget,
               "The pivot hot-band shared-memory budget must fit on sm86.");
+static_assert(FixedResidualHotBandTile64x128::kASharedBytes +
+                      FixedResidualHotBandTile64x128::kBSharedBytes +
+                      FixedResidualHotBandTile64x128::kCSharedStageCount *
+                          FixedResidualHotBandTile64x128::kWarpsPerBlock *
+                          FixedResidualHotBandTile64x128::kCSharedTileBytesPerWarp <=
+                  FixedResidualHotBandTile64x128::kStaticSharedByteBudget,
+              "The residual hot-band shared-memory budget must fit on sm86.");
 static_assert(kLegacyFixedMainRegionN + kLegacyFixedMiddleRegionN + kFixedTailRegionN == kFixedBenchmarkN, "Legacy main/middle/tail split must cover the fixed benchmark width exactly.");
 static_assert(kFixedHotBandN + kFixedTailRegionN == kFixedBenchmarkN, "Hot-band plus tail split must cover the fixed benchmark width exactly.");
 static_assert((kWmmaN % kEpilogueVecElems) == 0, "Epilogue vector stores require adjacent column pairs.");
@@ -318,8 +389,7 @@ struct PtxWmmaAccTileSet384 {
 };
 
 struct PtxWmmaAccTileSet64x64 {
-  PtxWmmaAccFragment tile[FixedHotBandTile256x128::kWarpMmaTilesM *
-                          FixedHotBandTile256x128::kWarpMmaTilesN];
+  PtxWmmaAccFragment tile[kPtxWarpMmaTilesM * kPtxWarpMmaTilesN];
 };
 
 __device__ __forceinline__ void ptx_wmma_fill_zero(PtxWmmaAccFragment& frag) {
@@ -451,21 +521,21 @@ __device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
 template <int TileRow, int TileCol>
 __device__ __forceinline__ PtxWmmaAccFragment& ptx_wmma_acc_tile(
     PtxWmmaAccTileSet64x64& tiles) {
-  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
+  static_assert(TileRow >= 0 && TileRow < kPtxWarpMmaTilesM,
                 "64x64 PTX accumulator row index out of range.");
-  static_assert(TileCol >= 0 && TileCol < FixedHotBandTile256x128::kWarpMmaTilesN,
+  static_assert(TileCol >= 0 && TileCol < kPtxWarpMmaTilesN,
                 "64x64 PTX accumulator col index out of range.");
-  return tiles.tile[TileRow * FixedHotBandTile256x128::kWarpMmaTilesN + TileCol];
+  return tiles.tile[TileRow * kPtxWarpMmaTilesN + TileCol];
 }
 
 template <int TileRow, int TileCol>
 __device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
     const PtxWmmaAccTileSet64x64& tiles) {
-  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
+  static_assert(TileRow >= 0 && TileRow < kPtxWarpMmaTilesM,
                 "64x64 PTX accumulator row index out of range.");
-  static_assert(TileCol >= 0 && TileCol < FixedHotBandTile256x128::kWarpMmaTilesN,
+  static_assert(TileCol >= 0 && TileCol < kPtxWarpMmaTilesN,
                 "64x64 PTX accumulator col index out of range.");
-  return tiles.tile[TileRow * FixedHotBandTile256x128::kWarpMmaTilesN + TileCol];
+  return tiles.tile[TileRow * kPtxWarpMmaTilesN + TileCol];
 }
 
 template <int TileIdx = 0>
@@ -478,8 +548,7 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384
 
 template <int TileIdx = 0>
 __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet64x64& tiles) {
-  if constexpr (TileIdx < FixedHotBandTile256x128::kWarpMmaTilesM *
-                               FixedHotBandTile256x128::kWarpMmaTilesN) {
+  if constexpr (TileIdx < kPtxWarpMmaTilesM * kPtxWarpMmaTilesN) {
     ptx_wmma_fill_zero(tiles.tile[TileIdx]);
     ptx_wmma_fill_zero_tile_set<TileIdx + 1>(tiles);
   }
@@ -513,23 +582,25 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
 
 template <int Step>
 struct PtxWmmaMirroredTileIndex64x64 {
-  static_assert(Step >= 0 && Step < FixedHotBandTile256x128::kWarpMmaTilesN,
+  static_assert(Step >= 0 && Step < kPtxWarpMmaTilesN,
                 "64x64 mirrored sweep step out of range.");
   static constexpr int kValue =
-      (Step & 1) == 0 ? (Step / 2)
-                      : (FixedHotBandTile256x128::kWarpMmaTilesN - 1 - (Step / 2));
+      (Step & 1) == 0 ? (Step / 2) : (kPtxWarpMmaTilesN - 1 - (Step / 2));
 };
 
-template <int RowPairBase, int ColIdx>
+template <typename TileConfig, int RowPairBase, int ColIdx>
 __device__ __forceinline__ void ptx_wmma_mma_row_pair_col_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
     const PtxWmmaBf16Fragment& b_frag) {
-  static_assert(RowPairBase >= 0 &&
-                    RowPairBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesM,
+  static_assert(TileConfig::kWarpMmaTilesM == kPtxWarpMmaTilesM,
+                "64x64 PTX helper expects four MMA rows per warp.");
+  static_assert(TileConfig::kWarpMmaTilesN == kPtxWarpMmaTilesN,
+                "64x64 PTX helper expects four MMA cols per warp.");
+  static_assert(RowPairBase >= 0 && RowPairBase + 1 < kPtxWarpMmaTilesM,
                 "64x64 row-pair MMA helper expects a valid 2-row pair.");
-  static_assert(ColIdx >= 0 && ColIdx < FixedHotBandTile256x128::kWarpMmaTilesN,
+  static_assert(ColIdx >= 0 && ColIdx < kPtxWarpMmaTilesN,
                 "64x64 column index out of range.");
   ptx_wmma_mma_row_row(
       ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
@@ -541,7 +612,7 @@ __device__ __forceinline__ void ptx_wmma_mma_row_pair_col_64x64(
       b_frag);
 }
 
-template <int Step>
+template <typename TileConfig, int Step>
 __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64(
     PtxWmmaBf16Fragment& b_frag,
     const __nv_bfloat16* b_tile) {
@@ -549,54 +620,54 @@ __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64(
   ptx_wmma_load_b_row(
       b_frag,
       b_tile + ColIdx * kWmmaN,
-      FixedHotBandTile256x128::kBSharedStride);
+      TileConfig::kBSharedStride);
 }
 
-template <int RowPairBase, int Step = 0>
+template <typename TileConfig, int RowPairBase, int Step = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_lookahead(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
     const __nv_bfloat16* b_tile,
     const PtxWmmaBf16Fragment& current_b_frag) {
-  if constexpr (Step < FixedHotBandTile256x128::kWarpMmaTilesN) {
+  if constexpr (Step < kPtxWarpMmaTilesN) {
     constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
-    if constexpr (Step + 1 < FixedHotBandTile256x128::kWarpMmaTilesN) {
+    if constexpr (Step + 1 < kPtxWarpMmaTilesN) {
       PtxWmmaBf16Fragment next_b_frag;
       // Keep one B fragment live so the next Ps2r load can issue ahead of the
       // current MMA pair without changing tile ownership or shared layout.
-      ptx_wmma_load_col_fragment_64x64<Step + 1>(next_b_frag, b_tile);
-      ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+      ptx_wmma_load_col_fragment_64x64<TileConfig, Step + 1>(next_b_frag, b_tile);
+      ptx_wmma_mma_row_pair_col_64x64<TileConfig, RowPairBase, ColIdx>(
           acc_tiles, a_frag0, a_frag1, current_b_frag);
-      ptx_wmma_accumulate_col_tiles_64x64_lookahead<RowPairBase, Step + 1>(
+      ptx_wmma_accumulate_col_tiles_64x64_lookahead<TileConfig, RowPairBase, Step + 1>(
           acc_tiles, a_frag0, a_frag1, b_tile, next_b_frag);
     } else {
-      ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+      ptx_wmma_mma_row_pair_col_64x64<TileConfig, RowPairBase, ColIdx>(
           acc_tiles, a_frag0, a_frag1, current_b_frag);
     }
   }
 }
 
-template <int RowPairBase, int Step = 0>
+template <typename TileConfig, int RowPairBase, int Step = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
     const __nv_bfloat16* b_tile) {
-  if constexpr (Step < FixedHotBandTile256x128::kWarpMmaTilesN) {
+  if constexpr (Step < kPtxWarpMmaTilesN) {
     PtxWmmaBf16Fragment b_frag;
-    ptx_wmma_load_col_fragment_64x64<Step>(b_frag, b_tile);
-    ptx_wmma_accumulate_col_tiles_64x64_lookahead<RowPairBase, Step>(
+    ptx_wmma_load_col_fragment_64x64<TileConfig, Step>(b_frag, b_tile);
+    ptx_wmma_accumulate_col_tiles_64x64_lookahead<TileConfig, RowPairBase, Step>(
         acc_tiles, a_frag0, a_frag1, b_tile, b_frag);
   }
 }
 
-template <int RowPairBase = 0>
+template <typename TileConfig, int RowPairBase = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  if constexpr (RowPairBase < FixedHotBandTile256x128::kWarpMmaTilesM) {
+  if constexpr (RowPairBase < kPtxWarpMmaTilesM) {
     PtxWmmaBf16Fragment a_frag0;
     PtxWmmaBf16Fragment a_frag1;
     ptx_wmma_load_a_row(
@@ -607,18 +678,19 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
         a_frag1,
         a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
         kWmmaK);
-    ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
+    ptx_wmma_accumulate_col_tiles_64x64<TileConfig, RowPairBase>(
         acc_tiles, a_frag0, a_frag1, b_tile);
-    ptx_wmma_accumulate_row_pairs_64x64<RowPairBase + 2>(
+    ptx_wmma_accumulate_row_pairs_64x64<TileConfig, RowPairBase + 2>(
         acc_tiles, a_tile, b_tile);
   }
 }
 
+template <typename TileConfig>
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
+  ptx_wmma_accumulate_row_pairs_64x64<TileConfig>(acc_tiles, a_tile, b_tile);
 }
 
 template <typename TileConfig, int TileIdx = 0>
@@ -720,9 +792,9 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64(
     const float* warp_c_tile,
     __nv_bfloat16* c_tile_base,
     int lane_id) {
-  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
+  static_assert(TileRow >= 0 && TileRow < kPtxWarpMmaTilesM,
                 "64x64 export tile row index out of range.");
-  static_assert(TileCol >= 0 && TileCol < FixedHotBandTile256x128::kWarpMmaTilesN,
+  static_assert(TileCol >= 0 && TileCol < kPtxWarpMmaTilesN,
                 "64x64 export tile col index out of range.");
   const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
   constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
@@ -740,27 +812,28 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64(
   }
 }
 
-template <int TilePairRowBase, int TileCol = 0>
+template <typename TileConfig, int TilePairRowBase, int TileCol = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_col_pairs_64x64(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
     __nv_bfloat16* c_tile_base,
     int warp_id,
     int lane_id) {
-  static_assert(FixedHotBandTile256x128::kCSharedStageCount == 2,
+  static_assert(TileConfig::kWarpMmaTilesM == kPtxWarpMmaTilesM,
+                "64x64 PTX export helper expects four MMA rows per warp.");
+  static_assert(TileConfig::kWarpMmaTilesN == kPtxWarpMmaTilesN,
+                "64x64 PTX export helper expects four MMA cols per warp.");
+  static_assert(TileConfig::kCSharedStageCount == 2,
                 "Paired 64x64 export requires two per-warp c_shared stages.");
-  static_assert(TilePairRowBase >= 0 &&
-                    TilePairRowBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesM,
+  static_assert(TilePairRowBase >= 0 && TilePairRowBase + 1 < kPtxWarpMmaTilesM,
                 "64x64 vertical export helper expects a valid 2-row pair.");
-  if constexpr (TileCol < FixedHotBandTile256x128::kWarpMmaTilesN) {
+  if constexpr (TileCol < kPtxWarpMmaTilesN) {
     constexpr int kCSharedStageStride =
-        FixedHotBandTile256x128::kWarpsPerBlock *
-        FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
+        TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
     float* warp_c_tile_stage0 =
-        c_shared + warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
+        c_shared + warp_id * TileConfig::kCSharedTileElemsPerWarp;
     float* warp_c_tile_stage1 =
-        c_shared + kCSharedStageStride +
-        warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
+        c_shared + kCSharedStageStride + warp_id * TileConfig::kCSharedTileElemsPerWarp;
 
     ptx_wmma_store_d_row_shared(
         warp_c_tile_stage0,
@@ -777,22 +850,22 @@ __device__ __forceinline__ void ptx_wmma_store_tile_col_pairs_64x64(
     ptx_export_shared_tile_quads_64x64<TilePairRowBase + 1, TileCol>(
         warp_c_tile_stage1, c_tile_base, lane_id);
 
-    ptx_wmma_store_tile_col_pairs_64x64<TilePairRowBase, TileCol + 1>(
+    ptx_wmma_store_tile_col_pairs_64x64<TileConfig, TilePairRowBase, TileCol + 1>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
   }
 }
 
-template <int TilePairRowBase = 0>
+template <typename TileConfig, int TilePairRowBase = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
     __nv_bfloat16* c_tile_base,
     int warp_id,
     int lane_id) {
-  if constexpr (TilePairRowBase < FixedHotBandTile256x128::kWarpMmaTilesM) {
-    ptx_wmma_store_tile_col_pairs_64x64<TilePairRowBase>(
+  if constexpr (TilePairRowBase < kPtxWarpMmaTilesM) {
+    ptx_wmma_store_tile_col_pairs_64x64<TileConfig, TilePairRowBase>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-    ptx_wmma_store_tile_pairs_64x64<TilePairRowBase + 2>(
+    ptx_wmma_store_tile_pairs_64x64<TileConfig, TilePairRowBase + 2>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
   }
 }
@@ -852,8 +925,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     __nv_bfloat16* c,
     int block_row_tile_base);
 
-template <int FixedKTiles>
-__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
+template <typename TileConfig, int FixedKTiles>
+__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c);
@@ -873,6 +946,22 @@ void launch_fixed_peeled_hot_band_row_band(
           dim3(TileConfig::kWarpsPerBlock * kWarpSize, 1, 1),
           0,
           stream>>>(a, b, c, block_row_tile_base);
+}
+
+template <typename TileConfig, int FixedKTiles>
+void launch_fixed_hot_band_ptx_region(
+    const __nv_bfloat16* a,
+    const __nv_bfloat16* b,
+    __nv_bfloat16* c,
+    int block_rows,
+    cudaStream_t stream) {
+  bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel<
+      TileConfig,
+      FixedKTiles><<<
+          dim3(kFixedHotBandN / TileConfig::kTensorBlockN, block_rows, 1),
+          dim3(TileConfig::kWarpsPerBlock * kWarpSize, 1, 1),
+          0,
+          stream>>>(a, b, c);
 }
 
 template <typename TileConfig>
@@ -1289,38 +1378,46 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
 #endif
 }
 
-template <int FixedKTiles>
-__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
+template <typename TileConfig, int FixedKTiles>
+__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
   static_assert(FixedKTiles > 1,
-                "The 256x128 fixed hot-band kernel expects at least two K-tiles.");
+                "The fixed hot-band PTX kernel expects at least two K-tiles.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
-                "The 256x128 fixed hot-band kernel must match the benchmark K dimension.");
+                "The fixed hot-band PTX kernel must match the benchmark K dimension.");
+  static_assert(TileConfig::kWarpMmaTilesM == kPtxWarpMmaTilesM,
+                "The fixed hot-band PTX kernel expects the shared 64x64 microkernel shape.");
+  static_assert(TileConfig::kWarpMmaTilesN == kPtxWarpMmaTilesN,
+                "The fixed hot-band PTX kernel expects the shared 64x64 microkernel shape.");
+  static_assert(TileConfig::kWarpTileM == 64,
+                "The fixed hot-band PTX kernel expects 64-row warp tiles.");
+  static_assert(TileConfig::kWarpTileN == 64,
+                "The fixed hot-band PTX kernel expects 64-column warp tiles.");
   __shared__ __align__(16)
-      __nv_bfloat16 a_shared[2][FixedHotBandTile256x128::kASharedTileElems];
+      __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
   __shared__ __align__(16)
-      __nv_bfloat16 b_shared[2][FixedHotBandTile256x128::kBSharedTileElems];
+      __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
   __shared__ __align__(16)
-      float c_shared[FixedHotBandTile256x128::kCSharedStageCount *
-                     FixedHotBandTile256x128::kWarpsPerBlock *
-                     FixedHotBandTile256x128::kCSharedTileElemsPerWarp];
+      float c_shared[TileConfig::kCSharedStageCount *
+                     TileConfig::kWarpsPerBlock *
+                     TileConfig::kCSharedTileElemsPerWarp];
 
   const int warp_id = threadIdx.x / kWarpSize;
   const int lane_id = threadIdx.x % kWarpSize;
 
-  if (warp_id >= FixedHotBandTile256x128::kWarpsPerBlock) {
+  if (warp_id >= TileConfig::kWarpsPerBlock) {
     return;
   }
 
-  const int block_row = blockIdx.y * FixedHotBandTile256x128::kTensorBlockM;
-  const int block_col = blockIdx.x * FixedHotBandTile256x128::kTensorBlockN;
-  const int warp_tile_m = warp_id / FixedHotBandTile256x128::kWarpTilesN;
-  const int warp_tile_n = warp_id % FixedHotBandTile256x128::kWarpTilesN;
-  const int row = block_row + warp_tile_m * FixedHotBandTile256x128::kWarpTileM;
-  const int col = block_col + warp_tile_n * FixedHotBandTile256x128::kWarpTileN;
+  const int block_row = blockIdx.y * TileConfig::kTensorBlockM;
+  const int block_col = blockIdx.x * TileConfig::kTensorBlockN;
+  const int warp_tile_m = warp_id / TileConfig::kWarpTilesN;
+  const int warp_tile_n = warp_id % TileConfig::kWarpTilesN;
+  const int row = block_row + warp_tile_m * TileConfig::kWarpTileM;
+  const int col = block_col + warp_tile_n * TileConfig::kWarpTileN;
 
   PtxWmmaAccTileSet64x64 acc_tiles;
   ptx_wmma_fill_zero_tile_set(acc_tiles);
@@ -1328,14 +1425,14 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+  stage_a_shared_tile_async<TileConfig>(
       a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+  stage_b_shared_tile_async<TileConfig>(
       b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+  stage_a_shared_tile_async<TileConfig>(
       a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+  stage_b_shared_tile_async<TileConfig>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
@@ -1351,21 +1448,21 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
 
     const __nv_bfloat16* a_tile =
         a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile256x128::kWarpTileM * kWmmaK;
+        warp_tile_m * TileConfig::kWarpTileM * kWmmaK;
     const __nv_bfloat16* b_tile =
         b_shared[curr_stage] +
-        b_shared_col_from_logical<FixedHotBandTile256x128>(
-            warp_tile_n * FixedHotBandTile256x128::kWarpGroupCols);
+        b_shared_col_from_logical<TileConfig>(
+            warp_tile_n * TileConfig::kWarpGroupCols);
 
-    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+    ptx_wmma_accumulate_tile_set_64x64<TileConfig>(acc_tiles, a_tile, b_tile);
 
     if (future_tile_idx < FixedKTiles) {
       const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async<FixedHotBandTile256x128>(
+      stage_a_shared_tile_async<TileConfig>(
           a_shared[curr_stage],
           a_block + future_tile_k,
           kFixedBenchmarkK);
-      stage_b_shared_tile_async<FixedHotBandTile256x128>(
+      stage_b_shared_tile_async<TileConfig>(
           b_shared[curr_stage],
           b_block + future_tile_k * kFixedBenchmarkN,
           kFixedBenchmarkN);
@@ -1383,7 +1480,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   }
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_store_tile_pairs_64x64(acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  ptx_wmma_store_tile_pairs_64x64<TileConfig>(
+      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
 #else
   (void)a;
   (void)b;
@@ -1433,23 +1531,22 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<
-          kFixedBenchmarkKTiles><<<
-              dim3(kFixedHotBandN / FixedHotBandTile256x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
-                   1),
-              dim3(FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize, 1, 1),
-              0,
-              stream>>>(a, b, c);
-
-      launch_fixed_peeled_hot_band_row_band<
-          TensorCoreTile384,
+      launch_fixed_hot_band_ptx_region<
+          FixedHotBandTile256x128,
           kFixedBenchmarkKTiles>(
               a,
               b,
               c,
-              kFixedPivotHotRows / TensorCoreTile384::kTensorBlockM,
-              kFixedResidualHotRows / TensorCoreTile384::kTensorBlockM,
+              kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
+              stream);
+
+      launch_fixed_hot_band_ptx_region<
+          FixedResidualHotBandTile64x128,
+          kFixedBenchmarkKTiles>(
+              a + kFixedPivotHotRows * kFixedBenchmarkK,
+              b,
+              c + kFixedPivotHotRows * kFixedBenchmarkN,
+              kFixedResidualHotRows / FixedResidualHotBandTile64x128::kTensorBlockM,
               stream);
 
       launch_tensor_core_region<TensorCoreTile96>(
