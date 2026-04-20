@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `9a4bb85409600456179030fc1eb1e59eb5ea3722`
-- plateau counter: `15`
-- round loop: `round 74/100`
-- rounds remaining: `27`
-- notes: `Node C build succeeded for round 74/100. Node A will now measure the new code path.`
+- latest measured commit: `f1ae7fa8d6947dd844a551459d71b7938db5dd09`
+- plateau counter: `16`
+- round loop: `round 75/100`
+- rounds remaining: `26`
+- notes: `Node A completed round 74/100. Run node_b to continue round 75/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_112149_bf16_gemm_v1_9a4bb85`
-- run dir: `runs/20260420_112149_bf16_gemm_v1_9a4bb85`
+- run id: `20260420_112828_bf16_gemm_v1_f1ae7fa`
+- run dir: `runs/20260420_112828_bf16_gemm_v1_f1ae7fa`
 - correctness: `PASS`
-- median runtime: `24.696192 ms`
-- TFLOP/s: `29.438523 TFLOP/s`
+- median runtime: `24.696832 ms`
+- TFLOP/s: `29.437761 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_112500`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Latest measured run: 24.69619179 ms with tensor active 48.21, barrier 6.38, long scoreboard 3.74, mio 3.33, and launch__occupancy_limit_registers = 2. That reads as compute/schedule limited with a register ceiling, not DRAM bound. Human-idea audit for this round: register-pressure reduction is accepted as the primary family because the profile is occupancy-limited; auxiliary 256x128 scheduling is accepted as a separate bounded family because the previous round already improved that path; export helper cleanup is deferred to low rank because barrier is present but not dominant; coalescing / global-memory widening is deferred because DRAM is only 9.73%; shared-memory / bank-conflict work is deferred because the profile does not show a strong shared-memory stall signature; launch-order locality is rejected for now because the evidence does not point to it and prior snake-style locality work regressed.`
-- dir_01: Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure | bottleneck: Register pressure and compiler scheduling friction inside the active PTX hot-band compute path, which is consistent with launch__occupancy_limit_registers = 2 and the low achieved warps-active number.
-- dir_02: Revisit The 256x128 Auxiliary Hot-Band Path As A Separate Schedule Family | bottleneck: Compute scheduling and latency hiding on the auxiliary 256x128 hot-band path, not DRAM bandwidth.
-- dir_03: Trim PTX Export Helper Shape Without Changing Store Semantics | bottleneck: Residual export-side instruction overhead and register clutter around the PTX writeback path, not global memory bandwidth.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

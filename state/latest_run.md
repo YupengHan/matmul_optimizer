@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_112149_bf16_gemm_v1_9a4bb85`
-- run dir: `runs/20260420_112149_bf16_gemm_v1_9a4bb85`
-- kernel tag: `bf16_gemm_v1_9a4bb85`
-- round label: `round 73/100`
+- run id: `20260420_112828_bf16_gemm_v1_f1ae7fa`
+- run dir: `runs/20260420_112828_bf16_gemm_v1_f1ae7fa`
+- kernel tag: `bf16_gemm_v1_f1ae7fa`
+- round label: `round 74/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.696192 ms`
-- p10 runtime: `24.463155 ms`
-- p90 runtime: `25.902796 ms`
-- TFLOP/s: `29.438523 TFLOP/s`
-- previous run id: `20260420_111141_bf16_gemm_v1_29b11d5`
-- runtime delta vs previous measured run: `-0.902784 ms`
-- TFLOP/s delta vs previous measured run: `+1.038191 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `24.696832 ms`
+- p10 runtime: `24.465818 ms`
+- p90 runtime: `25.364993 ms`
+- TFLOP/s: `29.437761 TFLOP/s`
+- previous run id: `20260420_112149_bf16_gemm_v1_9a4bb85`
+- runtime delta vs previous measured run: `+0.000640 ms`
+- TFLOP/s delta vs previous measured run: `-0.000763 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule`
+- implemented direction name: `Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_112149_bf16_gemm_v1_9a4bb85/summary.json`
-- measured commit: `9a4bb85409600456179030fc1eb1e59eb5ea3722`
+- raw summary json: `runs/20260420_112828_bf16_gemm_v1_f1ae7fa/summary.json`
+- measured commit: `f1ae7fa8d6947dd844a551459d71b7938db5dd09`
 - new best custom: `no`
-- generated at: `2026-04-20T11:21:56-07:00`
+- generated at: `2026-04-20T11:28:34-07:00`
