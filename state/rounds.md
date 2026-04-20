@@ -1,27 +1,20 @@
 # Round loop
 
-- active: `no`
-- status: `stopped`
-- total rounds: `100`
-- completed rounds: `83`
+- active: `yes`
+- status: `round_in_progress`
+- total rounds: `17`
+- completed rounds: `0`
 - remaining rounds: `17`
-- current round label: `single-run`
+- current round label: `round 1/17`
 - auto use recommended: `yes`
-- accepted base run id: `20260420_084915_bf16_gemm_v1_4e5579e`
-- accepted base measured commit: `4e5579ec72e9b1f05820c895c0315235d66f30cd`
-- accepted base runtime: `24.570881 ms`
-- started at: `2026-04-19T22:34:28-07:00`
-- completed at: `2026-04-20T15:30:57-07:00`
+- accepted base run id: `20260420_153144_bf16_gemm_v1_c550d79`
+- accepted base measured commit: `c550d7959d2a7f80c98ebb0a632629ff9d196656`
+- accepted base runtime: `25.763329 ms`
+- started at: `2026-04-20T15:41:15-07:00`
+- completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Stopped by user request.`
+- notes: `Executing round 1/17.`
 
 ## Last completed round
 
-- round: `83/100`
-- direction: `dir_01`
-- direction name: `Tighten PTX Hot-Band Grouping For Long-Scoreboard`
-- verdict: `regressed`
-- runtime delta: `+0.040337 ms`
-- TFLOP/s delta: `-0.043635 TFLOP/s`
-- run dir: `runs/20260420_120552_bf16_gemm_v1_84de30b`
-- ncu rep path: `runs/20260420_120552_bf16_gemm_v1_84de30b/ncu_profile.ncu-rep`
+- no completed round recorded yet
