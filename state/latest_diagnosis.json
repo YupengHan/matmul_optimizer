@@ -1,15 +1,83 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_174046",
+  "status": "completed",
+  "created_at": "2026-04-19T17:40:46-07:00",
   "source_run_id": "20260419_174014_bf16_gemm_v1_eff433a",
   "source_run_dir": "runs/20260419_174014_bf16_gemm_v1_eff433a",
   "source_summary_json": "runs/20260419_174014_bf16_gemm_v1_eff433a/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea 9 Ps2r: slice-local two-fragment ping-pong on the full-width PTX sweep",
+      "hypothesis": "Mapping: this direction is a direct refinement of human idea 9, Ps2r shared-to-register double buffering. Round 5 gave positive but insufficient evidence for this family: runtime improved and long-scoreboard dropped from 6.22 to 5.98, so Ps2r is real signal, not noise. What it did not fix was tensor activity and barrier pressure. The next practical move is therefore not to abandon Ps2r, but to make it more structured: keep the accepted 64x384 hot-band PTX kernel and unchanged 64x96 tail, then replace the current flat 12-tile walk with explicit small slices that ping-pong two B fragments in registers while the slice's mma chain executes. The aim is to preserve the round-5 scoreboard gain while tightening the live/use window enough to recover tensor issue without reopening CTA-level retiming.",
+      "expected_bottleneck": "Warp-local shared-to-register latency is now a proven residual limiter, but the current Ps2r form is not organized tightly enough to convert that stall reduction into better tensor issue.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:273-299",
+        "src/kernels/bf16_gemm_v1.cu:388-402",
+        "src/kernels/bf16_gemm_v1.cu:801-818",
+        "src/kernels/bf16_gemm_v1.cu:910-948"
+      ],
+      "risk": "Medium risk. The slice-local ping-pong can raise registers or turn into a cosmetic reorder if the fragment scope is not actually tightened. It is still the best next step because it builds directly on the only recent direction that improved the targeted stall without reopening a rejected family.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if long-scoreboard no longer improves or if tensor activity stays flat while registers rise, because that means the Ps2r refinement is not converting latency hiding into useful issue."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea 7 Register Reuse: RLRL serpentine tile traversal on top of Ps2r-compatible PTX compute",
+      "hypothesis": "Mapping: this direction targets human idea 7, register reuse via a Right-Left-Right-Left internal warp schedule. Round 5 implies the next missing piece after Ps2r is not more global staging but better issue efficiency inside the warp compute walk. A bounded complementary move is to keep the same 64x384 PTX hot-band and unchanged tail, but traverse the 12 N tiles in a serpentine or chunked RLRL order so adjacent accumulators reuse the warmed fragment path more deliberately. This is not a retry of the earlier near-noop issue-order tightening: the rationale here is explicit register reuse on top of a Ps2r-aware load sequence, not standalone reorder for its own sake.",
+      "expected_bottleneck": "Residual tensor under-issue now looks more like warp-internal compute ordering and register reuse inefficiency than raw memory feed failure.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:317-402",
+        "src/kernels/bf16_gemm_v1.cu:801-818",
+        "src/kernels/bf16_gemm_v1.cu:889-948"
+      ],
+      "risk": "Medium-high risk. This family is adjacent to the earlier weak issue-order attempt, so it only makes sense as a deliberate reuse schedule coupled to Ps2r, not as another generic retightening. If that distinction collapses in code, the result is likely another marginal or negative move.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if tensor activity does not improve or if the change behaves like another issue-order micro-tweak with no measurable runtime gain."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea 5 Bank Conflict: warp-local PTX B-consumer permutation layered under Ps2r",
+      "hypothesis": "Mapping: this direction is the remaining viable part of human idea 5, bank-conflict control. The padding half of idea 5 is already present in the accepted base, and CTA-wide repack/reorder is already negative evidence. What remains practical is a warp-local consumer-side permutation in the PTX B-fragment load path, especially now that Ps2r has made the shared-to-register step more important. Keep the same hot-band/tail split, but change only the warp-local logical-to-physical mapping seen by ptx_wmma_load_b_row() and b_shared_col_from_logical() so the next B fragment lands on a cleaner bank pattern without adding another shared copy step.",
+      "expected_bottleneck": "Residual bank/LSU serialization on B-fragment loads may still be limiting how much of the round-5 Ps2r gain reaches tensor issue.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:48-53",
+        "src/kernels/bf16_gemm_v1.cu:273-299",
+        "src/kernels/bf16_gemm_v1.cu:388-402",
+        "src/kernels/bf16_gemm_v1.cu:498-529",
+        "src/kernels/bf16_gemm_v1.cu:801-818"
+      ],
+      "risk": "Medium-high risk. Current bank metrics are already close to the accepted base, so the upside signal is weaker than for dir_01. This direction must remain warp-local; if it needs any CTA-wide reorder, it immediately falls back into a rejected family.",
+      "metrics_to_recheck": [
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if bank and LSU metrics stay flat, or if the implementation requires CTA-level reorder/repack instead of a pure warp-local consumer permutation."
+    }
+  ],
+  "notes": "Audit of the 10 human idea families for round 6 on the restored accepted base 9bdc160 and the round-5 Ps2r run eff433a: (1) Tiling 256x128 block / 64x64 warp = reject-for-this-round, because the accepted 64x384 PTX hot band is still the only measured winner and reopening tile hierarchy leaves the validated mainline. (2) Coalescing Access wide global-memory instructions = accept-now as already present in the base through 16-byte async copies and wide stores, but not the next differentiator. (3) Data Reuse using shared memory for A and B = accept-now as already core to the current kernel, not the missing lever. (4) Async Copy = accept-now as already core; near-neighbor handoff-retime retries remain rejected even though async copy itself is foundational. (5) Bank Conflict = accept-now only in the narrow warp-local PTX consumer-permutation form; CTA-wide reorder stays rejected. (6) L2 Cache swizzle = reject-for-this-round, because L2/DRAM behavior does not point to cache locality as the primary blocker on the restored base. (7) Register Reuse RLRL internal warp schedule = accept-now as a complementary family, but not primary because it is adjacent to the earlier low-value issue-order result and must be justified through reuse, not mere reorder. (8) Pg2s double-buffer global-to-shared = accept-now as already present in the base and not the new lever. (9) Ps2r double-buffer shared-to-register = accept-now and selected as the primary family again for round 6, because round 5 provided positive measured evidence by lowering the targeted long-scoreboard stall even though it did not yet beat the accepted base. (10) Stage multi-buffer global-to-shared = defer, because it remains high-upside but still blocked by shared/register budget and is not yet the most practical next move. Additional negative evidence still in force: no explicit half-panel mma.sync compute rewrite, no pair-compaction retry, no panelized B-load reorder, no helper/lifetime compaction as the main lever, and no near-neighbor handoff-retime retry."
 }
