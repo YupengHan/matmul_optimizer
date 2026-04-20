@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `7c672be6dd341dd11a21e8959d47bdd07a6acc39`
 - plateau counter: `1`
 - round loop: `round 29/50`
 - rounds remaining: `22`
-- notes: `Node A completed round 28/50. Run node_b to continue round 29/50.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 29/50.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_002345`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human-idea reflection for round 29: Stage is promoted again, but specifically as a re-evaluation of the K32 branch under the new grouped-order plus compiler-guided base. The earlier K32 rejection remains valid for the old regime, but the current best branch changed the occupancy/codegen picture enough that the comparison should be refreshed once. Register Reuse and L2 Cache remain accepted because the current best branch already depends on both. Tiling 256x128, aggressive launch-bounds, and the peeled schedule remain rejected.`
+- dir_01: Revisit the 128x128x32 hot-band branch on top of the current grouped-order plus launch-bounds base | bottleneck: Stage-depth / control-overhead tradeoff under the new best branch conditions, not under the older pre-grouped baseline.
+- dir_02: Keep the current best K16 branch fixed and revisit tiny barrier-side cleanup only if the K32 re-test fails again | bottleneck: Residual barrier overhead in the grouped-order plus launch-bounds K16 winner.
+- dir_03: Freeze the current best hot-band branch and look at a small secondary-region optimization only after the K32 re-test result is known | bottleneck: Secondary-region overhead outside the main hot band.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
