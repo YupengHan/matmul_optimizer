@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_015358_bf16_gemm_v1_80ceab7`
-- run dir: `runs/20260420_015358_bf16_gemm_v1_80ceab7`
-- kernel tag: `bf16_gemm_v1_80ceab7`
-- round label: `round 41/100`
+- run id: `20260420_020244_bf16_gemm_v1_6b518ac`
+- run dir: `runs/20260420_020244_bf16_gemm_v1_6b518ac`
+- kernel tag: `bf16_gemm_v1_6b518ac`
+- round label: `round 42/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.261951 ms`
-- p10 runtime: `26.920858 ms`
-- p90 runtime: `28.611482 ms`
-- TFLOP/s: `26.667916 TFLOP/s`
-- previous run id: `20260420_014458_bf16_gemm_v1_09d3544`
-- runtime delta vs previous measured run: `+0.173568 ms`
-- TFLOP/s delta vs previous measured run: `-0.170874 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `27.003904 ms`
+- p10 runtime: `26.653379 ms`
+- p90 runtime: `28.475846 ms`
+- TFLOP/s: `26.922752 TFLOP/s`
+- previous run id: `20260420_015358_bf16_gemm_v1_80ceab7`
+- runtime delta vs previous measured run: `-0.258047 ms`
+- TFLOP/s delta vs previous measured run: `+0.254836 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep The Accepted PTX Branch And Make The Steady-State Sequence More Explicit`
+- implemented direction name: `Restore Accepted PTX Branch And Tighten Export Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_015358_bf16_gemm_v1_80ceab7/summary.json`
-- measured commit: `80ceab789912da1c2cad1e92a16a158dfc2d6448`
+- raw summary json: `runs/20260420_020244_bf16_gemm_v1_6b518ac/summary.json`
+- measured commit: `6b518acb290f307ada1e207a9121a440e36edbbe`
 - new best custom: `no`
-- generated at: `2026-04-20T01:54:05-07:00`
+- generated at: `2026-04-20T02:02:51-07:00`
