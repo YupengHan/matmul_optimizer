@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `65`
-- remaining rounds: `35`
-- current round label: `round 66/100`
+- completed rounds: `66`
+- remaining rounds: `34`
+- current round label: `round 67/100`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_084915_bf16_gemm_v1_4e5579e`
 - accepted base measured commit: `4e5579ec72e9b1f05820c895c0315235d66f30cd`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 66/100. Node A will measure the result next.`
+- notes: `Completed round 66/100. Continue with node_b for round 67/100. Accepted base: 20260420_084915_bf16_gemm_v1_4e5579e at 24.570881 ms.`
 
 ## Last completed round
 
-- round: `65/100`
+- round: `66/100`
 - direction: `dir_01`
-- direction name: `Restore grouped_rows=8, then align PTX export order with the reversed compute row-pair traversal`
-- verdict: `regressed`
-- runtime delta: `+0.131583 ms`
-- TFLOP/s delta: `-0.145672 TFLOP/s`
-- run dir: `runs/20260420_092926_bf16_gemm_v1_8c2a778`
-- ncu rep path: `runs/20260420_092926_bf16_gemm_v1_8c2a778/ncu_profile.ncu-rep`
+- direction name: `Restore Linear PTX Export Order, Then Peel The Fixed-K Steady State`
+- verdict: `improved`
+- runtime delta: `-0.018432 ms`
+- TFLOP/s delta: `+0.020315 TFLOP/s`
+- run dir: `runs/20260420_093724_bf16_gemm_v1_1bd482e`
+- ncu rep path: `runs/20260420_093724_bf16_gemm_v1_1bd482e/ncu_profile.ncu-rep`
