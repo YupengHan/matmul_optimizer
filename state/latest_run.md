@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_210303_bf16_gemm_v1_3be0a8e`
-- run dir: `runs/20260419_210303_bf16_gemm_v1_3be0a8e`
-- kernel tag: `bf16_gemm_v1_3be0a8e`
-- round label: `round 4/10`
+- run id: `20260419_210551_bf16_gemm_v1_61be2e8`
+- run dir: `runs/20260419_210551_bf16_gemm_v1_61be2e8`
+- kernel tag: `bf16_gemm_v1_61be2e8`
+- round label: `round 5/10`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.594048 ms`
-- p10 runtime: `30.000426 ms`
-- p90 runtime: `31.095910 ms`
-- TFLOP/s: `23.763426 TFLOP/s`
-- previous run id: `20260419_205932_bf16_gemm_v1_1128e91`
-- runtime delta vs previous measured run: `-0.892416 ms`
-- TFLOP/s delta vs previous measured run: `+0.673523 TFLOP/s`
+- median runtime: `30.570496 ms`
+- p10 runtime: `30.010240 ms`
+- p90 runtime: `31.023932 ms`
+- TFLOP/s: `23.781735 TFLOP/s`
+- previous run id: `20260419_210303_bf16_gemm_v1_3be0a8e`
+- runtime delta vs previous measured run: `-0.023553 ms`
+- TFLOP/s delta vs previous measured run: `+0.018308 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 5 fallback reset: restore the last correct accepted base before spending more rounds on the hot branch`
+- implemented direction name: `Human idea 5/7 Bank conflict + internal-tile order: keep the correct 256x128 hot kernel, but change the 64x64 warp-consumer order to Right/Left/Right/Left`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_210303_bf16_gemm_v1_3be0a8e/summary.json`
-- measured commit: `3be0a8e0196710b8fd1d015ae234bbd27af1a0ff`
+- raw summary json: `runs/20260419_210551_bf16_gemm_v1_61be2e8/summary.json`
+- measured commit: `61be2e8be6b96d4f3c3424f3e8f2b3b307b7293e`
 - new best custom: `no`
-- generated at: `2026-04-19T21:03:11-07:00`
+- generated at: `2026-04-19T21:06:00-07:00`

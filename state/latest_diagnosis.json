@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_210642",
-  "status": "completed",
-  "created_at": "2026-04-19T21:06:42-07:00",
-  "source_run_id": "20260419_210303_bf16_gemm_v1_3be0a8e",
-  "source_run_dir": "runs/20260419_210303_bf16_gemm_v1_3be0a8e",
-  "source_summary_json": "runs/20260419_210303_bf16_gemm_v1_3be0a8e/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_210551_bf16_gemm_v1_61be2e8",
+  "source_run_dir": "runs/20260419_210551_bf16_gemm_v1_61be2e8",
+  "source_summary_json": "runs/20260419_210551_bf16_gemm_v1_61be2e8/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 5/7 Bank conflict + internal-tile order: keep the correct 256x128 hot kernel, but change the 64x64 warp-consumer order to Right/Left/Right/Left",
-      "hypothesis": "After the round-4 reset, the loop is back on a correct branch whose true hotspot is again the fixed hot-band 256x128 kernel at about 40.91 us with 167 registers/thread, occupancy_limit_registers = 1, tensor active around 38.0, and active warps around 16.6. That means the correct branch is back to the original feed/orchestration wall: not DRAM-bound, not L2-bound, and still under-occupying because the full 64x64 warp tile is fed in a flat left-to-right order. The user's human ideas map cleanly here: keep the accepted 256x128 / 64x64 tiling, keep wide cp.async coalescing and shared reuse unchanged, but retune the internal warp issue/load order as Right Left Right Left. Concretely, make the hot-kernel B-fragment consumption and MMA order alternate outer and inner tile columns instead of sweeping 0-1-2-3 monotonically. This is a warp-local consumer transform on the correct branch, not another CTA repack or macro-tile experiment.",
-      "expected_bottleneck": "Warp-local B-consumer delivery and internal fragment issue order on the true hot-band kernel. A win should show up as slightly higher tensor active and lower hot-band time without changing shared memory footprint or stage depth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_mma_row_pair_col_pair_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "The ceiling is moderate. Registers may stay near 167/thread, so this will not solve the whole occupancy wall by itself. The guardrail is that the branch stays correct and does not add new shared traffic or barriers.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if the hot-band runtime stays flat or tensor-active does not move while correctness remains unchanged. Also reject any implementation that increases shared memory or inserts CTA repack."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 10 Stage: specialize the fixed 452-tile hot loop into clearer prologue / steady-state / epilogue control",
-      "hypothesis": "The correct branch still pays generic steady-state orchestration inside the hot-band kernel even though the shape is fixed. The user already highlighted Stage and fixed-shape control as valid families. If the loop wants a lower-risk correct-branch direction, the next move is to keep the same math and layout but reduce per-iteration control overhead in the 452-tile sweep: more explicit prologue / steady-state / epilogue structure, fewer generic next-tile checks, and tighter cp.async handoff for the known fixed trip count.",
-      "expected_bottleneck": "Generic loop-control and stage-transition overhead in the hot-band kernel rather than operand layout.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
-      ],
-      "risk": "Lower ceiling than dir_01. It also risks turning into cosmetic refactoring if the actual wall is still operand delivery and register pressure.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if the hot-band runtime and barrier metrics stay essentially unchanged after the control simplification."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 9 Ps2r: add one-fragment shared-to-register lookahead inside the correct full-width 64x64 sweep",
-      "hypothesis": "The correct branch is back to a full-width 64x64 hot kernel. A more aggressive alternative to the simple issue-order retune is to hide some shared-to-register latency directly: keep the full-width 64x64 accumulator set and the same shared layout, but prefetch the next B fragment into registers while the current MMA chain is issuing. This is the correct-branch mapping of the user's Ps2r idea, but it carries more register risk than dir_01.",
-      "expected_bottleneck": "Warp-local shared-to-register feed latency inside the full-width hot-band sweep.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Higher register risk than dir_01 on a branch that is already at 167 regs/thread. It can easily make occupancy worse while only marginally helping feed latency.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if registers climb or occupancy worsens with no clear hot-band runtime improvement."
-    }
-  ],
-  "notes": "Round 5 human-idea audit against the restored correct branch: Tiling is accepted and already embodied by the active 256x128 CTA / 64x64 warp hot kernel, so this round does not reopen macro shape; Coalescing Access is accepted as baseline because 16-byte cp.async staging is already in place; Data Reuse is accepted as baseline because the correct branch already relies on shared reuse for both operands; Async Copy is accepted as baseline for the same reason; Bank Conflict is accepted as the primary family for this round because the branch is correct again and the user explicitly asked for warp-local consumer-side work with no CTA repack; L2 Cache is deferred because the profile is not L2-bound; Register Reuse is accepted only in the user's internal-tile-order sense for this round, not in the half-panel sense, because the half-panel branch stayed unstable; Pg2s remains baseline because double-buffered global-to-shared staging is already present; Ps2r is accepted as a secondary family, but ranked below the lower-risk issue-order retune; Stage is accepted as a valid backup direction in fixed-shape control form. Recommended direction dir_01 therefore keeps the correct branch and applies the user's Right Left Right Left internal ordering idea directly to the hot kernel's B-consumer / MMA issue order."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
