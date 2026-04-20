@@ -1,15 +1,87 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_212205",
+  "status": "completed",
+  "created_at": "2026-04-19T21:22:05-07:00",
   "source_run_id": "20260419_212123_bf16_gemm_v1_b276585",
   "source_run_dir": "runs/20260419_212123_bf16_gemm_v1_b276585",
   "source_summary_json": "runs/20260419_212123_bf16_gemm_v1_b276585/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "human-idea+auto-analysis",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "notes": "Round 7 human-idea audit against the round-6 regression: Tiling stays accepted at 256x128 CTA / 64x64 warp because the sweep already established 64x384 hot-band width as the best macro shape on this GPU; Coalescing Access, Data Reuse, Async Copy, and Pg2s stay accepted as baseline infrastructure because the correct branch already uses 16-byte cp.async staging plus shared reuse for both operands; Stage is rejected as the next move because round 6 restored correctness but regressed runtime to 30.765568 ms and left the hot-band kernel slower at about 41.45 us with registers still pinned at 167/thread and occupancy_limit_registers still 1; Bank Conflict remains accepted only in the user's strict warp-local consumer-transform form with no extra shared tile, no extra CTA barrier, and no stage-depth loss; the newly queued L2 Cache / block-order clue is promoted from deferred to active because the kernel is register-limited to one resident block, so even a modest inter-CTA cache-locality improvement is worth testing when the cheaper control-only refactor already failed; Register Reuse and Ps2r are deferred because the branch is still at 167 regs/thread. Recommended direction dir_01 therefore tests a grouped CTA mapping / block-order clue first because it is orthogonal to the failed stage refactor, cheap to implement, and easy to falsify in one round before spending more budget on riskier feed rewrites.",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea L2 cache: grouped CTA swizzle / block-order remap for the 64x384 hot band",
+      "hypothesis": "The accepted 64x384 outer shape is already the measured sweet spot, but round 6 showed that simplifying only the steady-state control path does not move the wall: runtime regressed, hot-band time rose to about 41.45 us, tensor active stayed near 38%, and the kernel is still register-limited to one resident block. In that low-occupancy regime, inter-CTA cache locality matters more because the machine has less warp-level latency hiding. A Triton-style grouped mapping from physical `blockIdx` to logical hot-band tiles can keep the same B slab resident across several neighboring M tiles, or keep adjacent A tiles hotter across grouped N tiles, without changing the kernel math, shared footprint, or register footprint. This makes the user's L2 block-order clue the cheapest orthogonal next experiment on the correct branch.",
+      "expected_bottleneck": "Inter-CTA locality loss at the L2/L1 boundary on the hot-band path under one-block register-limited occupancy.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel",
+        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+      ],
+      "risk": "Moderate but contained. CUDA does not guarantee launch order, so the gain has to come from a logical CTA remap rather than a scheduler promise. A grouped order can improve B reuse while slightly worsening A reuse, and the hot-band / peeled split must stay exact.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject quickly if runtime stays flat and the hot-band time plus L2-facing counters do not improve measurably. Do not spend multiple rounds here if the grouped remap fails to move the hot band."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea bank-conflict follow-through: a warp-local B consumer transform with no extra shared tile or barrier",
+      "hypothesis": "If the loop stays on the feed path after the failed stage refactor, the next valid B-side move is still the user's strict consumer-side rule: no CTA repack, no second B shared tile, no shared-footprint increase, and no stage-depth loss. Round 5 showed that a simple mirrored pair order was too weak, so the next attempt must be more structural than just another column order shuffle. Keep the accepted 64x384 outer tile and current staging path, but retune only the warp-local B fragment consumption path on the hot-band PTX microkernel, such as a lane-aware pair permutation or a shared-address permutation that preserves the current block footprint.",
+      "expected_bottleneck": "Warp-local shared/L1 operand delivery and bank behavior on B fragment loads in the true hot-band kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_b_row",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:b_shared_col_from_logical"
+      ],
+      "risk": "Moderate to high. This family is correctness-sensitive, and round 5 already spent one low-signal attempt on a smaller scheduling variant. Any implementation that quietly increases shared memory or inserts new barriers breaks the premise.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Reject if the implementation adds shared footprint, lowers stage depth, or leaves hot-band time flat. This family only stays alive while it remains warp-local and shared-neutral."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Warp-specialized producer/consumer on the correct 256x128 hot kernel",
+      "hypothesis": "Round 6 showed that a pure control rewrite does not help enough, but it did not disprove the broader orchestration idea that all warps are still participating in staging and full-CTA handoff work. A more aggressive control-path branch is to keep the accepted 256x128 / 64x64 shape, reserve 1-2 warps for `cp.async` and stage publication, and let the remaining warps focus more heavily on MMA. This attacks the user's earlier producer/consumer idea directly instead of only rearranging loop structure.",
+      "expected_bottleneck": "All-warps staging and barrier orchestration diluting tensor issue on a one-block register-limited hot-band kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
+      ],
+      "risk": "High. With occupancy already capped by registers, giving up compute warps to producer duty can easily cancel the overlap benefit. The synchronization protocol also becomes more brittle than the current all-warps path.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if barrier stall falls but runtime and hot-band time do not improve, or if the reduced compute-warp count pushes tensor active down instead of up."
+    }
+  ]
 }
