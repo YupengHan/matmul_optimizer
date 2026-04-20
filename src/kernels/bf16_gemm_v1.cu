@@ -385,38 +385,30 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384
   }
 }
 
-template <int TileIdx>
-__device__ __forceinline__ void ptx_wmma_accumulate_one_tile_384(
-    PtxWmmaAccTileSet384& acc_tiles,
-    const PtxWmmaBf16Fragment& a_frag,
-    const __nv_bfloat16* b_tile) {
-  PtxWmmaBf16Fragment b_frag;
-  ptx_wmma_load_b_row(
-      b_frag,
-      b_tile + TileIdx * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
-}
+template <int Step>
+struct PtxWmmaMirroredTileIndex384 {
+  static_assert(Step >= 0 && Step < TensorCoreTile384::kWarpMmaTilesN,
+                "Tile384 mirrored sweep step out of range.");
+  static constexpr int kValue =
+      (Step & 1) == 0 ? (Step / 2)
+                      : (TensorCoreTile384::kWarpMmaTilesN - 1 - (Step / 2));
+};
 
+template <int Step = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
     PtxWmmaAccTileSet384& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag,
     const __nv_bfloat16* b_tile) {
-  // Traverse the 12 hot-band tiles from the outer columns inward so the PTX
-  // sweep alternates left/right accumulator groups instead of walking 0..11
-  // monotonically. This keeps the change attributable to traversal order only.
-  ptx_wmma_accumulate_one_tile_384<0>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<11>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<1>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<10>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<2>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<9>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<3>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<8>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<4>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<7>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<5>(acc_tiles, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<6>(acc_tiles, a_frag, b_tile);
+  if constexpr (Step < TensorCoreTile384::kWarpMmaTilesN) {
+    constexpr int TileIdx = PtxWmmaMirroredTileIndex384<Step>::kValue;
+    PtxWmmaBf16Fragment b_frag;
+    ptx_wmma_load_b_row(
+        b_frag,
+        b_tile + TileIdx * kWmmaN,
+        TensorCoreTile384::kBSharedStride);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
+    ptx_wmma_accumulate_tile_set_384<Step + 1>(acc_tiles, a_frag, b_tile);
+  }
 }
 
 template <typename TileConfig, int TileIdx = 0>
