@@ -1,15 +1,84 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_093804",
+  "status": "completed",
+  "created_at": "2026-04-20T09:38:04-07:00",
   "source_run_id": "20260420_093724_bf16_gemm_v1_1bd482e",
   "source_run_dir": "runs/20260420_093724_bf16_gemm_v1_1bd482e",
   "source_summary_json": "runs/20260420_093724_bf16_gemm_v1_1bd482e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
-  "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore the accepted unpeeled base, then tighten PTX export-scratch sync and lifetime while keeping linear export order",
+      "hypothesis": "Goal remains below 20 ms, and the best accepted custom result is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd. Round 65 already closed export traversal reversal as negative, so the active export order should stay linear. Round 66 then restored linear export order but peeled the fixed-K steady state, and the runtime moved only trivially to 25.67372799 ms while barrier stall jumped from 5.27 to 6.65 and long scoreboard jumped from 7.59 to 14.82. That makes fixed-K peeling a closed-negative in its current one-sync K16 form and points back to the accepted base: grouped_rows=8, PTX hot-band right-left 64x64 consume order, reversed PTX compute row-pair traversal, original linear export traversal, one-sync steady-state handoff, B-first refill, and active-loop unroll 2. The best bounded next move is to restore that unpeeled base first, then shorten the PTX export scratch lifetime and trim the export-side sync/writeback closure without changing tile ownership or export traversal order. The current PTX export helper still performs shared export plus two warp syncs per 16x16 tile on a single padded scratch stage, so a smaller export-lifetime closure is a cleaner follow-up than reopening grouped_rows sweeps, consumer-order variants, or stage peeling.",
+      "expected_bottleneck": "PTX export scratch live-range and warp-sync/writeback overhead on the accepted hot-band base after linear export order is restored.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile128x128PtxExportScratch",
+        "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x64_ptx_microkernel",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64_ptx_microkernel",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel"
+      ],
+      "risk": "Moderate. The change is correctness-sensitive because it touches the writeback/export path, but it is still a bounded one-node_c edit in the current PTX hot-band helper and does not reopen traversal reversal, grouped_rows retunes, or fixed-K peeling.",
+      "metrics_to_recheck": [
+        "median_runtime_ms versus 25.67372799 ms and the round-58 accepted 24.57088089 ms",
+        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "l1tex__lsu_writeback_active.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "correctness on all three fixed BF16 cases"
+      ],
+      "stop_condition": "Reject if the accepted unpeeled base is restored but the export-scratch closure does not materially improve barrier or long-scoreboard behavior, or if correctness regresses."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore the accepted unpeeled base, then try a within-group launch-order and L2 locality closure with grouped_rows fixed at 8",
+      "hypothesis": "The L2 cache and launch-order family is still open only in one narrow form: grouped_rows stays fixed at the accepted value of 8, and only the within-group logical traversal changes. Grouped_rows=16, grouped_rows=4, and grouped_rows=6 are already closed negatives, so this direction must not become a disguised grouped_rows retune. The current run still shows non-trivial memory-side activity at about 10.33 DRAM and 30.43 L2 throughput while occupancy and tensor activity stayed essentially flat, which leaves some room for a small within-group mapping closure after the accepted unpeeled base is restored. This family is materially different from dir_01 because it targets CTA dispatch locality rather than export scratch lifetime, and it is different from dir_03 because it stays away from the one-sync refill boundary itself.",
+      "expected_bottleneck": "Residual within-group launch-order and L2 locality loss on the accepted grouped_rows=8 PTX hot-band base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:kFixedHotBandPtxGroupedRows",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel physical_pid/group_id/logical_block mapping",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel block_row/block_col setup"
+      ],
+      "risk": "Moderate to high. The upside is lower than dir_01, and this family can easily drift into a forbidden reopen of grouped_rows retunes instead of staying a true within-group closure.",
+      "metrics_to_recheck": [
+        "median_runtime_ms versus the restored grouped_rows=8 base",
+        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "correctness on all three fixed BF16 cases"
+      ],
+      "stop_condition": "Reject if the change requires any group-size move away from 8 or if it fails to lower runtime and hot-band kernel time relative to the restored accepted base."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore the accepted unpeeled base, then make a very narrow one-sync handoff closure without reopening A-first, K32, or extra-live staging",
+      "hypothesis": "The stage and multi-buffer family is already accepted only in a very specific form: the original unpeeled steady-state loop with one CTA sync handoff, B-first refill, and unroll 2. Round 66 showed that fixed-K peeling is not a safe extension of that family in the current K16 path, because it raised both barrier and long scoreboard sharply for almost no runtime gain. That still leaves one open stage-family move: restore the accepted unpeeled base and then retime the existing one-sync refill closure as narrowly as possible, while explicitly keeping A-first refill, K32 cadence, extra-live B lookahead, warmup-order reopen, and broader stage rewrites closed. This direction is materially different from dir_01 because it changes the steady-state handoff rather than the export helper, and different from dir_02 because it stays within the hot-band refill boundary rather than CTA launch order.",
+      "expected_bottleneck": "Residual one-sync handoff and refill-order overlap loss on the accepted PTX hot-band base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel prologue staging",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel cp.async.wait_group/__syncthreads handoff",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel B-first refill sequence"
+      ],
+      "risk": "High. This area was just falsified in its peeled form, so any further handoff work has to stay extremely narrow or it will turn into a disguised reopen of the closed stage families.",
+      "metrics_to_recheck": [
+        "median_runtime_ms versus the restored accepted base",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "correctness on all three fixed BF16 cases"
+      ],
+      "stop_condition": "Reject if the tweak stops being a narrow handoff closure, or if it reintroduces A-first refill, K32 cadence, extra-live staging, or fixed-K peeling behavior."
+    }
+  ],
+  "notes": "Round 67 diagnosis is anchored to run 20260420_093724_bf16_gemm_v1_1bd482e at 25.67372799 ms. The target remains under 20 ms, and the accepted best custom result is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd. Key judgment for this round: fixed-K peeling is closed-negative. Round 65 already closed export traversal reversal as negative, and round 66 restored linear export order but peeled the fixed-K steady state; that only improved runtime trivially while barrier rose 5.27 -> 6.65 and long scoreboard rose 7.59 -> 14.82, so the accepted base remains grouped_rows=8 plus PTX hot-band right-left 64x64 consume order, reversed PTX compute row-pair traversal, original linear export traversal, one-sync steady-state handoff, B-first refill, and active-loop unroll 2. Audit of the human-idea families: tiling is accepted only insofar as the current PTX hot band stays on the established 64x64 warp microtile and current CTA shape, so a broader retile is rejected for this round; coalescing and wide global access are already accepted through the current 16-byte async-copy path and are not the next lever; shared-memory reuse is already accepted in the staged A/B tiles; async copy is already accepted; bank-conflict handling is accepted only through the current right-left consume order with linear export, while export traversal reversal and broader consumer-order sweeps are closed; L2 cache and launch-order locality remain open only as a within-group closure with grouped_rows fixed at 8, while grouped_rows=16, grouped_rows=4, and grouped_rows=6 are closed; register reuse Right-Left-Right-Left is already accepted in the active consume order and should not be reopened as a new sweep family; Pg2s double buffer is already accepted; Ps2r double buffer is closed for this round through the already-rejected extra-live B lookahead, K32 cadence, and warmup-order reopen family; stage and multi-buffer are accepted only as the original one-sync, B-first, unroll-2 base, while fixed-K peeling in the active PTX hot-band loop is now closed-negative. Ranking rationale: dir_01 is the best next single node_c because it restores the accepted unpeeled base and then stays tightly bounded in the PTX export helper while preserving linear export order. Dir_02 is the remaining locality family, but only as a within-group closure at grouped_rows=8. Dir_03 is the last still-open stage-family move, but it ranks last because the same region was just falsified when the steady state was peeled."
 }
