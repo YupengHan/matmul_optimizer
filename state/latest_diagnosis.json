@@ -1,88 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_173445",
-  "status": "completed",
-  "created_at": "2026-04-19T17:34:45-07:00",
-  "source_run_id": "20260419_173241_bf16_gemm_v1_d2a8c31",
-  "source_run_dir": "runs/20260419_173241_bf16_gemm_v1_d2a8c31",
-  "source_summary_json": "runs/20260419_173241_bf16_gemm_v1_d2a8c31/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_174014_bf16_gemm_v1_eff433a",
+  "source_run_dir": "runs/20260419_174014_bf16_gemm_v1_eff433a",
+  "source_summary_json": "runs/20260419_174014_bf16_gemm_v1_eff433a/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 9 Ps2r: full-width PTX shared-to-register lookahead inside the 12-tile sweep",
-      "hypothesis": "Mapping: this direction is the direct accept-now implementation of human idea 9, Ps2r double-buffering from shared memory to registers. The current evidence fits it best: export-side c_shared scratch shrink alone cut shared allocation from 46.592 KiB to 38.400 KiB yet still regressed, so removing export scratch by itself is not the win. The remaining stable symptom on the restored accepted base is one-block occupancy plus persistent long-scoreboard around 6.2, which points more naturally at the warp-local shared-to-register feed path. Keep the accepted 64x384 hot-band PTX kernel and unchanged 64x96 tail, but restructure ptx_wmma_accumulate_tile_set_384() so one next B fragment is prefetched from shared to registers while the current tile's mma issues. That is materially different from the rejected half-panel compute rewrite and from the low-value issue-order retightening, because the mechanism is explicit Ps2r latency hiding inside the full-width sweep.",
-      "expected_bottleneck": "Warp-local shared-to-register latency on B-fragment consumption is the most actionable remaining underfeed source once export shrink and handoff retime have both failed to beat the accepted base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:273-299",
-        "src/kernels/bf16_gemm_v1.cu:388-402",
-        "src/kernels/bf16_gemm_v1.cu:801-818",
-        "src/kernels/bf16_gemm_v1.cu:910-948"
-      ],
-      "risk": "Medium risk. This still lives near the inner compute walk, so it can raise registers or accidentally drift toward the already-bad explicit compute family if it stops being a pure shared-to-register lookahead. It is ranked first because it is the cleanest new mechanism that stays inside the PTX mainline and matches the residual stall pattern.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if long-scoreboard does not come down together with tensor activity, or if register growth turns the lookahead into a net regression."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 5 Bank Conflict: warp-local PTX B-fragment permute without CTA reorder",
-      "hypothesis": "Mapping: this direction is the defer-but-still-viable interpretation of human idea 5, bank-conflict reduction. The current kernel already accepts the padding part of idea 5 via the skewed B shared stride, while the rejected panelized B-load reorder means CTA-wide repacking is off the table. The only practical version left is a warp-local PTX consumer permutation: keep the same 64x384 hot band and unchanged tail, but alter only the B-fragment load mapping seen by ptx_wmma_load_b_row() / b_shared_col_from_logical() so shared-bank behavior is improved at the point of consumption without adding another shared copy step or CTA barrier. It is ranked below Ps2r because the bank metrics are almost flat today, so the evidence is weaker than for a pure shared-to-register latency-hiding move.",
-      "expected_bottleneck": "Residual shared-bank serialization on the B-fragment consumer path may still be contributing to long-scoreboard and LSU pressure even though the current skew avoids catastrophic conflicts.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:48-53",
-        "src/kernels/bf16_gemm_v1.cu:273-299",
-        "src/kernels/bf16_gemm_v1.cu:388-402",
-        "src/kernels/bf16_gemm_v1.cu:498-529",
-        "src/kernels/bf16_gemm_v1.cu:801-818"
-      ],
-      "risk": "Medium-high risk. Evidence is weaker than for dir_01, and it is easy to slide back toward the already-rejected panelized B-load reorder family under a new name. This must stay warp-local and consumer-side only.",
-      "metrics_to_recheck": [
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if bank-read and LSU pressure stay flat, or if the implementation requires any CTA-wide repack/reorder step."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 10 Stage: real third G2S stage only after the budget math closes",
-      "hypothesis": "Mapping: this direction is the defer-for-now version of human idea 10, stage multi-buffering, built on the already-accepted idea 8 Pg2s baseline. The upside is obvious, but the current evidence says it is not yet the best round-5 bet: round 4 proved that shrinking export scratch alone is not a win even when shared allocation drops substantially, and the current accepted base still does not fit a true third A/B stage under the static 48 KiB budget without more aggressive savings or staging changes. So the right diagnosis stance is to keep this idea family alive but explicitly defer it behind Ps2r and warp-local bank-behavior work until the budget math is made credible.",
-      "expected_bottleneck": "If the branch can eventually add a genuine third global-to-shared stage, the main payoff would be deeper latency hiding under one-block occupancy rather than a marginal retime of the existing two-stage pipeline.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:33-67",
-        "src/kernels/bf16_gemm_v1.cu:194-208",
-        "src/kernels/bf16_gemm_v1.cu:503-529",
-        "src/kernels/bf16_gemm_v1.cu:821-854",
-        "src/kernels/bf16_gemm_v1.cu:869-905",
-        "src/kernels/bf16_gemm_v1.cu:910-948"
-      ],
-      "risk": "High risk and explicitly deferred. It requires a real budget closure, not just optimism, and it can easily raise barrier pressure if implemented before the shared/register tradeoff is actually favorable.",
-      "metrics_to_recheck": [
-        "launch__shared_mem_per_block_allocated",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the static shared-memory budget still cannot support a real extra A/B stage, or if the added stage increases barrier pressure without a clear runtime win."
-    }
-  ],
-  "notes": "Audit of the 10 human idea families for this round on the restored accepted base 9bdc160 and the failed round-4 export-shrink run d2a8c31: (1) Tiling 256x128 block / 64x64 warp = reject-for-this-round, because the accepted 64x384 hot-band tile is still the only measured winner and reopening tile hierarchy exits the current PTX mainline. (2) Coalescing Access wide global-memory instructions = accept-now as already present via 16-byte cp.async-style wide accesses, but not the main limiter this round. (3) Data Reuse through shared memory for A and B = accept-now as already core to the current kernel, not the next differentiator. (4) Async Copy non-blocking = accept-now as already core to the current kernel; near-neighbor handoff-retime retries are rejected as a primary lever. (5) Bank Conflict padding/permuted access = defer, with only the warp-local PTX consumer-side permutation still viable; CTA-wide reorder remains rejected. (6) L2 Cache swizzle access mode = reject-for-this-round, because current L2/DRAM behavior does not point to cache locality as the dominant blocker. (7) Register Reuse Right-Left-Right-Left warp-internal schedule = defer, because it sits too close to the earlier low-value issue-order family to be the round-5 primary bet. (8) Pg2s double-buffer global-to-shared = accept-now as already present in the accepted base; it is a foundation, not the recommended new family. (9) Ps2r double-buffer shared-to-register = accept-now and selected as the primary idea family for round 5, because current residual long-scoreboard under one-block occupancy points most directly here. (10) Stage multi-buffer global-to-shared = defer, because it remains high-upside but budget-blocked for this round even after export-side scratch shrink. Additional negative evidence still in force: no explicit half-panel mma.sync compute rewrite, no pair-compaction retry, no panelized B-load reorder, no helper/lifetime compaction as the main lever, and no near-neighbor handoff-retime retry."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Human idea 9 Ps2r: full-width PTX shared-to-register lookahead inside the 12-tile sweep",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T17:38:23-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_173445",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Human idea 9 Ps2r: full-width PTX shared-to-register lookahead inside the 12-tile sweep",
-    "hypothesis": "Mapping: this direction is the direct accept-now implementation of human idea 9, Ps2r double-buffering from shared memory to registers. The current evidence fits it best: export-side c_shared scratch shrink alone cut shared allocation from 46.592 KiB to 38.400 KiB yet still regressed, so removing export scratch by itself is not the win. The remaining stable symptom on the restored accepted base is one-block occupancy plus persistent long-scoreboard around 6.2, which points more naturally at the warp-local shared-to-register feed path. Keep the accepted 64x384 hot-band PTX kernel and unchanged 64x96 tail, but restructure ptx_wmma_accumulate_tile_set_384() so one next B fragment is prefetched from shared to registers while the current tile's mma issues. That is materially different from the rejected half-panel compute rewrite and from the low-value issue-order retightening, because the mechanism is explicit Ps2r latency hiding inside the full-width sweep.",
-    "expected_bottleneck": "Warp-local shared-to-register latency on B-fragment consumption is the most actionable remaining underfeed source once export shrink and handoff retime have both failed to beat the accepted base.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:273-299",
-      "src/kernels/bf16_gemm_v1.cu:388-402",
-      "src/kernels/bf16_gemm_v1.cu:801-818",
-      "src/kernels/bf16_gemm_v1.cu:910-948"
-    ],
-    "risk": "Medium risk. This still lives near the inner compute walk, so it can raise registers or accidentally drift toward the already-bad explicit compute family if it stops being a pure shared-to-register lookahead. It is ranked first because it is the cleanest new mechanism that stays inside the PTX mainline and matches the residual stall pattern.",
-    "metrics_to_recheck": [
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "launch__registers_per_thread",
-      "launch__occupancy_limit_registers",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if long-scoreboard does not come down together with tensor activity, or if register growth turns the lookahead into a net regression."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
