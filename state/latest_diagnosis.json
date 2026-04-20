@@ -1,93 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_081325",
-  "status": "completed",
-  "created_at": "2026-04-20T08:13:25-07:00",
-  "source_run_id": "20260420_081140_bf16_gemm_v1_3713ac4",
-  "source_run_dir": "runs/20260420_081140_bf16_gemm_v1_3713ac4",
-  "source_summary_json": "runs/20260420_081140_bf16_gemm_v1_3713ac4/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_082007_bf16_gemm_v1_f2b7c06",
+  "source_run_dir": "runs/20260420_082007_bf16_gemm_v1_f2b7c06",
+  "source_summary_json": "runs/20260420_082007_bf16_gemm_v1_f2b7c06/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "notes": "- round 52/100 must stay anchored to the accepted best base from round 47: `grouped-row=8 + K16` at `25.529328 ms` (`20260420_074331_bf16_gemm_v1_17a33b2`).\n- round 48's B-fragment lookahead branch is explicit negative evidence and stays stopped: it regressed to `25.759745 ms`, so do not reopen extra-live-B or rolling-window Ps2r work.\n- round 49's K32 cadence branch is also explicit negative evidence and stays stopped: it collapsed to `31.728224 ms`, so do not reopen another stage-width pivot.\n- round 50 / 51 recovery clarified the branch boundary: `#pragma unroll 1` improved the stall mix but was not an accepted base, and restoring the active PTX path to `unroll 2` brought runtime back to `25.716736 ms`, still about `0.19 ms` slower than the accepted best.\n- That means the next directions must build on accepted `grouped-row=8 + K16 + unroll2 + no-lookahead + single-scratch export`, not on the disproved lookahead or K32 variants and not on `unroll 1` as a new base.\n- The latest run is still underfed rather than DRAM-bound: tensor active `48.22%`, warps active `16.65%`, L2 throughput `30.66%`, DRAM throughput `10.35%`, barrier `7.21%`, mio_throttle `4.78%`, short_scoreboard `1.93%`, long_scoreboard `1.31%`.\n- Coalescing Access: not the lead family now; the 16-byte `cp.async` path and low DRAM utilization say the major coalescing win is already captured.\n- Data Reuse: still valid because grouped-row=8 is the accepted base, but only as a narrow within-branch reuse or ordering refinement rather than a fresh branch.\n- Async Copy: already present and useful; the next move is to retime the existing `cp.async` wait or commit handoff inside the accepted K16 path, not add another producer-side mechanism.\n- Bank Conflict: still worth a third-ranked micro-probe because shared-side pressure can still leak into `mio_throttle`, but only via minimal layout or padding tweaks on the accepted surface.\n- L2 Cache: still relevant because grouped-row locality produced the best run and current L2 is still around `30.66%`, but locality work must remain narrow and preserve grouped-row=8.\n- Register Reuse: still a live family because round 51 is on the restored single-scratch path yet remains about `0.19 ms` slower than the accepted best; focus on A-fragment or export lifetime, not extra B residency.\n- Pg2s: not the current limiter; DRAM stayed low enough that another global-to-shared rewrite is not the best use of this round.\n- Ps2r: explicit stop for the B-fragment lookahead family after round 48; any remaining reuse work must avoid keeping another B fragment live.\n- Stage: explicit stop for the K32 cadence family after round 49; the only valid stage work now is a small K16 handoff retime while keeping `unroll 2` and the accepted double buffer.\n- Target framing stays unchanged: the user goal is still `<20 ms`, not merely staying ahead of CUTLASS.",
-  "recommended_direction_id": "dir_01",
-  "recommended_idea_origin": "auto-analysis",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep The Accepted Unroll2 K16 Base And Retime The Existing Feed Or Issue Handoff",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "Round 47's grouped-row=8 + K16 path at 25.529328 ms remains the accepted best base. Round 48 already falsified B-fragment lookahead, round 49 already falsified K32 cadence, round 50's `unroll 1` cleaned the stall mix but was still slower, and round 51 restored the intended `grouped-row=8 + K16 + unroll2 + no-lookahead + single-scratch export` surface to 25.716736 ms, still about 0.19 ms behind the accepted best. The highest-value next move is therefore to keep the exact accepted unroll2 branch and retime only the existing K16 double-buffer handoff, `cp.async` wait or commit placement, or row-pair consume order so some of the `unroll 1` stall cleanup survives without serializing the loop again.",
-      "expected_bottleneck": "Feed or issue cadence and K16 stage-turnover latency inside the dominant 128x128 PTX hot-band microkernel, not raw DRAM bandwidth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:721-739",
-        "src/kernels/bf16_gemm_v1.cu:743-760",
-        "src/kernels/bf16_gemm_v1.cu:1949-2005"
-      ],
-      "risk": "This is the highest-upside direction, but it can easily drift into a disguised `unroll 1` downgrade or another hidden lookahead experiment. The implementation must preserve grouped-row=8, K16 cadence, `#pragma unroll 2`, no extra-live B fragment, and the current single-scratch export path.",
-      "metrics_to_recheck": [
-        "median runtime and TFLOP/s versus the 25.529328 ms accepted base and the <20 ms user target",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the change effectively behaves like another `unroll 1` branch, reintroduces extra-live B state, or fails to beat the 25.529328 ms accepted base."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim Operand And Export Lifetime On The Accepted Single-Scratch PTX Surface",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "The restored round-51 kernel already sits on the intended accepted surface: grouped-row=8, K16, `unroll 2`, no B-fragment lookahead, and a single per-warp export scratch tile. Yet runtime is still about 0.19 ms behind the accepted best while tensor active is only 48.22% and warps active only 16.65%. That makes operand or export lifetime the best bounded rank-2 direction: shorten A-row-pair residency, tighten the single-scratch export handoff, or reduce unnecessary live state in the PTX microkernel without reopening the disproved lookahead or K32 branches.",
-      "expected_bottleneck": "Register reuse or live-range pressure and export-side synchronization overhead inside the accepted PTX hot band, which may still be suppressing warp readiness after locality already improved.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134-142",
-        "src/kernels/bf16_gemm_v1.cu:743-760",
-        "src/kernels/bf16_gemm_v1.cu:974-1013",
-        "src/kernels/bf16_gemm_v1.cu:2009-2011"
-      ],
-      "risk": "This is easy to overfit. A small lifetime cleanup can silently raise registers, lengthen synchronization, or turn back into a disguised Ps2r experiment if it starts keeping more B state live than the accepted base does today.",
-      "metrics_to_recheck": [
-        "median runtime and TFLOP/s",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "correctness pass rate"
-      ],
-      "stop_condition": "Stop if register count, occupancy pressure, or export synchronization cost rises without a clear runtime drop versus the accepted base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Preserve The Accepted Base And Probe One Narrow Grouped-Row Or Shared-Mapping Micro-Tweak",
-      "idea_origin": "auto-analysis",
-      "hypothesis": "Grouped-row=8 is still real signal because it produced the accepted best run, and the restored round-51 kernel still shows meaningful L2 traffic at 30.66% with low DRAM at 10.35% plus residual `mio_throttle` at 4.78%. That keeps locality and shared-layout work alive only as a third-ranked micro-probe. The valid scope is one narrow grouped-row traversal or within-group ordering tweak, or one small `b_shared_col_from_logical` or padding refinement, while preserving K16, `unroll 2`, no lookahead, and the single-scratch export surface.",
-      "expected_bottleneck": "Residual L2 reuse and shared-memory layout friction in the accepted grouped-row=8 PTX hot band, expressed more as MIO or bank-side inefficiency than as global-memory saturation.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156-156",
-        "src/kernels/bf16_gemm_v1.cu:1018-1048",
-        "src/kernels/bf16_gemm_v1.cu:1920-1936"
-      ],
-      "risk": "This is likely incremental and could land in noise. A careless remap or padding change can give back the grouped-row=8 locality win, perturb alignment, or change correctness without addressing the real bottleneck.",
-      "metrics_to_recheck": [
-        "median runtime delta versus the 25.529328 ms accepted base",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness pass rate"
-      ],
-      "stop_condition": "Stop if L2 or bank counters move without a clear runtime improvement, because the target is still <20 ms rather than a cosmetic cache-metric change."
-    }
-  ]
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
