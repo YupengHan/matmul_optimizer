@@ -1,10 +1,30 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Use The Non-PTX 128x128 Sibling As The Next Control Path",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T16:26:03-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_162446",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Use The Non-PTX 128x128 Sibling As The Next Control Path",
+    "hypothesis": "Round 9/17 showed that reopening the PTX prefetch family on top of the new export base does improve the failed round-8 variant, but it still cannot beat the accepted base because it only trades long-scoreboard down to 6.58 for a higher barrier cost of 6.68. That effectively closes the reopened PTX prefetch family. The best next move is now the non-PTX 128x128 sibling control: it keeps the same hot-band tile geometry while removing the PTX-specific export/store and refill interaction that is now dominating the remaining tradeoff.",
+    "expected_bottleneck": "PTX-specific export/store and refill interaction versus the simpler non-PTX 128x128 sibling path.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1848-1932",
+      "src/kernels/bf16_gemm_v1.cu:2096-2104"
+    ],
+    "risk": "Low to medium. This is a bounded control-path switch that preserves the same 128x128 shape, but it may simply underperform the accepted PTX base if the remaining cost is not PTX-specific.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop this control path immediately if it is both slower than 24.84582424 ms and no cleaner in the profiler than the accepted PTX base."
+  },
+  "notes": "Node C may now implement this one direction."
 }

@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `bbcc928d6298d5a0483248e079094b06db6afc4c`
 - plateau counter: `35`
 - round loop: `round 10/17`
 - rounds remaining: `8`
-- notes: `Node A completed round 9/17. Run node_b to continue round 10/17.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 10/17.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_162446`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 10/17 diagnosis for run 20260420_162425_bf16_gemm_v1_bbcc928. Human-review mapping for this round: keep the deeper export cleanup from round 8 closed, and now also close the reopened PTX prefetch-handoff family after round 9/17. The new evidence is that the narrower future-refill retime reduced long-scoreboard to 6.58 and DRAM to 11.44, but it still lost to the accepted base because barrier rose to 6.68 and total runtime stayed at 25.67678452 ms. No new explicit human idea family is queued in state/human_review.md, so the ranking now shifts away from more PTX micro-adjustments: accept the non-PTX 128x128 sibling as the next control path, defer the older-but-measured 64x384 control as the broader fallback, and keep grouping/orchestration only as a tertiary PTX-adjacent retry if the cleaner controls also stall.`
+- dir_01: Use The Non-PTX 128x128 Sibling As The Next Control Path | bottleneck: PTX-specific export/store and refill interaction versus the simpler non-PTX 128x128 sibling path.
+- dir_02: Reopen The Measured 64x384 Fixed-Main-Tile Control Path | bottleneck: Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX helper overhead.
+- dir_03: Retry Grouping / Orchestration Only If Control Paths Stall | bottleneck: CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 

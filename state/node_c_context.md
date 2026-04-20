@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Use The Non-PTX 128x128 Sibling As The Next Control Path`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_162446`
 - round loop: `round 10/17`
+- hypothesis: `Round 9/17 showed that reopening the PTX prefetch family on top of the new export base does improve the failed round-8 variant, but it still cannot beat the accepted base because it only trades long-scoreboard down to 6.58 for a higher barrier cost of 6.68. That effectively closes the reopened PTX prefetch family. The best next move is now the non-PTX 128x128 sibling control: it keeps the same hot-band tile geometry while removing the PTX-specific export/store and refill interaction that is now dominating the remaining tradeoff.`
+- expected bottleneck: `PTX-specific export/store and refill interaction versus the simpler non-PTX 128x128 sibling path.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1848-1932, src/kernels/bf16_gemm_v1.cu:2096-2104`
+- risk: `Low to medium. This is a bounded control-path switch that preserves the same 128x128 shape, but it may simply underperform the accepted PTX base if the remaining cost is not PTX-specific.`
+- metrics to re-check: `correctness, median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
