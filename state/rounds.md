@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `running`
-- total rounds: `50`
+- status: `round_in_progress`
+- total rounds: `100`
 - completed rounds: `33`
-- remaining rounds: `17`
-- current round label: `round 34/50`
+- remaining rounds: `67`
+- current round label: `round 34/100`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_002759_bf16_gemm_v1_1b9dbe3`
 - accepted base measured commit: `1b9dbe3d306090b4f1762f1e1a504c13d2ab5d92`
@@ -13,11 +13,11 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Completed round 33/50. Continue with node_b for round 34/50. Accepted base: 20260420_002759_bf16_gemm_v1_1b9dbe3 at 26.924031 ms.`
+- notes: `Executing round 34/100.`
 
 ## Last completed round
 
-- round: `33/50`
+- round: `33/100`
 - direction: `dir_01`
 - direction name: `Rewrite the active 128x128 K16 hot-band steady-state around Pg2s/Stage orchestration instead of dead grouped_rows tuning`
 - verdict: `regressed`

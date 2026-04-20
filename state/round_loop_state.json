@@ -1,18 +1,18 @@
 {
   "active": true,
-  "status": "running",
-  "total_rounds": 50,
+  "status": "round_in_progress",
+  "total_rounds": 100,
   "completed_rounds": 33,
-  "remaining_rounds": 17,
+  "remaining_rounds": 67,
   "next_round_index": 34,
-  "current_round_index": null,
+  "current_round_index": 34,
   "auto_use_recommended": true,
   "started_at": "2026-04-19T22:34:28-07:00",
   "completed_at": null,
   "last_completed_round": {
     "recorded_at": "2026-04-20T00:43:33-07:00",
     "round_index": 33,
-    "total_rounds": 50,
+    "total_rounds": 100,
     "direction_id": "dir_01",
     "direction_name": "Rewrite the active 128x128 K16 hot-band steady-state around Pg2s/Stage orchestration instead of dead grouped_rows tuning",
     "selection_mode": "recommended",
@@ -35,5 +35,5 @@
   "accepted_base_measured_commit": "1b9dbe3d306090b4f1762f1e1a504c13d2ab5d92",
   "accepted_base_runtime_ms": 26.92403126,
   "history_path": "state/round_history.jsonl",
-  "notes": "Completed round 33/50. Continue with node_b for round 34/50. Accepted base: 20260420_002759_bf16_gemm_v1_1b9dbe3 at 26.924031 ms."
+  "notes": "Executing round 34/100."
 }
