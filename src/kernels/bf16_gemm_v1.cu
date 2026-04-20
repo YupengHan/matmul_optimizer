@@ -1674,6 +1674,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
             warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+    // Keep the double-buffered stage live until every warp finishes consuming it.
+    __syncthreads();
 
     if (future_tile_idx < FixedKTiles) {
       const int future_tile_k = future_tile_idx * kWmmaK;
