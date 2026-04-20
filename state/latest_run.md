@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_163016_bf16_gemm_v1_48ee4f9`
-- run dir: `runs/20260420_163016_bf16_gemm_v1_48ee4f9`
-- kernel tag: `bf16_gemm_v1_48ee4f9`
-- round label: `round 11/17`
+- run id: `20260420_163143_bf16_gemm_v1_6821ef5`
+- run dir: `runs/20260420_163143_bf16_gemm_v1_6821ef5`
+- kernel tag: `bf16_gemm_v1_6821ef5`
+- round label: `round 12/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.406448 ms`
-- p10 runtime: `24.919244 ms`
-- p90 runtime: `26.285252 ms`
-- TFLOP/s: `28.615547 TFLOP/s`
-- previous run id: `20260420_162632_bf16_gemm_v1_948fc5c`
-- runtime delta vs previous measured run: `-1.297935 ms`
-- TFLOP/s delta vs previous measured run: `+1.390825 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.066944 ms`
+- p10 runtime: `25.632767 ms`
+- p90 runtime: `26.751385 ms`
+- TFLOP/s: `27.890474 TFLOP/s`
+- previous run id: `20260420_163016_bf16_gemm_v1_48ee4f9`
+- runtime delta vs previous measured run: `+0.660496 ms`
+- TFLOP/s delta vs previous measured run: `-0.725073 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retry PTX Hot-Band Grouping With A 4-Row Window`
+- implemented direction name: `Tighten PTX Hot-Band Grouping Further To A 2-Row Window`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_163016_bf16_gemm_v1_48ee4f9/summary.json`
-- measured commit: `48ee4f9bb82099f9dee321757edcdb92828cd707`
+- raw summary json: `runs/20260420_163143_bf16_gemm_v1_6821ef5/summary.json`
+- measured commit: `6821ef5bfd8f089ea59938238f7d8375903a005e`
 - new best custom: `no`
-- generated at: `2026-04-20T16:30:25-07:00`
+- generated at: `2026-04-20T16:31:52-07:00`
