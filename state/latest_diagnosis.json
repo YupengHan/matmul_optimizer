@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_155107",
-  "status": "completed",
-  "created_at": "2026-04-20T15:51:07-07:00",
-  "source_run_id": "20260420_155035_bf16_gemm_v1_a4dc968",
-  "source_run_dir": "runs/20260420_155035_bf16_gemm_v1_a4dc968",
-  "source_summary_json": "runs/20260420_155035_bf16_gemm_v1_a4dc968/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_155247_bf16_gemm_v1_10d32cf",
+  "source_run_dir": "runs/20260420_155247_bf16_gemm_v1_10d32cf",
+  "source_summary_json": "runs/20260420_155247_bf16_gemm_v1_10d32cf/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Retune PTX Prefetch Handoff On Top Of The Accepted Export Base",
-      "hypothesis": "Round 2/17 established a new accepted base at 25.505328 ms, while round 3/17 showed that further export flattening only regressed by 0.040 ms and pushed long-scoreboard back up to 7.75. That means the export family is no longer the best next lever. The next bounded move should keep the accepted export helper intact and retune the PTX `cp.async` handoff itself, starting with the A/B staging order and future-tile refill sequence, to see whether the remaining scoreboard is now feed latency rather than epilogue control.",
-      "expected_bottleneck": "Copy-pipeline handoff timing in the PTX hot-band steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1975-1989",
-        "src/kernels/bf16_gemm_v1.cu:1991-2020",
-        "src/kernels/bf16_gemm_v1.cu:1056-1099"
-      ],
-      "risk": "Medium. This is a clean family shift on top of the accepted base, but changing the steady-state prefetch order can easily reshuffle barrier and scoreboard stalls without a net runtime win.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness"
-      ],
-      "stop_condition": "Stop this family if one bounded retime leaves runtime flat or simply trades scoreboard for barrier without beating 25.50532818 ms."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Tune PTX Hot-Band B-Shared Skew On The New Base",
-      "hypothesis": "The current accepted base already showed that export-side cleanup can help while leaving DRAM flat, so the next alternate family is the PTX B-fragment layout. A narrow adjustment around `kBSharedStride` or `b_shared_col_from_logical` can test whether the remaining 7.21 scoreboard cost is partly shared-layout friction rather than pure feed latency.",
-      "expected_bottleneck": "Shared-memory fragment address generation and B-tile layout friction in the PTX hot-band path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:44-56",
-        "src/kernels/bf16_gemm_v1.cu:1051-1054",
-        "src/kernels/bf16_gemm_v1.cu:1997-2003"
-      ],
-      "risk": "Medium to high. The family is still bounded, but shared-layout changes can reintroduce the memory-side regressions that the x-major traversal experiment exposed.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "correctness"
-      ],
-      "stop_condition": "Abandon this family if it raises DRAM or correctness risk without a measurable runtime improvement."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Apply Only A Minimal PTX Export Address Cleanup",
-      "hypothesis": "The deeper export flattening step is now effectively closed, but there may still be one last low-risk cleanup on the accepted base: hoist or simplify any remaining repeated address setup inside the PTX export helpers without changing recursion depth or scratch semantics again. This keeps a tiny export-side control family available if the prefetch retime and B-shared skew both fail.",
-      "expected_bottleneck": "Residual address-generation overhead in the PTX export helper on top of the accepted one-stage scratch design.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:925-947",
-        "src/kernels/bf16_gemm_v1.cu:1008-1056",
-        "src/kernels/bf16_gemm_v1.cu:2025-2027"
-      ],
-      "risk": "Low. The upside is likely small, but it is safer than reopening the closed deeper export flattening path.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness"
-      ],
-      "stop_condition": "Stop if the cleanup produces only noise-level movement and fails to improve runtime beyond the accepted base."
-    }
-  ],
-  "notes": "Round 4/17 diagnosis for run 20260420_155035_bf16_gemm_v1_a4dc968. Human-review mapping: keep broad default-promotion, staged K32, paired export-lifetime, x-major traversal, and deeper export flattening closed; continue to accept only narrow PTX-adjacent moves on top of the accepted base 20260420_154827_bf16_gemm_v1_7adfc4e at 25.50532818 ms. The round-3 result shows the export family has likely plateaued: DRAM stayed healthy at 11.52, but the extra TileRow flattening regressed runtime by 0.0404005 ms and pushed long-scoreboard back to 7.75. That makes PTX prefetch handoff the best next move, with B-shared skew as the main alternate family and only a minimal export-side cleanup retained as a low-risk control."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

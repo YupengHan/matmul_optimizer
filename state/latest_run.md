@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_155035_bf16_gemm_v1_a4dc968`
-- run dir: `runs/20260420_155035_bf16_gemm_v1_a4dc968`
-- kernel tag: `bf16_gemm_v1_a4dc968`
-- round label: `round 3/17`
+- run id: `20260420_155247_bf16_gemm_v1_10d32cf`
+- run dir: `runs/20260420_155247_bf16_gemm_v1_10d32cf`
+- kernel tag: `bf16_gemm_v1_10d32cf`
+- round label: `round 4/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.545729 ms`
-- p10 runtime: `25.208521 ms`
-- p90 runtime: `26.490983 ms`
-- TFLOP/s: `28.459530 TFLOP/s`
-- previous run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
-- runtime delta vs previous measured run: `+0.040401 ms`
-- TFLOP/s delta vs previous measured run: `-0.045080 TFLOP/s`
+- median runtime: `25.982464 ms`
+- p10 runtime: `25.408387 ms`
+- p90 runtime: `26.828800 ms`
+- TFLOP/s: `27.981158 TFLOP/s`
+- previous run id: `20260420_155035_bf16_gemm_v1_a4dc968`
+- runtime delta vs previous measured run: `+0.436735 ms`
+- TFLOP/s delta vs previous measured run: `-0.478372 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Finish Flattening PTX Export Across Tile Rows`
+- implemented direction name: `Retune PTX Prefetch Handoff On Top Of The Accepted Export Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_155035_bf16_gemm_v1_a4dc968/summary.json`
-- measured commit: `a4dc9684180bd8d536161425ebd8373caf288a6e`
+- raw summary json: `runs/20260420_155247_bf16_gemm_v1_10d32cf/summary.json`
+- measured commit: `10d32cf805efc73140de4de50b5aa8a57abda726`
 - new best custom: `no`
-- generated at: `2026-04-20T15:50:43-07:00`
+- generated at: `2026-04-20T15:52:56-07:00`
