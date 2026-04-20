@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `466263fcce7c61689773fa9fec22144a0d7233e1`
 - plateau counter: `14`
 - round loop: `round 15/50`
 - rounds remaining: `36`
-- notes: `Node A completed round 14/50. Run node_b to continue round 15/50.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 15/50.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_233204`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 15/50 keeps the new 128x128 family alive because it delivered the first major kernel-time improvement in many rounds. The recommended next move is a localization step: preserve the winning CTA/launch shape and revert only the K32 mainloop to K16 so the correctness bug can be isolated without discarding the structural gain.`
+- dir_01: Keep the 128x128/128-thread hot-band branch but revert only the K32 mainloop back to proven K16 staging to localize correctness | bottleneck: Correctness bug likely in the K32 staged mainloop bookkeeping, not in the new 128x128 warp mapping.
+- dir_02: If 128x128 K16 is correct, reintroduce K32 with explicit [stage][half] helpers to eliminate half-stage aliasing | bottleneck: Stage-half address aliasing or refill ordering inside the new K32 mainloop.
+- dir_03: Restore the accepted-correct implementation surface if the new family cannot be made correct quickly | bottleneck: Not a bottleneck attack; this is the fallback path.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
