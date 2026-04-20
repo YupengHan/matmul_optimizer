@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `50`
-- completed rounds: `13`
-- remaining rounds: `37`
-- current round label: `round 14/50`
+- completed rounds: `14`
+- remaining rounds: `36`
+- current round label: `round 15/50`
 - auto use recommended: `yes`
 - accepted base run id: `20260419_222734_bf16_gemm_v1_0d78758`
 - accepted base measured commit: `0d787589a75b35984fb169106135c77436806bc6`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 14/50. Node A will measure the result next.`
+- notes: `Completed round 14/50. Continue with node_b for round 15/50. Accepted base: 20260419_222734_bf16_gemm_v1_0d78758 at 29.325824 ms.`
 
 ## Last completed round
 
-- round: `13/50`
+- round: `14/50`
 - direction: `dir_01`
-- direction name: `Restore the accepted-correct hot-band surface and apply a warp-local B XOR/interleaved consumer swizzle with zero extra shared footprint`
+- direction name: `Start a CUTLASS-shaped hot-band branch: 128x128 CTA, 64x64 warp tiles, 128-thread launch, and K32 staged mainloop`
 - verdict: `improved`
-- runtime delta: `-0.000511 ms`
-- TFLOP/s delta: `+0.000394 TFLOP/s`
-- run dir: `runs/20260419_232419_bf16_gemm_v1_5e1cfd4`
-- ncu rep path: `runs/20260419_232419_bf16_gemm_v1_5e1cfd4/ncu_profile.ncu-rep`
+- runtime delta: `-1.201664 ms`
+- TFLOP/s delta: `+0.964995 TFLOP/s`
+- run dir: `runs/20260419_233123_bf16_gemm_v1_466263f`
+- ncu rep path: `runs/20260419_233123_bf16_gemm_v1_466263f/ncu_profile.ncu-rep`

@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_232652",
-  "status": "completed",
-  "created_at": "2026-04-19T23:26:52-07:00",
-  "source_run_id": "20260419_232419_bf16_gemm_v1_5e1cfd4",
-  "source_run_dir": "runs/20260419_232419_bf16_gemm_v1_5e1cfd4",
-  "source_summary_json": "runs/20260419_232419_bf16_gemm_v1_5e1cfd4/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_233123_bf16_gemm_v1_466263f",
+  "source_run_dir": "runs/20260419_233123_bf16_gemm_v1_466263f",
+  "source_summary_json": "runs/20260419_233123_bf16_gemm_v1_466263f/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human+auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Start a CUTLASS-shaped hot-band branch: 128x128 CTA, 64x64 warp tiles, 128-thread launch, and K32 staged mainloop",
-      "hypothesis": "The plateau is now too persistent to justify more local tweaks. The current accepted-correct hot-band kernel runs with a 256-thread 256x128 CTA and reaches only about 38.13% tensor active, 17.00% DRAM throughput, and 6.83% barrier stalls. The recorded CUTLASS baseline on the same shape uses a 128-thread 128x128x32 multistage tensor-op kernel, reaches about 49.25% tensor active, 42.76% DRAM throughput, and only 0.39% barrier stalls, even with higher registers and more shared memory. That strongly suggests this GPU prefers a smaller CTA and a fatter K-stage that reduces coordination frequency while increasing useful bytes per stage. The next serious branch should therefore stop patching the 256x128 path and instead build a CUTLASS-shaped hot-band kernel specialized for this fixed benchmark: 128x128 CTA tiles, 64x64 warp tiles, 128 threads, and a K32 per-stage mainloop.",
-      "expected_bottleneck": "Feed/orchestration inefficiency from the current 256-thread hot-band structure rather than a single bank-conflict or epilogue detail.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile256x128",
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaAccTileSet64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Very high. This is a new hot-band kernel family with tile-shape, launch-shape, and stage-shape changes all at once.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "runs/*/ncu_metrics.csv main hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "runs/*/ncu_metrics.csv main hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "runs/*/ncu_metrics.csv main hot-band launch__shared_mem_per_block_allocated",
-        "runs/*/ncu_metrics.csv main hot-band launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if the first CUTLASS-shaped branch cannot beat the restored accepted surface, or if the implementation balloons into multiple unrelated changes outside the hot-band kernel."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Escalate directly to an explicit ldmatrix/mma.sync hot-band microkernel if the CUTLASS-shaped WMMA branch still underfeeds Tensor Cores",
-      "hypothesis": "If a CUTLASS-shaped WMMA branch still stalls well below CUTLASS, the remaining ceiling is probably in the operand load and issue model itself. The repo has already explored multiple layout and scheduling variants around the current WMMA-based PTX helpers, so the next ceiling-lifting step would be to replace the hot-band warp microkernel with explicit ldmatrix plus mma.sync sequencing while leaving residual and tail paths untouched.",
-      "expected_bottleneck": "Tensor Core under-utilization caused by the current WMMA fragment delivery path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaBf16Fragment",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_a_row",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_b_row",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_mma_row_row",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64"
-      ],
-      "risk": "Extremely high. This is a new microkernel with a larger correctness and maintenance surface than any previous branch.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "runs/*/ncu_metrics.csv main hot-band launch__registers_per_thread"
-      ],
-      "stop_condition": "Defer this if the CUTLASS-shaped branch already closes the gap materially, or if the explicit microkernel would force changes beyond the hot-band path."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore the accepted-correct implementation surface before continuing the search",
-      "hypothesis": "The current source carries a safe but negative B-swizzle experiment. If the higher-upside structural branch cannot be landed cleanly in one round, the repo should restore the accepted surface before the next attempt so the search does not compound regressions.",
-      "expected_bottleneck": "Not a bottleneck attack; this is the reset path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu",
-        "python scripts/graph.py restore-implementation --source-commit 0d78758"
-      ],
-      "risk": "Low.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime"
-      ],
-      "stop_condition": "Use this if the higher-ranked branch does not compile or passes compile but fails correctness."
-    }
-  ],
-  "notes": "Round 14/50 incorporates the recorded CUTLASS NCU baseline directly. CUTLASS runs a 128-thread 128x128x32 multistage kernel with much higher tensor and DRAM utilization and almost no barrier pressure, while the current custom hot-band path remains stuck near 38% tensor active with 256 threads and k16 stages. The recommended next move is therefore a structural hot-band branch, not another local swizzle."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_232419_bf16_gemm_v1_5e1cfd4`
-- run dir: `runs/20260419_232419_bf16_gemm_v1_5e1cfd4`
-- kernel tag: `bf16_gemm_v1_5e1cfd4`
-- round label: `round 13/50`
+- run id: `20260419_233123_bf16_gemm_v1_466263f`
+- run dir: `runs/20260419_233123_bf16_gemm_v1_466263f`
+- kernel tag: `bf16_gemm_v1_466263f`
+- round label: `round 14/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.695424 ms`
-- p10 runtime: `30.274970 ms`
-- p90 runtime: `31.465459 ms`
-- TFLOP/s: `23.684945 TFLOP/s`
-- previous run id: `20260419_232036_bf16_gemm_v1_0c0ee9b`
-- runtime delta vs previous measured run: `-0.000511 ms`
-- TFLOP/s delta vs previous measured run: `+0.000394 TFLOP/s`
+- median runtime: `29.493760 ms`
+- p10 runtime: `29.092250 ms`
+- p90 runtime: `30.384652 ms`
+- TFLOP/s: `24.649940 TFLOP/s`
+- previous run id: `20260419_232419_bf16_gemm_v1_5e1cfd4`
+- runtime delta vs previous measured run: `-1.201664 ms`
+- TFLOP/s delta vs previous measured run: `+0.964995 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the accepted-correct hot-band surface and apply a warp-local B XOR/interleaved consumer swizzle with zero extra shared footprint`
+- implemented direction name: `Start a CUTLASS-shaped hot-band branch: 128x128 CTA, 64x64 warp tiles, 128-thread launch, and K32 staged mainloop`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_232419_bf16_gemm_v1_5e1cfd4/summary.json`
-- measured commit: `5e1cfd4820c9703956000c4048b5a8054a8df2d5`
+- raw summary json: `runs/20260419_233123_bf16_gemm_v1_466263f/summary.json`
+- measured commit: `466263fcce7c61689773fa9fec22144a0d7233e1`
 - new best custom: `no`
-- generated at: `2026-04-19T23:24:27-07:00`
+- generated at: `2026-04-19T23:31:30-07:00`
