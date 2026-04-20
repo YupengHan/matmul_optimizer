@@ -1,15 +1,81 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_160050",
+  "status": "completed",
+  "created_at": "2026-04-20T16:00:50-07:00",
   "source_run_id": "20260420_155914_bf16_gemm_v1_8297078",
   "source_run_dir": "runs/20260420_155914_bf16_gemm_v1_8297078",
   "source_summary_json": "runs/20260420_155914_bf16_gemm_v1_8297078/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Retighten PTX Hot-Band Grouping / Orchestration Window",
+      "hypothesis": "Round 5/17 closed the expanded B-shared-skew implementation: it still lost to the accepted base and, more importantly, all three correctness runs failed with runner exit code 1. That means the next move should stay on the restored accepted PTX/export base and target the remaining scoreboard cost from the hot-band orchestration boundary instead of reopening shared-layout risk. A bounded retune around `kFixedHotBandPtxGroupedRows` and the grouped-row logical mapping is the best next family because it preserves the known-correct export and copy layout while testing whether the CTA grouping itself is the leftover latency source.",
+      "expected_bottleneck": "Long-scoreboard and barrier cost caused by PTX hot-band grouping and grouped-row orchestration.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:155-156",
+        "src/kernels/bf16_gemm_v1.cu:1969-1979",
+        "src/kernels/bf16_gemm_v1.cu:2096-2102"
+      ],
+      "risk": "Medium. This remains inside the accepted PTX microkernel family and avoids the shared-layout correctness risk, but changing the grouping window can still perturb memory traffic or scheduler balance.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop this family if one bounded grouping/window retune fails correctness, fails to beat 25.50532818 ms, or simply reproduces the old traversal regression pattern."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Apply Only A Minimal PTX Export Address Cleanup",
+      "hypothesis": "Round 2/17 already proved that a narrow export-side cleanup can help, while round 3/17 showed that deeper export flattening is closed-negative. With the prefetch and B-shared-skew families both now closed for this loop, the safest remaining alternate is one last very small export-address cleanup on top of the restored accepted base, such as hoisting or simplifying the surviving row/quad address setup without changing scratch lifetime or copy order again.",
+      "expected_bottleneck": "Residual address-generation overhead in the surviving PTX export/store helper path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:925-947",
+        "src/kernels/bf16_gemm_v1.cu:1008-1065",
+        "src/kernels/bf16_gemm_v1.cu:2044-2047"
+      ],
+      "risk": "Low. The upside is smaller than the grouping move, but it stays on the accepted correct baseline and avoids reopening the shared-layout or prefetch families.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the cleanup produces only noise-level movement or fails to improve the accepted base after one bounded edit."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Use The Non-PTX 128x128 Sibling As A Control",
+      "hypothesis": "The expanded B-shared skew failed correctness, which is a strong sign that the PTX microkernel path is now sensitive to layout changes. A bounded control is to switch to the non-PTX 128x128 sibling only as an alternate family, not because it is expected to win outright, but because it can expose whether the remaining scoreboard cost is specific to the PTX export/store path or is inherent to the broader 128x128 hot-band feed.",
+      "expected_bottleneck": "PTX-specific export/store and orchestration overhead versus the simpler non-PTX 128x128 sibling.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1848-1932",
+        "src/kernels/bf16_gemm_v1.cu:2096-2102"
+      ],
+      "risk": "Low to medium. The path is bounded and should stay correct more easily than another shared-layout rewrite, but it may still lag the accepted PTX baseline if the remaining issue is not PTX-specific.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Use this only if the higher-ranked PTX-adjacent directions stall; close it immediately if it is both slower and no cleaner in the profiler."
+    }
+  ],
+  "notes": "Round 6/17 diagnosis for run 20260420_155914_bf16_gemm_v1_8297078. Human-review mapping for this round: keep broad retile/default-promotion, deeper export flattening, and the immediate prefetch-handoff family closed. Also close the specific expanded B-shared-skew implementation from round 5/17, because despite a 25.75615978 ms perf reading it failed correctness in all 3/3 cases with runner exit code 1, which is a harder rejection than a small runtime regression. No new explicit human idea family is queued in state/human_review.md, so this round carries forward only the surviving bounded families on the restored accepted base 20260420_154827_bf16_gemm_v1_7adfc4e at 25.50532818 ms: accept PTX grouping/orchestration retuning as the next primary move, defer a minimal export cleanup as the low-risk alternate, and keep the non-PTX 128x128 sibling only as a control path if the PTX-adjacent moves stall."
 }
