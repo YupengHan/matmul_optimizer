@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - round loop: `round 15/20` with `6` rounds remaining
 
 ## Direction approval policy
@@ -41,5 +41,5 @@ Primary choice for this round: continue the Human idea 1 family, but shift the i
 
 - selected direction: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
