@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_164223_bf16_gemm_v1_436e9ff`
-- run dir: `runs/20260420_164223_bf16_gemm_v1_436e9ff`
-- kernel tag: `bf16_gemm_v1_436e9ff`
-- round label: `round 16/17`
+- run id: `20260420_164612_bf16_gemm_v1_da1a5bb`
+- run dir: `runs/20260420_164612_bf16_gemm_v1_da1a5bb`
+- kernel tag: `bf16_gemm_v1_da1a5bb`
+- round label: `round 17/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.624064 ms`
-- p10 runtime: `24.928563 ms`
-- p90 runtime: `26.137293 ms`
-- TFLOP/s: `28.372525 TFLOP/s`
-- previous run id: `20260420_163839_bf16_gemm_v1_fcc145b`
-- runtime delta vs previous measured run: `-0.419231 ms`
-- TFLOP/s delta vs previous measured run: `+0.456726 TFLOP/s`
+- median runtime: `25.476608 ms`
+- p10 runtime: `25.208205 ms`
+- p90 runtime: `26.410291 ms`
+- TFLOP/s: `28.536743 TFLOP/s`
+- previous run id: `20260420_164223_bf16_gemm_v1_436e9ff`
+- runtime delta vs previous measured run: `-0.147456 ms`
+- TFLOP/s delta vs previous measured run: `+0.164217 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Apply The Full PTX Prefetch Retime On The Accepted Export Base`
+- implemented direction name: `Keep The Initial Prime Retime But Restore The Future Refill To B-Then-A`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_164223_bf16_gemm_v1_436e9ff/summary.json`
-- measured commit: `436e9ff0e79447691264b4a10ba8a0e499128da7`
+- raw summary json: `runs/20260420_164612_bf16_gemm_v1_da1a5bb/summary.json`
+- measured commit: `da1a5bbd4af452569659b4db75fff988f44084e0`
 - new best custom: `no`
-- generated at: `2026-04-20T16:42:32-07:00`
+- generated at: `2026-04-20T16:46:21-07:00`

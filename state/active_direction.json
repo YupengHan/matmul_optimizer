@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Keep The Initial Prime Retime But Restore The Future Refill To B-Then-A",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T16:45:46-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_164308",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Keep The Initial Prime Retime But Restore The Future Refill To B-Then-A",
-    "hypothesis": "Round 16/17 showed that the full prefetch retime improved the narrower refill-only variant from 25.67678452 ms down to 25.62406445 ms, but it still missed the accepted export base at 24.84582424 ms. That points to a mixed result inside the family: the initial A-then-B prime likely helps, while carrying A-then-B all the way into the future refill likely over-rotates and reintroduces barrier cost. The only remaining untested permutation in this family is the hybrid ordering where the initial two prime stages stay A-then-B but the steady-state future refill goes back to B-then-A, which also matches the nearby 128x128 PTX sibling path.",
-    "expected_bottleneck": "Copy-pipeline handoff balance between long-scoreboard relief from the retimed initial primes and barrier pressure from the future-tile refill ordering in the PTX hot-band microkernel.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1882-1922",
-      "src/kernels/bf16_gemm_v1.cu:1995-2006",
-      "src/kernels/bf16_gemm_v1.cu:2031-2039"
-    ],
-    "risk": "Medium. The prefetch family already had mixed results, but this is the last untested ordering permutation and it is a smaller step than reopening a broad launch-path control.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "stop_condition": "Close the PTX prefetch family if this last hybrid permutation still fails to beat 24.84582424 ms or only trades barrier against scoreboard without a real runtime win."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

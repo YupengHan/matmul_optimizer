@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_164308",
-  "status": "completed",
-  "created_at": "2026-04-20T16:43:08-07:00",
-  "source_run_id": "20260420_164223_bf16_gemm_v1_436e9ff",
-  "source_run_dir": "runs/20260420_164223_bf16_gemm_v1_436e9ff",
-  "source_summary_json": "runs/20260420_164223_bf16_gemm_v1_436e9ff/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_164612_bf16_gemm_v1_da1a5bb",
+  "source_run_dir": "runs/20260420_164612_bf16_gemm_v1_da1a5bb",
+  "source_summary_json": "runs/20260420_164612_bf16_gemm_v1_da1a5bb/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep The Initial Prime Retime But Restore The Future Refill To B-Then-A",
-      "hypothesis": "Round 16/17 showed that the full prefetch retime improved the narrower refill-only variant from 25.67678452 ms down to 25.62406445 ms, but it still missed the accepted export base at 24.84582424 ms. That points to a mixed result inside the family: the initial A-then-B prime likely helps, while carrying A-then-B all the way into the future refill likely over-rotates and reintroduces barrier cost. The only remaining untested permutation in this family is the hybrid ordering where the initial two prime stages stay A-then-B but the steady-state future refill goes back to B-then-A, which also matches the nearby 128x128 PTX sibling path.",
-      "expected_bottleneck": "Copy-pipeline handoff balance between long-scoreboard relief from the retimed initial primes and barrier pressure from the future-tile refill ordering in the PTX hot-band microkernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1882-1922",
-        "src/kernels/bf16_gemm_v1.cu:1995-2006",
-        "src/kernels/bf16_gemm_v1.cu:2031-2039"
-      ],
-      "risk": "Medium. The prefetch family already had mixed results, but this is the last untested ordering permutation and it is a smaller step than reopening a broad launch-path control.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Close the PTX prefetch family if this last hybrid permutation still fails to beat 24.84582424 ms or only trades barrier against scoreboard without a real runtime win."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore The 6144 Seam As The Best Bounded Launch-Split Fallback",
-      "hypothesis": "The seam family already exposed a local best: moving the hot-band / peeled split from 6400 down to 6144 improved the failed broad control back to 25.65470409 ms, while the next deeper shift to 5888 regressed to 26.04329586 ms. With the full prefetch retime still slower than the accepted export base, the best remaining non-prefetch family is to keep the launch path narrow and restore the measured 6144 seam instead of pushing deeper into the seam search again.",
-      "expected_bottleneck": "Boundary cost between the PTX hot-band kernel and the peeled 384-row row-band path, especially whether the fixed split point is leaving a small but repeatable launch handoff penalty.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-154",
-        "src/kernels/bf16_gemm_v1.cu:2097-2114"
-      ],
-      "risk": "Medium. This family already showed its local best and should stay secondary behind the last untested prefetch permutation.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Only revisit the seam at the known 6144 local best; stop immediately if it still trails 24.84582424 ms and do not keep line-searching deeper."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Keep The Broad 64x384 Fixed-Main Control Only As A Tertiary Close-Out Control",
-      "hypothesis": "The repo still carries explicit sweep evidence for the 64x384 fixed-main-tile family, but this round loop already showed that broadly routing the current kernel back through that control path regressed badly to 33.96454430 ms. That makes it unsuitable as the last recommended move, yet it remains the only materially different broad control family with measured ancestry if both the hybrid prefetch permutation and the 6144 seam also stall.",
-      "expected_bottleneck": "Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX microkernel copy-order tuning.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:152",
-        "src/kernels/bf16_gemm_v1.cu:1201-1248",
-        "src/kernels/bf16_gemm_v1.cu:2083-2118"
-      ],
-      "risk": "High. The family has historical sweep support but it was already catastrophic on the current accepted PTX/export base.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Treat this as a control only; stop immediately if it again opens a broad-family regression or inflates runtime well above the accepted export base."
-    }
-  ],
-  "notes": "Round 17/17 diagnosis for run 20260420_164223_bf16_gemm_v1_436e9ff. Human-review mapping for this round: there is still no new explicit external idea family queued in state/human_review.md, so the ranking is driven entirely by the measured evidence accumulated inside this loop. The full A-then-B prefetch retime improved the narrower refill-only retime but still missed the accepted export base, which leaves exactly one prefetch permutation untested: keep the initial primes retimed while restoring the future refill to B-then-A. That hybrid permutation is now the only live primary family. The seam family is kept secondary only at its known 6144 local best, because 5888 already regressed. The broad 64x384 control stays tertiary for auditability because the repo has sweep ancestry for it, but the current-loop evidence already says to keep that family effectively closed unless every narrower option stalls."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
