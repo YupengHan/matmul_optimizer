@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_082032",
+  "status": "completed",
+  "created_at": "2026-04-20T08:20:32-07:00",
   "source_run_id": "20260420_082007_bf16_gemm_v1_f2b7c06",
   "source_run_dir": "runs/20260420_082007_bf16_gemm_v1_f2b7c06",
   "source_summary_json": "runs/20260420_082007_bf16_gemm_v1_f2b7c06/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Retune The B-First CpAsync Handoff Without Reopening K32 Or Unroll-1",
+      "hypothesis": "Round 52 established the new accepted best base at 24.895488 ms by narrowing the active PTX hot-band feed/issue retiming to a pure cp.async order swap from A -> B to B -> A. With tensor active still only 48.34 while barrier stall is 6.45, mio throttle is 4.20, long scoreboard is just 0.79, and DRAM is only 9.78, the remaining gap looks like a steady-state handoff problem between cp.async issue, commit/wait timing, and the first PTX B-fragment consumption rather than a raw memory-latency problem. The next move should keep the accepted K16 double-buffer base intact and further narrow the commit/wait or prefetch handoff around the now-proven B-first ordering.",
+      "expected_bottleneck": "Async-copy feed/issue retiming in the active PTX hot-band steady state, expressed as barrier and MIO stalls rather than long scoreboard.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:332-360",
+        "src/kernels/bf16_gemm_v1.cu:1949-1963",
+        "src/kernels/bf16_gemm_v1.cu:1982-2005"
+      ],
+      "risk": "This is intentionally narrow, so upside may be incremental. Moving commit/wait or refill timing too far can erase the round-52 win or break the shared-memory visibility contract. Do not reopen the falsified K32 cadence, unroll-1 base, or B-fragment lookahead branches while exploring this.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if runtime does not improve on the round-52 accepted base, or if barrier and MIO stalls stay flat while tensor active fails to rise materially."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Retune PTX Hot-Band CTA Grouping For L2 Reuse On Top Of The Round-52 Base",
+      "hypothesis": "The active PTX hot-band is not DRAM-bound: DRAM throughput is 9.78 while L2 throughput is 30.64. That suggests the next memory-side gain is more likely to come from improving reuse distance and CTA traversal order for B tiles than from reopening broad coalescing or tile-shape searches. The current kFixedHotBandPtxGroupedRows=8 grouping was not tuned against the new B-first cp.async schedule, so adjusting grouped-row scheduling may improve L2 residency and smooth the arrival of the next B tile without touching the closed K32, unroll-1, or B-fragment-lookahead branches.",
+      "expected_bottleneck": "L2 locality and CTA scheduling across the fixed PTX hot-band, with secondary impact on async-copy arrival regularity.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:151-156",
+        "src/kernels/bf16_gemm_v1.cu:1920-1934",
+        "src/kernels/bf16_gemm_v1.cu:2061-2068"
+      ],
+      "risk": "Grouped-row retuning can improve locality for B while hurting traversal balance or exposing more synchronization overhead. Because the absolute goal is still <20 ms, this should stay subordinate to the narrower feed/issue retiming unless L2 behavior clearly shifts in the desired direction.",
+      "metrics_to_recheck": [
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "runtime_ms.median"
+      ],
+      "stop_condition": "Stop if L2 throughput moves but runtime does not improve, or if the grouping change raises barrier cost without a measurable tensor-active gain."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Trim PTX Export Or Accumulator Live State To Relieve Register-Limited Issue",
+      "hypothesis": "The active PTX hot-band still runs at 200 registers per thread with launch__occupancy_limit_registers=2 and only 16.59 active warps. Long scoreboard is already low, so another path to higher tensor activity is reducing live state in the PTX-only accumulate/export sequence rather than chasing more memory hiding. The current microkernel already cut export scratch to one per-warp tile, but the row-pair recursion and per-tile export cadence may still be holding more accumulator or scratch state live than necessary. Further trimming Ps2r/export lifetime could improve issue readiness without reopening the falsified B-fragment lookahead branch.",
+      "expected_bottleneck": "Register pressure and PTX-side shared-to-register or register-to-shared/export lifetime, which caps active warps and leaves tensor issue underfed.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:721-769",
+        "src/kernels/bf16_gemm_v1.cu:974-1013",
+        "src/kernels/bf16_gemm_v1.cu:1906-1911"
+      ],
+      "risk": "Reducing live state can raise instruction count, add extra syncwarp points, or simply shift pressure from registers to MIO. This must remain a register-lifetime trim, not a backdoor reintroduction of B-fragment lookahead or a broad stage rewrite.",
+      "metrics_to_recheck": [
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "runtime_ms.median"
+      ],
+      "stop_condition": "Stop if registers per thread or active-warps behavior does not improve, or if MIO rises enough to cancel any occupancy gain."
+    }
+  ],
+  "notes": "Round 53/100 diagnosis anchored to the refreshed accepted best base from round 52: run 20260420_082007_bf16_gemm_v1_f2b7c06 at 24.895488 ms. All follow-on directions must build on this base rather than any older branch.\n- Coalescing Access: no primary evidence says global coalescing is the limiter; DRAM is only 9.78, so broad load-vectorization or access-pattern rewrites are not the first move.\n- Data Reuse: L2 at 30.64 with DRAM at 9.78 says reuse already exists; the reuse question is CTA grouping and reuse distance, not reopening a larger-tile or different-base search.\n- Async Copy: this remains the hottest live lever. The only newly validated change was the narrow B-first cp.async issue order in the active PTX hot-band, and barrier plus MIO still dominate long scoreboard.\n- Bank Conflict: current evidence does not justify a first-priority shared-layout or padding rewrite; keep that behind feed/issue retiming unless a later run shows a clear bank-conflict signature.\n- L2 Cache: meaningful but not saturated, so it is a secondary tuning surface through grouped-row scheduling and locality, not a reason to chase DRAM fixes.\n- Register Reuse: 200 registers per thread and an occupancy cap of 2 blocks still matter. Any next register work must trim live state on top of the round-52 base.\n- Pg2s: the global-to-shared path is not waiting on raw memory latency; next Pg2s work is about handoff timing and B-first arrival order, not more stages or a K32 cadence.\n- Ps2r: the PTX load or export path can still consume issue bandwidth, so export-lifetime trimming is a valid secondary direction after the B-first retiming path.\n- Stage: keep the accepted K16 double buffer as the base. K32 cadence, unroll 1 as the base, and B-fragment lookahead remain closed branches.\n- Target: the objective is still to drive this kernel below 20 ms, not merely to stay ahead of the CUTLASS baseline."
 }
