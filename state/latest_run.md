@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_235839_bf16_gemm_v1_f97d68d`
-- run dir: `runs/20260419_235839_bf16_gemm_v1_f97d68d`
-- kernel tag: `bf16_gemm_v1_f97d68d`
-- round label: `round 17/50`
+- run id: `20260420_000122_bf16_gemm_v1_a4646fc`
+- run dir: `runs/20260420_000122_bf16_gemm_v1_a4646fc`
+- kernel tag: `bf16_gemm_v1_a4646fc`
+- round label: `round 18/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.888449 ms`
-- p10 runtime: `30.405427 ms`
-- p90 runtime: `32.060210 ms`
-- TFLOP/s: `23.536935 TFLOP/s`
-- previous run id: `20260419_235558_bf16_gemm_v1_be44358`
-- runtime delta vs previous measured run: `+1.683456 ms`
-- TFLOP/s delta vs previous measured run: `-1.356734 TFLOP/s`
+- median runtime: `31.673856 ms`
+- p10 runtime: `31.109632 ms`
+- p90 runtime: `32.547083 ms`
+- TFLOP/s: `22.953297 TFLOP/s`
+- previous run id: `20260419_235839_bf16_gemm_v1_f97d68d`
+- runtime delta vs previous measured run: `+0.785407 ms`
+- TFLOP/s delta vs previous measured run: `-0.583638 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-enable the 128x128x32 hot-band steady-state with the proven consume-before-overwrite fence`
+- implemented direction name: `Try the 256x128 hot-band CTA with 64x64 warp tiles on top of the proven K16 stage contract`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_235839_bf16_gemm_v1_f97d68d/summary.json`
-- measured commit: `f97d68dc8a9c95ad94ac9afe3383c14343d2694e`
+- raw summary json: `runs/20260420_000122_bf16_gemm_v1_a4646fc/summary.json`
+- measured commit: `a4646fcde92b3595f4801eb30c4e0026914da3a1`
 - new best custom: `no`
-- generated at: `2026-04-19T23:58:47-07:00`
+- generated at: `2026-04-20T00:01:30-07:00`
