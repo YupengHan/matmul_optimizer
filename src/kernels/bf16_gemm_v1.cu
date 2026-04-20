@@ -509,57 +509,52 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
   }
 }
 
-template <int RowPairBase, int ColPairBase>
-__device__ __forceinline__ void ptx_wmma_mma_row_pair_col_pair_64x64(
+template <int Step>
+struct PtxWmmaMirroredTileIndex64x64 {
+  static_assert(Step >= 0 && Step < FixedHotBandTile256x128::kWarpMmaTilesN,
+                "64x64 mirrored sweep step out of range.");
+  static constexpr int kValue =
+      (Step & 1) == 0 ? (Step / 2)
+                      : (FixedHotBandTile256x128::kWarpMmaTilesN - 1 - (Step / 2));
+};
+
+template <int RowPairBase, int ColIdx>
+__device__ __forceinline__ void ptx_wmma_mma_row_pair_col_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
-    const PtxWmmaBf16Fragment& b_frag0,
-    const PtxWmmaBf16Fragment& b_frag1) {
+    const PtxWmmaBf16Fragment& b_frag) {
   static_assert(RowPairBase >= 0 &&
                     RowPairBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesM,
                 "64x64 row-pair MMA helper expects a valid 2-row pair.");
-  static_assert(ColPairBase >= 0 &&
-                    ColPairBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesN,
-                "64x64 col-pair MMA helper expects a valid 2-col pair.");
+  static_assert(ColIdx >= 0 && ColIdx < FixedHotBandTile256x128::kWarpMmaTilesN,
+                "64x64 column index out of range.");
   ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase, ColPairBase>(acc_tiles),
+      ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
       a_frag0,
-      b_frag0);
+      b_frag);
   ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase, ColPairBase + 1>(acc_tiles),
-      a_frag0,
-      b_frag1);
-  ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase + 1, ColPairBase>(acc_tiles),
+      ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
       a_frag1,
-      b_frag0);
-  ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase + 1, ColPairBase + 1>(acc_tiles),
-      a_frag1,
-      b_frag1);
+      b_frag);
 }
 
-template <int RowPairBase, int ColPairBase = 0>
-__device__ __forceinline__ void ptx_wmma_accumulate_col_pairs_64x64(
+template <int RowPairBase, int Step = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
     const __nv_bfloat16* b_tile) {
-  if constexpr (ColPairBase < FixedHotBandTile256x128::kWarpMmaTilesN) {
-    PtxWmmaBf16Fragment b_frag0;
-    PtxWmmaBf16Fragment b_frag1;
+  if constexpr (Step < FixedHotBandTile256x128::kWarpMmaTilesN) {
+    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+    PtxWmmaBf16Fragment b_frag;
     ptx_wmma_load_b_row(
-        b_frag0,
-        b_tile + ColPairBase * kWmmaN,
+        b_frag,
+        b_tile + ColIdx * kWmmaN,
         FixedHotBandTile256x128::kBSharedStride);
-    ptx_wmma_load_b_row(
-        b_frag1,
-        b_tile + (ColPairBase + 1) * kWmmaN,
-        FixedHotBandTile256x128::kBSharedStride);
-    ptx_wmma_mma_row_pair_col_pair_64x64<RowPairBase, ColPairBase>(
-        acc_tiles, a_frag0, a_frag1, b_frag0, b_frag1);
-    ptx_wmma_accumulate_col_pairs_64x64<RowPairBase, ColPairBase + 2>(
+    ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+        acc_tiles, a_frag0, a_frag1, b_frag);
+    ptx_wmma_accumulate_col_tiles_64x64<RowPairBase, Step + 1>(
         acc_tiles, a_frag0, a_frag1, b_tile);
   }
 }
@@ -580,7 +575,7 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
         a_frag1,
         a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
         kWmmaK);
-    ptx_wmma_accumulate_col_pairs_64x64<RowPairBase>(
+    ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
         acc_tiles, a_frag0, a_frag1, b_tile);
     ptx_wmma_accumulate_row_pairs_64x64<RowPairBase + 2>(
         acc_tiles, a_tile, b_tile);

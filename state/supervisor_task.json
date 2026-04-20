@@ -1,19 +1,19 @@
 {
   "supervisor_role": "main_codex_agent",
-  "dispatch_node": "node_c",
-  "dispatch_mode": "sub_agent",
-  "graph_status": "ready_for_node_c",
+  "dispatch_node": "node_a",
+  "dispatch_mode": "direct_script",
+  "graph_status": "ready_for_node_a",
   "round_label": "round 8/10",
   "round_loop_active": true,
   "rounds_remaining": 3,
   "auto_use_recommended": true,
-  "requires_gpu_access": false,
-  "prepare_command": "python scripts/graph.py node_c",
+  "requires_gpu_access": true,
+  "prepare_command": "python scripts/graph.py node_a",
   "selection_command": null,
-  "finalize_command": "python scripts/graph.py node_c --finalize",
-  "protocol_doc": "docs/node_c_protocol.md",
-  "context_file": "state/node_c_context.md",
+  "finalize_command": null,
+  "protocol_doc": "AGENTS.md",
+  "context_file": null,
   "active_direction_id": "dir_01",
   "recommended_direction_id": "dir_01",
-  "notes": "Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent."
+  "notes": "Run node_a directly from the main Codex agent outside the sandbox, then re-read graph state."
 }
