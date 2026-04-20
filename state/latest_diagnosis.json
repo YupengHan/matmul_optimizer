@@ -1,15 +1,92 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_205559",
+  "status": "completed",
+  "created_at": "2026-04-19T20:55:59-07:00",
   "source_run_id": "20260419_204427_bf16_gemm_v1_d777e9e",
   "source_run_dir": "runs/20260419_204427_bf16_gemm_v1_d777e9e",
   "source_summary_json": "runs/20260419_204427_bf16_gemm_v1_d777e9e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea 7 sparse-error repair: keep the half-panel branch, but fix the remaining nondeterministic ownership/overlap bug end to end",
+      "hypothesis": "Round 2 preserved the only real register-wall breakthrough in the repo: the true hot-band kernel dropped from about 41.03 us to 36.94 us, registers/thread fell from 167 to 93, occupancy_limit_registers rose from 1 to 2, and active warps / tensor active both jumped into the low-30s / low-40s. That is too much real signal to abandon with seven rounds still available. The blocker is correctness. The key new clue is that a local rerun of the same correctness case after round 2 moved the max-error index and value, while the mean_abs_err stayed near 0.033. That is not the signature of one fixed deterministic address formula; it points to a sparse nondeterministic ownership or overlapping-writer bug somewhere in the half-panel control/export contract. The next move should therefore keep the half-panel family but tighten ownership all the way through pass control, compact B staging, and global export so each output tile has one compile-time writer and one compile-time column identity.",
+      "expected_bottleneck": "Correctness-blocking nondeterministic ownership/coverage bug in the half-panel control/export path, not DRAM bandwidth or the macro tile choice. Success means the same correctness case stops drifting across reruns while preserving the 93-reg / 2-block occupancy signal.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:HalfPanelIdentity64x32",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_half_panel_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x32",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x32",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_pass_64x32",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_control_64x32",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "Another repair round can still end with an incorrect kernel if the overlap is deeper than the current ownership helpers imply. The guardrail is to avoid silently re-expanding the live set or undoing the 2-block occupancy gain while chasing correctness.",
+      "metrics_to_recheck": [
+        "correctness_case_* max_abs_err / mean_abs_err",
+        "same-case rerun stability of max_abs_index / max_abs_output",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if repeated correctness reruns still drift after a full ownership/export cleanup, or if fixing correctness forces registers back toward the old 167/thread regime."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea 8/9 Pg2s + Ps2r: once correctness is stable, fuse the two 32-column passes into one K-loop so each staged A tile is consumed twice",
+      "hypothesis": "The half-panel branch broke the register wall, but it still replays the whole producer pipeline twice: each of the two 32-column passes restages the same A tile and pays the same cp.async commit/wait and CTA barrier pattern. Once correctness is stable, the highest-upside follow-up is to keep the 64x32 live set but consume both half panels inside one steady-state K loop so A is staged once and reused across both panels before the pipeline advances. That is the cleanest mapping from the user's `Pg2s`, `Ps2r`, and `Stage` ideas to the remaining performance tax on this branch.",
+      "expected_bottleneck": "Replay of the A-side producer path and repeated barrier tax across two serial half-panel sweeps. Successful fusion should cut barrier pressure and compute-memory throughput without giving back the current 93-reg occupancy win.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_half_panel_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_pass_64x32",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_control_64x32",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "This should not be attempted before correctness is stable. It also risks re-expanding the live fragment set or reintroducing stage-ordering bugs while trying to save A-feed cost.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "correctness"
+      ],
+      "stop_condition": "Only continue if dir_01 makes the branch correct or at least stable across reruns. Reject if registers climb materially above 100 or correctness regresses again."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea 5 Bank conflict fallback: restore the accepted 64x384 base and spend the next round on a warp-local B-consumer transform",
+      "hypothesis": "If the half-panel branch still fails after one more correctness-focused round, the disciplined fallback is not another blind repair; it is to return to the last correct accepted base and attack the original feed/orchestration wall at the warp consumer boundary only. The user explicitly constrained this family: no extra CTA repack, no extra shared tile, no reduced stage count. That still leaves a valid fallback path on the correct 64x384 branch while preserving the measured lesson that the current stable kernel is not DRAM-bound.",
+      "expected_bottleneck": "Shared/L1/B-operand delivery behavior on the accepted 64x384 path rather than occupancy. This is lower ceiling than the half-panel branch, but also much lower correctness risk.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_384",
+        "src/kernels/bf16_gemm_v1.cu:accumulate_peeled_shared_stage_ptx",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel"
+      ],
+      "risk": "This gives up the only path that actually broke through the register wall. It should be used only if one more correctness-repair round fails to stabilize the half-panel branch.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "shared mem / block allocated"
+      ],
+      "stop_condition": "Use only if dir_01 still leaves correctness unstable. Reject any fallback implementation that increases shared memory, adds CTA repack, or reduces stage depth."
+    }
+  ],
+  "notes": "Round 3 human-idea audit against the latest measured evidence: `Tiling` stays accepted as the outer family because the 256x128 hot-band branch is the only path that materially broke the register wall; `Coalescing Access`, `Data Reuse`, and `Async Copy` remain accepted as baseline infrastructure because the kernel is already on 16-byte cp.async staging and the profile is still not DRAM-limited; `Bank Conflict` is deferred to the fallback family only, because the current blocker is correctness, not shared-feed throughput on a correct branch; `L2 Cache` stays deferred because neither the latest run nor the accepted base is L2-bound; `Register Reuse` remains the primary accepted family because the half-panel branch is still the only path that reached 93 regs/thread and 2-block occupancy; `Pg2s`, `Ps2r`, and `Stage` are accepted as the next family after correctness because replaying the A producer path across two full half-panel passes is now the clearest remaining tax once the branch is stable. The key new diagnosis signal is local rerun instability: after round 2, rerunning the same correctness case changed the max-error index and value while mean_abs_err stayed near 0.033. That points to a sparse nondeterministic ownership or overlapping-writer bug, not just one fixed deterministic column formula. Recommended direction `dir_01` therefore keeps the high-ceiling half-panel family alive for one more round, but narrows the task to end-to-end ownership stabilization. If that still fails, the next round should pivot to the correct 64x384 fallback."
 }

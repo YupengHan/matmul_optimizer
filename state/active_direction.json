@@ -1,10 +1,37 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Human idea 7 sparse-error repair: keep the half-panel branch, but fix the remaining nondeterministic ownership/overlap bug end to end",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T20:57:06-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_205559",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Human idea 7 sparse-error repair: keep the half-panel branch, but fix the remaining nondeterministic ownership/overlap bug end to end",
+    "hypothesis": "Round 2 preserved the only real register-wall breakthrough in the repo: the true hot-band kernel dropped from about 41.03 us to 36.94 us, registers/thread fell from 167 to 93, occupancy_limit_registers rose from 1 to 2, and active warps / tensor active both jumped into the low-30s / low-40s. That is too much real signal to abandon with seven rounds still available. The blocker is correctness. The key new clue is that a local rerun of the same correctness case after round 2 moved the max-error index and value, while the mean_abs_err stayed near 0.033. That is not the signature of one fixed deterministic address formula; it points to a sparse nondeterministic ownership or overlapping-writer bug somewhere in the half-panel control/export contract. The next move should therefore keep the half-panel family but tighten ownership all the way through pass control, compact B staging, and global export so each output tile has one compile-time writer and one compile-time column identity.",
+    "expected_bottleneck": "Correctness-blocking nondeterministic ownership/coverage bug in the half-panel control/export path, not DRAM bandwidth or the macro tile choice. Success means the same correctness case stops drifting across reruns while preserving the 93-reg / 2-block occupancy signal.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:HalfPanelIdentity64x32",
+      "src/kernels/bf16_gemm_v1.cu:stage_b_half_panel_shared_tile_async",
+      "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x32",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x32",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_pass_64x32",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_control_64x32",
+      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+    ],
+    "risk": "Another repair round can still end with an incorrect kernel if the overlap is deeper than the current ownership helpers imply. The guardrail is to avoid silently re-expanding the live set or undoing the 2-block occupancy gain while chasing correctness.",
+    "metrics_to_recheck": [
+      "correctness_case_* max_abs_err / mean_abs_err",
+      "same-case rerun stability of max_abs_index / max_abs_output",
+      "median runtime",
+      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+      "launch__registers_per_thread",
+      "launch__occupancy_limit_registers",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+    ],
+    "stop_condition": "Stop if repeated correctness reruns still drift after a full ownership/export cleanup, or if fixing correctness forces registers back toward the old 167/thread regime."
+  },
+  "notes": "Node C may now implement this one direction."
 }
