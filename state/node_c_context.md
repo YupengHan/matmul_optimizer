@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Finish Flattening PTX Export Across Tile Rows`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_154908`
 - round loop: `round 3/17`
+- hypothesis: `Round 2/17 validated the PTX export-helper family: runtime improved from 26.978816 ms back down to 25.505328 ms, DRAM stayed anchored near 11.5%, and long-scoreboard dropped from 7.79 to 7.21. The current helper still recurses over `TileRow`, so the next best move is to finish that specialization and make the hot-band export fully explicit across the four tile rows. That keeps the single-stage scratch and recovered locality intact while trimming the remaining recursive control and repeated row-base setup in the epilogue.`
+- expected bottleneck: `Residual PTX export-side control overhead and per-row epilogue orchestration inside the hot-band microkernel.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:925-947, src/kernels/bf16_gemm_v1.cu:1008-1056, src/kernels/bf16_gemm_v1.cu:2025-2027`
+- risk: `Low to medium. This continues the only family with a clean recent win and does not widen scope beyond the existing one-stage PTX export helper, but the remaining upside may now be incremental rather than step-sized.`
+- metrics to re-check: `median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, correctness`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
