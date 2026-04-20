@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_190546_bf16_gemm_v1_3d01edf`
-- run dir: `runs/20260419_190546_bf16_gemm_v1_3d01edf`
-- kernel tag: `bf16_gemm_v1_3d01edf`
-- round label: `round 14/20`
+- run id: `20260419_191708_bf16_gemm_v1_b13027c`
+- run dir: `runs/20260419_191708_bf16_gemm_v1_b13027c`
+- kernel tag: `bf16_gemm_v1_b13027c`
+- round label: `round 15/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.062544 ms`
-- p10 runtime: `29.949638 ms`
-- p90 runtime: `31.457663 ms`
-- TFLOP/s: `24.183563 TFLOP/s`
-- previous run id: `20260419_185736_bf16_gemm_v1_85bb65b`
-- runtime delta vs previous measured run: `-0.911824 ms`
-- TFLOP/s delta vs previous measured run: `+0.711916 TFLOP/s`
+- median runtime: `30.052768 ms`
+- p10 runtime: `29.465792 ms`
+- p90 runtime: `30.903910 ms`
+- TFLOP/s: `24.191430 TFLOP/s`
+- previous run id: `20260419_190546_bf16_gemm_v1_3d01edf`
+- runtime delta vs previous measured run: `-0.009776 ms`
+- TFLOP/s delta vs previous measured run: `+0.007867 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 1 Tiling: keep the 256x128/64x64 family, but add paired 64x64 export scratch to cut warp barrier tax`
+- implemented direction name: `Human idea 7 Register reuse: stream the 64x64 PTX micro-tile by row-pairs and export each completed pair through the new paired scratch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_190546_bf16_gemm_v1_3d01edf/summary.json`
-- measured commit: `3d01edf5053f250aa4096cda3efec53e1e8b894b`
+- raw summary json: `runs/20260419_191708_bf16_gemm_v1_b13027c/summary.json`
+- measured commit: `b13027cdde2a90d1f00f3bd9b1e6b355ea15f2d9`
 - new best custom: `yes`
-- generated at: `2026-04-19T19:05:54-07:00`
+- generated at: `2026-04-19T19:17:17-07:00`

@@ -1,83 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_190621",
-  "status": "completed",
-  "created_at": "2026-04-19T19:06:21-07:00",
-  "source_run_id": "20260419_190546_bf16_gemm_v1_3d01edf",
-  "source_run_dir": "runs/20260419_190546_bf16_gemm_v1_3d01edf",
-  "source_summary_json": "runs/20260419_190546_bf16_gemm_v1_3d01edf/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_191708_bf16_gemm_v1_b13027c",
+  "source_run_dir": "runs/20260419_191708_bf16_gemm_v1_b13027c",
+  "source_summary_json": "runs/20260419_191708_bf16_gemm_v1_b13027c/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 7 Register reuse: stream the 64x64 PTX micro-tile by row-pairs and export each completed pair through the new paired scratch",
-      "hypothesis": "Round 14 proved the new 256x128/64x64 tiling family is still the right mainline, but it also changed what the next limiter is. Paired export improved runtime by another 0.91182423 ms even though barrier stayed flat at 20.89 and registers stayed flat at 166. The meaningful metric movement was long scoreboard 0.55 -> 0.22 and short scoreboard 6.78 -> 6.64. That says the paired-scratch win came from shortening the warp-local export and dependency chain, not from removing the main-loop CTA barrier. The right follow-up is therefore not another generic barrier chase. It is to cash in the new paired export structure by shrinking the live accumulator and fragment footprint: compute the 64x64 warp tile as row-pairs, then immediately store and export each completed row-pair through the existing two-stage c_shared scratch before reusing those accumulator registers for the next row-pair. This stays inside the accepted 256x128/64x64 family while finally attacking the unchanged 166-register occupancy wall.",
-      "expected_bottleneck": "Register and warp-local dependency pressure inside the 64x64 PTX microkernel, which now appears more important than headline CTA barrier rate.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:513-568",
-        "src/kernels/bf16_gemm_v1.cu:690-741",
-        "src/kernels/bf16_gemm_v1.cu:1235-1329"
-      ],
-      "risk": "This is more invasive than the paired-export change. If the row-pair schedule reloads A or B fragments too aggressively, tensor issue can fall or long scoreboard can come back. The implementation also has to avoid inserting extra warp syncs that erase the gain.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if registers remain at 166 and active warps stay flat, or if tensor active drops while short-scoreboard does not improve. Then row-pair register reuse is not paying for its extra scheduling complexity."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 3 Data reuse: keep paired export, but remap its scratch onto dead B-shared storage so the win survives without the extra 8 KB c_shared budget",
-      "hypothesis": "The measured lesson from round 14 is that paired export is real signal, but the benefit did not come from lower CTA barrier pressure. It came from a shorter export-side dependency path. The current implementation pays 42.496 KB shared memory to buy that path by making c_shared two-stage, even though B shared is dead once the final K tile has been accumulated and the last cp.async wait has retired. A concrete one-round follow-up is to preserve the paired export schedule but overlay its two scratch tiles onto dead B-shared storage after a final CTA-wide handoff, instead of carrying a dedicated two-stage c_shared allocation for the whole kernel. That would keep the mechanism that just won while recovering shared-memory budget for later rounds and reducing the chance that export scratch becomes a hidden occupancy or layout tax.",
-      "expected_bottleneck": "Dedicated export scratch budget and residual export-side dependency overhead at the end of the 256x128 kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-105",
-        "src/kernels/bf16_gemm_v1.cu:690-741",
-        "src/kernels/bf16_gemm_v1.cu:1245-1329"
-      ],
-      "risk": "This introduces a correctness-sensitive shared-memory overlay. If any warp can still read the terminal B stage while another warp writes export scratch, results will corrupt. The fix must include an explicit terminal CTA handoff before overlay reuse.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "launch__shared_mem_per_block_allocated",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if shared memory drops but runtime does not improve, or if the overlay requires enough extra synchronization that barrier and tensor metrics move the wrong way. Then the dedicated c_shared budget is not the next tax worth reclaiming."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 5 Bank conflict: retime only the 64x64 branch's B-fragment load and consume order to target the remaining short-scoreboard tax",
-      "hypothesis": "Long scoreboard is now nearly gone, DRAM remains low, and paired export only nudged short scoreboard from 6.78 to 6.64. That leaves a plausible warp-local shared-load problem inside the 64x64 PTX branch itself. Today the branch loads all four B fragments in ascending column order and then consumes the full 4x4 set. A bounded follow-up is to change only the 64x64 branch's B-fragment load and consume order, for example mirrored or alternating inside the existing 4x4 tile set, so the next fragment is consumed closer to its load and shared-bank overlap is reduced. This keeps the macro tiling and paired export unchanged and avoids reopening the older CTA-wide B-feed failures.",
-      "expected_bottleneck": "Warp-local shared-memory load and bank behavior in the 64x64 PTX branch, showing up primarily as residual short-scoreboard rather than global-memory latency.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:522-568",
-        "src/kernels/bf16_gemm_v1.cu:744-782",
-        "src/kernels/bf16_gemm_v1.cu:1289-1329"
-      ],
-      "risk": "The evidence is weaker than for register/live-state follow-through. A local B-order retime can easily end up as another tiny no-op if the current short-scoreboard is really coming from accumulator or export dependencies instead of bank overlap.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if bank and LSU metrics stay flat or if runtime regresses without any tensor-active gain. Then the remaining short-scoreboard is not primarily a shared-load ordering problem."
-    }
-  ],
-  "notes": "Round 15 is a continue-family move on the new Human idea 1 / Tiling branch, not a pivot away from it. The evidence is decisive: the 256x128 CTA / 64x64 warp structural pivot created the new accepted base, and the round-14 paired-export follow-up improved it again to 30.06254387 ms. The key interpretation is that paired export worked even though the headline barrier metric barely moved: the hot kernel stayed at barrier 20.89 vs 20.76 before, registers stayed at 166, tensor active stayed essentially flat at 37.58 vs 37.63, and active warps stayed around 16.55. The real signal was elsewhere: long scoreboard dropped from 0.55 to 0.22, short scoreboard dropped slightly from 6.78 to 6.64, and the hot-kernel time still improved. That means the paired-export win came from shortening warp-local export and dependency chains, not from removing the main-loop CTA barrier. So the next move should not blindly chase the barrier percentage. It should exploit the new export structure to attack the next unchanged wall: live-state and register pressure inside the 64x64 PTX microkernel.\n\nHuman idea audit for round 15:\n1. Tiling: accept-now as the active top-level family. The 256x128/64x64 branch is clearly the current mainline and should keep the implementation surface.\n2. Coalescing Access: defer. DRAM throughput is only 17.81 and the branch already uses wide async copies, so global coalescing is not the next limiter.\n3. Data Reuse: accept-now as a concrete secondary direction. Reusing dead B-shared storage for export scratch is now technically relevant because paired export already proved that export-side scratch matters.\n4. Async Copy: accept-now only as an established baseline. The current branch is not losing to obvious global-to-shared latency anymore.\n5. Bank Conflict: accept-now as a lower-ranked local follow-up. With long scoreboard nearly gone, the residual short-scoreboard may now be local shared-load behavior in the 64x64 branch.\n6. L2 Cache: reject-for-this-round. The hot kernel is not L2- or DRAM-limited.\n7. Register Reuse: accept-now and rank first. Registers per thread are still 166, occupancy remains register-limited, and paired export created a concrete way to flush partial work earlier and reuse accumulator state.\n8. Pg2s: defer. The global-to-shared pipeline is already doing its job on this family.\n9. Ps2r: defer. Long scoreboard is already tiny, so another Ps2r-first move is not the highest-value next step here.\n10. Stage: reject-for-this-round. A deeper stage family is both budget-constrained by the new shared-memory footprint and less evidence-backed than the current tiling branch.\n\nPrimary choice for this round: continue the Human idea 1 family, but shift the immediate lever to Human idea 7 register reuse inside that family. The round-14 result says export structure is now an enabling mechanism, not the main unfinished objective."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
