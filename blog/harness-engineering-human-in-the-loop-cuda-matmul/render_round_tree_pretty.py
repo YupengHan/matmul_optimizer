@@ -191,15 +191,63 @@ def parse_cutlass_ms(path: Path) -> float | None:
     return float(match.group(1))
 
 
+def parse_benchmark_snapshot(path: Path) -> dict[str, str | float | None]:
+    if not path.exists():
+        return {}
+
+    text = path.read_text()
+    snapshot: dict[str, str | float | None] = {}
+
+    cutlass_match = re.search(r"## CUTLASS baseline.*?- runtime:\s*`([0-9.]+)\s*ms`", text, re.S)
+    if cutlass_match:
+        snapshot["cutlass_ms"] = float(cutlass_match.group(1))
+
+    best_custom_match = re.search(r"## Best custom kernel.*?- runtime:\s*`([0-9.]+)\s*ms`", text, re.S)
+    if best_custom_match:
+        snapshot["best_custom_ms"] = float(best_custom_match.group(1))
+
+    best_commit_match = re.search(r"## Best custom kernel.*?- measured commit:\s*`([0-9a-f]+)`", text, re.S)
+    if best_commit_match:
+        snapshot["best_custom_commit"] = best_commit_match.group(1)
+
+    return snapshot
+
+
 def discover_mainline(records: list[dict]) -> list[dict]:
     mainline: list[dict] = []
     best = float("inf")
     for record in records:
+        if not record.get("correctness_passed", True):
+            continue
         runtime = record["median_runtime_ms"]
         if runtime < best:
             best = runtime
             mainline.append(record)
-    return mainline
+    if mainline:
+        return mainline
+    return records[:1]
+
+
+def pick_best_record(
+    records: list[dict],
+    official_best_ms: float | None,
+    official_best_commit: str | None,
+) -> dict:
+    valid_records = [record for record in records if record.get("correctness_passed", True)]
+    if not valid_records:
+        valid_records = records
+
+    if official_best_commit:
+        for record in valid_records:
+            if record.get("measured_commit") == official_best_commit:
+                return record
+
+    if official_best_ms is not None:
+        candidate = min(valid_records, key=lambda item: abs(item["median_runtime_ms"] - official_best_ms))
+        if abs(candidate["median_runtime_ms"] - official_best_ms) < 1e-3:
+            return candidate
+
+    return min(valid_records, key=lambda item: item["median_runtime_ms"])
 
 
 def infer_external_bases(records: list[dict], record_by_id: dict[str, dict]) -> dict[str, dict]:
@@ -263,7 +311,13 @@ def resolve_lane_overlaps(nodes: dict[str, dict], node_ids: list[str], min_gap: 
         last_bottom = node["y"] + node["h"]
 
 
-def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> tuple[dict, list[tuple[str, str, str, str]]]:
+def build_graph(
+    records: list[dict],
+    baseline_ms: float,
+    cutlass_ms: float,
+    official_best_ms: float | None = None,
+    official_best_commit: str | None = None,
+) -> tuple[dict, list[tuple[str, str, str, str]]]:
     for index, record in enumerate(records):
         record["_order_index"] = index
 
@@ -312,9 +366,10 @@ def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> t
 
     nodes: dict[str, dict] = {}
 
-    best_record = min(records, key=lambda item: item["median_runtime_ms"])
+    best_record = pick_best_record(records, official_best_ms=official_best_ms, official_best_commit=official_best_commit)
+    best_runtime_ms = official_best_ms if official_best_ms is not None else best_record["median_runtime_ms"]
     subtitle = (
-        f"Current best custom kernel: {best_record['median_runtime_ms']:.2f} ms"
+        f"Current best custom kernel: {best_runtime_ms:.2f} ms"
         f" | CUTLASS: {cutlass_ms:.2f} ms"
         f" | start: {baseline_ms:.2f} ms"
     )
@@ -496,14 +551,14 @@ def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> t
             kind = "neutral"
         edges.append((parent, record["run_id"], kind, ""))
 
-    gap = best_record["median_runtime_ms"] - cutlass_ms
+    gap = best_runtime_ms - cutlass_ms
     edges.append((best_record["run_id"], "cutlass", "goal", f"gap {gap:.2f} ms"))
 
     meta = {
         "width": width,
         "height": height,
         "subtitle": subtitle,
-        "best_runtime_ms": best_record["median_runtime_ms"],
+        "best_runtime_ms": best_runtime_ms,
     }
     return {"nodes": nodes, "edges": edges, "meta": meta}, mainline
 
@@ -639,7 +694,7 @@ def render_svg(graph: dict, mainline: list[dict]) -> str:
         svg_text(
             64,
             104,
-            "Main vertical spine = new best-so-far milestones. Side branches = other attempts grouped under the nearest accepted base.",
+            "Main vertical spine = new best correct-so-far milestones. Side branches = other attempts grouped under the nearest accepted base.",
             13,
             500,
             SUBTITLE_COLOR,
@@ -712,7 +767,17 @@ def render_svg(graph: dict, mainline: list[dict]) -> str:
         if node.get("human"):
             svg_parts.append(draw_svg_badge(node["x"] + node["w"] - 110, node["y"] + 10))
 
-    svg_parts.append(svg_text(width - 64, height - 22, "Auto-generated from state/round_history.jsonl", 11, 500, MUTED, anchor="end"))
+    svg_parts.append(
+        svg_text(
+            width - 64,
+            height - 22,
+            "Auto-generated from state/round_history.jsonl + state/benchmark_baselines.md",
+            11,
+            500,
+            MUTED,
+            anchor="end",
+        )
+    )
     svg_parts.append("</svg>")
     return "\n".join(svg_parts)
 
@@ -799,7 +864,7 @@ def render_png(graph: dict, output_path: Path) -> None:
     draw.text((64, 76), subtitle, font=fonts["subtitle"], fill=SUBTITLE_COLOR)
     draw.text(
         (64, 98),
-        "Main vertical spine = new best-so-far milestones. Side branches = other attempts grouped under the nearest accepted base.",
+        "Main vertical spine = new best correct-so-far milestones. Side branches = other attempts grouped under the nearest accepted base.",
         font=fonts["subtitle"],
         fill=SUBTITLE_COLOR,
     )
@@ -863,7 +928,7 @@ def render_png(graph: dict, output_path: Path) -> None:
         if node.get("human"):
             draw_badge_png(draw, x1 - 110, y0 + 10, fonts)
 
-    footer = "Auto-generated from state/round_history.jsonl"
+    footer = "Auto-generated from state/round_history.jsonl + state/benchmark_baselines.md"
     footer_w, _ = text_size(draw, footer, fonts["footnote"])
     draw.text((width - 64 - footer_w, height - 28), footer, font=fonts["footnote"], fill=MUTED)
     image.save(output_path)
@@ -891,14 +956,34 @@ def main() -> None:
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    benchmark_snapshot: dict[str, str | float | None] = {}
+    if args.cutlass_state:
+        benchmark_snapshot = parse_benchmark_snapshot(Path(args.cutlass_state).resolve())
+
     cutlass_ms = args.cutlass_ms
+    if cutlass_ms is None and benchmark_snapshot.get("cutlass_ms") is not None:
+        cutlass_ms = float(benchmark_snapshot["cutlass_ms"])
     if cutlass_ms is None and args.cutlass_state:
         cutlass_ms = parse_cutlass_ms(Path(args.cutlass_state).resolve())
     if cutlass_ms is None:
         cutlass_ms = 25.917889
 
     records = load_records(input_path)
-    graph, mainline = build_graph(records, baseline_ms=args.baseline_ms, cutlass_ms=cutlass_ms)
+    graph, mainline = build_graph(
+        records,
+        baseline_ms=args.baseline_ms,
+        cutlass_ms=cutlass_ms,
+        official_best_ms=(
+            float(benchmark_snapshot["best_custom_ms"])
+            if benchmark_snapshot.get("best_custom_ms") is not None
+            else None
+        ),
+        official_best_commit=(
+            str(benchmark_snapshot["best_custom_commit"])
+            if benchmark_snapshot.get("best_custom_commit") is not None
+            else None
+        ),
+    )
 
     svg_path = output_dir / "matmul_optimization_tree_pretty.svg"
     png_path = output_dir / "matmul_optimization_tree_pretty.png"

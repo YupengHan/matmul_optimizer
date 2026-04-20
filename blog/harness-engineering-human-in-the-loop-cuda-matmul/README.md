@@ -22,5 +22,5 @@ python3 render_round_tree_pretty.py \
 ```
 
 Notes:
-- The article body was not edited.
+- The article body should stay aligned with the latest benchmark snapshot in `state/benchmark_baselines.md`.
 - The image filenames stay in the same directory as `index.md`, so the existing Markdown image link continues to work.
