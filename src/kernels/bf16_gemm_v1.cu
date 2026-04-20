@@ -705,41 +705,59 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
   ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
 }
 
-template <int ColIdx>
-__device__ __forceinline__ void ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel(
-    PtxWmmaAccTileSet64x64& acc_tiles,
-    const PtxWmmaBf16Fragment& a_frag0,
-    const PtxWmmaBf16Fragment& a_frag1,
-    const PtxWmmaBf16Fragment& a_frag2,
-    const PtxWmmaBf16Fragment& a_frag3,
-    const PtxWmmaBf16Fragment& b_frag) {
-  static_assert(FixedHotBandTile128x128::kWarpMmaTilesM == 4,
-                "The PTX hot-band microkernel expects a 64x64 warp tile.");
-  ptx_wmma_mma_row_pair_col_64x64<0, ColIdx>(
-      acc_tiles, a_frag0, a_frag1, b_frag);
-  ptx_wmma_mma_row_pair_col_64x64<2, ColIdx>(
-      acc_tiles, a_frag2, a_frag3, b_frag);
+template <int Step>
+__device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64_ptx_microkernel(
+    PtxWmmaBf16Fragment& b_frag,
+    const __nv_bfloat16* b_tile) {
+  constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+  ptx_wmma_load_b_row(
+      b_frag,
+      b_tile + ColIdx * kWmmaN,
+      FixedHotBandTile128x128::kBSharedStride);
 }
 
-template <int Step = 0>
+template <int RowPairBase, int Step = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
-    const PtxWmmaBf16Fragment& a_frag2,
-    const PtxWmmaBf16Fragment& a_frag3,
     const __nv_bfloat16* b_tile) {
+  static_assert(RowPairBase >= 0 &&
+                    RowPairBase + 1 < FixedHotBandTile128x128::kWarpMmaTilesM,
+                "The PTX hot-band microkernel expects valid 64x64 row pairs.");
   if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
     constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
     PtxWmmaBf16Fragment b_frag;
-    // Load one mirrored-column B fragment, consume it across both row pairs,
-    // then advance so the PTX-only branch no longer keeps a next-fragment
-    // lookahead live through the recursive sweep.
-    ptx_wmma_load_col_fragment_64x64<Step>(b_frag, b_tile);
-    ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel<ColIdx>(
-        acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_frag);
-    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<Step + 1>(
-        acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile);
+    // Reload the mirrored-column B fragment per row-pair so this PTX-only
+    // path keeps just the active pair of A fragments live across the sweep.
+    ptx_wmma_load_col_fragment_64x64_ptx_microkernel<Step>(b_frag, b_tile);
+    ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+        acc_tiles, a_frag0, a_frag1, b_frag);
+    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase, Step + 1>(
+        acc_tiles, a_frag0, a_frag1, b_tile);
+  }
+}
+
+template <int RowPairBase = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const __nv_bfloat16* a_tile,
+    const __nv_bfloat16* b_tile) {
+  if constexpr (RowPairBase < FixedHotBandTile128x128::kWarpMmaTilesM) {
+    PtxWmmaBf16Fragment a_frag0;
+    PtxWmmaBf16Fragment a_frag1;
+    ptx_wmma_load_a_row(
+        a_frag0,
+        a_tile + RowPairBase * kWmmaM * kWmmaK,
+        kWmmaK);
+    ptx_wmma_load_a_row(
+        a_frag1,
+        a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
+        kWmmaK);
+    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase>(
+        acc_tiles, a_frag0, a_frag1, b_tile);
+    ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel<RowPairBase + 2>(
+        acc_tiles, a_tile, b_tile);
   }
 }
 
@@ -747,17 +765,7 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64_ptx_microkern
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  PtxWmmaBf16Fragment a_frag0;
-  PtxWmmaBf16Fragment a_frag1;
-  PtxWmmaBf16Fragment a_frag2;
-  PtxWmmaBf16Fragment a_frag3;
-
-  ptx_wmma_load_a_row(a_frag0, a_tile, kWmmaK);
-  ptx_wmma_load_a_row(a_frag1, a_tile + kWmmaM * kWmmaK, kWmmaK);
-  ptx_wmma_load_a_row(a_frag2, a_tile + 2 * kWmmaM * kWmmaK, kWmmaK);
-  ptx_wmma_load_a_row(a_frag3, a_tile + 3 * kWmmaM * kWmmaK, kWmmaK);
-  ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
-      acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile);
+  ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel(acc_tiles, a_tile, b_tile);
 }
 
 template <typename TileConfig, int TileIdx = 0>
