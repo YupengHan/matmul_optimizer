@@ -1,15 +1,75 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_230527",
+  "status": "completed",
+  "created_at": "2026-04-19T23:05:27-07:00",
   "source_run_id": "20260419_230410_bf16_gemm_v1_abefa1e",
   "source_run_dir": "runs/20260419_230410_bf16_gemm_v1_abefa1e",
   "source_summary_json": "runs/20260419_230410_bf16_gemm_v1_abefa1e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "human+auto-analysis",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments",
+      "hypothesis": "The loop has now spent several rounds on variants that are either incorrect or clearly slower than the accepted best surface. The current correct branch is 30.55 ms, while the accepted best measured implementation at commit 0d78758 already delivered 29.33 ms. Continuing to optimize on a degraded surface will make future measurements harder to interpret. The highest-value next move is therefore a clean implementation restore to 0d78758 so the next experimental branches start again from the real accepted baseline.",
+      "expected_bottleneck": "Not a bottleneck attack. This is a reset to the fastest correct implementation surface before the next human-idea experiments.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu",
+        "python scripts/graph.py restore-implementation --source-commit 0d78758"
+      ],
+      "risk": "Low. This uses a repo-supported restore path and should only roll back implementation drift, not benchmark state or unrelated documentation edits.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum"
+      ],
+      "stop_condition": "Reject only if the restore path fails to reproduce a correct implementation close to the accepted baseline."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "On the restored surface, try A-side Ps2r row-pair lookahead inside the 64x64 PTX microkernel",
+      "hypothesis": "Once the accepted surface is restored, the next human-idea branch with the best compute-side upside is deeper warp-local Ps2r. The simple right-left-right-left ordering was negative, but that only ruled out one B-column order. The A-side is still serialized by row pairs, so loading the next A row pair early is a cleaner test of the Ps2r hypothesis without reopening CTA-level control flow.",
+      "expected_bottleneck": "Warp-local shared-to-register latency on the A-side of the 64x64 PTX hot-band microkernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64_lookahead"
+      ],
+      "risk": "Moderate to high. This can grow live A fragments and push register pressure above the current accepted surface.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if registers rise materially or if the main hot-band time does not improve on the restored baseline."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "On the restored surface, test a light L2-friendly logical CTA swizzle on the hot-band grid",
+      "hypothesis": "After the implementation surface is clean again, the user's cache-locality idea remains the next non-warp-local family worth checking. A light logical CTA swizzle is still a valid low-invasiveness way to probe inter-CTA L2 reuse across the hot-band B tiles without changing the inner microkernel.",
+      "expected_bottleneck": "Inter-CTA L2 locality across neighboring hot-band tiles.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+      ],
+      "risk": "Moderate. A heavier grouped traversal already regressed, so this should stay lightweight.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if L2 throughput remains flat or if runtime regresses on the restored accepted surface."
+    }
+  ],
+  "notes": "Round 8/50 resets the search: the current correct branch is materially slower than the accepted best implementation, and several recent rounds have mixed correctness/debug work with forward optimization. The recommended next move is therefore dir_01, a clean restore to commit 0d78758. Dir_02 and dir_03 then capture the next two human-idea branches to try on that restored surface: deeper A-side Ps2r and a lighter L2-friendly CTA swizzle."
 }

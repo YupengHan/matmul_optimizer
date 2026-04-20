@@ -1,10 +1,27 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T23:06:08-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_230527",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments",
+    "hypothesis": "The loop has now spent several rounds on variants that are either incorrect or clearly slower than the accepted best surface. The current correct branch is 30.55 ms, while the accepted best measured implementation at commit 0d78758 already delivered 29.33 ms. Continuing to optimize on a degraded surface will make future measurements harder to interpret. The highest-value next move is therefore a clean implementation restore to 0d78758 so the next experimental branches start again from the real accepted baseline.",
+    "expected_bottleneck": "Not a bottleneck attack. This is a reset to the fastest correct implementation surface before the next human-idea experiments.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu",
+      "python scripts/graph.py restore-implementation --source-commit 0d78758"
+    ],
+    "risk": "Low. This uses a repo-supported restore path and should only roll back implementation drift, not benchmark state or unrelated documentation edits.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum"
+    ],
+    "stop_condition": "Reject only if the restore path fails to reproduce a correct implementation close to the accepted baseline."
+  },
+  "notes": "Node C may now implement this one direction."
 }

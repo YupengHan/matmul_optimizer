@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `abefa1e9a75ebf02bf1674afd4045d40e3195784`
 - plateau counter: `7`
 - round loop: `round 8/50`
 - rounds remaining: `43`
-- notes: `Node A completed round 7/50. Run node_b to continue round 8/50.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 8/50.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_230527`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 8/50 resets the search: the current correct branch is materially slower than the accepted best implementation, and several recent rounds have mixed correctness/debug work with forward optimization. The recommended next move is therefore dir_01, a clean restore to commit 0d78758. Dir_02 and dir_03 then capture the next two human-idea branches to try on that restored surface: deeper A-side Ps2r and a lighter L2-friendly CTA swizzle.`
+- dir_01: Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments | bottleneck: Not a bottleneck attack. This is a reset to the fastest correct implementation surface before the next human-idea experiments.
+- dir_02: On the restored surface, try A-side Ps2r row-pair lookahead inside the 64x64 PTX microkernel | bottleneck: Warp-local shared-to-register latency on the A-side of the 64x64 PTX hot-band microkernel.
+- dir_03: On the restored surface, test a light L2-friendly logical CTA swizzle on the hot-band grid | bottleneck: Inter-CTA L2 locality across neighboring hot-band tiles.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
