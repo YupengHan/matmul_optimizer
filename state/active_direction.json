@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Human idea 10 Stage: revert the catastrophic __noinline__ reg-squeeze split and continue from the round-8 checkpoint",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T18:24:25-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_182158",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Human idea 10 Stage: revert the catastrophic __noinline__ reg-squeeze split and continue from the round-8 checkpoint",
-    "hypothesis": "Round 9 is strong negative evidence against one specific implementation strategy, not against the whole Stage family. The family-level evidence is still round 8: first correct result, barrier 4.60, long scoreboard 1.21, mio 0.71, with only a modest runtime gap versus the accepted base. Round 9 then cut registers from 132 to 126 and opened occupancy_limit_registers from 1 to 2, but tensor active collapsed from 35.12 to 3.36 while DRAM throughput jumped to 90.96 and long scoreboard to 40.26. That is not a normal miss on the occupancy cliff; it is a broken code-shape signature consistent with the new __noinline__ pipeline and export split forcing accumulator or pipeline state out of the efficient inline path and turning the hot kernel into a memory-dominated engine. The right next move is to restore the round-8 inline Stage checkpoint first and only continue Stage from there.",
-    "expected_bottleneck": "Broken code generation and likely spill-like memory domination from the __noinline__ split, visible as extreme DRAM throughput, long scoreboard, and mio rather than useful tensor issue.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:505-518",
-      "src/kernels/bf16_gemm_v1.cu:915-987",
-      "src/kernels/bf16_gemm_v1.cu:990-1043"
-    ],
-    "risk": "This spends one round on recovery rather than direct forward progress, and if the restored round-8 code shape still cannot get closer to the accepted base then the Stage family loses its strongest justification for remaining primary.",
-    "metrics_to_recheck": [
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-      "launch__occupancy_limit_registers",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if reverting away from the __noinline__ split does not restore something close to the round-8 signature, meaning tensor active back near the mid-30s with barrier, long scoreboard, and mio back down sharply and runtime back near the 35-36 ms range. If that recovery does not happen, abandon the current Stage branch as primary."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
