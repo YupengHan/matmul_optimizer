@@ -1,27 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `30`
-- completed rounds: `1`
-- remaining rounds: `29`
-- current round label: `round 2/30`
+- completed rounds: `2`
+- remaining rounds: `28`
+- current round label: `round 3/30`
 - auto use recommended: `yes`
-- accepted base run id: `20260419_215456_bf16_gemm_v1_13caa86`
-- accepted base measured commit: `13caa861e2dbca1a073e2998007fb1569bda03c9`
-- accepted base runtime: `30.618112 ms`
+- accepted base run id: `20260419_215841_bf16_gemm_v1_06eedc6`
+- accepted base measured commit: `06eedc6cae82b3b30f2ac78be257751b6684432a`
+- accepted base runtime: `30.592960 ms`
 - started at: `2026-04-19T21:51:08-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 2/30. Node A will measure the result next.`
+- notes: `Completed round 2/30. Continue with node_b for round 3/30. Accepted base: 20260419_215841_bf16_gemm_v1_06eedc6 at 30.592960 ms.`
 
 ## Last completed round
 
-- round: `1/30`
+- round: `2/30`
 - direction: `dir_01`
-- direction name: `Restore the round-8 streaming-B branch before continuing exploration`
+- direction name: `Human idea Ps2r: one-fragment shared-to-register lookahead on the restored streaming-B branch`
 - verdict: `improved`
-- runtime delta: `-2.140672 ms`
-- TFLOP/s delta: `+1.551636 TFLOP/s`
-- run dir: `runs/20260419_215456_bf16_gemm_v1_13caa86`
-- ncu rep path: `runs/20260419_215456_bf16_gemm_v1_13caa86/ncu_profile.ncu-rep`
+- runtime delta: `-0.025151 ms`
+- TFLOP/s delta: `+0.019521 TFLOP/s`
+- run dir: `runs/20260419_215841_bf16_gemm_v1_06eedc6`
+- ncu rep path: `runs/20260419_215841_bf16_gemm_v1_06eedc6/ncu_profile.ncu-rep`

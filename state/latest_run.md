@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_215456_bf16_gemm_v1_13caa86`
-- run dir: `runs/20260419_215456_bf16_gemm_v1_13caa86`
-- kernel tag: `bf16_gemm_v1_13caa86`
-- round label: `round 1/30`
+- run id: `20260419_215841_bf16_gemm_v1_06eedc6`
+- run dir: `runs/20260419_215841_bf16_gemm_v1_06eedc6`
+- kernel tag: `bf16_gemm_v1_06eedc6`
+- round label: `round 2/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.618112 ms`
-- p10 runtime: `30.253040 ms`
-- p90 runtime: `31.550566 ms`
-- TFLOP/s: `23.744751 TFLOP/s`
-- previous run id: `20260419_214535_bf16_gemm_v1_dfd7960`
-- runtime delta vs previous measured run: `-2.140672 ms`
-- TFLOP/s delta vs previous measured run: `+1.551636 TFLOP/s`
+- median runtime: `30.592960 ms`
+- p10 runtime: `30.218548 ms`
+- p90 runtime: `31.288218 ms`
+- TFLOP/s: `23.764272 TFLOP/s`
+- previous run id: `20260419_215456_bf16_gemm_v1_13caa86`
+- runtime delta vs previous measured run: `-0.025151 ms`
+- TFLOP/s delta vs previous measured run: `+0.019521 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the round-8 streaming-B branch before continuing exploration`
+- implemented direction name: `Human idea Ps2r: one-fragment shared-to-register lookahead on the restored streaming-B branch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_215456_bf16_gemm_v1_13caa86/summary.json`
-- measured commit: `13caa861e2dbca1a073e2998007fb1569bda03c9`
+- raw summary json: `runs/20260419_215841_bf16_gemm_v1_06eedc6/summary.json`
+- measured commit: `06eedc6cae82b3b30f2ac78be257751b6684432a`
 - new best custom: `no`
-- generated at: `2026-04-19T21:55:04-07:00`
+- generated at: `2026-04-19T21:58:49-07:00`
