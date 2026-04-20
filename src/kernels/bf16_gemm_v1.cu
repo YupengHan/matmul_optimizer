@@ -153,7 +153,7 @@ constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
-constexpr int kFixedHotBandPtxGroupedRows = 6;
+constexpr int kFixedHotBandPtxGroupedRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1017,10 +1017,16 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64_ptx_microkernel(
     int warp_id,
     int lane_id) {
   if constexpr (TileRow < FixedHotBandTile128x128::kWarpMmaTilesM) {
+    if constexpr (TileRow + 2 < FixedHotBandTile128x128::kWarpMmaTilesM) {
+      ptx_wmma_store_tile_pairs_64x64_ptx_microkernel<TileRow + 2>(
+          acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+    }
     ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel<TileRow>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-    ptx_wmma_store_tile_pairs_64x64_ptx_microkernel<TileRow + 1>(
-        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+    if constexpr (TileRow + 1 < FixedHotBandTile128x128::kWarpMmaTilesM) {
+      ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel<TileRow + 1>(
+          acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+    }
   }
 }
 
