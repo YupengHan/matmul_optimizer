@@ -142,7 +142,7 @@ constexpr int kFixedHotBandN = kFixedBenchmarkN - kFixedTailRegionN;
 constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
-constexpr int kFixedHotBandGroupedRows = 2;
+constexpr int kFixedHotBandGroupedRows = 4;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1497,8 +1497,22 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
     return;
   }
 
-  const int block_row = blockIdx.y * FixedHotBandTile128x128::kTensorBlockM;
-  const int block_col = blockIdx.x * FixedHotBandTile128x128::kTensorBlockN;
+  const int hot_band_tiles_m = kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM;
+  const int hot_band_tiles_n = kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN;
+  const int physical_pid = blockIdx.y * hot_band_tiles_n + blockIdx.x;
+  const int pids_per_group = kFixedHotBandGroupedRows * hot_band_tiles_n;
+  const int group_id = physical_pid / pids_per_group;
+  const int first_block_y = group_id * kFixedHotBandGroupedRows;
+  const int group_size_y =
+      (first_block_y + kFixedHotBandGroupedRows <= hot_band_tiles_m)
+          ? kFixedHotBandGroupedRows
+          : (hot_band_tiles_m - first_block_y);
+  const int pid_in_group = physical_pid % pids_per_group;
+  const int logical_block_y = first_block_y + (pid_in_group % group_size_y);
+  const int logical_block_x = pid_in_group / group_size_y;
+
+  const int block_row = logical_block_y * FixedHotBandTile128x128::kTensorBlockM;
+  const int block_col = logical_block_x * FixedHotBandTile128x128::kTensorBlockN;
   const int warp_tile_m = warp_id / FixedHotBandTile128x128::kWarpTilesN;
   const int warp_tile_n = warp_id % FixedHotBandTile128x128::kWarpTilesN;
   const int row = block_row + warp_tile_m * FixedHotBandTile128x128::kWarpTileM;
@@ -1759,12 +1773,12 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel<
-          kFixedBenchmarkKStages32><<<
-              dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
+      bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<
+          kFixedBenchmarkKTiles><<<
+              dim3(kFixedHotBandN / FixedHotBandTile256x128::kTensorBlockN,
+                   kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
                    1),
-              dim3(FixedHotBandTile128x128::kWarpsPerBlock * kWarpSize, 1, 1),
+              dim3(FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize, 1, 1),
               0,
               stream>>>(a, b, c);
 
