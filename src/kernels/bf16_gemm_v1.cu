@@ -684,6 +684,69 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
   ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
 }
 
+template <int ColIdx>
+__device__ __forceinline__ void ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag0,
+    const PtxWmmaBf16Fragment& a_frag1,
+    const PtxWmmaBf16Fragment& a_frag2,
+    const PtxWmmaBf16Fragment& a_frag3,
+    const PtxWmmaBf16Fragment& b_frag) {
+  static_assert(FixedHotBandTile128x128::kWarpMmaTilesM == 4,
+                "The PTX hot-band microkernel expects a 64x64 warp tile.");
+  ptx_wmma_mma_row_pair_col_64x64<0, ColIdx>(
+      acc_tiles, a_frag0, a_frag1, b_frag);
+  ptx_wmma_mma_row_pair_col_64x64<2, ColIdx>(
+      acc_tiles, a_frag2, a_frag3, b_frag);
+}
+
+template <int Step = 0>
+__device__ __forceinline__ void
+ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag0,
+    const PtxWmmaBf16Fragment& a_frag1,
+    const PtxWmmaBf16Fragment& a_frag2,
+    const PtxWmmaBf16Fragment& a_frag3,
+    const __nv_bfloat16* b_tile,
+    const PtxWmmaBf16Fragment& current_b_frag) {
+  if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
+    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+    if constexpr (Step + 1 < FixedHotBandTile128x128::kWarpMmaTilesN) {
+      PtxWmmaBf16Fragment next_b_frag;
+      // Keep a single B fragment live across both 32-row pairs before
+      // advancing so the active PTX branch stops reloading it per pair.
+      ptx_wmma_load_col_fragment_64x64<Step + 1>(next_b_frag, b_tile);
+      ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel<ColIdx>(
+          acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, current_b_frag);
+      ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead<Step + 1>(
+          acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile, next_b_frag);
+    } else {
+      ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel<ColIdx>(
+          acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, current_b_frag);
+    }
+  }
+}
+
+__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const __nv_bfloat16* a_tile,
+    const __nv_bfloat16* b_tile) {
+  PtxWmmaBf16Fragment a_frag0;
+  PtxWmmaBf16Fragment a_frag1;
+  PtxWmmaBf16Fragment a_frag2;
+  PtxWmmaBf16Fragment a_frag3;
+  PtxWmmaBf16Fragment b_frag;
+
+  ptx_wmma_load_a_row(a_frag0, a_tile, kWmmaK);
+  ptx_wmma_load_a_row(a_frag1, a_tile + kWmmaM * kWmmaK, kWmmaK);
+  ptx_wmma_load_a_row(a_frag2, a_tile + 2 * kWmmaM * kWmmaK, kWmmaK);
+  ptx_wmma_load_a_row(a_frag3, a_tile + 3 * kWmmaM * kWmmaK, kWmmaK);
+  ptx_wmma_load_col_fragment_64x64<0>(b_frag, b_tile);
+  ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead(
+      acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile, b_frag);
+}
+
 template <typename TileConfig, int TileIdx = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_set_384(
     const PtxWmmaAccTileSet384& acc_tiles,
@@ -1806,7 +1869,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
         b_shared_col_from_logical<FixedHotBandTile128x128>(
             warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
-    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+    ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(acc_tiles, a_tile, b_tile);
 
     if (future_tile_idx < FixedKTiles) {
       // Keep the restored accepted base intact while isolating future PTX work
