@@ -1,80 +1,15 @@
 {
-  "diagnosis_id": "node_b_20260419_181340_round09_512448e",
-  "status": "completed",
-  "created_at": "2026-04-19T18:13:40-07:00",
-  "source_run_id": "20260419_180828_bf16_gemm_v1_512448e",
-  "source_run_dir": "runs/20260419_180828_bf16_gemm_v1_512448e",
-  "source_summary_json": "runs/20260419_180828_bf16_gemm_v1_512448e/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_181807_bf16_gemm_v1_3dd4394",
+  "source_run_dir": "runs/20260419_181807_bf16_gemm_v1_3dd4394",
+  "source_summary_json": "runs/20260419_181807_bf16_gemm_v1_3dd4394/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 10 Stage: keep the corrected 3-stage hot band, but squeeze it under the 128-reg cliff",
-      "hypothesis": "Round 8 is the first correct 3-stage result, and the machine-level shift is too large to dismiss: barrier dropped from 14.30 to 4.60, long scoreboard from 6.21 to 1.21, mio from 2.30 to 0.71, registers/thread from 167 to 132, and shared/block from 46.6 KB to 44.8 KB. That says the Stage family is real, but it is not yet cashing out into runtime because tensor issue stayed middling and occupancy is still pinned at 1 block/SM. The next move should stay inside Idea 10 and target the concrete cliff that is now close enough to matter: trim stage/export bookkeeping live ranges so the hot 64x384 PTX kernel can get from 132 regs/thread to 128 or below without giving back the new low-stall signature. If that works, the Stage family finally has a plausible path to convert overlap into more resident work and real runtime wins.",
-      "expected_bottleneck": "launch__occupancy_limit_registers and residual tensor underfill after overlap gains; short scoreboard is the next stall to watch once barrier, long scoreboard, and mio are already low.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:410-500",
-        "src/kernels/bf16_gemm_v1.cu:862-896",
-        "src/kernels/bf16_gemm_v1.cu:939-1014"
-      ],
-      "risk": "If the live-range split is attempted by adding helper state or extra fences, ptxas can re-inflate registers or erase the Stage-family overlap win. If this branch still cannot clear the 128-reg cliff, it loses its best concrete reason to continue as the primary family.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if registers/thread stays above 128 or runtime is still clearly slower than the 33.12844658 ms accepted base without a clear tensor-active gain; at that point the Stage family is not converting its overlap advantage."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 7 Register reuse: stage-compatible RLRL accumulator traversal inside the 12-tile PTX sweep",
-      "hypothesis": "Round 8 already crushed the feed-side stalls, so the missing gain likely sits inside the warp-local 12-tile sweep itself. The current PTX path still walks the accumulator set monotonically through neighboring B tiles, which is a reasonable place for the remaining short-scoreboard and tensor-issue inefficiency to hide now that long-scoreboard and barrier are mostly gone. A right-left-right-left style traversal, or another non-monotonic accumulator touch order that stays within the same 12 named fragments, gives the Stage branch a different way to exploit its low-stall state without reviving the already-rejected pair-compaction or explicit half-panel compute paths.",
-      "expected_bottleneck": "short scoreboard and warp-internal issue efficiency inside the 64x384 PTX accumulate sweep, not CTA-level feed stalls.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:323-408",
-        "src/kernels/bf16_gemm_v1.cu:807-825",
-        "src/kernels/bf16_gemm_v1.cu:968-1001"
-      ],
-      "risk": "This can regress if it turns into pair-compaction in disguise or if the new traversal lengthens accumulator live ranges enough to push registers back up. The change needs to be limited to issue order, not another structural compute rewrite.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if short-scoreboard does not drop or tensor active does not rise while runtime stays slower than the accepted base; then the remaining gap is probably not in warp-local accumulator reuse order."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human ideas 2 and 4 Coalescing/Async copy: specialize the 3-stage refill issue stream without changing the macro shape",
-      "hypothesis": "The live Stage branch proves that deeper overlap works, but its refill path still uses generic all-thread copy loops for every A and B tile. A more explicit wide-copy partition for the 3-stage hot-band refill, keeping the same 64x384 shape, the same stage depth, and the same shared-memory budget, could reduce refill instruction overhead and tighten the cp.async issue stream without re-entering the failed producer-specialization or B-repack families. This is lower-ranked because round 8 already has very low mio, so the upside is secondary to the occupancy and warp-issue work above.",
-      "expected_bottleneck": "remaining cp.async issue overhead and LSU wavefront churn inside the 3-stage refill path once the major waits are already hidden.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:509-536",
-        "src/kernels/bf16_gemm_v1.cu:946-960",
-        "src/kernels/bf16_gemm_v1.cu:968-982"
-      ],
-      "risk": "Because mio is already low, this may only shuffle instruction cost around and could easily give back the round-8 correctness and simplicity gains if the refill partitioning becomes too clever.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if mio and LSU pressure stay essentially flat and runtime does not improve; then refill issue overhead is not the limiter that is holding the 3-stage branch back."
-    }
-  ],
-  "notes": "Round 9 diagnosis is a continue-family move, not a pivot away from Idea 10 / Stage. Round 8 repaired the terminal CTA handoff and kept the Stage-family signature almost intact: barrier 4.60, long scoreboard 1.21, mio 0.71, correctness 3/3. The runtime is still bad at 35.69459343 ms, so the live question is no longer whether Stage changes machine behavior; it is whether that behavior can be converted into tensor issue and occupancy. The strongest concrete reason to keep Stage primary for one more round is that the branch already dropped registers/thread from 167 to 132 and shared/block from 46.6 KB to 44.8 KB, which puts it close enough to the 128-reg cliff that a bounded follow-up could plausibly unlock 2 CTAs/SM.\n\nHuman idea audit for this round:\n1. Tiling (256x128 block, 64x64 warp): reject-for-this-round. The autotune sweep in state/autotune_round18_main_tiles.md still says 64x384 is the measured sweet spot, so abandoning it now would throw away the only tile shape with repeated wins before the live Stage signal is exhausted.\n2. Coalescing Access: defer as a primary family. The kernel already uses 16-byte cp.async wide accesses, so only a smaller refill-issue specialization is justified, not a rank-1 pivot.\n3. Data Reuse: accept-now as baseline behavior, but not as a new standalone family. Shared A/B reuse is already the foundation of both the accepted base and the Stage branch.\n4. Async Copy: accept-now as a secondary lever. The 3-stage branch is the clearest live expression of this idea, but the next round should change refill issue mechanics only if it is materially different from the earlier handoff-retime path.\n5. Bank Conflict: reject-for-this-round. Prior B-feed permutations were strongly negative, and round-8 bank pressure is already below the accepted base, so bank behavior is not the missing win.\n6. L2 Cache: reject-for-this-round. The current signature does not point at L2 or DRAM as the limiter.\n7. Register Reuse: accept-now as a secondary ranked direction. With feed-side stalls already crushed, warp-internal reuse order is one of the few plausible remaining levers.\n8. Pg2s: accept-now only as already-adopted baseline behavior. Global-to-shared double buffering is already present; the question is how to cash it out.\n9. Ps2r: defer. It showed one positive run and one failed refinement, but the live Stage branch now reaches much larger stall reductions, so Ps2r is not the best primary family this round.\n10. Stage: accept-now and keep primary. Correctness is fixed, the stall signature is dramatically better, and the branch is now close enough to the occupancy cliff to justify one more technically focused continuation round."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_180828_bf16_gemm_v1_512448e`
-- run dir: `runs/20260419_180828_bf16_gemm_v1_512448e`
-- kernel tag: `bf16_gemm_v1_512448e`
-- round label: `round 8/20`
+- run id: `20260419_181807_bf16_gemm_v1_3dd4394`
+- run dir: `runs/20260419_181807_bf16_gemm_v1_3dd4394`
+- kernel tag: `bf16_gemm_v1_3dd4394`
+- round label: `round 9/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `35.694593 ms`
-- p10 runtime: `35.171795 ms`
-- p90 runtime: `36.519927 ms`
-- TFLOP/s: `20.367774 TFLOP/s`
-- previous run id: `20260419_180238_bf16_gemm_v1_24b96ad`
-- runtime delta vs previous measured run: `-0.158718 ms`
-- TFLOP/s delta vs previous measured run: `+0.090166 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `488.546341 ms`
+- p10 runtime: `485.990183 ms`
+- p90 runtime: `490.512256 ms`
+- TFLOP/s: `1.488128 TFLOP/s`
+- previous run id: `20260419_180828_bf16_gemm_v1_512448e`
+- runtime delta vs previous measured run: `+452.851747 ms`
+- TFLOP/s delta vs previous measured run: `-18.879646 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 10 Stage: repair the 3-stage family with an explicit terminal CTA handoff before export overlay reuse`
+- implemented direction name: `Human idea 10 Stage: keep the corrected 3-stage hot band, but squeeze it under the 128-reg cliff`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_180828_bf16_gemm_v1_512448e/summary.json`
-- measured commit: `512448e87bfb00e777dbbd630fd73e756635f6c9`
+- raw summary json: `runs/20260419_181807_bf16_gemm_v1_3dd4394/summary.json`
+- measured commit: `3dd4394d5113e6c6f6f2cc1e37c32dad490af6c4`
 - new best custom: `no`
-- generated at: `2026-04-19T18:08:37-07:00`
+- generated at: `2026-04-19T18:18:42-07:00`
