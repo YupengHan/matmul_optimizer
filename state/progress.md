@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `9d84c09b3ca47275ec766af61a4a51c0a4ebdcee`
-- plateau counter: `3`
-- round loop: `round 8/30`
-- rounds remaining: `23`
-- notes: `Node C build succeeded for round 8/30. Node A will now measure the new code path.`
+- latest measured commit: `7f0af836fe07d39be9f5b7354aadb7e740dbab6b`
+- plateau counter: `4`
+- round loop: `round 9/30`
+- rounds remaining: `22`
+- notes: `Node A completed round 8/30. Run node_b to continue round 9/30.`
 
 ## Latest measured custom run
 
-- run id: `20260419_221757_bf16_gemm_v1_9d84c09`
-- run dir: `runs/20260419_221757_bf16_gemm_v1_9d84c09`
+- run id: `20260419_222209_bf16_gemm_v1_7f0af83`
+- run dir: `runs/20260419_222209_bf16_gemm_v1_7f0af83`
 - correctness: `PASS`
-- median runtime: `30.769152 ms`
-- TFLOP/s: `23.628192 TFLOP/s`
+- median runtime: `30.386592 ms`
+- TFLOP/s: `23.925665 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_221835`
-- recommended direction: `dir_01`
-- approved direction: `dir_03`
-- diagnosis notes: `Round 8/30 starts from a clearly negative warp-local consumer-order experiment. Reversing the mirrored 64x64 B sweep to a `Right Left Right Left` order preserved correctness but regressed runtime by about 0.46 ms, slowed the hot-band kernel to about 41.76 us, and worsened tensor active, barrier stall, short scoreboard, and `mio_throttle`. The next move should therefore restore the proven pre-sweep consumer path and spend one round on a different human-idea family. Recommended direction dir_01 does exactly that while also trying the fixed-shape stage-peeling idea on the hot-band K loop. Dir_02 keeps the cp.async ownership experiment ready on the same restored surface, and dir_03 is the pure restore fallback if the peeling change grows too large.`
-- dir_01: Human idea stage: restore the pre-sweep best surface and peel the hot-band K loop into steady-state | bottleneck: Fixed-shape control-flow and stage-transition overhead inside the hot-band K loop.
-- dir_02: Human idea coalescing + async copy: restore the pre-sweep best surface and retune cp.async ownership | bottleneck: Global-to-shared staging issue regularity and LSU ownership balance.
-- dir_03: Restore the pre-sweep best surface without adding a new experiment | bottleneck: Not a direct bottleneck attack; this is a branch repair after a negative warp-local consumer experiment.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_03`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

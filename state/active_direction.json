@@ -1,26 +1,10 @@
 {
-  "direction_id": "dir_03",
-  "name": "Restore the pre-sweep best surface without adding a new experiment",
-  "selection_mode": "approved",
-  "selected_at": "2026-04-19T22:21:13-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_221835",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_03",
-    "rank": 3,
-    "name": "Restore the pre-sweep best surface without adding a new experiment",
-    "hypothesis": "If the loop needs to recover immediately before spending another experimental round, the safest move is simply to restore the pre-sweep best custom surface. This keeps the remaining rounds anchored on the best measured family and discards the proven-negative `Right Left Right Left` order.",
-    "expected_bottleneck": "Not a direct bottleneck attack; this is a branch repair after a negative warp-local consumer experiment.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "risk": "Low. The restore is simple and correctness-stable, but it spends a round on recovery rather than on a new idea.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
-    ],
-    "stop_condition": "Use this immediately if the stage-peeling implementation becomes too invasive for the current round."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

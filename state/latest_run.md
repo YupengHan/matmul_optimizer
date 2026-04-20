@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_221757_bf16_gemm_v1_9d84c09`
-- run dir: `runs/20260419_221757_bf16_gemm_v1_9d84c09`
-- kernel tag: `bf16_gemm_v1_9d84c09`
-- round label: `round 7/30`
+- run id: `20260419_222209_bf16_gemm_v1_7f0af83`
+- run dir: `runs/20260419_222209_bf16_gemm_v1_7f0af83`
+- kernel tag: `bf16_gemm_v1_7f0af83`
+- round label: `round 8/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.769152 ms`
-- p10 runtime: `30.467175 ms`
-- p90 runtime: `31.545652 ms`
-- TFLOP/s: `23.628192 TFLOP/s`
-- previous run id: `20260419_221542_bf16_gemm_v1_6ae3d5d`
-- runtime delta vs previous measured run: `+0.464895 ms`
-- TFLOP/s delta vs previous measured run: `-0.362478 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Human idea bank conflict: reverse the mirrored 64x64 B sweep into a `Right Left Right Left` order`
-- implemented selection mode: `recommended`
+- median runtime: `30.386592 ms`
+- p10 runtime: `30.149529 ms`
+- p90 runtime: `31.497114 ms`
+- TFLOP/s: `23.925665 TFLOP/s`
+- previous run id: `20260419_221757_bf16_gemm_v1_9d84c09`
+- runtime delta vs previous measured run: `-0.382560 ms`
+- TFLOP/s delta vs previous measured run: `+0.297473 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `dir_03`
+- implemented direction name: `Restore the pre-sweep best surface without adding a new experiment`
+- implemented selection mode: `approved`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_221757_bf16_gemm_v1_9d84c09/summary.json`
-- measured commit: `9d84c09b3ca47275ec766af61a4a51c0a4ebdcee`
+- raw summary json: `runs/20260419_222209_bf16_gemm_v1_7f0af83/summary.json`
+- measured commit: `7f0af836fe07d39be9f5b7354aadb7e740dbab6b`
 - new best custom: `no`
-- generated at: `2026-04-19T22:18:06-07:00`
+- generated at: `2026-04-19T22:22:17-07:00`

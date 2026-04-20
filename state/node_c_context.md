@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_03`
-- direction name: `Restore the pre-sweep best surface without adding a new experiment`
-- selection mode: `approved`
-- source diagnosis id: `diagnosis_20260419_221835`
-- round loop: `round 8/30`
-- hypothesis: `If the loop needs to recover immediately before spending another experimental round, the safest move is simply to restore the pre-sweep best custom surface. This keeps the remaining rounds anchored on the best measured family and discards the proven-negative `Right Left Right Left` order.`
-- expected bottleneck: `Not a direct bottleneck attack; this is a branch repair after a negative warp-local consumer experiment.`
-- code locations: `src/kernels/bf16_gemm_v1.cu`
-- risk: `Low. The restore is simple and correctness-stable, but it spends a round on recovery rather than on a new idea.`
-- metrics to re-check: `correctness, median runtime, runs/*/ncu_details.csv hot-band gpu__time_duration.sum`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 9/30`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail

@@ -1,77 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_221835",
-  "status": "completed",
-  "created_at": "2026-04-19T22:18:35-07:00",
-  "source_run_id": "20260419_221757_bf16_gemm_v1_9d84c09",
-  "source_run_dir": "runs/20260419_221757_bf16_gemm_v1_9d84c09",
-  "source_summary_json": "runs/20260419_221757_bf16_gemm_v1_9d84c09/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_222209_bf16_gemm_v1_7f0af83",
+  "source_run_dir": "runs/20260419_222209_bf16_gemm_v1_7f0af83",
+  "source_summary_json": "runs/20260419_222209_bf16_gemm_v1_7f0af83/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "approved_direction_id": "dir_03",
-  "recommended_idea_origin": "human-idea",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea stage: restore the pre-sweep best surface and peel the hot-band K loop into steady-state",
-      "hypothesis": "The reversed B sweep is a clear negative and should not be the surface for further work. The next human-idea direction is therefore to restore the pre-sweep best hot-band consumer order and then specialize the 452-tile hot-band K loop into prologue, steady-state, and epilogue so the common path no longer pays `future_tile_idx` / `next_tile_idx` branch logic every iteration. Because the hot-band kernel is already fully fixed-shape and uses `#pragma unroll 1`, this is the cleanest remaining control-side experiment on top of the best-known warp-local consumer path.",
-      "expected_bottleneck": "Fixed-shape control-flow and stage-transition overhead inside the hot-band K loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Moderate. The idea is mechanically straightforward, but the hot-band pipeline is delicate and the specialization must preserve the proven pre-sweep consumer order while removing only the generic loop branches.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if the restored + peeled loop does not beat the pre-sweep best surface or if barrier / hot-band time fail to improve."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea coalescing + async copy: restore the pre-sweep best surface and retune cp.async ownership",
-      "hypothesis": "If the stage-peeling experiment is too branchy for one round, the remaining staging-side human idea is still to keep the pre-sweep best branch and change `cp.async` ownership so each warp stages more contiguous stripes. That attacks copy regularity without keeping the already-failed reversed consumer order.",
-      "expected_bottleneck": "Global-to-shared staging issue regularity and LSU ownership balance.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Moderate. The remap is local, but the current copy rhythm is already stable and changing ownership can regress quickly.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if the copy-ownership retune worsens barrier stall or hot-band time."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore the pre-sweep best surface without adding a new experiment",
-      "hypothesis": "If the loop needs to recover immediately before spending another experimental round, the safest move is simply to restore the pre-sweep best custom surface. This keeps the remaining rounds anchored on the best measured family and discards the proven-negative `Right Left Right Left` order.",
-      "expected_bottleneck": "Not a direct bottleneck attack; this is a branch repair after a negative warp-local consumer experiment.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. The restore is simple and correctness-stable, but it spends a round on recovery rather than on a new idea.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
-      ],
-      "stop_condition": "Use this immediately if the stage-peeling implementation becomes too invasive for the current round."
-    }
-  ],
-  "notes": "Round 8/30 starts from a clearly negative warp-local consumer-order experiment. Reversing the mirrored 64x64 B sweep to a `Right Left Right Left` order preserved correctness but regressed runtime by about 0.46 ms, slowed the hot-band kernel to about 41.76 us, and worsened tensor active, barrier stall, short scoreboard, and `mio_throttle`. The next move should therefore restore the proven pre-sweep consumer path and spend one round on a different human-idea family. Recommended direction dir_01 does exactly that while also trying the fixed-shape stage-peeling idea on the hot-band K loop. Dir_02 keeps the cp.async ownership experiment ready on the same restored surface, and dir_03 is the pure restore fallback if the peeling change grows too large."
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
