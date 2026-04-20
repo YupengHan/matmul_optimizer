@@ -1,78 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_114200",
-  "status": "completed",
-  "created_at": "2026-04-20T11:42:00-07:00",
-  "source_run_id": "20260420_114003_bf16_gemm_v1_9f8afe4",
-  "source_run_dir": "runs/20260420_114003_bf16_gemm_v1_9f8afe4",
-  "source_summary_json": "runs/20260420_114003_bf16_gemm_v1_9f8afe4/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_114346_bf16_gemm_v1_a7d3817",
+  "source_run_dir": "runs/20260420_114346_bf16_gemm_v1_a7d3817",
+  "source_summary_json": "runs/20260420_114346_bf16_gemm_v1_a7d3817/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Try The 128x128x32 Staged Hot-Band Family",
-      "hypothesis": "The restored PTX baseline is back in the same source surface as the earlier round-74 code, but the present environment is still slower at 25.97375965 ms and the profile remains barrier- and scoreboard-heavy. The most concrete next family is to change staging granularity rather than relitigate dispatch promotion: the 128x128x32 path keeps the restored hot-band semantics but breaks the work into 32-K-slice stages. That gives a plausible route to lower live-range pressure and barrier cost without reopening the closed non-PTX default promotion family.",
-      "expected_bottleneck": "Barrier cost, short-scoreboard pressure, and register/occupancy pressure in the current 128x128 PTX hot-band cadence.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1667-1815",
-        "src/kernels/bf16_gemm_v1.cu:2070-2093"
-      ],
-      "risk": "Medium. This is a structural change, but it is still anchored to the restored baseline and is more defensible than another baseline-restore round.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the 128x128x32 variant does not reduce barrier/scoreboard pressure or if it has to reopen the closed non-PTX promotion family to function."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Activate The Existing 128x128 Two-Stage Hot-Band Kernel",
-      "hypothesis": "If the 128x128x32 family is too heavy, the existing 128x128 two-stage kernel is the closest distinct PTX-adjacent sibling. It preserves the restored baseline's overall semantics while using a simpler staging shape and fewer macro-stage bookkeeping steps than the 32-stage variant. That makes it a plausible lower-risk alternative for recovering occupancy without going back to the failed default promotions.",
-      "expected_bottleneck": "Occupancy and synchronization overhead in a smaller 128x128 kernel, rather than DRAM bandwidth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1801-1905",
-        "src/kernels/bf16_gemm_v1.cu:2070-2093"
-      ],
-      "risk": "Medium-high. It is a different kernel path, but it still lives close to the restored baseline, so the benefit depends on whether the smaller CTA and simpler staging actually improve warp residency.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the 128x128 sibling cannot beat the restored baseline by a clear margin or if it becomes dependent on the closed promotion family again."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Trim PTX Export And Scratch Shape On The Restored Baseline",
-      "hypothesis": "With the helper-flattening family already closed-negative and the default promotions closed, the remaining low-risk PTX-adjacent cleanup is the export path. Preserving the exact store order and sync structure while simplifying export scratch layout or pointer arithmetic could shave residual barrier and short-scoreboard overhead without changing the restored baseline's dispatch shape.",
-      "expected_bottleneck": "Residual export-side instruction overhead and scratch/register clutter around the writeback path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:904-1025",
-        "src/kernels/bf16_gemm_v1.cu:1908-2012"
-      ],
-      "risk": "Low-medium. This is the safest option, but it also has the smallest expected upside.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if export cleanup changes store order or sync behavior, or if it remains flat against the restored baseline."
-    }
-  ],
-  "notes": "Latest measured run 20260420_114003_bf16_gemm_v1_9f8afe4 is back in the restored PTX baseline shape, but the environment is slower than the earlier round-74 measurement: 25.97375965 ms versus about 24.696 ms. The profile shape is still the same class of problem, with tensor active 47.88, barrier 6.53, long scoreboard 3.71, mio 3.31, and launch__occupancy_limit_registers 2. The source file is identical to the earlier round-74 f1ae7fa surface, so this should be treated as the current baseline environment rather than a launch-path discrepancy. The non-PTX default promotion family is already closed-negative, so the next search should stay on genuinely different PTX-adjacent families from this restored baseline."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

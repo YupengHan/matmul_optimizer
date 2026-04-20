@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `9f8afe4d5bc56643bbd110d2285046ea298e310b`
-- plateau counter: `19`
-- round loop: `round 78/100`
-- rounds remaining: `23`
-- notes: `Node C build succeeded for round 78/100. Node A will now measure the new code path.`
+- latest measured commit: `a7d381754d2b7e09d1ea99275532f036dfd5fc81`
+- plateau counter: `20`
+- round loop: `round 79/100`
+- rounds remaining: `22`
+- notes: `Node A completed round 78/100. Run node_b to continue round 79/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_114003_bf16_gemm_v1_9f8afe4`
-- run dir: `runs/20260420_114003_bf16_gemm_v1_9f8afe4`
+- run id: `20260420_114346_bf16_gemm_v1_a7d3817`
+- run dir: `runs/20260420_114346_bf16_gemm_v1_a7d3817`
 - correctness: `PASS`
-- median runtime: `25.973760 ms`
-- TFLOP/s: `27.990535 TFLOP/s`
+- median runtime: `31.552928 ms`
+- TFLOP/s: `23.041266 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_114200`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Latest measured run 20260420_114003_bf16_gemm_v1_9f8afe4 is back in the restored PTX baseline shape, but the environment is slower than the earlier round-74 measurement: 25.97375965 ms versus about 24.696 ms. The profile shape is still the same class of problem, with tensor active 47.88, barrier 6.53, long scoreboard 3.71, mio 3.31, and launch__occupancy_limit_registers 2. The source file is identical to the earlier round-74 f1ae7fa surface, so this should be treated as the current baseline environment rather than a launch-path discrepancy. The non-PTX default promotion family is already closed-negative, so the next search should stay on genuinely different PTX-adjacent families from this restored baseline.`
-- dir_01: Try The 128x128x32 Staged Hot-Band Family | bottleneck: Barrier cost, short-scoreboard pressure, and register/occupancy pressure in the current 128x128 PTX hot-band cadence.
-- dir_02: Activate The Existing 128x128 Two-Stage Hot-Band Kernel | bottleneck: Occupancy and synchronization overhead in a smaller 128x128 kernel, rather than DRAM bandwidth.
-- dir_03: Trim PTX Export And Scratch Shape On The Restored Baseline | bottleneck: Residual export-side instruction overhead and scratch/register clutter around the writeback path.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
