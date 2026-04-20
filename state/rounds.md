@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `17`
-- completed rounds: `4`
-- remaining rounds: `13`
-- current round label: `round 5/17`
+- completed rounds: `5`
+- remaining rounds: `12`
+- current round label: `round 6/17`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
 - accepted base measured commit: `7adfc4eaef68ec1c5b773b611c0d7a91b594c7b8`
@@ -13,15 +13,15 @@
 - started at: `2026-04-20T15:41:15-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 5/17. Node A will measure the result next.`
+- notes: `Completed round 5/17. Continue with node_b for round 6/17. Accepted base: 20260420_154827_bf16_gemm_v1_7adfc4e at 25.505328 ms.`
 
 ## Last completed round
 
-- round: `4/17`
+- round: `5/17`
 - direction: `dir_01`
-- direction name: `Retune PTX Prefetch Handoff On Top Of The Accepted Export Base`
-- verdict: `regressed`
-- runtime delta: `+0.436735 ms`
-- TFLOP/s delta: `-0.478372 TFLOP/s`
-- run dir: `runs/20260420_155247_bf16_gemm_v1_10d32cf`
-- ncu rep path: `runs/20260420_155247_bf16_gemm_v1_10d32cf/ncu_profile.ncu-rep`
+- direction name: `Tune PTX Hot-Band B-Shared Skew On The Accepted Export Base`
+- verdict: `improved`
+- runtime delta: `-0.226304 ms`
+- TFLOP/s delta: `+0.245854 TFLOP/s`
+- run dir: `runs/20260420_155914_bf16_gemm_v1_8297078`
+- ncu rep path: `runs/20260420_155914_bf16_gemm_v1_8297078/ncu_profile.ncu-rep`

@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_155518",
-  "status": "completed",
-  "created_at": "2026-04-20T15:55:18-07:00",
-  "source_run_id": "20260420_155247_bf16_gemm_v1_10d32cf",
-  "source_run_dir": "runs/20260420_155247_bf16_gemm_v1_10d32cf",
-  "source_summary_json": "runs/20260420_155247_bf16_gemm_v1_10d32cf/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_155914_bf16_gemm_v1_8297078",
+  "source_run_dir": "runs/20260420_155914_bf16_gemm_v1_8297078",
+  "source_summary_json": "runs/20260420_155914_bf16_gemm_v1_8297078/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Tune PTX Hot-Band B-Shared Skew On The Accepted Export Base",
-      "hypothesis": "Round 4/17 showed that retiming the PTX prefetch handoff is not the next win: long-scoreboard dropped to 5.83, but runtime still regressed to 25.98246384 ms because barrier cost rose to 6.63 without a compute-throughput gain. That closes the immediate prefetch-order family for now. The next primary move should stay on the accepted export base from round 2/17 and retune the PTX B-shared layout itself, starting with the single 16-byte skew and `b_shared_col_from_logical`, to test whether the remaining feed cost is shared-layout friction rather than copy-order timing.",
-      "expected_bottleneck": "Shared-memory B-fragment layout friction and address-generation overhead in the PTX hot-band path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:49-53",
-        "src/kernels/bf16_gemm_v1.cu:1070-1073",
-        "src/kernels/bf16_gemm_v1.cu:2019-2022"
-      ],
-      "risk": "Medium. The surface is still narrow and stays on the accepted PTX/export base, but changing the skew can reintroduce memory-side regressions or correctness issues if the warp-local B slices stop lining up cleanly.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "correctness"
-      ],
-      "stop_condition": "Stop this family if one bounded skew/layout retune fails to beat 25.50532818 ms or if it increases DRAM / correctness risk while only moving scoreboard noise."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Retighten PTX Hot-Band Grouping / Orchestration Window",
-      "hypothesis": "The accepted export base is still the best overall branch, and the failed prefetch retime suggests the remaining cost is more likely in how the PTX hot-band path groups CTAs than in steady-state copy order. A bounded retune around `kFixedHotBandPtxGroupedRows` and the grouped-row logical mapping can test whether the orchestration boundary is leaving scoreboard and barrier cost on the table without reopening the x-major traversal variant that already lost.",
-      "expected_bottleneck": "Hot-band CTA grouping and orchestration overhead around the PTX grouped-row mapping.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:155-156",
-        "src/kernels/bf16_gemm_v1.cu:1969-1979",
-        "src/kernels/bf16_gemm_v1.cu:2096-2102"
-      ],
-      "risk": "Medium. This stays in the same PTX microkernel family, but grouped-row changes can disturb load balance or global traffic if they move too far from the accepted traversal.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness"
-      ],
-      "stop_condition": "Close this family if a narrow grouped-row/window retune does not improve runtime or if it repeats the memory-traffic regression pattern seen in the rejected traversal experiment."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Apply Only A Minimal PTX Export Address Cleanup",
-      "hypothesis": "Round 2/17 proved that export-side cleanup can help, but round 3/17 also showed that deeper export flattening is already closed-negative. The only export family that should remain open is a very small cleanup around the surviving one-stage PTX store helpers, such as hoisting or simplifying the remaining row/quad address setup without changing scratch lifetime or recursion depth again.",
-      "expected_bottleneck": "Residual address-generation and store-helper overhead in the surviving PTX export path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:925-947",
-        "src/kernels/bf16_gemm_v1.cu:1008-1065",
-        "src/kernels/bf16_gemm_v1.cu:2044-2047"
-      ],
-      "risk": "Low. The upside is likely smaller than the first two families, but it is the safest remaining control path that does not reopen already closed export changes.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness"
-      ],
-      "stop_condition": "Stop if the cleanup only produces noise-level movement or fails to beat the accepted base after one bounded edit."
-    }
-  ],
-  "notes": "Round 5/17 diagnosis for run 20260420_155247_bf16_gemm_v1_10d32cf. Human-review mapping for this round: reject broad retile/default-promotion reopening and reject the immediate PTX prefetch-handoff family for now, because round 4 cut long-scoreboard to 5.83 but still regressed by +0.47713566 ms versus the accepted base, with barrier rising to 6.63 and no throughput gain. Also keep deeper export flattening closed after round 3. No new explicit human idea family is queued in state/human_review.md, so this round carries forward the surviving narrow idea families only: accept PTX B-shared skew as the primary next move, defer grouped-row/orchestration retuning as the main alternate, and keep only a minimal export cleanup as the low-risk reserve. The older main-tile sweep data is noted but not reopened this round because tonight's loop is staying on the accepted PTX baseline rather than broad branch changes."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

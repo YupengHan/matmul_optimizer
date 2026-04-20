@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Tune PTX Hot-Band B-Shared Skew On The Accepted Export Base`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_155518`
-- round loop: `round 5/17`
-- hypothesis: `Round 4/17 showed that retiming the PTX prefetch handoff is not the next win: long-scoreboard dropped to 5.83, but runtime still regressed to 25.98246384 ms because barrier cost rose to 6.63 without a compute-throughput gain. That closes the immediate prefetch-order family for now. The next primary move should stay on the accepted export base from round 2/17 and retune the PTX B-shared layout itself, starting with the single 16-byte skew and `b_shared_col_from_logical`, to test whether the remaining feed cost is shared-layout friction rather than copy-order timing.`
-- expected bottleneck: `Shared-memory B-fragment layout friction and address-generation overhead in the PTX hot-band path.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:49-53, src/kernels/bf16_gemm_v1.cu:1070-1073, src/kernels/bf16_gemm_v1.cu:2019-2022`
-- risk: `Medium. The surface is still narrow and stays on the accepted PTX/export base, but changing the skew can reintroduce memory-side regressions or correctness issues if the warp-local B slices stop lining up cleanly.`
-- metrics to re-check: `median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, lts__throughput.avg.pct_of_peak_sustained_elapsed, correctness`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 6/17`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail

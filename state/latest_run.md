@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_155247_bf16_gemm_v1_10d32cf`
-- run dir: `runs/20260420_155247_bf16_gemm_v1_10d32cf`
-- kernel tag: `bf16_gemm_v1_10d32cf`
-- round label: `round 4/17`
+- run id: `20260420_155914_bf16_gemm_v1_8297078`
+- run dir: `runs/20260420_155914_bf16_gemm_v1_8297078`
+- kernel tag: `bf16_gemm_v1_8297078`
+- round label: `round 5/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `25.982464 ms`
-- p10 runtime: `25.408387 ms`
-- p90 runtime: `26.828800 ms`
-- TFLOP/s: `27.981158 TFLOP/s`
-- previous run id: `20260420_155035_bf16_gemm_v1_a4dc968`
-- runtime delta vs previous measured run: `+0.436735 ms`
-- TFLOP/s delta vs previous measured run: `-0.478372 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.756160 ms`
+- p10 runtime: `25.371239 ms`
+- p90 runtime: `26.671177 ms`
+- TFLOP/s: `28.227012 TFLOP/s`
+- previous run id: `20260420_155247_bf16_gemm_v1_10d32cf`
+- runtime delta vs previous measured run: `-0.226304 ms`
+- TFLOP/s delta vs previous measured run: `+0.245854 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune PTX Prefetch Handoff On Top Of The Accepted Export Base`
+- implemented direction name: `Tune PTX Hot-Band B-Shared Skew On The Accepted Export Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_155247_bf16_gemm_v1_10d32cf/summary.json`
-- measured commit: `10d32cf805efc73140de4de50b5aa8a57abda726`
+- raw summary json: `runs/20260420_155914_bf16_gemm_v1_8297078/summary.json`
+- measured commit: `8297078f8163c83e53d6840ef668423eed5c2719`
 - new best custom: `no`
-- generated at: `2026-04-20T15:52:56-07:00`
+- generated at: `2026-04-20T15:59:21-07:00`

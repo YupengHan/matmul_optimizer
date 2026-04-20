@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Tune PTX Hot-Band B-Shared Skew On The Accepted Export Base",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T15:57:54-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_155518",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Tune PTX Hot-Band B-Shared Skew On The Accepted Export Base",
-    "hypothesis": "Round 4/17 showed that retiming the PTX prefetch handoff is not the next win: long-scoreboard dropped to 5.83, but runtime still regressed to 25.98246384 ms because barrier cost rose to 6.63 without a compute-throughput gain. That closes the immediate prefetch-order family for now. The next primary move should stay on the accepted export base from round 2/17 and retune the PTX B-shared layout itself, starting with the single 16-byte skew and `b_shared_col_from_logical`, to test whether the remaining feed cost is shared-layout friction rather than copy-order timing.",
-    "expected_bottleneck": "Shared-memory B-fragment layout friction and address-generation overhead in the PTX hot-band path.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:49-53",
-      "src/kernels/bf16_gemm_v1.cu:1070-1073",
-      "src/kernels/bf16_gemm_v1.cu:2019-2022"
-    ],
-    "risk": "Medium. The surface is still narrow and stays on the accepted PTX/export base, but changing the skew can reintroduce memory-side regressions or correctness issues if the warp-local B slices stop lining up cleanly.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-      "correctness"
-    ],
-    "stop_condition": "Stop this family if one bounded skew/layout retune fails to beat 25.50532818 ms or if it increases DRAM / correctness risk while only moving scoreboard noise."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
