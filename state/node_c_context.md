@@ -8,7 +8,7 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 - direction name: `Re-enter The PTX Hot-Band Path With A Mid-Width Grouping Control`
 - selection mode: `recommended`
 - source diagnosis id: `diagnosis_20260420_152858`
-- round loop: `round 84/100`
+- round loop: `single-run`
 - hypothesis: `The regression is dominated by falling off the PTX hot-band microkernel and its single-stage export-scratch path, not by the narrower grouped-row value alone. Restoring the PTX launch/store path while testing a bounded middle grouping such as 6 rows should keep DRAM near the 25.643007 ms active baseline and let the grouped-row idea be measured on the intended PTX baseline instead of on the higher-traffic non-PTX sibling.`
 - expected bottleneck: `Long-scoreboard in the PTX hot-band kernel, with DRAM and L2 locality acting as guardrails while the grouped-row mapping is re-isolated.`
 - code locations: `src/kernels/bf16_gemm_v1.cu:153, src/kernels/bf16_gemm_v1.cu:1934-2028, src/kernels/bf16_gemm_v1.cu:2076-2092`
@@ -31,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `src/kernels/bf16_gemm_v1.cu`

@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `ready_for_node_c`
-- round loop: `round 84/100` with `17` rounds remaining
+- next node: `node_a`
+- status: `ready_for_node_a`
+- round loop: `single-run` with `17` rounds remaining
 
 ## Direction approval policy
 
@@ -27,5 +27,5 @@
 
 - selected direction: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`

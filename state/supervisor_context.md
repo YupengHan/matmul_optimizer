@@ -4,11 +4,11 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Current dispatch
 
-- dispatch node: `node_c`
-- dispatch mode: `sub_agent`
-- graph status: `ready_for_node_c`
-- round label: `round 84/100`
-- round loop active: `yes`
+- dispatch node: `node_a`
+- dispatch mode: `direct_script`
+- graph status: `ready_for_node_a`
+- round label: `single-run`
+- round loop active: `no`
 - rounds remaining: `17`
 - latest run id: `20260420_120552_bf16_gemm_v1_84de30b`
 - latest runtime: `25.944464 ms`
@@ -18,25 +18,21 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 ## Supervisor protocol
 
 - read `docs/supervisor_protocol.md` first
-- node-specific protocol: `docs/node_c_protocol.md`
-- node context file: `state/node_c_context.md`
-- prepare command: `python scripts/graph.py node_c`
-- finalize command: `python scripts/graph.py node_c --finalize`
-- current dispatch requires direct GPU access: `no`
+- node-specific protocol: `AGENTS.md`
+- prepare command: `python scripts/graph.py node_a`
+- current dispatch requires direct GPU access: `yes`
 
 ## Dispatch rule
 
-- main agent stays responsible for graph state, commits, and loop control
-- spawn exactly one sub-agent for the current node
-- after the sub-agent returns, run the finalize command from the main agent
-- then re-read `state/supervisor_task.json` before dispatching the next node
+- run the script-first node directly from the main agent
+- do not spawn a sub-agent for node_a
+- after node_a finishes, re-read `state/supervisor_task.json` and continue
 
 ## Multi-round loop
 
-- active loop: `round 84/100` with `17` rounds remaining
-- auto-use recommended: `yes`
-- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop
+- no multi-round loop is active
+- to arm one, run `python scripts/graph.py rounds --count N --auto-use-recommended`
 
 ## Notes
 
-- `Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.`
+- `Run node_a directly from the main Codex agent outside the sandbox, then re-read graph state.`
