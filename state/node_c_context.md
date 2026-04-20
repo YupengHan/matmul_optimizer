@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Re-enter The PTX Hot-Band Path With A Mid-Width Grouping Control`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_152858`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
 - round loop: `single-run`
-- hypothesis: `The regression is dominated by falling off the PTX hot-band microkernel and its single-stage export-scratch path, not by the narrower grouped-row value alone. Restoring the PTX launch/store path while testing a bounded middle grouping such as 6 rows should keep DRAM near the 25.643007 ms active baseline and let the grouped-row idea be measured on the intended PTX baseline instead of on the higher-traffic non-PTX sibling.`
-- expected bottleneck: `Long-scoreboard in the PTX hot-band kernel, with DRAM and L2 locality acting as guardrails while the grouped-row mapping is re-isolated.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:153, src/kernels/bf16_gemm_v1.cu:1934-2028, src/kernels/bf16_gemm_v1.cu:2076-2092`
-- risk: `Low to medium. This is close to the best active family and directly addresses the confounding variable, but the upside may be small if grouped-row width was never the real limiter once the PTX path is restored.`
-- metrics to re-check: `median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, lts__throughput.avg.pct_of_peak_sustained_elapsed, smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct, launch__registers_per_thread`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_120552_bf16_gemm_v1_84de30b`
-- run dir: `runs/20260420_120552_bf16_gemm_v1_84de30b`
-- kernel tag: `bf16_gemm_v1_84de30b`
-- round label: `round 83/100`
+- run id: `20260420_153144_bf16_gemm_v1_c550d79`
+- run dir: `runs/20260420_153144_bf16_gemm_v1_c550d79`
+- kernel tag: `bf16_gemm_v1_c550d79`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.944464 ms`
-- p10 runtime: `25.731997 ms`
-- p90 runtime: `26.617940 ms`
-- TFLOP/s: `28.022141 TFLOP/s`
-- previous run id: `20260420_120349_bf16_gemm_v1_af42390`
-- runtime delta vs previous measured run: `+0.040337 ms`
-- TFLOP/s delta vs previous measured run: `-0.043635 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.763329 ms`
+- p10 runtime: `25.184854 ms`
+- p90 runtime: `26.783107 ms`
+- TFLOP/s: `28.219157 TFLOP/s`
+- previous run id: `20260420_120552_bf16_gemm_v1_84de30b`
+- runtime delta vs previous measured run: `-0.181135 ms`
+- TFLOP/s delta vs previous measured run: `+0.197016 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Tighten PTX Hot-Band Grouping For Long-Scoreboard`
+- implemented direction name: `Re-enter The PTX Hot-Band Path With A Mid-Width Grouping Control`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_120552_bf16_gemm_v1_84de30b/summary.json`
-- measured commit: `84de30b73776656fed997f60535082ce957bc002`
+- raw summary json: `runs/20260420_153144_bf16_gemm_v1_c550d79/summary.json`
+- measured commit: `c550d7959d2a7f80c98ebb0a632629ff9d196656`
 - new best custom: `no`
-- generated at: `2026-04-20T12:05:59-07:00`
+- generated at: `2026-04-20T15:31:52-07:00`

@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_152858",
-  "status": "completed",
-  "created_at": "2026-04-20T15:28:58-07:00",
-  "source_run_id": "20260420_120552_bf16_gemm_v1_84de30b",
-  "source_run_dir": "runs/20260420_120552_bf16_gemm_v1_84de30b",
-  "source_summary_json": "runs/20260420_120552_bf16_gemm_v1_84de30b/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_153144_bf16_gemm_v1_c550d79",
+  "source_run_dir": "runs/20260420_153144_bf16_gemm_v1_c550d79",
+  "source_summary_json": "runs/20260420_153144_bf16_gemm_v1_c550d79/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "notes": "Round 84/100 diagnosis for run 20260420_120552_bf16_gemm_v1_84de30b. Human-review mapping: accept narrow PTX-adjacent ideas and very small export/feed/orchestration experiments on top of the zero-padding PTX baseline; defer pure baseline-restore work unless it isolates the current regression; reject reopening the broad default-promotion family, the staged K32 family, the paired PTX export-lifetime helper, helper flattening without a new codegen thesis, and the already-flat grouped_rows=4 replay as a standalone answer. The latest regression is confounded: the measured run tightened kFixedHotBandPtxGroupedRows from 8 to 4, but it also left the PTX hot-band microkernel family entirely and launched the regular 128x128 hot-band kernel. That only trimmed hot-band long-scoreboard slightly (7.61 -> 7.25) while blowing up hot-band DRAM throughput (10.29% -> 30.29%), so the next step should re-isolate long-scoreboard work inside the PTX path instead of ranking the current non-PTX result as the true grouped-row answer.",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Re-enter The PTX Hot-Band Path With A Mid-Width Grouping Control",
-      "hypothesis": "The regression is dominated by falling off the PTX hot-band microkernel and its single-stage export-scratch path, not by the narrower grouped-row value alone. Restoring the PTX launch/store path while testing a bounded middle grouping such as 6 rows should keep DRAM near the 25.643007 ms active baseline and let the grouped-row idea be measured on the intended PTX baseline instead of on the higher-traffic non-PTX sibling.",
-      "expected_bottleneck": "Long-scoreboard in the PTX hot-band kernel, with DRAM and L2 locality acting as guardrails while the grouped-row mapping is re-isolated.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153",
-        "src/kernels/bf16_gemm_v1.cu:1934-2028",
-        "src/kernels/bf16_gemm_v1.cu:2076-2092"
-      ],
-      "risk": "Low to medium. This is close to the best active family and directly addresses the confounding variable, but the upside may be small if grouped-row width was never the real limiter once the PTX path is restored.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Close this line if the PTX microkernel is restored, hot-band DRAM returns near the active-baseline level, and the runtime still does not beat or meaningfully challenge 25.64300728 ms."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Retune PTX Microkernel Feed Cadence Around The Row-Pair Loop",
-      "hypothesis": "Once the hot-band path is back on the PTX microkernel, the remaining loss is more likely to sit in copy/compute overlap than in export scratch. A small PTX-specific cadence retime around cp.async wait timing, A/B issue order, or the future-tile refill point can reduce the residual scoreboard cost without reopening the broad non-PTX memory-traffic behavior that already lost.",
-      "expected_bottleneck": "Feed latency and stage handoff inside the PTX hot-band steady-state loop, showing up as long-scoreboard and barrier tradeoffs around the row-pair MMA traversal.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:801-819",
-        "src/kernels/bf16_gemm_v1.cu:1995-2022",
-        "src/kernels/bf16_gemm_v1.cu:1822-1918"
-      ],
-      "risk": "Medium. This stays in the live PTX-adjacent family, but the bounded non-PTX feed-cadence sibling was already weak, so the gain depends on PTX-specific overlap rather than generic two-stage tuning.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop after one bounded cadence edit if barrier or DRAM rises without at least a small runtime improvement, because that would mean the overlap retime is just reshuffling stalls."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Rework PTX Group Traversal To Preserve B Locality Without Broad Groups",
-      "hypothesis": "The live opportunity may be in how hot-band CTAs walk the grouped-row space rather than in the grouped-row count alone. A traversal change that keeps B-column locality stronger while using a narrower or asymmetric row grouping could target scoreboard pressure at the group boundary without reintroducing the full broad-group behavior that the user review wants to avoid reopening casually.",
-      "expected_bottleneck": "Hot-band orchestration and CTA traversal locality, especially the balance between B reuse, L2 behavior, and scoreboard cost across grouped-row boundaries.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1953-1967",
-        "src/kernels/bf16_gemm_v1.cu:1934-1988",
-        "src/kernels/bf16_gemm_v1.cu:2076-2092"
-      ],
-      "risk": "Medium to high. This is more intrusive than a pure PTX-path restore or cadence retime, and it can easily devolve into scheduler churn without a measurable locality win.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness"
-      ],
-      "stop_condition": "Abandon this family if one bounded traversal change leaves runtime flat or worsens DRAM/L2 behavior, because then grouped traversal is not the profitable control surface."
-    }
-  ]
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
