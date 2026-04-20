@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 23/50` with `28` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 24/50` with `27` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260420_001328`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human-idea reflection for round 23: L2 Cache remains primary because grouped_rows=8 produced a real improvement and grouped_rows=16 provided useful negative evidence, which means this axis is still actively informative. Stage, Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted fixed infrastructure under the current base. Register Reuse remains deferred after the launch-bounds failure. Tiling 256x128 stays rejected. Coalescing Access and Bank Conflict remain deferred because the current wins and losses are still tracking CTA-order choices more than those signals.`
-- dir_01: Keep the grouped CTA-order remap and reduce the hot-band row-group size to check the other side of the L2 curve | bottleneck: Cross-CTA cache locality on the accepted grouped-order hot-band kernel.
-- dir_02: Hold grouped_rows=8 as the accepted L2 base and return to conservative K16 barrier-side cleanup | bottleneck: Residual barrier overhead in the accepted grouped-order K16 kernel.
-- dir_03: Freeze the accepted grouped-order kernel and revisit a strictly milder register hint later | bottleneck: Compiler allocation quality on top of the accepted grouped-order base.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

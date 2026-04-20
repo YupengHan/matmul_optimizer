@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_001248_bf16_gemm_v1_4fc47fd`
-- run dir: `runs/20260420_001248_bf16_gemm_v1_4fc47fd`
-- kernel tag: `bf16_gemm_v1_4fc47fd`
-- round label: `round 22/50`
+- run id: `20260420_001413_bf16_gemm_v1_0cbbcf7`
+- run dir: `runs/20260420_001413_bf16_gemm_v1_0cbbcf7`
+- kernel tag: `bf16_gemm_v1_0cbbcf7`
+- round label: `round 23/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `29.319664 ms`
-- p10 runtime: `28.759040 ms`
-- p90 runtime: `30.413107 ms`
-- TFLOP/s: `24.796308 TFLOP/s`
-- previous run id: `20260420_001122_bf16_gemm_v1_273d63c`
-- runtime delta vs previous measured run: `+0.370160 ms`
-- TFLOP/s delta vs previous measured run: `-0.317056 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `29.179888 ms`
+- p10 runtime: `28.567756 ms`
+- p90 runtime: `30.248400 ms`
+- TFLOP/s: `24.915086 TFLOP/s`
+- previous run id: `20260420_001248_bf16_gemm_v1_4fc47fd`
+- runtime delta vs previous measured run: `-0.139776 ms`
+- TFLOP/s delta vs previous measured run: `+0.118778 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the grouped CTA-order remap and increase the hot-band row-group size to deepen B-tile reuse`
+- implemented direction name: `Keep the grouped CTA-order remap and reduce the hot-band row-group size to check the other side of the L2 curve`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_001248_bf16_gemm_v1_4fc47fd/summary.json`
-- measured commit: `4fc47fd8dad9e9dd6b46dd22db57692a8f6d947e`
+- raw summary json: `runs/20260420_001413_bf16_gemm_v1_0cbbcf7/summary.json`
+- measured commit: `0cbbcf7b2d28ba864853823c4120f8f0001843a1`
 - new best custom: `no`
-- generated at: `2026-04-20T00:12:56-07:00`
+- generated at: `2026-04-20T00:14:21-07:00`
