@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Tighten PTX Hot-Band Grouping For Long-Scoreboard",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T12:05:03-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_120428",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Tighten PTX Hot-Band Grouping For Long-Scoreboard",
+    "hypothesis": "The zero-padding export baseline is still the best current family, but the current regression suggests the remaining cost is in the PTX hot-band grouping and peel handoff rather than export padding or the two-stage feed cadence. Narrowing the grouped-row window or simplifying the peel boundary should target long-scoreboard directly without reintroducing the memory traffic that made the previous variants lose.",
+    "expected_bottleneck": "Long-scoreboard stalls caused by hot-band orchestration, grouped-row mapping, and tail handoff in the PTX microkernel path.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1181-1227",
+      "src/kernels/bf16_gemm_v1.cu:1953-1967",
+      "src/kernels/bf16_gemm_v1.cu:2079-2111"
+    ],
+    "risk": "Medium. It stays inside the restored PTX baseline family, but the benefit depends on the scoreboard cost actually coming from orchestration rather than the core export path.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Keep this direction only if it reduces long-scoreboard stalls and beats 25.83756828 ms; otherwise close it and move to a cleanup-only alternative."
+  },
+  "notes": "Node C may now implement this one direction."
 }

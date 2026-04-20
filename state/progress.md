@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `af42390db4796a6bfb2b8e1b21751cf877ed7a86`
 - plateau counter: `24`
 - round loop: `round 83/100`
 - rounds remaining: `18`
-- notes: `Node A completed round 82/100. Run node_b to continue round 83/100.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 83/100.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_120428`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 83/100 diagnosis for run 20260420_120349_bf16_gemm_v1_af42390. The bounded 128x128 two-stage cadence experiment is now effectively closed as a distinct next step: it was flat-to-slightly-negative versus the best PTX baseline, with runtime 25.90412712 ms, barrier 5.24, mio 3.00, but dram 30.18 and long scoreboard 7.22. The paired-export-lifetime variant remains closed-negative, and the best current baseline stays the PTX microkernel default with zero export padding. The next work should target long-scoreboard reduction at the PTX hot-band grouping / orchestration boundary or use another narrow PTX-adjacent control path, not reopen the closed broad families.`
+- dir_01: Tighten PTX Hot-Band Grouping For Long-Scoreboard | bottleneck: Long-scoreboard stalls caused by hot-band orchestration, grouped-row mapping, and tail handoff in the PTX microkernel path.
+- dir_02: Low-Risk PTX Export-Side Cleanup | bottleneck: Residual address-generation and scratch-lifetime overhead in the PTX store helpers.
+- dir_03: Use The Non-PTX 128x128 Sibling As A Control | bottleneck: PTX export/store complexity versus a simpler non-PTX 128x128 feed path.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 

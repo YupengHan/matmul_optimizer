@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Tighten PTX Hot-Band Grouping For Long-Scoreboard`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_120428`
 - round loop: `round 83/100`
+- hypothesis: `The zero-padding export baseline is still the best current family, but the current regression suggests the remaining cost is in the PTX hot-band grouping and peel handoff rather than export padding or the two-stage feed cadence. Narrowing the grouped-row window or simplifying the peel boundary should target long-scoreboard directly without reintroducing the memory traffic that made the previous variants lose.`
+- expected bottleneck: `Long-scoreboard stalls caused by hot-band orchestration, grouped-row mapping, and tail handoff in the PTX microkernel path.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1181-1227, src/kernels/bf16_gemm_v1.cu:1953-1967, src/kernels/bf16_gemm_v1.cu:2079-2111`
+- risk: `Medium. It stays inside the restored PTX baseline family, but the benefit depends on the scoreboard cost actually coming from orchestration rather than the core export path.`
+- metrics to re-check: `median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, lts__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
