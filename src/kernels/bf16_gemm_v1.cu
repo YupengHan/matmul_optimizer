@@ -1163,6 +1163,53 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
   next_stage = consumed_stage;
 }
 
+__device__ __forceinline__ void accumulate_hot_band_shared_stage_ptx(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const __nv_bfloat16* a_stage,
+    const __nv_bfloat16* b_stage,
+    int warp_tile_m,
+    int warp_tile_n) {
+  const __nv_bfloat16* a_tile =
+      a_stage + warp_tile_m * FixedHotBandTile256x128::kWarpTileM * kWmmaK;
+  const __nv_bfloat16* b_tile =
+      b_stage + b_shared_col_from_logical<FixedHotBandTile256x128>(
+                    warp_tile_n * FixedHotBandTile256x128::kWarpGroupCols);
+
+  ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+}
+
+__device__ __forceinline__ void advance_hot_band_stage_ptx(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    __nv_bfloat16 a_shared[][FixedHotBandTile256x128::kASharedTileElems],
+    __nv_bfloat16 b_shared[][FixedHotBandTile256x128::kBSharedTileElems],
+    const __nv_bfloat16* a_block,
+    const __nv_bfloat16* b_block,
+    int future_tile_k,
+    int warp_tile_m,
+    int warp_tile_n,
+    int& curr_stage,
+    int& next_stage) {
+  accumulate_hot_band_shared_stage_ptx(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  // Use the same single-pending-group handoff discipline as the peeled helper:
+  // fully publish the next consumer stage before reusing the just-consumed stage.
+  cp_async_wait_group_0();
+  __syncthreads();
+
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+      b_shared[curr_stage],
+      b_block + future_tile_k * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+
+  const int consumed_stage = curr_stage;
+  curr_stage = next_stage;
+  next_stage = consumed_stage;
+}
+
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
@@ -1326,44 +1373,34 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   cp_async_wait_group_1();
   __syncthreads();
 
+  int curr_stage = 0;
+  int next_stage = 1;
+
   #pragma unroll 1
-  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
-    const int curr_stage = tile_idx & 1;
-    const int next_tile_idx = tile_idx + 1;
-    const int future_tile_idx = tile_idx + 2;
-
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile256x128::kWarpTileM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<FixedHotBandTile256x128>(
-            warp_tile_n * FixedHotBandTile256x128::kWarpGroupCols);
-
-    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
-
-    if (future_tile_idx < FixedKTiles) {
-      const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async<FixedHotBandTile256x128>(
-          a_shared[curr_stage],
-          a_block + future_tile_k,
-          kFixedBenchmarkK);
-      stage_b_shared_tile_async<FixedHotBandTile256x128>(
-          b_shared[curr_stage],
-          b_block + future_tile_k * kFixedBenchmarkN,
-          kFixedBenchmarkN);
-      cp_async_commit_group();
-    }
-
-    if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
-        cp_async_wait_group_1();
-      } else {
-        cp_async_wait_group_0();
-      }
-      __syncthreads();
-    }
+  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; ++tile_idx) {
+    const int future_tile_k = (tile_idx + 2) * kWmmaK;
+    advance_hot_band_stage_ptx(
+        acc_tiles,
+        a_shared,
+        b_shared,
+        a_block,
+        b_block,
+        future_tile_k,
+        warp_tile_m,
+        warp_tile_n,
+        curr_stage,
+        next_stage);
   }
+
+  accumulate_hot_band_shared_stage_ptx(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  cp_async_wait_group_0();
+  __syncthreads();
+  curr_stage = next_stage;
+
+  accumulate_hot_band_shared_stage_ptx(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
   ptx_wmma_store_tile_pairs_64x64(acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
