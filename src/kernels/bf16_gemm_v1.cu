@@ -1256,6 +1256,11 @@ __device__ __forceinline__ void ptx_wmma_run_half_panel_pass_64x32(
       c_warp_tile_base + Panel::template global_output_tile_col_offset<0>();
   ptx_wmma_store_tile_pairs_64x32<HalfPanelColBase>(
       acc_tiles, c_shared, c_panel_tile_base, warp_id, lane_id);
+  // The half-panel family is still chasing a sparse nondeterministic correctness
+  // bug. End each pass with an explicit CTA handoff so the next local-half pass
+  // cannot inherit any lingering async-group or shared-state ambiguity.
+  cp_async_wait_group_0();
+  __syncthreads();
 }
 
 template <int HalfPanelIndex = 0, int FixedKTiles>

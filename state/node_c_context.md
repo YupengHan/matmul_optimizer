@@ -32,4 +32,5 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 ## Dirty working tree snapshot before node_c finalize
 
 - `include/runner_contract.h`
+- `src/kernels/bf16_gemm_v1.cu`
 - `src/runner/main.cpp`
