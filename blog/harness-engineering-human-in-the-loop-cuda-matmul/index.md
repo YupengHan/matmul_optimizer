@@ -34,8 +34,6 @@ That is exactly where a good harness can make LLMs much more useful.
 
 ## What I learned so far
 
-![Optimization tree](./matmul_optimization_tree_pretty.svg)
-
 
 This project started as a weekend practice, but the part I really care about is not only the final number. It is **what this workflow taught me**.
 
@@ -242,6 +240,7 @@ It is **optimization of the optimization process itself**.
 
 
 ## Current snapshot
+![Optimization tree](./matmul_optimization_tree_pretty.svg)
 
 This repo is intentionally narrow:
 - one fixed BF16 GEMM shape
