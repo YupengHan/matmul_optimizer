@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_223649_bf16_gemm_v1_848bad7`
-- run dir: `runs/20260419_223649_bf16_gemm_v1_848bad7`
-- kernel tag: `bf16_gemm_v1_848bad7`
-- round label: `round 1/50`
+- run id: `20260419_223856_bf16_gemm_v1_9e7679d`
+- run dir: `runs/20260419_223856_bf16_gemm_v1_9e7679d`
+- kernel tag: `bf16_gemm_v1_9e7679d`
+- round label: `round 2/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.356480 ms`
-- p10 runtime: `29.918720 ms`
-- p90 runtime: `31.454934 ms`
-- TFLOP/s: `23.949398 TFLOP/s`
-- previous run id: `20260419_222734_bf16_gemm_v1_0d78758`
-- runtime delta vs previous measured run: `+1.030656 ms`
-- TFLOP/s delta vs previous measured run: `-0.841701 TFLOP/s`
+- median runtime: `30.578688 ms`
+- p10 runtime: `30.112972 ms`
+- p90 runtime: `31.819577 ms`
+- TFLOP/s: `23.775364 TFLOP/s`
+- previous run id: `20260419_223649_bf16_gemm_v1_848bad7`
+- runtime delta vs previous measured run: `+0.222208 ms`
+- TFLOP/s delta vs previous measured run: `-0.174035 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim the hot-band export path by batching 64x64 stores vertically instead of horizontally`
+- implemented direction name: `Human idea bank conflict: increase the hot-band B shared-memory padding from +8 to +16 elements`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_223649_bf16_gemm_v1_848bad7/summary.json`
-- measured commit: `848bad76a95cfcc18a02981190b09432583d4aa5`
+- raw summary json: `runs/20260419_223856_bf16_gemm_v1_9e7679d/summary.json`
+- measured commit: `9e7679d84de81ed2499e78ee6e3285f74206a441`
 - new best custom: `no`
-- generated at: `2026-04-19T22:36:57-07:00`
+- generated at: `2026-04-19T22:39:04-07:00`
