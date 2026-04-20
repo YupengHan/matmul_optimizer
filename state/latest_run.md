@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_074908_bf16_gemm_v1_b6110a1`
-- run dir: `runs/20260420_074908_bf16_gemm_v1_b6110a1`
-- kernel tag: `bf16_gemm_v1_b6110a1`
-- round label: `round 48/100`
+- run id: `20260420_075705_bf16_gemm_v1_47484fa`
+- run dir: `runs/20260420_075705_bf16_gemm_v1_47484fa`
+- kernel tag: `bf16_gemm_v1_47484fa`
+- round label: `round 49/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.759745 ms`
-- p10 runtime: `25.284300 ms`
-- p90 runtime: `26.736019 ms`
-- TFLOP/s: `28.223083 TFLOP/s`
-- previous run id: `20260420_074331_bf16_gemm_v1_17a33b2`
-- runtime delta vs previous measured run: `+0.230416 ms`
-- TFLOP/s delta vs previous measured run: `-0.254729 TFLOP/s`
+- median runtime: `31.728224 ms`
+- p10 runtime: `30.555239 ms`
+- p90 runtime: `33.370417 ms`
+- TFLOP/s: `22.913965 TFLOP/s`
+- previous run id: `20260420_074908_bf16_gemm_v1_b6110a1`
+- runtime delta vs previous measured run: `+5.968479 ms`
+- TFLOP/s delta vs previous measured run: `-5.309118 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Rebalance PTX B Fragment Reuse Against Ps2r Feed Pressure`
+- implemented direction name: `Retune The Accepted Grouped-Row=8 PTX Hot Band Around Stage Cadence`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_074908_bf16_gemm_v1_b6110a1/summary.json`
-- measured commit: `b6110a1ab489e294af0f78af8bf3fa93ac916903`
+- raw summary json: `runs/20260420_075705_bf16_gemm_v1_47484fa/summary.json`
+- measured commit: `47484fae7cf2c42fa7acda5e5ce2f2beafc4e1c8`
 - new best custom: `no`
-- generated at: `2026-04-20T07:49:16-07:00`
+- generated at: `2026-04-20T07:57:13-07:00`
