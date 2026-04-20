@@ -539,6 +539,42 @@ __device__ __forceinline__ void ptx_wmma_mma_row_pair_col_64x64(
       b_frag);
 }
 
+template <int Step>
+__device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64(
+    PtxWmmaBf16Fragment& b_frag,
+    const __nv_bfloat16* b_tile) {
+  constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+  ptx_wmma_load_b_row(
+      b_frag,
+      b_tile + ColIdx * kWmmaN,
+      FixedHotBandTile256x128::kBSharedStride);
+}
+
+template <int RowPairBase, int Step = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_lookahead(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag0,
+    const PtxWmmaBf16Fragment& a_frag1,
+    const __nv_bfloat16* b_tile,
+    const PtxWmmaBf16Fragment& current_b_frag) {
+  if constexpr (Step < FixedHotBandTile256x128::kWarpMmaTilesN) {
+    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+    if constexpr (Step + 1 < FixedHotBandTile256x128::kWarpMmaTilesN) {
+      PtxWmmaBf16Fragment next_b_frag;
+      // Keep one B fragment live so the next Ps2r load can issue ahead of the
+      // current MMA pair without changing tile ownership or shared layout.
+      ptx_wmma_load_col_fragment_64x64<Step + 1>(next_b_frag, b_tile);
+      ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+          acc_tiles, a_frag0, a_frag1, current_b_frag);
+      ptx_wmma_accumulate_col_tiles_64x64_lookahead<RowPairBase, Step + 1>(
+          acc_tiles, a_frag0, a_frag1, b_tile, next_b_frag);
+    } else {
+      ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+          acc_tiles, a_frag0, a_frag1, current_b_frag);
+    }
+  }
+}
+
 template <int RowPairBase, int Step = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
@@ -546,16 +582,10 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
     const PtxWmmaBf16Fragment& a_frag1,
     const __nv_bfloat16* b_tile) {
   if constexpr (Step < FixedHotBandTile256x128::kWarpMmaTilesN) {
-    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
     PtxWmmaBf16Fragment b_frag;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + ColIdx * kWmmaN,
-        FixedHotBandTile256x128::kBSharedStride);
-    ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
-        acc_tiles, a_frag0, a_frag1, b_frag);
-    ptx_wmma_accumulate_col_tiles_64x64<RowPairBase, Step + 1>(
-        acc_tiles, a_frag0, a_frag1, b_tile);
+    ptx_wmma_load_col_fragment_64x64<Step>(b_frag, b_tile);
+    ptx_wmma_accumulate_col_tiles_64x64_lookahead<RowPairBase, Step>(
+        acc_tiles, a_frag0, a_frag1, b_tile, b_frag);
   }
 }
 
