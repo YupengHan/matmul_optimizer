@@ -826,51 +826,6 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   }
 }
 
-__device__ __forceinline__ void stage_a_shared_tile_async_split_hot_band(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  constexpr int kCopyThreads =
-      (FixedHotBandTile256x128::kWarpsPerBlock / 2) * kWarpSize;
-  if (threadIdx.x >= kCopyThreads) {
-    return;
-  }
-  for (int copy_idx = threadIdx.x;
-       copy_idx < FixedHotBandTile256x128::kAAsyncCopiesPerTile;
-       copy_idx += kCopyThreads) {
-    const int row = copy_idx / FixedHotBandTile256x128::kAAsyncCopiesPerRow;
-    const int col =
-        (copy_idx % FixedHotBandTile256x128::kAAsyncCopiesPerRow) * kAsyncCopyElems;
-    cp_async_copy_16_bytes(
-        shared_tile + row * kWmmaK + col,
-        global_tile + row * global_stride + col);
-  }
-}
-
-__device__ __forceinline__ void stage_b_shared_tile_async_split_hot_band(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  constexpr int kCopyThreads =
-      (FixedHotBandTile256x128::kWarpsPerBlock / 2) * kWarpSize;
-  if (threadIdx.x < kCopyThreads) {
-    return;
-  }
-  const int local_thread = threadIdx.x - kCopyThreads;
-  for (int copy_idx = local_thread;
-       copy_idx < FixedHotBandTile256x128::kBAsyncCopiesPerTile;
-       copy_idx += kCopyThreads) {
-    const int row = copy_idx / FixedHotBandTile256x128::kBAsyncCopiesPerRow;
-    const int logical_col =
-        (copy_idx % FixedHotBandTile256x128::kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int shared_col =
-        b_shared_col_from_logical<FixedHotBandTile256x128>(logical_col);
-    cp_async_copy_16_bytes(
-        shared_tile + row * FixedHotBandTile256x128::kBSharedStride + shared_col,
-        global_tile + row * global_stride + logical_col);
-  }
-}
-
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
 }
@@ -1367,14 +1322,14 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async_split_hot_band(
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
       a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async_split_hot_band(
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
       b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  stage_a_shared_tile_async_split_hot_band(
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
       a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async_split_hot_band(
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
@@ -1400,11 +1355,11 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
 
     if (future_tile_idx < FixedKTiles) {
       const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async_split_hot_band(
+      stage_a_shared_tile_async<FixedHotBandTile256x128>(
           a_shared[curr_stage],
           a_block + future_tile_k,
           kFixedBenchmarkK);
-      stage_b_shared_tile_async_split_hot_band(
+      stage_b_shared_tile_async<FixedHotBandTile256x128>(
           b_shared[curr_stage],
           b_block + future_tile_k * kFixedBenchmarkN,
           kFixedBenchmarkN);
