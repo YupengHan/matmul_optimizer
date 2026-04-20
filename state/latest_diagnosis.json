@@ -1,88 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_195407",
-  "status": "ready_for_finalize",
-  "created_at": "2026-04-19T19:54:07-07:00",
-  "source_run_id": "20260419_195339_bf16_gemm_v1_778a0b4",
-  "source_run_dir": "runs/20260419_195339_bf16_gemm_v1_778a0b4",
-  "source_summary_json": "runs/20260419_195339_bf16_gemm_v1_778a0b4/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_200457_bf16_gemm_v1_76622e3",
+  "source_run_dir": "runs/20260419_200457_bf16_gemm_v1_76622e3",
+  "source_summary_json": "runs/20260419_200457_bf16_gemm_v1_76622e3/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Half-Panel Correctness Repair With Single-Sourced Panel Identity",
-      "hypothesis": "Idea 7 / Register Reuse remains the primary family for round 19. Run 778a0b4 is still wrong, but it preserved the core half-panel breakthrough: 92 registers per thread, occupancy_limit_registers = 2, active warps about 32.9, tensor active about 43.7, and runtime already back to 30.236 ms. That is too much real signal to abandon with two rounds left. The next move is to make HalfPanelIdentity64x32 the only source of compact/shared/global column identity across staging, MMA tile selection, and export so the two 64x32 passes stop disagreeing about where a panel lives.",
-      "expected_bottleneck": "Correctness is the immediate blocker; the likely failing surface is pass-local panel identity and output-column mapping inside the half-panel path, not raw throughput.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:270-321",
-        "src/kernels/bf16_gemm_v1.cu:700-771",
-        "src/kernels/bf16_gemm_v1.cu:946-1008",
-        "src/kernels/bf16_gemm_v1.cu:1045-1143",
-        "src/kernels/bf16_gemm_v1.cu:1635-1660"
-      ],
-      "risk": "Medium. If the wrong-result source is a deeper cross-pass hazard instead of duplicated panel arithmetic, one more repair round may be needed. Any fix that regrows the live state above roughly 96 registers per thread risks collapsing occupancy back to 1 block per SM.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "max_abs_err",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if correctness still fails after the panel-identity audit, or if launch__registers_per_thread climbs back above 96 and occupancy_limit_registers falls to 1 before any runtime gain appears."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Twin-Panel Shared-A Reuse Inside One K Sweep",
-      "hypothesis": "Idea 3 / Data Reuse plus Idea 8 / Pg2s is the best follow-through once dir_01 is correct. The current half-panel branch replays the full A cp.async and shared sweep twice, once per 64x32 pass, even though both passes consume the same A tile over the same 452 K tiles. Fuse the two half-panels under one K loop so each staged A tile feeds both local 64x32 passes before eviction, while B stays compact per panel. That attacks the doubled producer tax that still sits underneath the otherwise strong 2-block/SM machine state.",
-      "expected_bottleneck": "Duplicated A-side staging and shared/LSU traffic from running two full half-panel passes over K, rather than reusing one staged A tile across both panels.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1017-1028",
-        "src/kernels/bf16_gemm_v1.cu:1045-1143",
-        "src/kernels/bf16_gemm_v1.cu:1612-1619",
-        "src/kernels/bf16_gemm_v1.cu:1635-1660"
-      ],
-      "risk": "High. Interleaving both panels inside one K sweep changes the control surface and could reintroduce correctness bugs or re-grow register pressure if both panel states stay live at once.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the fused sweep needs extra shared memory or pushes registers back over roughly 96 per thread, or if corrected runtime still does not beat the standalone-correct half-panel branch."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Compact Panel Shared and Export Bank Cleanup",
-      "hypothesis": "Idea 5 / Bank Conflict is a bounded backup inside the same half-panel family. If dir_01 makes the branch correct but short scoreboard and barrier remain elevated, retune only the compact 64x32 shared and export lane layout: adjust the compact_shared_col_from_logical and warp_shared_col_base mapping together with the per-lane quad export striping so the compact panel path stops paying unnecessary bank and short-dependency tax. This keeps the 92-register, 2-block shape intact and does not reopen macro tiling.",
-      "expected_bottleneck": "Residual short scoreboard and shared-bank pressure inside the compact 64x32 B-load and export path, which is now more visible because long scoreboard and mio are already low.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:270-321",
-        "src/kernels/bf16_gemm_v1.cu:946-1008",
-        "src/kernels/bf16_gemm_v1.cu:1045-1063"
-      ],
-      "risk": "Medium-low upside. Layout cleanup can trim the remaining short-scoreboard and barrier tax, but it will not save the branch if correctness is still broken or if the real dominant cost is the duplicated A sweep.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the bank-read and bank-write metrics stay flat, or if the layout retune needs extra shared memory beyond the current half-panel budget."
-    }
-  ],
-  "notes": "Round 19 decision: continue-family on the half-panel 64x32+64x32 branch, with Idea 7 / Register Reuse as the primary family. Run 778a0b4 is FAIL, but it still holds 92 regs/thread, occupancy_limit_registers = 2, active warps about 32.9, tensor active about 43.7, and 30.236 ms runtime, so the branch looks incomplete rather than invalid. With only rounds 19 and 20 left, the honest path is to repair correctness first while preserving that machine state, then convert the surviving signal into lower feed tax.\nHuman idea audit for this round:\n1. Tiling - accept-now as the outer 256x128 CTA and 64x64 warp shell; round 18 main-tile sweep and rounds 13-15 already proved this structural shell, so do not reopen macro tiling now.\n2. Coalescing Access - defer; DRAM throughput is only about 21 percent and cp.async already uses 16-byte accesses, so coalescing is not the current main wall.\n3. Data Reuse - accept-now as dir_02; both half-panel passes still replay the same A sweep, so reuse across the two passes is the cleanest next feed-side ceiling after correctness.\n4. Async Copy - defer; async copy is already present and the current issue is duplicated use of it, not absence of it.\n5. Bank Conflict - accept-now only as the bounded dir_03 backup; compact panel bank/layout cleanup is plausible, but it should not outrank correctness repair or shared-A reuse.\n6. L2 Cache - reject-for-this-round; nothing in the latest profile says L2 is the limiting factor.\n7. Register Reuse - accept-now and primary; the half-panel split is exactly what opened the 92-register, 2-block-per-SM, 32.9-active-warp regime.\n8. Pg2s - accept-now as part of dir_02; the next producer-side improvement should be one staged A tile feeding both half-panels instead of two independent passes.\n9. Ps2r - reject-for-this-round; the old ps2r family gave mixed signal and the current branch is not dominated by the same long-scoreboard signature anymore.\n10. Stage - reject-for-this-round; the stage family changed the machine state before, but its corrected versions stayed around 35.7 ms and no longer justify primary ranking.\nRanking rationale: dir_01 preserves the strongest surviving path toward the 20 ms goal while fixing the only blocker that still invalidates the result. dir_02 is the highest-ceiling next step once correctness is restored because it removes the duplicated A producer tax beneath the new occupancy regime. dir_03 stays inside the same family as a lower-risk cleanup if the branch becomes correct but still carries shared-bank and short-scoreboard residue."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_195339_bf16_gemm_v1_778a0b4`
-- run dir: `runs/20260419_195339_bf16_gemm_v1_778a0b4`
-- kernel tag: `bf16_gemm_v1_778a0b4`
-- round label: `round 18/20`
+- run id: `20260419_200457_bf16_gemm_v1_76622e3`
+- run dir: `runs/20260419_200457_bf16_gemm_v1_76622e3`
+- kernel tag: `bf16_gemm_v1_76622e3`
+- round label: `round 19/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.236128 ms`
-- p10 runtime: `29.868339 ms`
-- p90 runtime: `30.849876 ms`
-- TFLOP/s: `24.044726 TFLOP/s`
-- previous run id: `20260419_194001_bf16_gemm_v1_e51df4e`
-- runtime delta vs previous measured run: `-0.640032 ms`
-- TFLOP/s delta vs previous measured run: `+0.498423 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `31.337984 ms`
+- p10 runtime: `30.752154 ms`
+- p90 runtime: `31.952180 ms`
+- TFLOP/s: `23.199304 TFLOP/s`
+- previous run id: `20260419_195339_bf16_gemm_v1_778a0b4`
+- runtime delta vs previous measured run: `+1.101856 ms`
+- TFLOP/s delta vs previous measured run: `-0.845422 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7 Register reuse: continue the half-panel family, but spend this round on correctness root-cause repair while preserving the 92-reg / 2-block signal`
+- implemented direction name: `Human idea 7 Register reuse: keep the half-panel family and close the remaining correctness gap by single-sourcing warp ownership end to end`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_195339_bf16_gemm_v1_778a0b4/summary.json`
-- measured commit: `778a0b475a3fbcfd5a0f3fecc8381784fa832256`
+- raw summary json: `runs/20260419_200457_bf16_gemm_v1_76622e3/summary.json`
+- measured commit: `76622e3953ae33585df08f275e54bdd27fad9860`
 - new best custom: `no`
-- generated at: `2026-04-19T19:53:48-07:00`
+- generated at: `2026-04-19T20:05:04-07:00`
