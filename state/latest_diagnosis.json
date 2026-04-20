@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_082833",
-  "status": "completed",
-  "source_run_id": "20260420_082654_bf16_gemm_v1_1653a82",
-  "source_run_dir": "runs/20260420_082654_bf16_gemm_v1_1653a82",
-  "source_summary_json": "runs/20260420_082654_bf16_gemm_v1_1653a82/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_083244_bf16_gemm_v1_66273be",
+  "source_run_dir": "runs/20260420_083244_bf16_gemm_v1_66273be",
+  "source_summary_json": "runs/20260420_083244_bf16_gemm_v1_66273be/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
+  "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Retune the accepted B-first cp.async handoff inside the K16 hot band",
-      "hypothesis": "The accepted round-52/53 base is still the right surface: grouped-row=8, K16, no B lookahead, single-scratch export, and B-first refill ordering. The latest run only regressed by 0.009152 ms, so the remaining gap looks like a very narrow steady-state handoff issue between cp.async issue, wait/commit timing, and the first PTX B-fragment consume order rather than a new memory-balance problem. Keep the accepted base intact and tighten only the B-first feed/issue handoff.",
-      "expected_bottleneck": "Async-copy feed/issue retiming and stage handoff latency inside the active PTX hot-band microkernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1949-2005",
-        "src/kernels/bf16_gemm_v1.cu:1024-1049",
-        "src/kernels/bf16_gemm_v1.cu:720-769"
-      ],
-      "risk": "Low to moderate. The upside is the best in this round, but it is easy to slide back into a disguised unroll-1 or lookahead-style rewrite if the handoff is changed too broadly.",
-      "metrics_to_recheck": [
-        "median runtime versus 24.895488 ms accepted base",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if the change does not beat the 24.895488 ms accepted base, or if it starts behaving like another K32 or unroll-1 branch."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim PTX export and accumulator live range on the accepted single-scratch surface",
-      "hypothesis": "Round 53 kept the accepted base intact but still landed slightly slower than round 52, while tensor activity stayed only mid-48% and active warps stayed low. That makes register pressure and export-side live range the best deferred cleanup family: shorten operand or accumulator residency, tighten the single-scratch export handoff, and recover issue capacity without reopening the disproved lookahead or stage branches.",
-      "expected_bottleneck": "Register pressure and export-side synchronization / live-range overhead in the PTX hot-band epilogue.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:973-1015",
-        "src/kernels/bf16_gemm_v1.cu:1906-2011"
-      ],
-      "risk": "Moderate. This is narrower than a stage rewrite, but it can still raise register count or add synchronization if the lifetime trim is not truly local.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "median runtime",
-        "TFLOP/s"
-      ],
-      "stop_condition": "Stop if register count or occupancy pressure worsens without a clear runtime win over the accepted base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Reopen the warmup A-first / refill B-first branch only as a closure probe",
-      "hypothesis": "The latest measured experiment already tested the A-first warmup / B-first refill idea and regressed slightly versus the accepted base. With DRAM still low and the stall mix pointing at steady-state handoff timing instead of raw memory latency, this branch is not the next best move; it only remains as a closure probe to confirm the branch stays closed unless new evidence appears.",
-      "expected_bottleneck": "Warmup ordering is not the primary limiter; the current loss is in steady-state handoff timing on the accepted base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1949-1963",
-        "src/kernels/bf16_gemm_v1.cu:1982-2005"
-      ],
-      "risk": "High. This reopens a measured-negative branch and is unlikely to outperform the accepted B-first surface without new evidence.",
-      "metrics_to_recheck": [
-        "median runtime versus 24.895488 ms accepted base",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop immediately if it does not beat the accepted base or if it reintroduces the same regression pattern from the failed warmup-order experiment."
-    }
-  ],
-  "notes": "Accepted this round: the B-first cp.async handoff family, constrained to the already-accepted grouped-row=8 + K16 + no-lookahead + single-scratch export base. Deferred: export/live-range trimming, because it is still plausible but secondary to the handoff retiming. Rejected: reopening the A-first warmup / B-first refill branch, because the latest experiment regressed and the evidence still points to steady-state handoff timing rather than warmup order.",
-  "created_at": "2026-04-20T08:31:03-07:00"
+  "recommended_direction_id": null,
+  "approved_direction_id": null,
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `1653a82878dfc5f563cd0ff65442d526874aa9a3`
-- plateau counter: `1`
-- round loop: `round 54/100`
-- rounds remaining: `47`
-- notes: `Node C build succeeded for round 54/100. Node A will now measure the new code path.`
+- latest measured commit: `66273be4ab02d93dca25251ada08f52ec95cdfd9`
+- plateau counter: `2`
+- round loop: `round 55/100`
+- rounds remaining: `46`
+- notes: `Node A completed round 54/100. Run node_b to continue round 55/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_082654_bf16_gemm_v1_1653a82`
-- run dir: `runs/20260420_082654_bf16_gemm_v1_1653a82`
+- run id: `20260420_083244_bf16_gemm_v1_66273be`
+- run dir: `runs/20260420_083244_bf16_gemm_v1_66273be`
 - correctness: `PASS`
-- median runtime: `24.904640 ms`
-- TFLOP/s: `29.192127 TFLOP/s`
+- median runtime: `24.896433 ms`
+- TFLOP/s: `29.201751 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_082833`
-- recommended direction: `dir_01`
-- approved direction: `N/A`
-- diagnosis notes: `Accepted this round: the B-first cp.async handoff family, constrained to the already-accepted grouped-row=8 + K16 + no-lookahead + single-scratch export base. Deferred: export/live-range trimming, because it is still plausible but secondary to the handoff retiming. Rejected: reopening the A-first warmup / B-first refill branch, because the latest experiment regressed and the evidence still points to steady-state handoff timing rather than warmup order.`
-- dir_01: Retune the accepted B-first cp.async handoff inside the K16 hot band | bottleneck: Async-copy feed/issue retiming and stage handoff latency inside the active PTX hot-band microkernel.
-- dir_02: Trim PTX export and accumulator live range on the accepted single-scratch surface | bottleneck: Register pressure and export-side synchronization / live-range overhead in the PTX hot-band epilogue.
-- dir_03: Reopen the warmup A-first / refill B-first branch only as a closure probe | bottleneck: Warmup ordering is not the primary limiter; the current loss is in steady-state handoff timing on the accepted base.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
