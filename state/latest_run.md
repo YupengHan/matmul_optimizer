@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_174014_bf16_gemm_v1_eff433a`
-- run dir: `runs/20260419_174014_bf16_gemm_v1_eff433a`
-- kernel tag: `bf16_gemm_v1_eff433a`
-- round label: `round 5/20`
+- run id: `20260419_174642_bf16_gemm_v1_52a3af6`
+- run dir: `runs/20260419_174642_bf16_gemm_v1_52a3af6`
+- kernel tag: `bf16_gemm_v1_52a3af6`
+- round label: `round 6/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `33.620975 ms`
-- p10 runtime: `33.067924 ms`
-- p90 runtime: `34.748936 ms`
-- TFLOP/s: `21.623984 TFLOP/s`
-- previous run id: `20260419_173241_bf16_gemm_v1_d2a8c31`
-- runtime delta vs previous measured run: `-0.219666 ms`
-- TFLOP/s delta vs previous measured run: `+0.140365 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `33.716736 ms`
+- p10 runtime: `33.147833 ms`
+- p90 runtime: `34.942772 ms`
+- TFLOP/s: `21.562568 TFLOP/s`
+- previous run id: `20260419_174014_bf16_gemm_v1_eff433a`
+- runtime delta vs previous measured run: `+0.095760 ms`
+- TFLOP/s delta vs previous measured run: `-0.061415 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 9 Ps2r: full-width PTX shared-to-register lookahead inside the 12-tile sweep`
+- implemented direction name: `Human idea 9 Ps2r: slice-local two-fragment ping-pong on the full-width PTX sweep`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_174014_bf16_gemm_v1_eff433a/summary.json`
-- measured commit: `eff433a907421c8ab3daf0c5e2146806d021305f`
+- raw summary json: `runs/20260419_174642_bf16_gemm_v1_52a3af6/summary.json`
+- measured commit: `52a3af636bfe7050aaf0eeab255ff6c111eb0e01`
 - new best custom: `no`
-- generated at: `2026-04-19T17:40:22-07:00`
+- generated at: `2026-04-19T17:46:50-07:00`
