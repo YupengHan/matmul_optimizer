@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_230410_bf16_gemm_v1_abefa1e`
-- run dir: `runs/20260419_230410_bf16_gemm_v1_abefa1e`
-- kernel tag: `bf16_gemm_v1_abefa1e`
-- round label: `round 7/50`
+- run id: `20260419_230631_bf16_gemm_v1_2122558`
+- run dir: `runs/20260419_230631_bf16_gemm_v1_2122558`
+- kernel tag: `bf16_gemm_v1_2122558`
+- round label: `round 8/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.550528 ms`
-- p10 runtime: `29.890646 ms`
-- p90 runtime: `31.042561 ms`
-- TFLOP/s: `23.797279 TFLOP/s`
-- previous run id: `20260419_230146_bf16_gemm_v1_b368da0`
-- runtime delta vs previous measured run: `+0.443904 ms`
-- TFLOP/s delta vs previous measured run: `-0.350876 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `30.363136 ms`
+- p10 runtime: `30.103523 ms`
+- p90 runtime: `31.702937 ms`
+- TFLOP/s: `23.944148 TFLOP/s`
+- previous run id: `20260419_230410_bf16_gemm_v1_abefa1e`
+- runtime delta vs previous measured run: `-0.187391 ms`
+- TFLOP/s delta vs previous measured run: `+0.146869 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order`
+- implemented direction name: `Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_230410_bf16_gemm_v1_abefa1e/summary.json`
-- measured commit: `abefa1e9a75ebf02bf1674afd4045d40e3195784`
+- raw summary json: `runs/20260419_230631_bf16_gemm_v1_2122558/summary.json`
+- measured commit: `212255834e8215f9f39a12cd699bfa87eb8fb458`
 - new best custom: `no`
-- generated at: `2026-04-19T23:04:18-07:00`
+- generated at: `2026-04-19T23:06:38-07:00`

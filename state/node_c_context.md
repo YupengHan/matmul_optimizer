@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260419_230527`
-- round loop: `round 8/50`
-- hypothesis: `The loop has now spent several rounds on variants that are either incorrect or clearly slower than the accepted best surface. The current correct branch is 30.55 ms, while the accepted best measured implementation at commit 0d78758 already delivered 29.33 ms. Continuing to optimize on a degraded surface will make future measurements harder to interpret. The highest-value next move is therefore a clean implementation restore to 0d78758 so the next experimental branches start again from the real accepted baseline.`
-- expected bottleneck: `Not a bottleneck attack. This is a reset to the fastest correct implementation surface before the next human-idea experiments.`
-- code locations: `src/kernels/bf16_gemm_v1.cu, python scripts/graph.py restore-implementation --source-commit 0d78758`
-- risk: `Low. This uses a repo-supported restore path and should only roll back implementation drift, not benchmark state or unrelated documentation edits.`
-- metrics to re-check: `correctness, median runtime, runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 9/50`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
