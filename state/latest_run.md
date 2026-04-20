@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_002230_bf16_gemm_v1_7c672be`
-- run dir: `runs/20260420_002230_bf16_gemm_v1_7c672be`
-- kernel tag: `bf16_gemm_v1_7c672be`
-- round label: `round 28/50`
+- run id: `20260420_002455_bf16_gemm_v1_7864f55`
+- run dir: `runs/20260420_002455_bf16_gemm_v1_7864f55`
+- kernel tag: `bf16_gemm_v1_7864f55`
+- round label: `round 29/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `29.662720 ms`
-- p10 runtime: `29.069722 ms`
-- p90 runtime: `31.302041 ms`
-- TFLOP/s: `24.509533 TFLOP/s`
-- previous run id: `20260420_002119_bf16_gemm_v1_c26ac4f`
-- runtime delta vs previous measured run: `+2.640384 ms`
-- TFLOP/s delta vs previous measured run: `-2.394855 TFLOP/s`
+- median runtime: `30.668673 ms`
+- p10 runtime: `30.286119 ms`
+- p90 runtime: `31.522304 ms`
+- TFLOP/s: `23.705604 TFLOP/s`
+- previous run id: `20260420_002230_bf16_gemm_v1_7c672be`
+- runtime delta vs previous measured run: `+1.005953 ms`
+- TFLOP/s delta vs previous measured run: `-0.803929 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the current best branch and raise the hot-band K16 loop to the next small unroll factor`
+- implemented direction name: `Revisit the 128x128x32 hot-band branch on top of the current grouped-order plus launch-bounds base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_002230_bf16_gemm_v1_7c672be/summary.json`
-- measured commit: `7c672be6dd341dd11a21e8959d47bdd07a6acc39`
+- raw summary json: `runs/20260420_002455_bf16_gemm_v1_7864f55/summary.json`
+- measured commit: `7864f5515778a7b40f754bd5cb6ac6e0ec083ef2`
 - new best custom: `no`
-- generated at: `2026-04-20T00:22:39-07:00`
+- generated at: `2026-04-20T00:25:03-07:00`
