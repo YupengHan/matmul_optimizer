@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-19T23:07:57-07:00",
   "source_diagnosis_id": "diagnosis_20260419_230713",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -26,5 +26,5 @@
     ],
     "stop_condition": "Reject if register pressure rises materially or if short-scoreboard changes do not produce a measurable hot-band win."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

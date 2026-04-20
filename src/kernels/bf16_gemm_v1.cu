@@ -616,7 +616,21 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
+  static_assert(FixedHotBandTile256x128::kWarpMmaTilesM == 4,
+                "A-side row-pair lookahead expects exactly two 16x16 row pairs.");
+
+  PtxWmmaBf16Fragment a_frag00;
+  PtxWmmaBf16Fragment a_frag01;
+  PtxWmmaBf16Fragment a_frag10;
+  PtxWmmaBf16Fragment a_frag11;
+
+  ptx_wmma_load_a_row(a_frag00, a_tile, kWmmaK);
+  ptx_wmma_load_a_row(a_frag01, a_tile + kWmmaM * kWmmaK, kWmmaK);
+  ptx_wmma_load_a_row(a_frag10, a_tile + 2 * kWmmaM * kWmmaK, kWmmaK);
+  ptx_wmma_load_a_row(a_frag11, a_tile + 3 * kWmmaM * kWmmaK, kWmmaK);
+
+  ptx_wmma_accumulate_col_tiles_64x64<0>(acc_tiles, a_frag00, a_frag01, b_tile);
+  ptx_wmma_accumulate_col_tiles_64x64<2>(acc_tiles, a_frag10, a_frag11, b_tile);
 }
 
 template <typename TileConfig, int TileIdx = 0>
