@@ -589,6 +589,50 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
   }
 }
 
+template <int RowPairBase>
+__device__ __forceinline__ void ptx_wmma_load_row_pair_64x64(
+    PtxWmmaBf16Fragment& a_frag0,
+    PtxWmmaBf16Fragment& a_frag1,
+    const __nv_bfloat16* a_tile) {
+  static_assert(RowPairBase >= 0 &&
+                    RowPairBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesM,
+                "64x64 A row-pair load helper expects a valid 2-row pair.");
+  ptx_wmma_load_a_row(
+      a_frag0,
+      a_tile + RowPairBase * kWmmaM * kWmmaK,
+      kWmmaK);
+  ptx_wmma_load_a_row(
+      a_frag1,
+      a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
+      kWmmaK);
+}
+
+template <int RowPairBase = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64_lookahead(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const __nv_bfloat16* a_tile,
+    const __nv_bfloat16* b_tile,
+    const PtxWmmaBf16Fragment& current_a_frag0,
+    const PtxWmmaBf16Fragment& current_a_frag1) {
+  if constexpr (RowPairBase < FixedHotBandTile256x128::kWarpMmaTilesM) {
+    if constexpr (RowPairBase + 2 < FixedHotBandTile256x128::kWarpMmaTilesM) {
+      PtxWmmaBf16Fragment next_a_frag0;
+      PtxWmmaBf16Fragment next_a_frag1;
+      // Keep one row-pair of A fragments live so the next Ps2r load can issue
+      // ahead of the current mirrored-order B sweep without changing staging.
+      ptx_wmma_load_row_pair_64x64<RowPairBase + 2>(
+          next_a_frag0, next_a_frag1, a_tile);
+      ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
+          acc_tiles, current_a_frag0, current_a_frag1, b_tile);
+      ptx_wmma_accumulate_row_pairs_64x64_lookahead<RowPairBase + 2>(
+          acc_tiles, a_tile, b_tile, next_a_frag0, next_a_frag1);
+    } else {
+      ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
+          acc_tiles, current_a_frag0, current_a_frag1, b_tile);
+    }
+  }
+}
+
 template <int RowPairBase = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
@@ -597,18 +641,9 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
   if constexpr (RowPairBase < FixedHotBandTile256x128::kWarpMmaTilesM) {
     PtxWmmaBf16Fragment a_frag0;
     PtxWmmaBf16Fragment a_frag1;
-    ptx_wmma_load_a_row(
-        a_frag0,
-        a_tile + RowPairBase * kWmmaM * kWmmaK,
-        kWmmaK);
-    ptx_wmma_load_a_row(
-        a_frag1,
-        a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
-        kWmmaK);
-    ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
-        acc_tiles, a_frag0, a_frag1, b_tile);
-    ptx_wmma_accumulate_row_pairs_64x64<RowPairBase + 2>(
-        acc_tiles, a_tile, b_tile);
+    ptx_wmma_load_row_pair_64x64<RowPairBase>(a_frag0, a_frag1, a_tile);
+    ptx_wmma_accumulate_row_pairs_64x64_lookahead<RowPairBase>(
+        acc_tiles, a_tile, b_tile, a_frag0, a_frag1);
   }
 }
 
