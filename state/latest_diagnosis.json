@@ -1,15 +1,71 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_091130",
+  "status": "completed",
+  "created_at": "2026-04-20T09:11:30-07:00",
   "source_run_id": "20260420_091028_bf16_gemm_v1_1d9b03e",
   "source_run_dir": "runs/20260420_091028_bf16_gemm_v1_1d9b03e",
   "source_summary_json": "runs/20260420_091028_bf16_gemm_v1_1d9b03e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore accepted base, then retest finer issue granularity on the hot band",
+      "hypothesis": "The fastest path is to return to the accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff base, then reduce issue granularity in the active 128x128 PTX hot-band loop. The newer accepted base likely changed the interaction enough that #pragma unroll 1 can recover scheduling slack without reintroducing the slower grouped_rows=4 locality pattern.",
+      "expected_bottleneck": "Issue granularity and instruction pressure inside the hot-band loop, not higher-level locality. The evidence suggests grouped_rows=4 is still slower than the accepted base and also raises DRAM to 13.05, while nearby consumer/refill variants remain negative.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: the accepted grouped_rows=8 / reversed row-pair / right-left PTX sweep / one-sync handoff path",
+        "src/kernels/bf16_gemm_v1.cu: the active 128x128 PTX hot-band loop where the current unroll factor is set"
+      ],
+      "risk": "Lowering unroll may expose latency if the accepted base no longer has enough ILP, but this is a bounded retest on the newest accepted base rather than a generic old-branch unroll-1 attempt.",
+      "metrics_to_recheck": [
+        "runtime versus 25.281983 ms source run",
+        "DRAM throughput, especially whether it stays below the grouped_rows=4 level",
+        "sm issue rate and any increase in scoreboard or dependency stalls",
+        "shared-memory and register pressure in the hot-band loop"
+      ],
+      "stop_condition": "Keep the accepted base only if the finer-granularity retest improves over 25.281983 ms without re-raising DRAM or stall metrics."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Accepted base plus narrow overlap recovery behind the one-sync handoff",
+      "hypothesis": "Once the accepted grouped_rows=8 base is restored, a very narrow overlap-recovery tweak behind the one-sync handoff may recover a small amount of idle time without changing the established row-pair and sweep structure.",
+      "expected_bottleneck": "A short post-handoff gap rather than the broader locality structure. This is the smallest safe tweak after the accepted base is restored.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: the one-sync handoff code immediately after the PTX sweep",
+        "src/kernels/bf16_gemm_v1.cu: the consumer/refill transition on the accepted grouped_rows=8 path"
+      ],
+      "risk": "The change is intentionally narrow, but overlap recovery can still perturb the timing that the accepted base relies on.",
+      "metrics_to_recheck": [
+        "runtime versus 25.281983 ms source run",
+        "stall reasons around the handoff window",
+        "consumer/refill balance after the sync point"
+      ],
+      "stop_condition": "Accept only if the tweak improves runtime without regressing the accepted base behavior or reopening grouped_rows=4 / grouped_rows=16 paths."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Small locality closure on the restored grouped_rows=8 base",
+      "hypothesis": "After restoring grouped_rows=8, a smaller locality-closure change may trim the remaining waste without reopening grouped_rows=16 or grouped_rows=4 as active directions.",
+      "expected_bottleneck": "Residual locality and reuse loss, but only as a secondary issue after the accepted base is back in place.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: grouped_rows=8 locality closure logic",
+        "src/kernels/bf16_gemm_v1.cu: the row-pair ordering and consumer/refill boundary around the accepted base"
+      ],
+      "risk": "This can easily drift back toward the slower grouped_rows=16 or grouped_rows=4 behaviors if it broadens beyond a small closure.",
+      "metrics_to_recheck": [
+        "runtime versus 25.281983 ms source run",
+        "DRAM throughput and any locality-driven change",
+        "stall mix around consumer/refill and row-pair turnover"
+      ],
+      "stop_condition": "Proceed only if the change remains a small closure on grouped_rows=8 and does not reactivate grouped_rows=16 or grouped_rows=4 as active paths."
+    }
+  ],
+  "notes": "Diagnosis anchored to run 20260420_091028_bf16_gemm_v1_1d9b03e at 25.281983 ms; exactly three ranked directions recorded for round 63/100."
 }

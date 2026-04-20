@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore accepted base, then retest finer issue granularity on the hot band`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_091130`
 - round loop: `round 63/100`
+- hypothesis: `The fastest path is to return to the accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff base, then reduce issue granularity in the active 128x128 PTX hot-band loop. The newer accepted base likely changed the interaction enough that #pragma unroll 1 can recover scheduling slack without reintroducing the slower grouped_rows=4 locality pattern.`
+- expected bottleneck: `Issue granularity and instruction pressure inside the hot-band loop, not higher-level locality. The evidence suggests grouped_rows=4 is still slower than the accepted base and also raises DRAM to 13.05, while nearby consumer/refill variants remain negative.`
+- code locations: `src/kernels/bf16_gemm_v1.cu: the accepted grouped_rows=8 / reversed row-pair / right-left PTX sweep / one-sync handoff path, src/kernels/bf16_gemm_v1.cu: the active 128x128 PTX hot-band loop where the current unroll factor is set`
+- risk: `Lowering unroll may expose latency if the accepted base no longer has enough ILP, but this is a bounded retest on the newest accepted base rather than a generic old-branch unroll-1 attempt.`
+- metrics to re-check: `runtime versus 25.281983 ms source run, DRAM throughput, especially whether it stays below the grouped_rows=4 level, sm issue rate and any increase in scoreboard or dependency stalls, shared-memory and register pressure in the hot-band loop`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
