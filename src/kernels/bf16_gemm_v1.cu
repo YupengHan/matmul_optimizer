@@ -385,31 +385,20 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384
   }
 }
 
-template <int TileIdx>
-__device__ __forceinline__ void ptx_wmma_accumulate_one_tile_384(
-    PtxWmmaAccFragment& acc_tile,
+template <int TileIdx = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
+    PtxWmmaAccTileSet384& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag,
     const __nv_bfloat16* b_tile) {
-  PtxWmmaBf16Fragment b_frag;
-  ptx_wmma_load_b_row(
-      b_frag,
-      b_tile + TileIdx * kWmmaN,
-      TensorCoreTile384::kBSharedStride);
-  ptx_wmma_mma_row_row(acc_tile, a_frag, b_frag);
-}
-
-template <int TileBase>
-__device__ __forceinline__ void ptx_wmma_accumulate_tile_slice_384(
-    PtxWmmaAccFragment& tile0,
-    PtxWmmaAccFragment& tile1,
-    PtxWmmaAccFragment& tile2,
-    PtxWmmaAccFragment& tile3,
-    const PtxWmmaBf16Fragment& a_frag,
-    const __nv_bfloat16* b_tile) {
-  ptx_wmma_accumulate_one_tile_384<TileBase + 0>(tile0, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<TileBase + 1>(tile1, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<TileBase + 2>(tile2, a_frag, b_tile);
-  ptx_wmma_accumulate_one_tile_384<TileBase + 3>(tile3, a_frag, b_tile);
+  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
+    PtxWmmaBf16Fragment b_frag;
+    ptx_wmma_load_b_row(
+        b_frag,
+        b_tile + TileIdx * kWmmaN,
+        TensorCoreTile384::kBSharedStride);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
+    ptx_wmma_accumulate_tile_set_384<TileIdx + 1>(acc_tiles, a_frag, b_tile);
+  }
 }
 
 template <typename TileConfig, int TileIdx = 0>
@@ -471,39 +460,7 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_384(
   }
 }
 
-template <typename TileConfig, int TilePairBase>
-__device__ __noinline__ void ptx_wmma_store_tile_pair_384(
-    const PtxWmmaAccFragment& first_tile,
-    const PtxWmmaAccFragment& second_tile,
-    float* c_shared,
-    __nv_bfloat16* c_tile_base,
-    int warp_id,
-    int lane_id) {
-  static_assert(TileConfig::kCSharedStageCount == 2,
-                "Tile pair export batching requires the two-stage Tile384 c_shared scratch.");
-  static_assert(TilePairBase >= 0 && TilePairBase + 1 < TensorCoreTile384::kWarpMmaTilesN,
-                "Tile384 export pair index out of range.");
-  constexpr int kCSharedStageStride =
-      TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
-  float* warp_c_tile_stage0 =
-      c_shared + warp_id * TileConfig::kCSharedTileElemsPerWarp;
-  float* warp_c_tile_stage1 =
-      c_shared + kCSharedStageStride + warp_id * TileConfig::kCSharedTileElemsPerWarp;
-
-  // Keep the existing paired-export strategy, but drain one explicit pair per
-  // helper invocation so the shared scratch temporaries do not stay live across
-  // the full 12-tile export walk in the caller.
-  ptx_wmma_store_d_row_shared(warp_c_tile_stage0, first_tile, kWmmaN);
-  ptx_wmma_store_d_row_shared(warp_c_tile_stage1, second_tile, kWmmaN);
-  __syncwarp();
-
-  ptx_export_shared_tile_quads_384<TilePairBase>(
-      warp_c_tile_stage0, c_tile_base, lane_id);
-  ptx_export_shared_tile_quads_384<TilePairBase + 1>(
-      warp_c_tile_stage1, c_tile_base, lane_id);
-}
-
-template <typename TileConfig>
+template <typename TileConfig, int TilePairBase = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
     const PtxWmmaAccTileSet384& acc_tiles,
     float* c_shared,
@@ -512,18 +469,30 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
     int lane_id) {
   static_assert(TileConfig::kCSharedStageCount == 2,
                 "Tile pair export batching requires the two-stage Tile384 c_shared scratch.");
-  ptx_wmma_store_tile_pair_384<TileConfig, 0>(
-      acc_tiles.tile0, acc_tiles.tile1, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_pair_384<TileConfig, 2>(
-      acc_tiles.tile2, acc_tiles.tile3, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_pair_384<TileConfig, 4>(
-      acc_tiles.tile4, acc_tiles.tile5, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_pair_384<TileConfig, 6>(
-      acc_tiles.tile6, acc_tiles.tile7, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_pair_384<TileConfig, 8>(
-      acc_tiles.tile8, acc_tiles.tile9, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_pair_384<TileConfig, 10>(
-      acc_tiles.tile10, acc_tiles.tile11, c_shared, c_tile_base, warp_id, lane_id);
+  if constexpr (TilePairBase < TensorCoreTile384::kWarpMmaTilesN) {
+    constexpr int kCSharedStageStride =
+        TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
+    float* warp_c_tile_stage0 =
+        c_shared + warp_id * TileConfig::kCSharedTileElemsPerWarp;
+    float* warp_c_tile_stage1 =
+        c_shared + kCSharedStageStride + warp_id * TileConfig::kCSharedTileElemsPerWarp;
+
+    // Fill both c_shared stages before synchronizing so the two scratch tiles
+    // are used as an actual pair instead of a per-tile ping-pong.
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage0, ptx_wmma_acc_tile<TilePairBase>(acc_tiles), kWmmaN);
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage1, ptx_wmma_acc_tile<TilePairBase + 1>(acc_tiles), kWmmaN);
+    __syncwarp();
+
+    ptx_export_shared_tile_quads_384<TilePairBase>(
+        warp_c_tile_stage0, c_tile_base, lane_id);
+    ptx_export_shared_tile_quads_384<TilePairBase + 1>(
+        warp_c_tile_stage1, c_tile_base, lane_id);
+
+    ptx_wmma_store_tile_pairs_384<TileConfig, TilePairBase + 2>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 }
 
 template <typename TileConfig>
@@ -846,27 +815,7 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
       b_stage + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
 
   ptx_wmma_load_a_row(a_frag, a_tile, kWmmaK);
-  ptx_wmma_accumulate_tile_slice_384<0>(
-      acc_tiles.tile0,
-      acc_tiles.tile1,
-      acc_tiles.tile2,
-      acc_tiles.tile3,
-      a_frag,
-      b_tile);
-  ptx_wmma_accumulate_tile_slice_384<4>(
-      acc_tiles.tile4,
-      acc_tiles.tile5,
-      acc_tiles.tile6,
-      acc_tiles.tile7,
-      a_frag,
-      b_tile);
-  ptx_wmma_accumulate_tile_slice_384<8>(
-      acc_tiles.tile8,
-      acc_tiles.tile9,
-      acc_tiles.tile10,
-      acc_tiles.tile11,
-      a_frag,
-      b_tile);
+  ptx_wmma_accumulate_tile_set_384(acc_tiles, a_frag, b_tile);
 }
 
 template <typename TileConfig>
