@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 7/17` with `11` rounds remaining
 
 ## Direction approval policy
@@ -14,16 +14,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260420_160310`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 7/17 diagnosis for run 20260420_160231_bf16_gemm_v1_8ed8cf3. Human-review mapping for this round: keep broad retile/default-promotion reopening low priority, and keep the immediate prefetch-handoff, expanded B-shared-skew, and grouped-row-window families closed. Round 5 proved the multi-gap B-shared layout was invalid because correctness failed 3/3, and round 6 proved the grouped-row retune stayed correct but still regressed to 25.77151966 ms with long-scoreboard rising to 7.83 and DRAM nudging up to 11.74. No new explicit human idea family is queued in state/human_review.md, so the surviving ranking is: accept one last minimal PTX export-address cleanup as the primary narrow move on top of the accepted base 20260420_154827_bf16_gemm_v1_7adfc4e at 25.50532818 ms; defer the historically measured 64x384 fixed-main-tile control because its evidence is older and broader; keep the non-PTX 128x128 sibling only as a fallback control.`
+- dir_01: Apply Only A Minimal PTX Export Address Cleanup | bottleneck: Residual address-generation and store-helper overhead in the surviving PTX export path.
+- dir_02: Reopen The Measured 64x384 Fixed-Main-Tile Control Path | bottleneck: Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX microkernel control overhead.
+- dir_03: Use The Non-PTX 128x128 Sibling As A Control | bottleneck: PTX-specific export/store complexity versus the simpler non-PTX 128x128 sibling.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`

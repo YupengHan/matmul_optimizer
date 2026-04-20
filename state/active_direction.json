@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Apply Only A Minimal PTX Export Address Cleanup",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T16:04:31-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_160310",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Apply Only A Minimal PTX Export Address Cleanup",
+    "hypothesis": "Round 6/17 kept correctness but still regressed to 25.77151966 ms, so the grouped-row window retune is now closed alongside the earlier prefetch and expanded B-shared-skew attempts. That leaves the narrowest surviving family on top of the accepted PTX base: a minimal export-address cleanup that does not reopen scratch lifetime, traversal direction, or shared-layout risk. Round 2/17 already showed that modest export cleanup can help, so the next best move is to trim only the remaining address setup in the PTX store helpers.",
+    "expected_bottleneck": "Residual address-generation and store-helper overhead in the surviving PTX export path.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:925-947",
+      "src/kernels/bf16_gemm_v1.cu:1008-1065",
+      "src/kernels/bf16_gemm_v1.cu:2044-2047"
+    ],
+    "risk": "Low. The expected upside is smaller than a broader path switch, but it stays closest to the last accepted correct baseline and avoids reopening already closed families.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop after one bounded cleanup if it only produces noise-level movement or fails to beat 25.50532818 ms."
+  },
+  "notes": "Node C may now implement this one direction."
 }
