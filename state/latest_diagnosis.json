@@ -1,75 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_085345",
-  "status": "completed",
-  "created_at": "2026-04-20T08:53:45-07:00",
-  "source_run_id": "20260420_084915_bf16_gemm_v1_4e5579e",
-  "source_run_dir": "runs/20260420_084915_bf16_gemm_v1_4e5579e",
-  "source_summary_json": "runs/20260420_084915_bf16_gemm_v1_4e5579e/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_085640_bf16_gemm_v1_f71a41f",
+  "source_run_dir": "runs/20260420_085640_bf16_gemm_v1_f71a41f",
+  "source_summary_json": "runs/20260420_085640_bf16_gemm_v1_f71a41f/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "PTX hot-band consumer-order refinement",
-      "hypothesis": "The accepted grouped_rows=8 + one-sync handoff base is already exposing the right bottleneck mix, but the remaining long scoreboard stall suggests the PTX hot-band consumer order still leaves latency on the table. A narrower lane-local consume-order tweak inside the PTX hot-band sweep should preserve the new barrier and short-scoreboard gains while trimming the remaining long scoreboard tail.",
-      "expected_bottleneck": "Long scoreboard latency in the PTX hot-band consumer path, not the barrier or shared-memory handoff itself.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:741-748",
-        "src/kernels/bf16_gemm_v1.cu:753-770",
-        "src/kernels/bf16_gemm_v1.cu:1994-2006"
-      ],
-      "risk": "A consumer-order tweak may regress the newly recovered grouped_rows=8 balance or reintroduce scoreboard pressure if it disturbs the accepted row-pair traversal too broadly.",
-      "metrics_to_recheck": [
-        "kernel time on 20260420_084915_bf16_gemm_v1_4e5579e baseline comparison",
-        "long scoreboard",
-        "short scoreboard",
-        "barrier stall",
-        "sm__sass_thread_inst_executed_op_shared"
-      ],
-      "stop_condition": "Stop if the PTX hot-band consumer-order change improves time without undoing the recovered barrier/short-scoreboard gains, and keep grouped_rows=8 as the active base."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Recover overlap behind the one-sync wait_group_0 handoff",
-      "hypothesis": "The one-sync wait_group_0 handoff is now the accepted steady-state base, but the long scoreboard remaining after that handoff suggests there may still be a narrower overlap opportunity between consumer drain and producer refill. The goal is to recover a little more overlap without reopening the broader warmup or CTA-level schemes that already lost.",
-      "expected_bottleneck": "Residual overlap loss after the single wait_group_0 + __syncthreads() handoff, now exposed mainly as long scoreboard.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1410-1427",
-        "src/kernels/bf16_gemm_v1.cu:1994-2006"
-      ],
-      "risk": "This path can easily overfit the refill timing and backslide into the rejected warmup-order or broad shared-memory rewrite space.",
-      "metrics_to_recheck": [
-        "long scoreboard",
-        "barrier stall",
-        "issue/execute overlap across the steady-state handoff",
-        "kernel time"
-      ],
-      "stop_condition": "Stop if the handoff tweak does not improve overlap measurably within the accepted one-sync base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Limited locality closure with grouped_rows=8 only",
-      "hypothesis": "If the hot-band consumer order is not the main lever, a smaller locality closure tweak may still help by tightening dispatch order while staying inside the grouped_rows=8 path. This is intentionally narrower than reopening any grouped_rows=16 shape, which is closed for this round.",
-      "expected_bottleneck": "Minor locality loss in the grouped_rows=8 dispatch order, not a structural tile-size problem.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:735-770",
-        "src/kernels/bf16_gemm_v1.cu:1410-1427"
-      ],
-      "risk": "The gain ceiling is likely small, and any larger dispatch-order change risks drifting back toward grouped_rows=16 or other rejected families.",
-      "metrics_to_recheck": [
-        "kernel time",
-        "long scoreboard",
-        "short scoreboard",
-        "shared-memory load efficiency"
-      ],
-      "stop_condition": "Stop if the tweak requires broadening beyond grouped_rows=8 or if it behaves like a disguised grouped_rows=16 reopen."
-    }
-  ],
-  "notes": "Anchored to run 20260420_084915_bf16_gemm_v1_4e5579e at 24.570881 ms. Accepted themes this round were Register Reuse, Ps2r, and Bank Conflict. Rejected this round: grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

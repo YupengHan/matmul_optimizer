@@ -6,44 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `4e5579ec72e9b1f05820c895c0315235d66f30cd`
-- plateau counter: `0`
-- round loop: `round 59/100`
-- rounds remaining: `42`
-- notes: `Node C build succeeded for round 59/100. Node A will now measure the new code path.`
+- latest measured commit: `f71a41fdee677a3f78b9124bae317e3e96ba4983`
+- plateau counter: `1`
+- round loop: `round 60/100`
+- rounds remaining: `41`
+- notes: `Node A completed round 59/100. Run node_b to continue round 60/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_084915_bf16_gemm_v1_4e5579e`
-- run dir: `runs/20260420_084915_bf16_gemm_v1_4e5579e`
+- run id: `20260420_085640_bf16_gemm_v1_f71a41f`
+- run dir: `runs/20260420_085640_bf16_gemm_v1_f71a41f`
 - correctness: `PASS`
-- median runtime: `24.570881 ms`
-- TFLOP/s: `29.588659 TFLOP/s`
+- median runtime: `25.995744 ms`
+- TFLOP/s: `27.966864 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
-- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_085345`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Anchored to run 20260420_084915_bf16_gemm_v1_4e5579e at 24.570881 ms. Accepted themes this round were Register Reuse, Ps2r, and Bank Conflict. Rejected this round: grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites.`
-- dir_01: PTX hot-band consumer-order refinement | bottleneck: Long scoreboard latency in the PTX hot-band consumer path, not the barrier or shared-memory handoff itself.
-- dir_02: Recover overlap behind the one-sync wait_group_0 handoff | bottleneck: Residual overlap loss after the single wait_group_0 + __syncthreads() handoff, now exposed mainly as long scoreboard.
-- dir_03: Limited locality closure with grouped_rows=8 only | bottleneck: Minor locality loss in the grouped_rows=8 dispatch order, not a structural tile-size problem.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

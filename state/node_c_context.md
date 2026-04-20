@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `PTX hot-band consumer-order refinement`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_085345`
-- round loop: `round 59/100`
-- hypothesis: `The accepted grouped_rows=8 + one-sync handoff base is already exposing the right bottleneck mix, but the remaining long scoreboard stall suggests the PTX hot-band consumer order still leaves latency on the table. A narrower lane-local consume-order tweak inside the PTX hot-band sweep should preserve the new barrier and short-scoreboard gains while trimming the remaining long scoreboard tail.`
-- expected bottleneck: `Long scoreboard latency in the PTX hot-band consumer path, not the barrier or shared-memory handoff itself.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:741-748, src/kernels/bf16_gemm_v1.cu:753-770, src/kernels/bf16_gemm_v1.cu:1994-2006`
-- risk: `A consumer-order tweak may regress the newly recovered grouped_rows=8 balance or reintroduce scoreboard pressure if it disturbs the accepted row-pair traversal too broadly.`
-- metrics to re-check: `kernel time on 20260420_084915_bf16_gemm_v1_4e5579e baseline comparison, long scoreboard, short scoreboard, barrier stall, sm__sass_thread_inst_executed_op_shared`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 60/100`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
