@@ -1,76 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_000825",
-  "status": "completed",
-  "created_at": "2026-04-20T00:08:25-07:00",
-  "source_run_id": "20260420_000504_bf16_gemm_v1_f35aea8",
-  "source_run_dir": "runs/20260420_000504_bf16_gemm_v1_f35aea8",
-  "source_summary_json": "runs/20260420_000504_bf16_gemm_v1_f35aea8/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_000930_bf16_gemm_v1_11f0427",
+  "source_run_dir": "runs/20260420_000930_bf16_gemm_v1_11f0427",
+  "source_summary_json": "runs/20260420_000930_bf16_gemm_v1_11f0427/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the accepted 128x128 K16 base and scope the consume fence only to real stage overwrites",
-      "hypothesis": "Round 19 showed that aggressive launch-bounds pressure is not a viable path on this kernel: runtime doubled, tensor active collapsed, and memory stalls exploded. The next move should therefore be a strict return to the accepted 29.20 ms base, followed by the smallest possible Stage-family refinement. The most bounded variant is to keep the proven 128x128 K16 kernel, remove the launch-bounds hint, and only execute the added consume-side CTA fence on iterations that actually overwrite the current shared stage. That preserves the correctness fix while trimming barrier work on the final tiles where no future overwrite happens.",
-      "expected_bottleneck": "Barrier / orchestration overhead in the accepted 128x128 K16 hot-band loop, with no increase in shared footprint or register pressure.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1610",
-        "src/kernels/bf16_gemm_v1.cu:1678",
-        "src/kernels/bf16_gemm_v1.cu:1683",
-        "src/kernels/bf16_gemm_v1.cu:1757"
-      ],
-      "risk": "The upside is modest because the fence only disappears on the tail of the fixed K loop. The main risk is accidentally weakening the correctness guard and reopening the round-15 race.",
-      "metrics_to_recheck": [
-        "correctness pass rate on all benchmark cases",
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if correctness regresses, or if the runtime simply returns to the accepted base with no measurable improvement."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore the accepted base and try a milder register hint that does not target extra resident blocks",
-      "hypothesis": "If a compiler hint is still worth testing, it has to be far weaker than round 19. A milder launch-bounds or equivalent compiler nudge that preserves the current resident-block target could still trim some scheduler overhead without forcing the spill-heavy behavior that destroyed tensor throughput.",
-      "expected_bottleneck": "Compiler register allocation quality on the accepted 128x128 K16 kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1610",
-        "src/kernels/bf16_gemm_v1.cu:1757"
-      ],
-      "risk": "Very easy to waste a round here: a weak hint may do nothing, while a slightly too-strong hint can recreate the round-19 collapse.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "median runtime",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if register count stays flat or if the hint pushes the kernel back toward the round-19 memory-stall regime."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Hold the accepted base fixed and use the deferred L2-friendly block-order clue as the next orthogonal axis",
-      "hypothesis": "With larger CTA shapes and aggressive register pressure both rejected, the remaining user-provided orthogonal lever is L2 locality. If CTA-local changes keep stalling, a block-order or swizzle-style clue is the next distinct experiment that does not require growing shared memory or deepening the stage pipeline.",
-      "expected_bottleneck": "Inter-CTA cache reuse rather than within-CTA feed or occupancy.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1732",
-        "src/runner/main.cpp:135"
-      ],
-      "risk": "Block issue order is only weakly controllable in CUDA, so the effect may be negligible.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the accepted base remains dominated by barrier / tensor delivery rather than cache traffic."
-    }
-  ],
-  "notes": "Human-idea reflection for round 20: Stage remains the primary family, but in a deliberately conservative form because the last two aggressive experiments failed for different reasons. Register Reuse is temporarily deferred after round 19 showed that forcing higher occupancy through launch-bounds was far too expensive. Tiling 256x128 is now rejected for the current branch because it raised shared footprint and reduced active warps without any upside. Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted background mechanisms already present in the accepted 128x128 K16 kernel. Coalescing Access and Bank Conflict remain deferred because the regressions were driven much more by occupancy / stage effects than by those signals. The L2 clue stays as the next orthogonal backup plan."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

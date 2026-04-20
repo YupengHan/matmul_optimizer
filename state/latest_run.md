@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_000504_bf16_gemm_v1_f35aea8`
-- run dir: `runs/20260420_000504_bf16_gemm_v1_f35aea8`
-- kernel tag: `bf16_gemm_v1_f35aea8`
-- round label: `round 19/50`
+- run id: `20260420_000930_bf16_gemm_v1_11f0427`
+- run dir: `runs/20260420_000930_bf16_gemm_v1_11f0427`
+- kernel tag: `bf16_gemm_v1_11f0427`
+- round label: `round 20/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `60.609537 ms`
-- p10 runtime: `59.976192 ms`
-- p90 runtime: `61.918516 ms`
-- TFLOP/s: `11.995132 TFLOP/s`
-- previous run id: `20260420_000122_bf16_gemm_v1_a4646fc`
-- runtime delta vs previous measured run: `+28.935681 ms`
-- TFLOP/s delta vs previous measured run: `-10.958165 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `29.116928 ms`
+- p10 runtime: `28.660019 ms`
+- p90 runtime: `29.933670 ms`
+- TFLOP/s: `24.968960 TFLOP/s`
+- previous run id: `20260420_000504_bf16_gemm_v1_f35aea8`
+- runtime delta vs previous measured run: `-31.492609 ms`
+- TFLOP/s delta vs previous measured run: `+12.973828 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the 128x128 K16 winner and add a register-pressure / launch-bounds hint to chase higher occupancy`
+- implemented direction name: `Restore the accepted 128x128 K16 base and scope the consume fence only to real stage overwrites`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_000504_bf16_gemm_v1_f35aea8/summary.json`
-- measured commit: `f35aea8b55dcd6d7d085a93469f414d6471ccd07`
-- new best custom: `no`
-- generated at: `2026-04-20T00:05:13-07:00`
+- raw summary json: `runs/20260420_000930_bf16_gemm_v1_11f0427/summary.json`
+- measured commit: `11f04271ca6d1544510b98163a61027d6cef8c5d`
+- new best custom: `yes`
+- generated at: `2026-04-20T00:09:38-07:00`
