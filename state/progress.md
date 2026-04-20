@@ -6,44 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `57d08c3396876293a5e7c223a96cb3da09cca4a9`
-- plateau counter: `0`
-- round loop: `round 57/100`
-- rounds remaining: `44`
-- notes: `Node C build succeeded for round 57/100. Node A will now measure the new code path.`
+- latest measured commit: `761d868c89340f65e01ba99eb7c5c6492df9c893`
+- plateau counter: `1`
+- round loop: `round 58/100`
+- rounds remaining: `43`
+- notes: `Node A completed round 57/100. Run node_b to continue round 58/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_084312_bf16_gemm_v1_57d08c3`
-- run dir: `runs/20260420_084312_bf16_gemm_v1_57d08c3`
+- run id: `20260420_084554_bf16_gemm_v1_761d868`
+- run dir: `runs/20260420_084554_bf16_gemm_v1_761d868`
 - correctness: `PASS`
-- median runtime: `24.713584 ms`
-- TFLOP/s: `29.417806 TFLOP/s`
+- median runtime: `25.473536 ms`
+- TFLOP/s: `28.540184 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
-- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_084408`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Anchored to measured run 20260420_084312_bf16_gemm_v1_57d08c3 at 24.713584 ms. Rejected this round: reopening warmup-order, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites.`
-- dir_01: Hot-band L2 / grouped-row launch-order refinement | bottleneck: Improved L2 locality and reduced B-tile churn should trim long scoreboard pressure without reopening the already-accepted one-sync handoff base.
-- dir_02: PTX hot-band consumer-order refinement | bottleneck: The warp consumer order inside the active PTX hot-band microkernel likely still leaves a small scoreboard gap after the retime.
-- dir_03: Deferred steady-state overlap recovery | bottleneck: Residual handoff overlap and refill timing in the steady-state peeled hot-band path.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

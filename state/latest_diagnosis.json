@@ -1,74 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_084408",
-  "status": "completed",
-  "created_at": "2026-04-20T08:44:08-07:00",
-  "source_run_id": "20260420_084312_bf16_gemm_v1_57d08c3",
-  "source_run_dir": "runs/20260420_084312_bf16_gemm_v1_57d08c3",
-  "source_summary_json": "runs/20260420_084312_bf16_gemm_v1_57d08c3/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_084554_bf16_gemm_v1_761d868",
+  "source_run_dir": "runs/20260420_084554_bf16_gemm_v1_761d868",
+  "source_summary_json": "runs/20260420_084554_bf16_gemm_v1_761d868/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Hot-band L2 / grouped-row launch-order refinement",
-      "hypothesis": "The latest measured run 20260420_084312_bf16_gemm_v1_57d08c3 at 24.713584 ms already validated the steady-state handoff retime, with runtime improving by 0.135839 ms and barrier pressure falling from 7.43 to 5.45. Long scoreboard rose to 7.29 while LTS stayed around 30.75 and DRAM stayed low at 9.74, so the cheapest remaining locality lever is to refine kFixedHotBandPtxGroupedRows / hot-band launch order to increase reuse of the same B tile before advancing to the next x tile.",
-      "expected_bottleneck": "Improved L2 locality and reduced B-tile churn should trim long scoreboard pressure without reopening the already-accepted one-sync handoff base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: kFixedHotBandPtxGroupedRows",
-        "src/kernels/bf16_gemm_v1.cu: bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu: launch_bf16_gemm_v1"
-      ],
-      "risk": "If the grouping becomes too coarse, the launch order can reduce locality for one axis while helping the other, and any win may be small because DRAM is already low.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Adopt this direction only if long scoreboard falls without regressing the 24.713584 ms baseline or reintroducing barrier pressure."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "PTX hot-band consumer-order refinement",
-      "hypothesis": "The first right-left retime already worked, so a narrower row-pair or lane-local consumer-order tweak in the PTX hot-band branch may still cut the remaining long scoreboard tail while preserving the accepted steady-state base.",
-      "expected_bottleneck": "The warp consumer order inside the active PTX hot-band microkernel likely still leaves a small scoreboard gap after the retime.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu: bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu: advance_peeled_hot_stage_ptx"
-      ],
-      "risk": "This is a narrower lever and may produce only a marginal gain, with a real chance of simply moving stall pressure rather than reducing it.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Use only if the PTX consume ordering can be tightened without disturbing the accepted one-sync wait_group_0 base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Deferred steady-state overlap recovery",
-      "hypothesis": "A careful overlap recovery pass in the steady-state handoff may still reclaim a bit of idle time, but only as a deferred branch because the one-sync wait_group_0 retime is already the accepted base.",
-      "expected_bottleneck": "Residual handoff overlap and refill timing in the steady-state peeled hot-band path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: advance_peeled_hot_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu: bf16_gemm_v1_tensor_core_fixed_peeled_kernel",
-        "src/kernels/bf16_gemm_v1.cu: cp_async_wait_group_0"
-      ],
-      "risk": "This branch is riskier because the current handoff is already deliberately collapsed to one sync, so trying to recover overlap can easily reintroduce barrier cost.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Only pursue if it can preserve the accepted wait_group_0 handoff while recovering overlap that is not already being lost to the barrier."
-    }
-  ],
-  "notes": "Anchored to measured run 20260420_084312_bf16_gemm_v1_57d08c3 at 24.713584 ms. Rejected this round: reopening warmup-order, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,29 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Hot-band L2 / grouped-row launch-order refinement",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T08:45:07-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_084408",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Hot-band L2 / grouped-row launch-order refinement",
-    "hypothesis": "The latest measured run 20260420_084312_bf16_gemm_v1_57d08c3 at 24.713584 ms already validated the steady-state handoff retime, with runtime improving by 0.135839 ms and barrier pressure falling from 7.43 to 5.45. Long scoreboard rose to 7.29 while LTS stayed around 30.75 and DRAM stayed low at 9.74, so the cheapest remaining locality lever is to refine kFixedHotBandPtxGroupedRows / hot-band launch order to increase reuse of the same B tile before advancing to the next x tile.",
-    "expected_bottleneck": "Improved L2 locality and reduced B-tile churn should trim long scoreboard pressure without reopening the already-accepted one-sync handoff base.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu: kFixedHotBandPtxGroupedRows",
-      "src/kernels/bf16_gemm_v1.cu: bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel",
-      "src/kernels/bf16_gemm_v1.cu: launch_bf16_gemm_v1"
-    ],
-    "risk": "If the grouping becomes too coarse, the launch order can reduce locality for one axis while helping the other, and any win may be small because DRAM is already low.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-    ],
-    "stop_condition": "Adopt this direction only if long scoreboard falls without regressing the 24.713584 ms baseline or reintroducing barrier pressure."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_084312_bf16_gemm_v1_57d08c3`
-- run dir: `runs/20260420_084312_bf16_gemm_v1_57d08c3`
-- kernel tag: `bf16_gemm_v1_57d08c3`
-- round label: `round 56/100`
+- run id: `20260420_084554_bf16_gemm_v1_761d868`
+- run dir: `runs/20260420_084554_bf16_gemm_v1_761d868`
+- kernel tag: `bf16_gemm_v1_761d868`
+- round label: `round 57/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.713584 ms`
-- p10 runtime: `24.548147 ms`
-- p90 runtime: `25.258086 ms`
-- TFLOP/s: `29.417806 TFLOP/s`
-- previous run id: `20260420_083902_bf16_gemm_v1_de7e8be`
-- runtime delta vs previous measured run: `-0.135839 ms`
-- TFLOP/s delta vs previous measured run: `+0.160813 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.473536 ms`
+- p10 runtime: `25.295769 ms`
+- p90 runtime: `26.816205 ms`
+- TFLOP/s: `28.540184 TFLOP/s`
+- previous run id: `20260420_084312_bf16_gemm_v1_57d08c3`
+- runtime delta vs previous measured run: `+0.759953 ms`
+- TFLOP/s delta vs previous measured run: `-0.877622 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Steady-state barrier / handoff retime`
+- implemented direction name: `Hot-band L2 / grouped-row launch-order refinement`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_084312_bf16_gemm_v1_57d08c3/summary.json`
-- measured commit: `57d08c3396876293a5e7c223a96cb3da09cca4a9`
-- new best custom: `yes`
-- generated at: `2026-04-20T08:43:20-07:00`
+- raw summary json: `runs/20260420_084554_bf16_gemm_v1_761d868/summary.json`
+- measured commit: `761d868c89340f65e01ba99eb7c5c6492df9c893`
+- new best custom: `no`
+- generated at: `2026-04-20T08:46:02-07:00`
