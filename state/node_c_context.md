@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Promote The 64x384 Hot-Band Dispatch And Retune Around The Wide-Tile Path`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_113007`
 - round loop: `round 75/100`
+- hypothesis: `The round-74 PTX helper flattening family is now effectively closed-negative: the latest run moved only from 24.69619179 ms to 24.6968317 ms and the tensor, warps-active, barrier, and scoreboard metrics stayed essentially flat. The next materially different move is to stop spending effort inside the PTX helper recursion and re-center the hot band on the widest non-PTX dispatch family that already showed strong behavior in the earlier tile sweep, namely the 64x384 path. That should cut launch count, keep the hot band on a lower-overhead schedule, and give the register-limited profile a better chance to improve without changing the accepted PTX traversal semantics.`
+- expected bottleneck: `Register pressure and launch/schedule overhead in the current PTX hot-band path, which is consistent with the low 16.57 warps-active number and the register occupancy limit.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1181-1227, src/kernels/bf16_gemm_v1.cu:2042-2058`
+- risk: `Medium. This is the most grounded non-PTX alternative because it follows the measured wide-tile family rather than another helper rewrite, but it still has to prove that the dispatch change is worth the additional code-path complexity.`
+- metrics to re-check: `median runtime, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

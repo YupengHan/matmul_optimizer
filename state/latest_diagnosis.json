@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_113007",
+  "status": "completed",
+  "created_at": "2026-04-20T11:30:07-07:00",
   "source_run_id": "20260420_112828_bf16_gemm_v1_f1ae7fa",
   "source_run_dir": "runs/20260420_112828_bf16_gemm_v1_f1ae7fa",
   "source_summary_json": "runs/20260420_112828_bf16_gemm_v1_f1ae7fa/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Promote The 64x384 Hot-Band Dispatch And Retune Around The Wide-Tile Path",
+      "hypothesis": "The round-74 PTX helper flattening family is now effectively closed-negative: the latest run moved only from 24.69619179 ms to 24.6968317 ms and the tensor, warps-active, barrier, and scoreboard metrics stayed essentially flat. The next materially different move is to stop spending effort inside the PTX helper recursion and re-center the hot band on the widest non-PTX dispatch family that already showed strong behavior in the earlier tile sweep, namely the 64x384 path. That should cut launch count, keep the hot band on a lower-overhead schedule, and give the register-limited profile a better chance to improve without changing the accepted PTX traversal semantics.",
+      "expected_bottleneck": "Register pressure and launch/schedule overhead in the current PTX hot-band path, which is consistent with the low 16.57 warps-active number and the register occupancy limit.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1181-1227",
+        "src/kernels/bf16_gemm_v1.cu:2042-2058"
+      ],
+      "risk": "Medium. This is the most grounded non-PTX alternative because it follows the measured wide-tile family rather than another helper rewrite, but it still has to prove that the dispatch change is worth the additional code-path complexity.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the 64x384 dispatch path cannot beat the latest 24.6968317 ms measurement or if the implementation has to touch the closed PTX helper semantics to make progress."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Revisit The Auxiliary 256x128 Hot-Band Schedule As A Separate Family",
+      "hypothesis": "The previous round showed the auxiliary 256x128 schedule can improve the measured path, while the PTX-helper flattening stayed flat. That makes the auxiliary family the cleanest bounded fallback: it is explicitly isolated, already exists in the kernel, and gives a different schedule shape from both the current PTX microkernel and the wide-tile dispatch path. A small retune to its local K-loop schedule, staging cadence, or launch preference can still be worthwhile if it preserves that isolation and does not drag the active path back into helper surgery.",
+      "expected_bottleneck": "Compute scheduling and latency hiding on the auxiliary 256x128 hot-band path, not DRAM bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1561-1606",
+        "src/kernels/bf16_gemm_v1.cu:2042-2058"
+      ],
+      "risk": "Medium-high. The family is distinct and measurable, but it is easier to over-rank because it is an alternate schedule rather than the current dominant hot-band path.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "tflops",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the auxiliary-path retune cannot stay isolated or if it fails to show a plausible improvement over the latest 24.6968317 ms run."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Activate Or Retune The 128x128x32 Staged Hot-Band Kernel To Cut Live Ranges",
+      "hypothesis": "The PTX helper flattening family is closed for this round, but a clearly different PTX-adjacent variant remains available: the 128x128x32 staged kernel. It changes staging granularity and K-loop structure rather than helper recursion shape, so it is not just another version of the same no-op. Because the profile is still register-limited and occupancy-limited, a smaller staged hot-band kernel may reduce live ranges, lower pressure on the scheduler, and expose a different barrier/latency tradeoff than the current PTX microkernel.",
+      "expected_bottleneck": "Register pressure plus stage-synchronization overhead in the 128x128x32 hot-band variant.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1667-1815",
+        "src/kernels/bf16_gemm_v1.cu:2070-2093"
+      ],
+      "risk": "High. This is a more invasive dispatch change than the helper rewrite, and the 128x128x32 path is less proven than the wide-tile and auxiliary alternatives.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the staged-kernel variant fails to improve occupancy or runtime, or if it forces a return to the closed PTX-helper family to keep the code path working."
+    }
+  ],
+  "notes": "Latest measured run 20260420_112828_bf16_gemm_v1_f1ae7fa is effectively unchanged from round 74: 24.6968317 ms vs 24.69619179 ms, TFLOP/s 29.4377607, tensor active 48.23, warps active 16.57, barrier 6.39, long scoreboard 3.74, mio throttle 3.34, and launch__occupancy_limit_registers = 2. That makes the PTX helper flattening family effectively closed-negative for this round unless a clearly different variant is proposed. Ranking now shifts to distinct schedule families: the wide 64x384 dispatch path as the best grounded non-PTX alternative, the auxiliary 256x128 schedule as the next distinct schedule family, and the 128x128x32 staged kernel as a lower-rank but materially different PTX-adjacent option."
 }
