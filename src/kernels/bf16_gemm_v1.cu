@@ -614,6 +614,17 @@ struct PtxWmmaHotBandTileIndex64x64 {
                       : (Step / 2);
 };
 
+template <int RowPairBase, int Step>
+struct PtxWmmaHotBandTileIndex64x64PtxMicrokernel {
+  static_assert(RowPairBase == 0 || RowPairBase == 2,
+                "PTX hot-band 64x64 sweep expects the two fixed row-pair bases.");
+  static_assert(Step >= 0 && Step < FixedHotBandTile128x128::kWarpMmaTilesN,
+                "PTX hot-band 64x64 sweep step out of range.");
+  static constexpr int kValue =
+      RowPairBase == 0 ? PtxWmmaHotBandTileIndex64x64<Step>::kValue
+                       : PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+};
+
 template <int RowPairBase, int ColIdx>
 __device__ __forceinline__ void ptx_wmma_mma_row_pair_col_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
@@ -715,11 +726,11 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
   ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
 }
 
-template <int Step>
+template <int RowPairBase, int Step>
 __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64_ptx_microkernel(
     PtxWmmaBf16Fragment& b_frag,
     const __nv_bfloat16* b_tile) {
-  constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<Step>::kValue;
+  constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64PtxMicrokernel<RowPairBase, Step>::kValue;
   ptx_wmma_load_b_row(
       b_frag,
       b_tile + ColIdx * kWmmaN,
@@ -736,12 +747,12 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microker
                     RowPairBase + 1 < FixedHotBandTile128x128::kWarpMmaTilesM,
                 "The PTX hot-band microkernel expects valid 64x64 row pairs.");
   if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
-    constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<Step>::kValue;
+    constexpr int ColIdx =
+        PtxWmmaHotBandTileIndex64x64PtxMicrokernel<RowPairBase, Step>::kValue;
     PtxWmmaBf16Fragment b_frag;
-    // Reload the PTX-hot-band-local B fragment per row-pair so this PTX-only
-    // path can test a right-left consume order while keeping just the active
-    // pair of A fragments live across the sweep.
-    ptx_wmma_load_col_fragment_64x64_ptx_microkernel<Step>(b_frag, b_tile);
+    // Keep the lower pair on the current right-left sweep and mirror only the
+    // upper pair.
+    ptx_wmma_load_col_fragment_64x64_ptx_microkernel<RowPairBase, Step>(b_frag, b_tile);
     ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
         acc_tiles, a_frag0, a_frag1, b_frag);
     ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase, Step + 1>(
