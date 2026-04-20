@@ -96,7 +96,7 @@ struct FixedHotBandTile256x128 {
   static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
   static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
   static constexpr int kBSharedBytes = 2 * kBSharedTileElems * sizeof(__nv_bfloat16);
-  static constexpr int kCSharedStageCount = 1;
+  static constexpr int kCSharedStageCount = 2;
   static constexpr int kBStagedTileElems = kWmmaK * kTensorBlockN;
   static constexpr int kAAsyncCopiesPerRow = kWmmaK / kAsyncCopyElems;
   static constexpr int kBAsyncCopiesPerRow = kTensorBlockN / kAsyncCopyElems;
@@ -146,8 +146,8 @@ static_assert(FixedHotBandTile256x128::kWarpTileM == 64,
               "The fixed-shape pivot branch expects a 64x64 warp tile.");
 static_assert(FixedHotBandTile256x128::kWarpTileN == 64,
               "The fixed-shape pivot branch expects a 64x64 warp tile.");
-static_assert(FixedHotBandTile256x128::kCSharedStageCount == 1,
-              "The first-cut pivot branch keeps a single per-warp export scratch tile.");
+static_assert(FixedHotBandTile256x128::kCSharedStageCount == 2,
+              "The pivot branch expects paired per-warp export scratch tiles.");
 static_assert(TensorCoreTile32::kTensorBlockN == 32, "Autotune candidates expect a 64x32 CTA tile.");
 static_assert(TensorCoreTile64::kTensorBlockN == 64, "Autotune candidates expect a 64x64 CTA tile.");
 static_assert(TensorCoreTile256::kTensorBlockN == 256, "Autotune candidates expect a 64x256 CTA tile.");
@@ -232,7 +232,8 @@ static_assert((kFixedResidualHotRows % TensorCoreTile384::kTensorBlockM) == 0,
               "The stable remainder path must cover the last 64 rows exactly.");
 static_assert(FixedHotBandTile256x128::kASharedBytes +
                       FixedHotBandTile256x128::kBSharedBytes +
-                      FixedHotBandTile256x128::kWarpsPerBlock *
+                      FixedHotBandTile256x128::kCSharedStageCount *
+                          FixedHotBandTile256x128::kWarpsPerBlock *
                           FixedHotBandTile256x128::kCSharedTileBytesPerWarp <=
                   FixedHotBandTile256x128::kStaticSharedByteBudget,
               "The pivot hot-band shared-memory budget must fit on sm86.");
@@ -661,50 +662,82 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
   }
 }
 
-template <int TileRow, int TileCol = 0>
-__device__ __forceinline__ void ptx_export_tile_row_64x64(
-    const PtxWmmaAccTileSet64x64& acc_tiles,
-    float* warp_c_tile,
+template <int TileRow, int TileCol>
+__device__ __forceinline__ void ptx_export_shared_tile_quads_64x64(
+    const float* warp_c_tile,
     __nv_bfloat16* c_tile_base,
     int lane_id) {
-  if constexpr (TileCol < FixedHotBandTile256x128::kWarpMmaTilesN) {
+  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
+                "64x64 export tile row index out of range.");
+  static_assert(TileCol >= 0 && TileCol < FixedHotBandTile256x128::kWarpMmaTilesN,
+                "64x64 export tile col index out of range.");
+  const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
+  constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
+  constexpr int kQuadsPerTile =
+      FixedHotBandTile256x128::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
+
+  #pragma unroll
+  for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
+    const int local_row = quad_idx / kQuadsPerRow;
+    const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
+    store_bfloat164_quad(
+        c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN + TileCol * kWmmaN +
+            local_row * kFixedBenchmarkN + local_col,
+        warp_c_tile_quads[quad_idx]);
+  }
+}
+
+template <int TileRow, int TilePairColBase = 0>
+__device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64(
+    const PtxWmmaAccTileSet64x64& acc_tiles,
+    float* c_shared,
+    __nv_bfloat16* c_tile_base,
+    int warp_id,
+    int lane_id) {
+  static_assert(FixedHotBandTile256x128::kCSharedStageCount == 2,
+                "Paired 64x64 export requires two per-warp c_shared stages.");
+  if constexpr (TilePairColBase < FixedHotBandTile256x128::kWarpMmaTilesN) {
+    constexpr int kCSharedStageStride =
+        FixedHotBandTile256x128::kWarpsPerBlock *
+        FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
+    float* warp_c_tile_stage0 =
+        c_shared + warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
+    float* warp_c_tile_stage1 =
+        c_shared + kCSharedStageStride +
+        warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
+
     ptx_wmma_store_d_row_shared(
-        warp_c_tile,
-        ptx_wmma_acc_tile<TileRow, TileCol>(acc_tiles),
+        warp_c_tile_stage0,
+        ptx_wmma_acc_tile<TileRow, TilePairColBase>(acc_tiles),
+        kWmmaN);
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage1,
+        ptx_wmma_acc_tile<TileRow, TilePairColBase + 1>(acc_tiles),
         kWmmaN);
     __syncwarp();
 
-    const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
-    constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
-    constexpr int kQuadsPerTile =
-        FixedHotBandTile256x128::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
+    ptx_export_shared_tile_quads_64x64<TileRow, TilePairColBase>(
+        warp_c_tile_stage0, c_tile_base, lane_id);
+    ptx_export_shared_tile_quads_64x64<TileRow, TilePairColBase + 1>(
+        warp_c_tile_stage1, c_tile_base, lane_id);
 
-    #pragma unroll
-    for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
-      const int local_row = quad_idx / kQuadsPerRow;
-      const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
-      store_bfloat164_quad(
-          c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN + TileCol * kWmmaN +
-              local_row * kFixedBenchmarkN + local_col,
-          warp_c_tile_quads[quad_idx]);
-    }
-    __syncwarp();
-
-    ptx_export_tile_row_64x64<TileRow, TileCol + 1>(
-        acc_tiles, warp_c_tile, c_tile_base, lane_id);
+    ptx_wmma_store_tile_row_pairs_64x64<TileRow, TilePairColBase + 2>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
   }
 }
 
 template <int TileRow = 0>
-__device__ __forceinline__ void ptx_wmma_store_tile_set_64x64(
+__device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
     const PtxWmmaAccTileSet64x64& acc_tiles,
-    float* warp_c_tile,
+    float* c_shared,
     __nv_bfloat16* c_tile_base,
+    int warp_id,
     int lane_id) {
   if constexpr (TileRow < FixedHotBandTile256x128::kWarpMmaTilesM) {
-    ptx_export_tile_row_64x64<TileRow>(acc_tiles, warp_c_tile, c_tile_base, lane_id);
-    ptx_wmma_store_tile_set_64x64<TileRow + 1>(
-        acc_tiles, warp_c_tile, c_tile_base, lane_id);
+    ptx_wmma_store_tile_row_pairs_64x64<TileRow>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+    ptx_wmma_store_tile_pairs_64x64<TileRow + 1>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
   }
 }
 
@@ -1214,7 +1247,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   __shared__ __align__(16)
       __nv_bfloat16 b_shared[2][FixedHotBandTile256x128::kBSharedTileElems];
   __shared__ __align__(16)
-      float c_shared[FixedHotBandTile256x128::kWarpsPerBlock *
+      float c_shared[FixedHotBandTile256x128::kCSharedStageCount *
+                     FixedHotBandTile256x128::kWarpsPerBlock *
                      FixedHotBandTile256x128::kCSharedTileElemsPerWarp];
 
   const int warp_id = threadIdx.x / kWarpSize;
@@ -1291,10 +1325,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
     }
   }
 
-  float* warp_c_tile =
-      c_shared + warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_store_tile_set_64x64(acc_tiles, warp_c_tile, c_tile_base, lane_id);
+  ptx_wmma_store_tile_pairs_64x64(acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
 #else
   (void)a;
   (void)b;
