@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore the new best custom branch `5dd9f0d` and discard the grouped-CTA traversal`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260419_221410`
-- round loop: `round 6/30`
-- hypothesis: `Round 5 cleanly falsified the L2-launch-order clue as an implementation branch. The grouped traversal kept correctness, slightly improved the hot-band kernel to about 40.70 us, and even nudged headline tensor activity up, but overall runtime regressed from 29.432832 ms to 30.692336 ms. That means the remap is not a viable surface for the next 25 rounds even if one sub-kernel metric looks nicer. The first move should therefore be to restore the correctness-valid best custom branch `5dd9f0d` before trying another family.`
-- expected bottleneck: `Not a new bottleneck attack; this is a branch reset after a structurally negative CTA-traversal experiment.`
-- code locations: `src/kernels/bf16_gemm_v1.cu`
-- risk: `Low. The restore is local and measured. The only cost is one recovery round, but continuing from the slower grouped-traversal branch is less defensible.`
-- metrics to re-check: `correctness, median runtime, runs/*/ncu_details.csv hot-band gpu__time_duration.sum, launch__registers_per_thread`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 7/30`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
