@@ -1,15 +1,94 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_022105",
+  "status": "completed",
+  "created_at": "2026-04-20T02:21:05-07:00",
   "source_run_id": "20260420_022041_bf16_gemm_v1_2c6441d",
   "source_run_dir": "runs/20260420_022041_bf16_gemm_v1_2c6441d",
   "source_summary_json": "runs/20260420_022041_bf16_gemm_v1_2c6441d/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Trim PTX Hot-Band Accumulator And Fragment Live Ranges",
+      "hypothesis": "Round 44 already recovered from 30.126080 ms to 26.955776 ms by removing K32 and switching to single-scratch sequential export, but versus round 42 the hot-band signals only moved slightly: tensor active 47.86 -> 48.05, mio throttle 0.56 -> 0.34, barrier 11.18 -> 11.21, and long scoreboard 1.29 -> 1.33. That says export lifetime trimming helped a little, but the remaining ceiling is inside the active PTX 128x128 hot-band compute path itself. The main kernel still runs at 188 registers/thread with occupancy limited to 2 blocks/SM and only 16.58% active warps, so shrinking accumulator / fragment live ranges inside the PTX microkernel should raise resident warps and let the tensor pipe cross the current 26 ms band instead of only restoring prior regressions.",
+      "expected_bottleneck": "Occupancy and tensor-core under-utilization in the active PTX hot-band path, driven by register pressure rather than global-memory latency.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:709",
+        "src/kernels/bf16_gemm_v1.cu:725",
+        "src/kernels/bf16_gemm_v1.cu:746",
+        "src/kernels/bf16_gemm_v1.cu:1888",
+        "src/kernels/bf16_gemm_v1.cu:1940",
+        "src/kernels/bf16_gemm_v1.cu:1985"
+      ],
+      "risk": "Reducing live ranges can easily trade one bottleneck for another: less unrolling or fewer simultaneously resident fragments may cut instruction-level parallelism, lower tensor issue efficiency, or force extra shared-memory round trips. The risk is acceptable because the current evidence already says the export path is no longer the main limiter.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if registers/thread do not drop materially or if tensor active stays flat while runtime regresses, because that would mean the PTX compute body is no longer the highest-leverage place to cut live state."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Port Grouped-Row CTA Traversal To The PTX Hot Band For Better L2 Reuse",
+      "hypothesis": "The user-provided L2 cache / grouped-row family should be revived, but only in a way consistent with the active-path evidence. The dominant kernel is the PTX hot-band branch with a 60x50 CTA grid and about 30.30% L2 throughput over almost the entire runtime budget. Unlike the older 128x128x32 branch, the active PTX kernel uses plain blockIdx.y / blockIdx.x traversal and does not reuse the grouped-row remap that clusters nearby M tiles against a stable N slice. Porting the grouped-row logical pid mapping into the PTX hot band can improve B-tile residency in L2 and reduce cache churn without undoing the round-44 export cleanup.",
+      "expected_bottleneck": "L2 reuse and block traversal efficiency for the hot-band CTA schedule, especially B-side reuse across adjacent row groups.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:155",
+        "src/kernels/bf16_gemm_v1.cu:1625",
+        "src/kernels/bf16_gemm_v1.cu:1652",
+        "src/kernels/bf16_gemm_v1.cu:1666",
+        "src/kernels/bf16_gemm_v1.cu:1888",
+        "src/kernels/bf16_gemm_v1.cu:1911"
+      ],
+      "risk": "Grouped traversal may improve L2 locality yet still lose wall-clock time if it hurts warp scheduling fairness, causes worse tail interaction with the peeled 64x384 row band, or reduces whatever implicit locality the current launch order already gets from the scheduler.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "hot-band kernel gpu__time_duration.sum"
+      ],
+      "stop_condition": "Stop if L2 / DRAM movement stays effectively unchanged or if runtime worsens despite lower cache traffic, because then the bottleneck is still inside the PTX issue / fragment path rather than traversal locality."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune Shared-To-Register Fragment Access In The PTX Hot Band",
+      "hypothesis": "The active kernel is not obviously global-memory starved anymore, but `ncu_details.csv` still shows substantial shared/L1 pressure on the main branch: about 40.47% LSU wavefront activity, 22.33% xbar-to-L1 read sectors, 9.00% bank reads, 5.82% bank writes, and 5.94% short scoreboard stalls. That points to a secondary ps2r / shared-layout opportunity: adjust shared stride, lane mapping, or fragment load ordering so the PTX 64x64 tile set feeds WMMA with less replay and fewer short-scoreboard bubbles.",
+      "expected_bottleneck": "Shared-memory to register movement and fragment load replay in the PTX hot-band steady state.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:43",
+        "src/kernels/bf16_gemm_v1.cu:802",
+        "src/kernels/bf16_gemm_v1.cu:858",
+        "src/kernels/bf16_gemm_v1.cu:883",
+        "src/kernels/bf16_gemm_v1.cu:1946",
+        "src/kernels/bf16_gemm_v1.cu:1954"
+      ],
+      "risk": "This is the easiest path to overfit or break correctness because the current layout already balances async-copy alignment, shared skew, and export scratch alignment. A swizzle or lane-remap experiment could reduce short scoreboard but increase bank conflicts, barrier cost, or register pressure.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__m_xbar2l1tex_read_sectors.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if short-scoreboard and L1/shared traffic stay flat after a layout change or if register pressure rises, because then the extra ps2r tuning is just moving pressure around."
+    }
+  ],
+  "notes": "Round 44 mattered because it was restorative but informative: removing K32 and switching to single-scratch sequential export pulled runtime from 30.126080 ms back to 26.955776 ms. Relative to round 42 at 27.003904 ms, the active PTX hot-band only nudged upward on tensor active (47.86 -> 48.05) while barrier (11.18 -> 11.21) and long scoreboard (1.29 -> 1.33) stayed basically flat; mio throttle improved (0.56 -> 0.34) but was already small. That means export lifetime trimming has positive signal, but the ceiling remains limited and the next round must push the active PTX path below the current 26 ms band rather than reintroduce restorative pipeline experiments. The user goal is still sub-20 ms, not merely catching CUTLASS. Family review: Coalescing Access -> deprioritized for now because the active path already uses aligned 16-byte async copies and the profile does not show a classic global-load packing failure. Data Reuse -> still live, but the highest-value reuse idea is CTA traversal / L2 residency, not another generic tile-size sweep. Async Copy -> deprioritized as a primary move because rolling back to the K16 double buffer is what restored performance and long scoreboard is already low. Bank Conflict -> monitor but not top-ranked; the shared path has measurable bank traffic, yet the profile does not show a decisive bank-conflict stall signature on its own. L2 Cache -> promoted and captured by dir_02 because the active 60x50 hot-band grid dominates runtime and the PTX branch no longer uses the grouped-row remap present in the older 128x128x32 path. Register Reuse -> promoted hardest and captured by dir_01 because 188 regs/thread plus occupancy capped at 2 blocks/SM is the clearest remaining ceiling on tensor issue. Pg2s -> deprioritized because mio throttle and long scoreboard are both low after the rollback, so the global-to-shared path is no longer the obvious limiter. Ps2r -> kept as a secondary direction in dir_03 because short scoreboard and shared wavefront pressure still leave room for a better fragment load path. Stage -> deprioritized because round 44 already showed that extra stage depth / K32 buffering was not the way through the plateau."
 }
