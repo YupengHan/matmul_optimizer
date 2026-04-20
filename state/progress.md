@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `29b11d564fce6a7df3ff24a0310d698a86fe996a`
-- plateau counter: `14`
-- round loop: `round 73/100`
-- rounds remaining: `28`
-- notes: `Node C build succeeded for round 73/100. Node A will now measure the new code path.`
+- latest measured commit: `9a4bb85409600456179030fc1eb1e59eb5ea3722`
+- plateau counter: `15`
+- round loop: `round 74/100`
+- rounds remaining: `27`
+- notes: `Node A completed round 73/100. Run node_b to continue round 74/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_111141_bf16_gemm_v1_29b11d5`
-- run dir: `runs/20260420_111141_bf16_gemm_v1_29b11d5`
+- run id: `20260420_112149_bf16_gemm_v1_9a4bb85`
+- run dir: `runs/20260420_112149_bf16_gemm_v1_9a4bb85`
 - correctness: `PASS`
-- median runtime: `25.598976 ms`
-- TFLOP/s: `28.400332 TFLOP/s`
+- median runtime: `24.696192 ms`
+- TFLOP/s: `29.438523 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_111736`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Goal remains <20 ms. The current reproducible exact-base neighborhood is round 69 at 25.49913597 ms; round 72 measured 25.59897614 ms after removing the second export-side syncwarp again, so export-lifetime recheck is also closed-negative as a primary direction in this regime. Current profile still looks compute/schedule limited rather than bandwidth limited: tensor 47.95%, SM throughput 47.47%, warps_active 16.60%, DRAM 10.38%, L2 30.98%, barrier 6.54%, long_scoreboard 4.19%. That makes more barrier/lifetime surgery a weak bet and shifts ranking toward the remaining schedule-shape families. Human-idea audit: tiling 256x128/64x64 remains open only through the auxiliary 256x128 family; coalescing and wide global access are already substantially covered and do not read as primary at 10.38% DRAM; shared-memory reuse is already built into the accepted layouts; async copy and Pg2s double buffer are already present on the 256x128 auxiliary kernel; bank-conflict handling lacks a strong profile signal and stays deferred. L2 cache swizzle and launch-order locality are rejected for this round because snake mapping regressed; register reuse keeps the accepted right-left consume order plus reversed row-pair traversal and rejects further consumer-order sweeps; Ps2r double buffer as extra-live lookahead is closed-negative, so only semantics-preserving helper-shape fallbacks stay open; broad stage or multi-buffer expansion and narrow handoff closure remain rejected.`
-- dir_01: Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule | bottleneck: Compute scheduling and latency hiding on the auxiliary 256x128 hot-band path, not DRAM bandwidth.
-- dir_02: Flatten PTX Hot-Band Accumulate Helpers Without Changing Consume Semantics | bottleneck: Register allocation and compiler scheduling friction inside the active PTX hot-band consume path.
-- dir_03: Flatten PTX Export Helper Shape While Preserving Exact Sync And Linear Order | bottleneck: Minor export-side instruction overhead and register pressure, not barrier lifetime.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

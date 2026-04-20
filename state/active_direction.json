@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T11:19:58-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_111736",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule",
-    "hypothesis": "The exact PTX round-69 surface has exhausted the bounded active-path levers that were still open, and round 72 showed export-side lifetime changes are not a win. The remaining materially different bounded family is the non-PTX 256x128 auxiliary hot-band path, whose local K-loop schedule is still conservative (`#pragma unroll 1`) despite already carrying async-copy staging and larger reuse tiles. A small local retune there, such as increasing only the steady-state unroll or lightly reshaping the per-tile loop, can test whether the larger reuse tile recovers tensor utilization without disturbing the accepted PTX base.",
-    "expected_bottleneck": "Compute scheduling and latency hiding on the auxiliary 256x128 hot-band path, not DRAM bandwidth.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1539",
-      "src/kernels/bf16_gemm_v1.cu:1592",
-      "src/kernels/bf16_gemm_v1.cu:1606"
-    ],
-    "risk": "Medium. This path is auxiliary rather than the current default PTX path, so upside depends on the alternative hot-band route being worth reviving; an over-aggressive unroll can also raise registers or scoreboard stalls. The PTX round-69 base should remain unchanged.",
-    "metrics_to_recheck": [
-      "runtime_ms",
-      "tflops",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "launch__registers_per_thread",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-    ],
-    "stop_condition": "Reject if the isolated 256x128 local schedule retune does not improve runtime from the exact round-69 base neighborhood or if it requires changing the accepted PTX default path semantics."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
