@@ -1989,30 +1989,24 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
 
-    if (future_tile_idx < FixedKTiles) {
-      // Restore the active PTX hot-band path to the accepted K16 double buffer,
-      // then reuse a single padded export scratch tile per warp to shorten the
-      // store/export live range.
-      __syncthreads();
-      const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_b_shared_tile_async<FixedHotBandTile128x128>(
-          b_shared[curr_stage],
-          b_block + future_tile_k * kFixedBenchmarkN,
-          kFixedBenchmarkN);
-      stage_a_shared_tile_async<FixedHotBandTile128x128>(
-          a_shared[curr_stage],
-          a_block + future_tile_k,
-          kFixedBenchmarkK);
-      cp_async_commit_group();
-    }
-
     if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
-        cp_async_wait_group_1();
-      } else {
-        cp_async_wait_group_0();
-      }
+      cp_async_wait_group_0();
       __syncthreads();
+      if (future_tile_idx < FixedKTiles) {
+        // Restore the active PTX hot-band path to the accepted K16 double buffer,
+        // then reuse a single padded export scratch tile per warp to shorten the
+        // store/export live range.
+        const int future_tile_k = future_tile_idx * kWmmaK;
+        stage_b_shared_tile_async<FixedHotBandTile128x128>(
+            b_shared[curr_stage],
+            b_block + future_tile_k * kFixedBenchmarkN,
+            kFixedBenchmarkN);
+        stage_a_shared_tile_async<FixedHotBandTile128x128>(
+            a_shared[curr_stage],
+            a_block + future_tile_k,
+            kFixedBenchmarkK);
+        cp_async_commit_group();
+      }
     }
   }
 
