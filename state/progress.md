@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `1cc244fde41bb83706b3bc4840740c9715b54c41`
 - plateau counter: `11`
 - round loop: `round 12/50`
 - rounds remaining: `39`
-- notes: `Node A completed round 11/50. Run node_b to continue round 12/50.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 12/50.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_231606`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 12/50 absorbs a strong negative result from the half-CTA Pg2s experiment. The hot-band kernel regressed badly, so the next staging-family move should deepen overlap by reallocating shared-memory budget instead of reducing the number of copy-issuing threads. The untried secondary family remains a consumer-side B swizzle that does not add CTA-level repacking.`
+- dir_01: Restore the accepted-correct hot-band surface and trade paired c_shared scratch for a 3-stage A/B pipeline | bottleneck: Tensor under-utilization from a too-shallow hot-band mainloop pipeline rather than pure DRAM bandwidth.
+- dir_02: Restore the accepted surface and try a light consumer-side B XOR/interleaved swizzle with no extra shared footprint | bottleneck: Shared-memory bank behavior and operand delivery on the hot-band B consumer path.
+- dir_03: Restore the accepted-correct implementation surface before any new experiment | bottleneck: Not a bottleneck attack; this is the reset path that preserves signal quality for later rounds.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
