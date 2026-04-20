@@ -17,9 +17,9 @@ The goal is not to solve general matmul. The goal is to see how far a single eng
 - benchmark target: `fixed_bf16_gemm_v1`
 - shape: `m=6464`, `n=7776`, `k=7232`
 - dtype: BF16 inputs, FP32 accumulation, BF16 output reference
-- current official best custom runtime: `26.924031 ms`
+- current official best custom runtime: `25.974272 ms`
 - current local CUTLASS baseline: `25.917889 ms`
-- current gap: `1.006143 ms`, or `1.038820x` / `3.882038%` slower than CUTLASS
+- current gap: `0.056383 ms`, or `1.002175x` / `0.217545%` slower than CUTLASS
 - execution model: local and script-first, with Codex used for diagnosis and implementation
 - runtime dependencies: no OpenAI API key, cloud service, or LangGraph runtime required
 
@@ -71,7 +71,7 @@ This started as a weekend project, but it was really a concrete question I wante
 
 I am a GPU performance engineer, not part of NVIDIA, and I did not start by reading CUTLASS internals. I wanted to try something narrower and more practical: pick one fixed BF16 GEMM, on one RTX 3070 Laptop GPU, build a reproducible human-in-the-loop optimization loop, and see how close I could get to a strong reference implementation with limited weekend time.
 
-So far, the result is already interesting enough to share. The custom kernel moved from roughly `800 ms` at the beginning to under `30 ms` on the official benchmark snapshot, with the current best custom run at `26.924031 ms`, while the current local CUTLASS baseline on the same benchmark is `25.917889 ms`. That leaves an official gap of `1.006143 ms`, or `3.882038%` in runtime.
+So far, the result is already interesting enough to share. The custom kernel moved from roughly `800 ms` at the beginning to under `30 ms` on the official benchmark snapshot, with the current best custom run at `25.974272 ms`, while the current local CUTLASS baseline on the same benchmark is `25.917889 ms`. That leaves an official gap of `0.056383 ms`, or `0.217545%` in runtime.
 
 That is not a "we beat CUTLASS" story. Not yet. It is a proof of concept about harness engineering: with a strong evaluation loop, good profiling, short-context iteration, and human steering at the right moments, a single engineer can move surprisingly far, surprisingly fast.
 
@@ -293,13 +293,13 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in the repo, so it can reflect newer exploratory commits even when the official best runtime remains unchanged.
+The tree asset below is regenerated from the latest tracked round history in the repo, currently through round `39/100`, so it can reflect newer exploratory commits even when the official best runtime remains unchanged.
 
 At the moment, the official benchmark snapshot in the repo is:
 
-- custom kernel: `26.924031 ms`
+- custom kernel: `25.974272 ms`
 - local CUTLASS baseline: `25.917889 ms`
-- result: `1.006143 ms` slower than CUTLASS, or `3.882038%` behind on runtime, already close enough to be interesting, still far enough to leave real room for better ideas
+- result: `0.056383 ms` slower than CUTLASS, or `0.217545%` behind on runtime, already close enough to be interesting, still far enough to leave real room for better ideas
 
 ## Document Map
 
