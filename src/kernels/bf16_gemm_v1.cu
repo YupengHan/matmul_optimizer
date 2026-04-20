@@ -315,8 +315,11 @@ static_assert(FixedHotBandTile128x128::kASharedBytes +
                           FixedHotBandTile128x128::kCSharedTileBytesPerWarp <=
                   FixedHotBandTile128x128::kStaticSharedByteBudget,
               "The CUTLASS-shaped hot-band shared-memory budget must fit on sm86.");
-static_assert(2 * FixedHotBandTile128x128::kASharedTileElems * sizeof(__nv_bfloat16) +
-                      2 * FixedHotBandTile128x128::kBSharedTileElems * sizeof(__nv_bfloat16) +
+static_assert(2 * kHotBandStageKTiles * FixedHotBandTile128x128::kASharedTileElems *
+                          sizeof(__nv_bfloat16) +
+                      2 * kHotBandStageKTiles *
+                          FixedHotBandTile128x128::kBSharedTileElems *
+                          sizeof(__nv_bfloat16) +
                       FixedHotBandTile128x128PtxExportScratch::kSharedBytes <=
                   FixedHotBandTile128x128::kStaticSharedByteBudget,
               "The PTX hot-band padded export scratch must fit inside the shared-memory budget.");
@@ -1085,7 +1088,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const __nv_bfloat16* b,
     __nv_bfloat16* c);
 
-template <int FixedKTiles>
+template <int FixedKStages>
 __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
@@ -1890,21 +1893,23 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
 #endif
 }
 
-template <int FixedKTiles>
+template <int FixedKStages>
 __global__ __launch_bounds__(128, 2)
 void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
-  static_assert(FixedKTiles > 1,
-                "The 128x128 PTX microkernel branch expects at least two K-tiles.");
-  static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
+  static_assert(FixedKStages > 1,
+                "The 128x128 PTX microkernel branch expects at least two K32 stages.");
+  static_assert(FixedKStages * kHotBandStageKTiles == kFixedBenchmarkKTiles,
                 "The 128x128 PTX microkernel branch must match the benchmark K dimension.");
   __shared__ __align__(16)
-      __nv_bfloat16 a_shared[2][FixedHotBandTile128x128::kASharedTileElems];
+      __nv_bfloat16
+          a_shared[2][kHotBandStageKTiles * FixedHotBandTile128x128::kASharedTileElems];
   __shared__ __align__(16)
-      __nv_bfloat16 b_shared[2][FixedHotBandTile128x128::kBSharedTileElems];
+      __nv_bfloat16
+          b_shared[2][kHotBandStageKTiles * FixedHotBandTile128x128::kBSharedTileElems];
   __shared__ __align__(16)
       float c_shared[FixedHotBandTile128x128PtxExportScratch::kTotalElems];
 
@@ -1932,39 +1937,69 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
       a_shared[0], a_block, kFixedBenchmarkK);
   stage_b_shared_tile_async<FixedHotBandTile128x128>(
       b_shared[0], b_block, kFixedBenchmarkN);
-  cp_async_commit_group();
   stage_a_shared_tile_async<FixedHotBandTile128x128>(
-      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+      a_shared[0] + FixedHotBandTile128x128::kASharedTileElems,
+      a_block + kWmmaK,
+      kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile128x128>(
+      b_shared[0] + FixedHotBandTile128x128::kBSharedTileElems,
+      b_block + kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
+      a_shared[1],
+      a_block + kHotBandStageKTiles * kWmmaK,
+      kFixedBenchmarkK);
   stage_b_shared_tile_async<FixedHotBandTile128x128>(
       b_shared[1],
-      b_block + kWmmaK * kFixedBenchmarkN,
+      b_block + kHotBandStageKTiles * kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
+      a_shared[1] + FixedHotBandTile128x128::kASharedTileElems,
+      a_block + (kHotBandStageKTiles + 1) * kWmmaK,
+      kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile128x128>(
+      b_shared[1] + FixedHotBandTile128x128::kBSharedTileElems,
+      b_block + (kHotBandStageKTiles + 1) * kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
   cp_async_commit_group();
   cp_async_wait_group_1();
   __syncthreads();
 
-  #pragma unroll 2
-  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
-    const int curr_stage = tile_idx & 1;
-    const int next_tile_idx = tile_idx + 1;
-    const int future_tile_idx = tile_idx + 2;
+  #pragma unroll 1
+  for (int stage_idx = 0; stage_idx < FixedKStages; ++stage_idx) {
+    const int curr_stage = stage_idx & 1;
+    const int next_stage_idx = stage_idx + 1;
+    const int future_stage_idx = stage_idx + 2;
 
-    const __nv_bfloat16* a_tile =
+    const __nv_bfloat16* a_tile_0 =
         a_shared[curr_stage] +
         warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
-    const __nv_bfloat16* b_tile =
+    const __nv_bfloat16* a_tile_1 =
+        a_shared[curr_stage] + FixedHotBandTile128x128::kASharedTileElems +
+        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* b_tile_0 =
         b_shared[curr_stage] +
+        b_shared_col_from_logical<FixedHotBandTile128x128>(
+            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+    const __nv_bfloat16* b_tile_1 =
+        b_shared[curr_stage] + FixedHotBandTile128x128::kBSharedTileElems +
         b_shared_col_from_logical<FixedHotBandTile128x128>(
             warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
-        acc_tiles, a_tile, b_tile);
+        acc_tiles, a_tile_0, b_tile_0);
+    ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
+        acc_tiles, a_tile_1, b_tile_1);
 
-    if (future_tile_idx < FixedKTiles) {
-      // Keep the restored accepted base intact while isolating future PTX work
-      // to this active hot-band branch symbol.
-      __syncthreads();
-      const int future_tile_k = future_tile_idx * kWmmaK;
+    // Keep the restored accepted base intact while isolating future PTX work
+    // to this active hot-band branch symbol, but recycle each stage only after
+    // both K16 halves of the current K32 stage have been consumed.
+    __syncthreads();
+
+    if (future_stage_idx < FixedKStages) {
+      const int future_tile_k = future_stage_idx * kHotBandStageKTiles * kWmmaK;
       stage_a_shared_tile_async<FixedHotBandTile128x128>(
           a_shared[curr_stage],
           a_block + future_tile_k,
@@ -1973,11 +2008,19 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
           b_shared[curr_stage],
           b_block + future_tile_k * kFixedBenchmarkN,
           kFixedBenchmarkN);
+      stage_a_shared_tile_async<FixedHotBandTile128x128>(
+          a_shared[curr_stage] + FixedHotBandTile128x128::kASharedTileElems,
+          a_block + future_tile_k + kWmmaK,
+          kFixedBenchmarkK);
+      stage_b_shared_tile_async<FixedHotBandTile128x128>(
+          b_shared[curr_stage] + FixedHotBandTile128x128::kBSharedTileElems,
+          b_block + (future_tile_k + kWmmaK) * kFixedBenchmarkN,
+          kFixedBenchmarkN);
       cp_async_commit_group();
     }
 
-    if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
+    if (next_stage_idx < FixedKStages) {
+      if (future_stage_idx < FixedKStages) {
         cp_async_wait_group_1();
       } else {
         cp_async_wait_group_0();
@@ -2039,7 +2082,7 @@ bool launch_bf16_gemm_v1(
           stream);
     } else {
       bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
-          kFixedBenchmarkKTiles><<<
+          kFixedBenchmarkKStages32><<<
               dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
                    kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
                    1),
