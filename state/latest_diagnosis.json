@@ -1,15 +1,78 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_090253",
+  "status": "completed",
+  "created_at": "2026-04-20T09:02:53-07:00",
   "source_run_id": "20260420_090210_bf16_gemm_v1_06ebe93",
   "source_run_dir": "runs/20260420_090210_bf16_gemm_v1_06ebe93",
   "source_summary_json": "runs/20260420_090210_bf16_gemm_v1_06ebe93/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "restore accepted base, then narrow locality window",
+      "hypothesis": "Restore the accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff base, then test whether reducing only kFixedHotBandPtxGroupedRows from 8 to 4 improves locality on the accepted consumer path without reopening the rejected grouped_rows=16 path.",
+      "expected_bottleneck": "Hot-band consumer-path locality and reuse window width on the accepted PTX sweep / handoff path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:600-606",
+        "src/kernels/bf16_gemm_v1.cu:649-685",
+        "src/kernels/bf16_gemm_v1.cu:1407-1424",
+        "src/kernels/bf16_gemm_v1.cu:1934-1943"
+      ],
+      "risk": "Medium: shrinking the group size may be too small and lose the locality benefit that the accepted base already captures, but the change stays narrowly scoped.",
+      "metrics_to_recheck": [
+        "kernel runtime versus 25.634208 ms",
+        "cp.async wait / CTA handoff stall behavior",
+        "shared-memory replay or load conflict signals",
+        "correctness against the BF16 reference"
+      ],
+      "stop_condition": "Only accept if it beats 25.634208 ms and keeps the accepted sweep order and handoff behavior intact."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "accepted base, then narrow overlap recovery",
+      "hypothesis": "Restore the accepted base first, then try a very narrow overlap-recovery tweak only after the current refill-order branch is closed; the residual loss is more likely a handoff overlap issue than a layout problem.",
+      "expected_bottleneck": "Refill-order overlap around the one-sync handoff and staged consumer refill path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1407-1424",
+        "src/kernels/bf16_gemm_v1.cu:1934-1943",
+        "src/kernels/bf16_gemm_v1.cu:649-685"
+      ],
+      "risk": "Higher than dir_01: small overlap changes can perturb scheduling and re-open refill-order regressions.",
+      "metrics_to_recheck": [
+        "kernel runtime versus 25.634208 ms",
+        "__syncthreads and cp.async wait pressure",
+        "barrier or memory-dependency stall indicators",
+        "correctness against the BF16 reference"
+      ],
+      "stop_condition": "Only accept if it improves on the restored base without reopening the refill-order branch."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "final consumer-order closure",
+      "hypothesis": "If the accepted right-left sweep remains the active base, the remaining opportunity is a final very local consumer-order closure after explicitly closing both the split sweep and the full mirrored sweep variants.",
+      "expected_bottleneck": "Residual consumer-order inefficiency in the hot-band PTX consumer path rather than grouping or refill layout.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:573-595",
+        "src/kernels/bf16_gemm_v1.cu:600-606",
+        "src/kernels/bf16_gemm_v1.cu:649-685"
+      ],
+      "risk": "Moderate: this is the narrowest remaining surface and easy to overfit if the accepted right-left sweep is still the right base.",
+      "metrics_to_recheck": [
+        "kernel runtime versus 25.634208 ms",
+        "warp issue efficiency",
+        "shared-load replay and dependency stall signals",
+        "correctness against the BF16 reference"
+      ],
+      "stop_condition": "Only pursue if the accepted right-left sweep stays active and the change does not replace it."
+    }
+  ],
+  "notes": "Anchored to run 20260420_090210_bf16_gemm_v1_06ebe93 at 25.634208 ms. Rejected this round: grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, broad shared-memory rewrites, and consumer-order variants that replace the accepted right-left sweep as the active base."
 }
