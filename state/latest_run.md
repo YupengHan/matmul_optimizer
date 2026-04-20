@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
-- run dir: `runs/20260420_154827_bf16_gemm_v1_7adfc4e`
-- kernel tag: `bf16_gemm_v1_7adfc4e`
-- round label: `round 2/17`
+- run id: `20260420_155035_bf16_gemm_v1_a4dc968`
+- run dir: `runs/20260420_155035_bf16_gemm_v1_a4dc968`
+- kernel tag: `bf16_gemm_v1_a4dc968`
+- round label: `round 3/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.505328 ms`
-- p10 runtime: `25.176064 ms`
-- p90 runtime: `26.814150 ms`
-- TFLOP/s: `28.504610 TFLOP/s`
-- previous run id: `20260420_154403_bf16_gemm_v1_153bda2`
-- runtime delta vs previous measured run: `-1.473488 ms`
-- TFLOP/s delta vs previous measured run: `+1.556821 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.545729 ms`
+- p10 runtime: `25.208521 ms`
+- p90 runtime: `26.490983 ms`
+- TFLOP/s: `28.459530 TFLOP/s`
+- previous run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
+- runtime delta vs previous measured run: `+0.040401 ms`
+- TFLOP/s delta vs previous measured run: `-0.045080 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX Export Syncs Inside The Single-Stage Scratch`
+- implemented direction name: `Finish Flattening PTX Export Across Tile Rows`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_154827_bf16_gemm_v1_7adfc4e/summary.json`
-- measured commit: `7adfc4eaef68ec1c5b773b611c0d7a91b594c7b8`
+- raw summary json: `runs/20260420_155035_bf16_gemm_v1_a4dc968/summary.json`
+- measured commit: `a4dc9684180bd8d536161425ebd8373caf288a6e`
 - new best custom: `no`
-- generated at: `2026-04-20T15:48:35-07:00`
+- generated at: `2026-04-20T15:50:43-07:00`

@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `7adfc4eaef68ec1c5b773b611c0d7a91b594c7b8`
-- plateau counter: `28`
-- round loop: `round 3/17`
-- rounds remaining: `15`
-- notes: `Node C build succeeded for round 3/17. Node A will now measure the new code path.`
+- latest measured commit: `a4dc9684180bd8d536161425ebd8373caf288a6e`
+- plateau counter: `29`
+- round loop: `round 4/17`
+- rounds remaining: `14`
+- notes: `Node A completed round 3/17. Run node_b to continue round 4/17.`
 
 ## Latest measured custom run
 
-- run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
-- run dir: `runs/20260420_154827_bf16_gemm_v1_7adfc4e`
+- run id: `20260420_155035_bf16_gemm_v1_a4dc968`
+- run dir: `runs/20260420_155035_bf16_gemm_v1_a4dc968`
 - correctness: `PASS`
-- median runtime: `25.505328 ms`
-- TFLOP/s: `28.504610 TFLOP/s`
+- median runtime: `25.545729 ms`
+- TFLOP/s: `28.459530 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_154908`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 3/17 diagnosis for run 20260420_154827_bf16_gemm_v1_7adfc4e. Human-review mapping: continue to accept only narrow PTX-adjacent ideas on the recovered baseline; keep broad default-promotion, staged K32, paired export-lifetime, helper-flattening-without-locality-awareness, and x-major traversal closed. The key update is that the export-helper family is now confirmed live: the bounded row-pair specialization improved runtime to 25.50532818 ms while holding DRAM at 11.54 and reducing long-scoreboard to 7.21. That makes a final TileRow flattening pass the best next move, with PTX prefetch retiming and B-shared skew as the two backup families.`
-- dir_01: Finish Flattening PTX Export Across Tile Rows | bottleneck: Residual PTX export-side control overhead and per-row epilogue orchestration inside the hot-band microkernel.
-- dir_02: Retune PTX Prefetch Handoff After The Export Cleanup | bottleneck: Copy-pipeline handoff timing in the PTX hot-band steady-state loop.
-- dir_03: Tune PTX Hot-Band B-Shared Skew On Top Of The New Base | bottleneck: Shared-memory fragment address generation and B-tile layout friction in the PTX hot-band path.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
