@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_221100",
-  "status": "completed",
-  "created_at": "2026-04-19T22:11:00-07:00",
-  "source_run_id": "20260419_221014_bf16_gemm_v1_5dd9f0d",
-  "source_run_dir": "runs/20260419_221014_bf16_gemm_v1_5dd9f0d",
-  "source_summary_json": "runs/20260419_221014_bf16_gemm_v1_5dd9f0d/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_221322_bf16_gemm_v1_d1b835e",
+  "source_run_dir": "runs/20260419_221322_bf16_gemm_v1_d1b835e",
+  "source_summary_json": "runs/20260419_221322_bf16_gemm_v1_d1b835e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human-idea",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea L2 cache clue: grouped CTA traversal for the fixed hot-band grid",
-      "hypothesis": "The current best custom branch is now correctness-stable and materially closer to CUTLASS at 29.432832 ms, but the headline micro-metrics still look almost identical to the earlier round-2 surface: tensor active about 38.63%, active warps about 16.67%, `mio_throttle` about 0.33, and L2 throughput only about 19.26%. That is a good moment to try the user-provided launch-order clue: keep the hot-band kernel logic unchanged, but remap logical CTA coordinates into a grouped traversal that clusters several block rows under the same hot-band column before advancing to the next column. If the scheduler follows block index order closely enough, this can improve B-tile reuse in L2 with very small code risk.",
-      "expected_bottleneck": "Potential L2 locality loss from the default hot-band CTA traversal over the 60x25 grid.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Low to moderate. The remap is structurally simple and does not touch the MMA pipeline, but CUDA does not guarantee issue order, so the upside may be limited or noisy.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if L2 throughput and hot-band time stay flat or if the grouped mapping perturbs correctness / hot-band coverage."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea bank conflict: try a lighter warp-local B consumer remap with no shared-footprint growth",
-      "hypothesis": "The best branch so far still comes from the B-consumer cleanup family, and the user explicitly asked to keep future bank-conflict work on the warp-local side rather than adding any CTA repack. A reasonable second direction is therefore to keep the shared layout and stage count fixed, but try a different warp-local column visit / lane-remap scheme for the 64x64 hot-band micro-tile so the consumer load order better matches the PTX operand-delivery pattern without adding shared memory or barriers.",
-      "expected_bottleneck": "Residual B-side shared-to-register delivery inefficiency and bank behavior inside the 64x64 hot-band PTX consumer path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64"
-      ],
-      "risk": "Moderate to high. This stays within the no-extra-shared rule, but recent history shows that B-side experiments can regress quickly if they disturb the already-good streaming path.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if `mio_throttle` rises, if registers climb, or if the hot-band time regresses."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea coalescing + async copy: retune cp.async ownership so each warp stages contiguous stripes",
-      "hypothesis": "The hot-band kernel already uses 16-byte `cp.async`, but the current staging loops still distribute copy ownership across the whole CTA with a simple `threadIdx.x` stride. A lower-priority structural experiment is to keep the same bytes moved and the same double buffer, but assign `cp.async` work in more contiguous per-warp stripes so the global-to-shared issue pattern is easier for the LSU and the consumer warps see more regular staging ownership.",
-      "expected_bottleneck": "Global-to-shared staging instruction overhead and issue regularity rather than raw DRAM bandwidth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Moderate. The code motion is local, but it changes the hot-band staging schedule and can easily lose if the current all-thread copy ownership is already well-balanced.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
-      ],
-      "stop_condition": "Reject if barrier stall grows or if the hot-band kernel time does not improve."
-    }
-  ],
-  "notes": "Round 5/30 starts from the new best custom branch. Restoring the last correctness-valid hot-band surface unexpectedly measured at 29.432832 ms with correctness restored, shrinking the CUTLASS gap to about 3.51 ms. The detailed profile, however, still does not show an obvious new single micro-bottleneck: the hot-band kernel remains around 40.99 us, registers stay at about 167/thread, tensor active stays around 38.63%, active warps around 16.67%, and both DRAM and L2 throughput remain modest. Because the branch is now both valid and relatively strong, this is a good point to spend one round on the user-provided L2-launch-order clue instead of forcing another fragile feed-side rewrite. Recommended direction dir_01 therefore tries a grouped CTA traversal for the fixed hot-band grid. Dir_02 keeps the next bank-conflict / consumer-delivery human idea in reserve without violating the no-extra-shared rule, and dir_03 captures the remaining coalescing / async-copy ownership experiment once the traversal clue has been tested."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
