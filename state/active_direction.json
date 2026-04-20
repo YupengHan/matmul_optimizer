@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Warp-specialized producer/consumer on top of the restored round-8 streaming B branch",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T21:43:40-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_214233",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Warp-specialized producer/consumer on top of the restored round-8 streaming B branch",
-    "hypothesis": "Round 8 showed that cleaning up the warp-local B consumer path can move runtime and feed metrics in the right direction without raising registers or shared memory. Round 9 then showed that squeezing the shared permutation harder is not the answer. The best remaining final-round bet is therefore to keep the restored round-8 streaming consumer branch and add the user's producer/consumer split on top: dedicate a small warp subset to staging and publication, while the remaining warps focus more heavily on MMA. This tests whether the residual gap is now CTA orchestration rather than raw B-fragment ordering.",
-    "expected_bottleneck": "All-warps staging and handoff overhead after the most obvious warp-local B feed pressure has already been reduced.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-      "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-      "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
-    ],
-    "risk": "High but worthwhile for a final-round ceiling test. The branch is still register-limited to one resident block, so losing compute warps can erase the benefit if the producer count is wrong.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "launch__registers_per_thread"
-    ],
-    "stop_condition": "Reject if barrier stall drops but hot-band time and runtime do not, or if tensor active falls because too many warps stop doing MMA."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
