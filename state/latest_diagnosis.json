@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_183726",
-  "status": "completed",
-  "created_at": "2026-04-19T18:37:26-07:00",
-  "source_run_id": "20260419_183401_bf16_gemm_v1_c3b9942",
-  "source_run_dir": "runs/20260419_183401_bf16_gemm_v1_c3b9942",
-  "source_summary_json": "runs/20260419_183401_bf16_gemm_v1_c3b9942/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_184138_bf16_gemm_v1_18511c3",
+  "source_run_dir": "runs/20260419_184138_bf16_gemm_v1_18511c3",
+  "source_summary_json": "runs/20260419_184138_bf16_gemm_v1_18511c3/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 7 Register reuse: keep the outside-in signal, but recode it as a lower-pressure mirrored schedule",
-      "hypothesis": "Round 11 is the strongest new measured signal since the accepted base: a single change to the PTX accumulator traversal improved runtime from the demoted Stage branch back to 33.5528965 ms, only about 0.424 ms slower than the accepted 9bdc160 run. That means Idea 7 is real, not noise. But the current implementation also raised registers/thread from 167 to 172 and made barrier and mio stalls worse than the accepted base while only modestly lowering long scoreboard. The right round-12 move is therefore not a family pivot yet; it is one bounded follow-up inside Idea 7. Keep the outside-in reuse concept, but re-encode the 12-tile sweep in a compiler-friendlier mirrored schedule so it preserves the long-scoreboard improvement without paying the current barrier/mio/register tax.",
-      "expected_bottleneck": "Warp-local issue-order pressure and codegen-induced register growth inside the 12-fragment PTX sweep, showing up as higher barrier and mio stalls even though long scoreboard improved.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:388-419",
-        "src/kernels/bf16_gemm_v1.cu:823-824",
-        "src/kernels/bf16_gemm_v1.cu:928-965"
-      ],
-      "risk": "This is a narrow optimization lane. If the current outside-in order already captured essentially all of the reuse benefit, the follow-up may only reshuffle tiny effects or regress back toward the accepted base. It also risks turning into another codegen experiment if the schedule is rewritten too abstractly.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the follow-up cannot beat the accepted base or at least recover registers/barrier/mio while preserving the long-scoreboard gain. If Idea 7 stalls there, it no longer deserves another narrow follow-up."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 1 Tiling: start a true 256x128 CTA / 64x64 warp hot-band branch",
-      "hypothesis": "The target is still 20 ms, and the current 64x384 family may simply not have enough ceiling even after the Idea 7 gain. The old tile sweep only covered 64-row CTA variants and found 64x384 best within that family; it did not invalidate a genuinely different 256x128 CTA and 64x64 warp hierarchy. This remains the most plausible high-ceiling pivot if the bounded Idea 7 follow-up does not immediately convert the current near-hit into a new accepted base.",
-      "expected_bottleneck": "CTA and warp tile hierarchy ceiling, where the current 64x384 hot band may be near-optimal only within a too-narrow search family.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:26-77",
-        "src/kernels/bf16_gemm_v1.cu:592-646",
-        "src/kernels/bf16_gemm_v1.cu:875-980"
-      ],
-      "risk": "High implementation risk and large search surface. This discards the current known-good hot-band branch and opens a structural rewrite that can easily regress correctness, occupancy, or tensor issue before it shows any upside.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "correctness",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if the first real implementation does not show a clear tensor-activity or runtime upside over the current 64x384 branch, or if correctness/build complexity explodes. Then the structural pivot is not paying its cost."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 9 Ps2r: add bounded shared-to-register lookahead on the stable two-stage PTX hot loop",
-      "hypothesis": "If round 12 decides not to keep tunneling on traversal order, the best fallback family is still Idea 9 rather than another feed-path rewrite. The current idea-7 branch restored the accepted-base two-stage control surface and still shows nontrivial long-scoreboard stall at 5.67. A small shared-to-register lookahead inside the hot sweep is materially different from traversal-order tuning and from the failed Stage family, while staying on the same stable PTX kernel surface.",
-      "expected_bottleneck": "Shared-to-register latency inside the hot PTX sweep, with long scoreboard as the main symptom and tensor activity as the payoff metric.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:267-289",
-        "src/kernels/bf16_gemm_v1.cu:388-419",
-        "src/kernels/bf16_gemm_v1.cu:823-824"
-      ],
-      "risk": "Earlier Idea 9 rounds were positive-but-insufficient, so this may improve a metric without beating the accepted base. It can also inflate registers if the lookahead is too eager.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if long scoreboard does not fall materially or if runtime stays flat while registers climb. Then Idea 9 remains a side signal rather than the mainline."
-    }
-  ],
-  "notes": "Round 12 is a continue-family move for Human idea 7 / Register reuse, not a pivot yet. The reason is measured and specific: the first outside-in RLRL traversal run immediately produced the best non-accepted result at 33.5528965 ms, recovering most of the gap from the demoted Stage branch and landing within about 0.424 ms of the accepted base. That is a much stronger reason to continue a family than the Stage family had after four rounds. At the same time, the current Idea 7 implementation clearly has secondary costs: registers/thread rose from 167 to 172, barrier stall rose from 14.30 to 16.95, and mio rose from 2.30 to 3.17. So the correct round-12 move is not to abandon Idea 7 immediately, but to make one bounded follow-up that tries to keep the long-scoreboard gain while reducing those new costs.\n\nHuman idea audit for this round:\n1. Tiling (256x128 block, 64x64 warp): accept-now. This is the best higher-ceiling pivot family, but it is ranked behind Idea 7 because Idea 7 now has direct measured evidence and much lower implementation risk.\n2. Coalescing Access: defer. The kernel already uses 16-byte cp.async-style wide accesses, and current evidence does not point to global-access packing as the next main limiter.\n3. Data Reuse: accept-now only as already-adopted baseline behavior. Shared-memory reuse of A and B is present in both the accepted base and the current Idea 7 branch.\n4. Async Copy: accept-now only as already-adopted baseline behavior. Async copy remains part of the stable hot loop, but it is not the family to prioritize next.\n5. Bank Conflict: reject-for-this-round. Prior B-feed and bank-shaping experiments were negative, and the current near-hit does not show a bank-conflict-led bottleneck.\n6. L2 Cache: reject-for-this-round. Nothing in the current run suggests that L2 hit ratio is the deciding limiter versus the accepted base.\n7. Register Reuse: accept-now and rank first. This family has the freshest and strongest positive evidence, and it is still close enough to the accepted base to justify one bounded follow-up.\n8. Pg2s: accept-now only as baseline behavior. Global-to-shared prefetch is already present and not the active decision point.\n9. Ps2r: accept-now as the fallback family and rank third. It remains a credible bounded latency-hiding alternative on the same stable control surface.\n10. Stage: reject-for-this-round as a primary family. Four rounds were enough to show that it changes machine behavior but plateaus far from the accepted base, so it should not regain priority here."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

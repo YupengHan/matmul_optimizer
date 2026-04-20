@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Human idea 7 Register reuse: keep the outside-in signal, but recode it as a lower-pressure mirrored schedule",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T18:39:31-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_183726",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Human idea 7 Register reuse: keep the outside-in signal, but recode it as a lower-pressure mirrored schedule",
-    "hypothesis": "Round 11 is the strongest new measured signal since the accepted base: a single change to the PTX accumulator traversal improved runtime from the demoted Stage branch back to 33.5528965 ms, only about 0.424 ms slower than the accepted 9bdc160 run. That means Idea 7 is real, not noise. But the current implementation also raised registers/thread from 167 to 172 and made barrier and mio stalls worse than the accepted base while only modestly lowering long scoreboard. The right round-12 move is therefore not a family pivot yet; it is one bounded follow-up inside Idea 7. Keep the outside-in reuse concept, but re-encode the 12-tile sweep in a compiler-friendlier mirrored schedule so it preserves the long-scoreboard improvement without paying the current barrier/mio/register tax.",
-    "expected_bottleneck": "Warp-local issue-order pressure and codegen-induced register growth inside the 12-fragment PTX sweep, showing up as higher barrier and mio stalls even though long scoreboard improved.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:388-419",
-      "src/kernels/bf16_gemm_v1.cu:823-824",
-      "src/kernels/bf16_gemm_v1.cu:928-965"
-    ],
-    "risk": "This is a narrow optimization lane. If the current outside-in order already captured essentially all of the reuse benefit, the follow-up may only reshuffle tiny effects or regress back toward the accepted base. It also risks turning into another codegen experiment if the schedule is rewritten too abstractly.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "launch__registers_per_thread"
-    ],
-    "stop_condition": "Stop if the follow-up cannot beat the accepted base or at least recover registers/barrier/mio while preserving the long-scoreboard gain. If Idea 7 stalls there, it no longer deserves another narrow follow-up."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

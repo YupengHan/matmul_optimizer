@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_183401_bf16_gemm_v1_c3b9942`
-- run dir: `runs/20260419_183401_bf16_gemm_v1_c3b9942`
-- kernel tag: `bf16_gemm_v1_c3b9942`
-- round label: `round 11/20`
+- run id: `20260419_184138_bf16_gemm_v1_18511c3`
+- run dir: `runs/20260419_184138_bf16_gemm_v1_18511c3`
+- kernel tag: `bf16_gemm_v1_18511c3`
+- round label: `round 12/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `33.552897 ms`
-- p10 runtime: `33.217843 ms`
-- p90 runtime: `34.747920 ms`
-- TFLOP/s: `21.667859 TFLOP/s`
-- previous run id: `20260419_182615_bf16_gemm_v1_b11ebbb`
-- runtime delta vs previous measured run: `-2.250175 ms`
-- TFLOP/s delta vs previous measured run: `+1.361796 TFLOP/s`
+- median runtime: `33.427456 ms`
+- p10 runtime: `33.031929 ms`
+- p90 runtime: `35.445863 ms`
+- TFLOP/s: `21.749170 TFLOP/s`
+- previous run id: `20260419_183401_bf16_gemm_v1_c3b9942`
+- runtime delta vs previous measured run: `-0.125441 ms`
+- TFLOP/s delta vs previous measured run: `+0.081311 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7 Register reuse: demote Stage, restore the accepted hot-band control surface, then reorder the 12-fragment PTX sweep`
+- implemented direction name: `Human idea 7 Register reuse: keep the outside-in signal, but recode it as a lower-pressure mirrored schedule`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_183401_bf16_gemm_v1_c3b9942/summary.json`
-- measured commit: `c3b9942c74427ff2dde2ee3290a87ac86cbea970`
+- raw summary json: `runs/20260419_184138_bf16_gemm_v1_18511c3/summary.json`
+- measured commit: `18511c3971aab131e324f44a6a370232b6aef1f8`
 - new best custom: `no`
-- generated at: `2026-04-19T18:34:08-07:00`
+- generated at: `2026-04-19T18:41:45-07:00`
