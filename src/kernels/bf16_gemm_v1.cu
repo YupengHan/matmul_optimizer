@@ -518,6 +518,12 @@ struct PtxWmmaMirroredTileIndex64x64 {
                       : (FixedHotBandTile256x128::kWarpMmaTilesN - 1 - (Step / 2));
 };
 
+template <typename TileConfig>
+__host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col);
+
+template <typename TileConfig>
+__host__ __device__ __forceinline__ int b_shared_col_offset_from_group_base(int logical_col_in_group);
+
 template <int RowPairBase, int ColIdx>
 __device__ __forceinline__ void ptx_wmma_mma_row_pair_col_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
@@ -550,7 +556,8 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
     PtxWmmaBf16Fragment b_frag;
     ptx_wmma_load_b_row(
         b_frag,
-        b_tile + ColIdx * kWmmaN,
+        b_tile +
+            b_shared_col_offset_from_group_base<FixedHotBandTile256x128>(ColIdx * kWmmaN),
         FixedHotBandTile256x128::kBSharedStride);
     ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
         acc_tiles, a_frag0, a_frag1, b_frag);
@@ -764,7 +771,32 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
 
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
+  if constexpr (TileConfig::kTensorBlockN == FixedHotBandTile256x128::kTensorBlockN &&
+                TileConfig::kWarpGroupCols == FixedHotBandTile256x128::kWarpGroupCols) {
+    const int warp_group = logical_col / TileConfig::kWarpGroupCols;
+    const int col_in_group = logical_col % TileConfig::kWarpGroupCols;
+    const int logical_fragment = col_in_group / kWmmaN;
+    const int col_in_fragment = col_in_group % kWmmaN;
+
+    int physical_fragment = logical_fragment;
+    if (logical_fragment == 1) {
+      physical_fragment = 2;
+    } else if (logical_fragment == 2) {
+      physical_fragment = 3;
+    } else if (logical_fragment == 3) {
+      physical_fragment = 1;
+    }
+
+    return warp_group * (TileConfig::kWarpGroupCols + kAsyncCopyElems) +
+           physical_fragment * kWmmaN + col_in_fragment;
+  }
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
+}
+
+template <typename TileConfig>
+__host__ __device__ __forceinline__ int b_shared_col_offset_from_group_base(int logical_col_in_group) {
+  return b_shared_col_from_logical<TileConfig>(logical_col_in_group) -
+         b_shared_col_from_logical<TileConfig>(0);
 }
 
 template <typename TileConfig>
