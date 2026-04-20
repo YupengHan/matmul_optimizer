@@ -1,70 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_002707",
-  "status": "completed",
-  "created_at": "2026-04-20T00:27:07-07:00",
-  "source_run_id": "20260420_002629_bf16_gemm_v1_1e8ffdd",
-  "source_run_dir": "runs/20260420_002629_bf16_gemm_v1_1e8ffdd",
-  "source_summary_json": "runs/20260420_002629_bf16_gemm_v1_1e8ffdd/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_002759_bf16_gemm_v1_1b9dbe3",
+  "source_run_dir": "runs/20260420_002759_bf16_gemm_v1_1b9dbe3",
+  "source_summary_json": "runs/20260420_002759_bf16_gemm_v1_1b9dbe3/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the current best branch and re-test grouped_rows=4 under the newer launch-bounds plus unroll-2 codegen",
-      "hypothesis": "The earlier grouped-order sweep was measured before the branch adopted `launch_bounds(128, 2)` and the successful unroll-2 setting. Those two changes materially altered codegen and the scheduler profile, which means the L2 sweet spot may have shifted. The next sensible re-check is the closer neighboring grouped value, `grouped_rows=4`, on top of the current best branch rather than on the older pre-launch-bounds baseline.",
-      "expected_bottleneck": "Cross-CTA locality under the newer compiler-guided hot-band branch, not under the earlier baseline used in the first grouped-order sweep.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:145",
-        "src/kernels/bf16_gemm_v1.cu:1501",
-        "src/kernels/bf16_gemm_v1.cu:1680"
-      ],
-      "risk": "The original grouped-order result may still hold, in which case this simply gives back some of the current gain. The main reason to do it is that the surrounding codegen regime is no longer the same one we tested before.",
-      "metrics_to_recheck": [
-        "correctness pass rate on all benchmark cases",
-        "median runtime",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if grouped_rows=4 remains worse than grouped_rows=8 even under the new codegen regime."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Freeze the current best hot-band branch and start trimming the smaller non-hot-band remainder only if the grouped re-check is neutral",
-      "hypothesis": "If grouped_rows=8 still wins under the new codegen regime, the hot-band branch may be approaching saturation and it becomes more rational to look at the smaller remainder kernels.",
-      "expected_bottleneck": "Secondary-region overhead outside the main hot band.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1784",
-        "src/kernels/bf16_gemm_v1.cu:1794"
-      ],
-      "risk": "Lower ceiling than hot-band work.",
-      "metrics_to_recheck": [
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the hot-band branch still dominates total runtime."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Hold the current best branch fixed and revisit tiny barrier-side cleanup only after the grouped re-check is settled",
-      "hypothesis": "If the grouped re-check is negative, the remaining bounded hot-band knob is still small barrier cleanup under the fixed best branch.",
-      "expected_bottleneck": "Residual barrier overhead in the current best hot-band kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1699",
-        "src/kernels/bf16_gemm_v1.cu:1712"
-      ],
-      "risk": "Very limited headroom.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if grouped_rows=8 continues to look like the settled hot-band setting."
-    }
-  ],
-  "notes": "Human-idea reflection for round 31: L2 Cache is promoted again, but specifically because the branch conditions changed after the original grouped-order sweep. The current best branch now combines grouped ordering, `launch_bounds(128, 2)`, and unroll-2, so re-checking the nearby grouped setting is more justified than repeating unrelated hot-band ideas. Register Reuse and compiler guidance remain accepted in the background because they define the current base. K32, peeled scheduling, aggressive launch-bounds, and 256x128 remain rejected."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

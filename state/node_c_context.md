@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore the current best branch and re-test grouped_rows=4 under the newer launch-bounds plus unroll-2 codegen`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_002707`
-- round loop: `round 31/50`
-- hypothesis: `The earlier grouped-order sweep was measured before the branch adopted `launch_bounds(128, 2)` and the successful unroll-2 setting. Those two changes materially altered codegen and the scheduler profile, which means the L2 sweet spot may have shifted. The next sensible re-check is the closer neighboring grouped value, `grouped_rows=4`, on top of the current best branch rather than on the older pre-launch-bounds baseline.`
-- expected bottleneck: `Cross-CTA locality under the newer compiler-guided hot-band branch, not under the earlier baseline used in the first grouped-order sweep.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:145, src/kernels/bf16_gemm_v1.cu:1501, src/kernels/bf16_gemm_v1.cu:1680`
-- risk: `The original grouped-order result may still hold, in which case this simply gives back some of the current gain. The main reason to do it is that the surrounding codegen regime is no longer the same one we tested before.`
-- metrics to re-check: `correctness pass rate on all benchmark cases, median runtime, lts__throughput.avg.pct_of_peak_sustained_elapsed, dram__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 32/50`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail

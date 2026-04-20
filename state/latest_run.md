@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_002629_bf16_gemm_v1_1e8ffdd`
-- run dir: `runs/20260420_002629_bf16_gemm_v1_1e8ffdd`
-- kernel tag: `bf16_gemm_v1_1e8ffdd`
-- round label: `round 30/50`
+- run id: `20260420_002759_bf16_gemm_v1_1b9dbe3`
+- run dir: `runs/20260420_002759_bf16_gemm_v1_1b9dbe3`
+- kernel tag: `bf16_gemm_v1_1b9dbe3`
+- round label: `round 31/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.601408 ms`
-- p10 runtime: `27.201814 ms`
-- p90 runtime: `28.607386 ms`
-- TFLOP/s: `26.339940 TFLOP/s`
-- previous run id: `20260420_002455_bf16_gemm_v1_7864f55`
-- runtime delta vs previous measured run: `-3.067265 ms`
-- TFLOP/s delta vs previous measured run: `+2.634335 TFLOP/s`
+- median runtime: `26.924031 ms`
+- p10 runtime: `26.706329 ms`
+- p90 runtime: `28.232499 ms`
+- TFLOP/s: `27.002621 TFLOP/s`
+- previous run id: `20260420_002629_bf16_gemm_v1_1e8ffdd`
+- runtime delta vs previous measured run: `-0.677377 ms`
+- TFLOP/s delta vs previous measured run: `+0.662682 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the current best grouped K16 branch and test the intermediate unroll factor between 2 and 4`
+- implemented direction name: `Restore the current best branch and re-test grouped_rows=4 under the newer launch-bounds plus unroll-2 codegen`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_002629_bf16_gemm_v1_1e8ffdd/summary.json`
-- measured commit: `1e8ffddc0cd1587cdd1fd9b6403d24f57c24cc45`
-- new best custom: `no`
-- generated at: `2026-04-20T00:26:37-07:00`
+- raw summary json: `runs/20260420_002759_bf16_gemm_v1_1b9dbe3/summary.json`
+- measured commit: `1b9dbe3d306090b4f1762f1e1a504c13d2ab5d92`
+- new best custom: `yes`
+- generated at: `2026-04-20T00:28:07-07:00`
