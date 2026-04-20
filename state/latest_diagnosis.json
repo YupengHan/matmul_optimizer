@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_235645",
+  "status": "completed",
+  "created_at": "2026-04-19T23:56:45-07:00",
   "source_run_id": "20260419_235558_bf16_gemm_v1_be44358",
   "source_run_dir": "runs/20260419_235558_bf16_gemm_v1_be44358",
   "source_summary_json": "runs/20260419_235558_bf16_gemm_v1_be44358/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Re-enable the 128x128x32 hot-band steady-state with the proven consume-before-overwrite fence",
+      "hypothesis": "Round 16 proved that the 128x128/128-thread hot-band family is structurally correct once the shared stage is kept live until all four warps finish consuming it. That means the best next move, aligned with the human-idea families around Async Copy, Pg2s, Ps2r, Data Reuse, and Stage, is not a new tile search but restoring the 2xK16-per-stage K32 steady-state on top of the now-proven stage contract. If the same consume-before-overwrite fence is applied to the K32 loop before reusing `a_shared[curr_stage]` and `b_shared[curr_stage]`, the branch should recover some of the 0.84 ms lost to the K16 control overhead while staying correct.",
+      "expected_bottleneck": "Mainloop control and overlap efficiency in the corrected 128x128 family. The target is to raise tensor active back toward the earlier incorrect K32/K16 peaks without reopening the shared-stage race.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1469",
+        "src/kernels/bf16_gemm_v1.cu:1555",
+        "src/kernels/bf16_gemm_v1.cu:1565",
+        "src/kernels/bf16_gemm_v1.cu:1754"
+      ],
+      "risk": "The K32 loop has two consumes per stage, so the fence placement must cover both MMA steps without unnecessarily serializing the stage. If the fence is too weak, correctness fails again; if it is too strong, the overlap gain disappears.",
+      "metrics_to_recheck": [
+        "correctness pass rate on all benchmark cases",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if correctness regresses, or if the K32 steady-state stays slower than the corrected K16 branch despite remaining correct."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Tighten the K16 consume fence instead of fencing every iteration with a full CTA barrier",
+      "hypothesis": "The corrected 29.20 ms path still leaves almost 10% barrier stall on the table. Once correctness is secured, the next lower-risk micro-optimization is to keep the 128x128 K16 kernel but reduce the bluntness of the new fence, for example by only synchronizing at the exact stage handoff point or by restructuring the reuse sequence so the overwrite happens after a narrower rendezvous. This stays inside the same hot-band family while directly targeting the round-16 regression from 28.36 ms to 29.20 ms.",
+      "expected_bottleneck": "Barrier overhead inside the corrected K16 mainloop rather than memory bandwidth or a macro-tile limitation.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1609",
+        "src/kernels/bf16_gemm_v1.cu:1662",
+        "src/kernels/bf16_gemm_v1.cu:1676",
+        "src/kernels/bf16_gemm_v1.cu:1692"
+      ],
+      "risk": "This is easy to get wrong because the current fence is the reason correctness returned. A narrower rendezvous can silently reintroduce the same race pattern.",
+      "metrics_to_recheck": [
+        "correctness pass rate",
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if any correctness case fails again, or if the narrower synchronization does not reduce barrier stalls enough to beat the current 29.20 ms result."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Try an L2-friendly CTA-order clue only after the corrected hot-band pipeline stabilizes",
+      "hypothesis": "The user-provided L2-cache idea remains plausible because the corrected 128x128 branch is now compute-credible and still shows meaningful DRAM/L2 traffic. A launch-order or swizzle-style hint could improve inter-CTA B reuse across neighboring column tiles, but CUDA provides weak control here and the effect will be second-order compared with the hot-band pipeline. This should therefore stay as a reserve experiment after the 128x128 stage machinery is fully exploited.",
+      "expected_bottleneck": "L2 reuse and block-issue locality rather than tensor-core delivery within a CTA.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1732",
+        "src/runner/main.cpp:135"
+      ],
+      "risk": "Block-order clues are indirect and hardware-dependent. The change may produce no measurable shift while adding complexity to the fixed benchmark path.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the corrected hot-band kernel is still mainly limited by tensor/barrier behavior, or if the code change requires a wider launch-graph refactor than a single round should absorb."
+    }
+  ],
+  "notes": "Human-idea reflection for round 17: accepted as primary are Stage, Async Copy, Pg2s, Ps2r, and Data Reuse because the corrected 128x128 path established that orchestration, not macro tiling, is what unlocked the new best custom runtime. Tiling 256x128 with 64x64 warp tiles is deferred because the 128x128 family has not yet been fully exploited and already beats the prior best custom result. Coalescing Access and Bank Conflict are deferred again because mio-throttle and scoreboard pressure are not the dominant signals in the corrected run. Register Reuse is also deferred because the current gain came from stage timing rather than a new register schedule. The L2 cache / block-order clue remains a valid later experiment, but only after the hot-band pipeline is stable."
 }

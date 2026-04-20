@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Re-enable the 128x128x32 hot-band steady-state with the proven consume-before-overwrite fence`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260419_235645`
 - round loop: `round 17/50`
+- hypothesis: `Round 16 proved that the 128x128/128-thread hot-band family is structurally correct once the shared stage is kept live until all four warps finish consuming it. That means the best next move, aligned with the human-idea families around Async Copy, Pg2s, Ps2r, Data Reuse, and Stage, is not a new tile search but restoring the 2xK16-per-stage K32 steady-state on top of the now-proven stage contract. If the same consume-before-overwrite fence is applied to the K32 loop before reusing `a_shared[curr_stage]` and `b_shared[curr_stage]`, the branch should recover some of the 0.84 ms lost to the K16 control overhead while staying correct.`
+- expected bottleneck: `Mainloop control and overlap efficiency in the corrected 128x128 family. The target is to raise tensor active back toward the earlier incorrect K32/K16 peaks without reopening the shared-stage race.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1469, src/kernels/bf16_gemm_v1.cu:1555, src/kernels/bf16_gemm_v1.cu:1565, src/kernels/bf16_gemm_v1.cu:1754`
+- risk: `The K32 loop has two consumes per stage, so the fence placement must cover both MMA steps without unnecessarily serializing the stage. If the fence is too weak, correctness fails again; if it is too strong, the overlap gain disappears.`
+- metrics to re-check: `correctness pass rate on all benchmark cases, median runtime, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
