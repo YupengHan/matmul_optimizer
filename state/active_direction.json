@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore the accepted 128x128 K16 base and scope the consume fence only to real stage overwrites",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T00:09:02-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_000825",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Restore the accepted 128x128 K16 base and scope the consume fence only to real stage overwrites",
+    "hypothesis": "Round 19 showed that aggressive launch-bounds pressure is not a viable path on this kernel: runtime doubled, tensor active collapsed, and memory stalls exploded. The next move should therefore be a strict return to the accepted 29.20 ms base, followed by the smallest possible Stage-family refinement. The most bounded variant is to keep the proven 128x128 K16 kernel, remove the launch-bounds hint, and only execute the added consume-side CTA fence on iterations that actually overwrite the current shared stage. That preserves the correctness fix while trimming barrier work on the final tiles where no future overwrite happens.",
+    "expected_bottleneck": "Barrier / orchestration overhead in the accepted 128x128 K16 hot-band loop, with no increase in shared footprint or register pressure.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1610",
+      "src/kernels/bf16_gemm_v1.cu:1678",
+      "src/kernels/bf16_gemm_v1.cu:1683",
+      "src/kernels/bf16_gemm_v1.cu:1757"
+    ],
+    "risk": "The upside is modest because the fence only disappears on the tail of the fixed K loop. The main risk is accidentally weakening the correctness guard and reopening the round-15 race.",
+    "metrics_to_recheck": [
+      "correctness pass rate on all benchmark cases",
+      "median runtime",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+    ],
+    "stop_condition": "Stop if correctness regresses, or if the runtime simply returns to the accepted base with no measurable improvement."
+  },
+  "notes": "Node C may now implement this one direction."
 }
