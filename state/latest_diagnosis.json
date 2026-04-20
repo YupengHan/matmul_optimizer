@@ -1,15 +1,76 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_084003",
+  "status": "completed",
+  "created_at": "2026-04-20T08:40:03-07:00",
   "source_run_id": "20260420_083902_bf16_gemm_v1_de7e8be",
   "source_run_dir": "runs/20260420_083902_bf16_gemm_v1_de7e8be",
   "source_summary_json": "runs/20260420_083902_bf16_gemm_v1_de7e8be/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Steady-state barrier / handoff retime",
+      "hypothesis": "The accepted PTX hot-band base is now limited most visibly by the barrier/handoff point in the steady-state loop. The right-left PTX consume order already proved the lane-local retime is live: runtime improved by 0.047009 ms at 24.849423 ms, and short scoreboard dropped from 3.02 to 1.52. Barrier rose from 6.42 to 7.43 and is now the clearest exposed limiter, so the next move is a very narrow retime around the active PTX hot-band loop handoff.",
+      "expected_bottleneck": "Barrier latency at the active hot-band handoff, not stage count, macro tiling, grouped-row count, or warmup-order mechanics.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: hot-band steady-state loop handoff around the PTX consume order",
+        "src/kernels/bf16_gemm_v1.cu: barrier placement immediately before/after the active PTX hot-band consumer path",
+        "src/kernels/bf16_gemm_v1.cu: accepted PTX hot-band base in the async-copy / Pg2s / Stage path"
+      ],
+      "risk": "A handoff retime can regress the already improved scoreboard balance if it widens the critical path or disturbs the accepted hot-band base.",
+      "metrics_to_recheck": [
+        "runtime_ms versus 24.849423 ms",
+        "barrier",
+        "short_scoreboard",
+        "warp stall balance at the hot-band handoff"
+      ],
+      "stop_condition": "Stop if the retime reduces barrier without reopening stage count, macro tiling, grouped-row count, or warmup-order experimentation."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "PTX hot-band consumer-order refinement",
+      "hypothesis": "The first warp-local consume retime paid off, so a second consumer-side refinement remains live. A narrower lane-local variant or row-pair traversal order adjustment may still trim residual latency on the PTX hot-band consumer path without changing the accepted base structure.",
+      "expected_bottleneck": "Consumer-side ordering detail in the PTX hot-band path, especially row-pair traversal or lane-local reuse, with the current run still showing barrier as the primary exposed issue.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: row-pair traversal order in the PTX hot-band consumer loop",
+        "src/kernels/bf16_gemm_v1.cu: lane-local consume variant adjacent to the active PTX hot-band path",
+        "src/kernels/bf16_gemm_v1.cu: register-reuse / bank-sensitive consumer ordering region"
+      ],
+      "risk": "Further consumer-order changes can overfit a narrow scheduling window or trade the current scoreboard gain for instability.",
+      "metrics_to_recheck": [
+        "runtime_ms versus 24.849423 ms",
+        "short_scoreboard",
+        "register pressure",
+        "bank conflict indicators"
+      ],
+      "stop_condition": "Stop if the refinement does not beat the current consumer-order result or starts to undo the scoreboard improvement."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Hot-band L2 / grouped-row launch-order locality",
+      "hypothesis": "Launch-order locality may still help the hot-band path by improving L2 behavior or grouped-row sequencing, but this is secondary because the current run exposed barrier pressure more strongly than L2 pressure.",
+      "expected_bottleneck": "L2 cache locality and grouped-row launch order rather than the steady-state barrier limiter.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu: grouped-row launch order for the hot-band path",
+        "src/kernels/bf16_gemm_v1.cu: L2 locality / swizzle-sensitive launch sequencing",
+        "src/kernels/bf16_gemm_v1.cu: grouped-row dispatch around the accepted PTX hot-band base"
+      ],
+      "risk": "Launch-order tuning may produce small gains but is less likely to move the main limiter than the barrier/handoff path.",
+      "metrics_to_recheck": [
+        "runtime_ms versus 24.849423 ms",
+        "L2 locality indicators",
+        "launch-order sensitivity",
+        "grouped-row throughput"
+      ],
+      "stop_condition": "Stop if L2/locality changes fail to move runtime or if they distract from the clearer barrier limiter."
+    }
+  ],
+  "notes": "Round 56/100 diagnosis anchored to run 20260420_083902_bf16_gemm_v1_de7e8be at 24.849423 ms. Rejected this round: reopening warmup-order branch, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, or wider shared-memory rewrites."
 }
