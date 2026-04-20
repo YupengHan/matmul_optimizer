@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `50`
-- completed rounds: `8`
-- remaining rounds: `42`
-- current round label: `round 9/50`
+- completed rounds: `9`
+- remaining rounds: `41`
+- current round label: `round 10/50`
 - auto use recommended: `yes`
 - accepted base run id: `20260419_222734_bf16_gemm_v1_0d78758`
 - accepted base measured commit: `0d787589a75b35984fb169106135c77436806bc6`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 9/50. Node A will measure the result next.`
+- notes: `Completed round 9/50. Continue with node_b for round 10/50. Accepted base: 20260419_222734_bf16_gemm_v1_0d78758 at 29.325824 ms.`
 
 ## Last completed round
 
-- round: `8/50`
+- round: `9/50`
 - direction: `dir_01`
-- direction name: `Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments`
-- verdict: `improved`
-- runtime delta: `-0.187391 ms`
-- TFLOP/s delta: `+0.146869 TFLOP/s`
-- run dir: `runs/20260419_230631_bf16_gemm_v1_2122558`
-- ncu rep path: `runs/20260419_230631_bf16_gemm_v1_2122558/ncu_profile.ncu-rep`
+- direction name: `Keep the restored control flow and add A-side row-pair lookahead inside the 64x64 PTX microkernel`
+- verdict: `regressed`
+- runtime delta: `+0.068096 ms`
+- TFLOP/s delta: `-0.053580 TFLOP/s`
+- run dir: `runs/20260419_230856_bf16_gemm_v1_a80b5af`
+- ncu rep path: `runs/20260419_230856_bf16_gemm_v1_a80b5af/ncu_profile.ncu-rep`

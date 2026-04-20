@@ -1,79 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_230713",
-  "status": "completed",
-  "created_at": "2026-04-19T23:07:13-07:00",
-  "source_run_id": "20260419_230631_bf16_gemm_v1_2122558",
-  "source_run_dir": "runs/20260419_230631_bf16_gemm_v1_2122558",
-  "source_summary_json": "runs/20260419_230631_bf16_gemm_v1_2122558/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_230856_bf16_gemm_v1_a80b5af",
+  "source_run_dir": "runs/20260419_230856_bf16_gemm_v1_a80b5af",
+  "source_summary_json": "runs/20260419_230856_bf16_gemm_v1_a80b5af/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human+auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep the restored control flow and add A-side row-pair lookahead inside the 64x64 PTX microkernel",
-      "hypothesis": "The restored surface is correct again and the headline bottleneck profile still looks like compute underfeed, not DRAM saturation: tensor activity is 38.55%, short scoreboard is 6.80%, mio throttle is only 0.33%, and barrier is low. The right-left-right-left B sweep was negative, so the next human Ps2r branch should move to the A side instead of the B side. The current microkernel still loads one row pair, consumes all columns, then loads the next row pair. Keeping the next A row pair live while the current row pair is consumed is the cleanest warp-local test that matches the human Ps2r idea without touching CTA staging or control flow.",
-      "expected_bottleneck": "Warp-local shared-to-register latency on the A-fragment path inside the 64x64 PTX microkernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64"
-      ],
-      "risk": "Moderate. This is warp-local and correctness-safe in shape, but it can increase live A fragments and push register pressure above the current 167/thread surface.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if register pressure rises materially or if short-scoreboard changes do not produce a measurable hot-band win."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Keep the restored surface and test a light L2-friendly logical CTA swizzle",
-      "hypothesis": "The user's L2-cache idea remains the strongest non-warp-local alternative. With correctness back under control, a light logical CTA swizzle over the hot-band grid is a clean way to probe inter-CTA locality without changing the inner microkernel or shared-memory layout.",
-      "expected_bottleneck": "Inter-CTA L2 reuse across neighboring hot-band B tiles.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Moderate. The previous grouped traversal regression means this needs to stay lightweight and reversible.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if L2 throughput stays flat or if runtime regresses on the restored surface."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Try warp-specialized Pg2s staging on the restored surface without changing the tile shape",
-      "hypothesis": "The last major human-idea family that remains mostly untested on the restored correct surface is Pg2s orchestration. Even with low barrier, all warps still participate in the hot-band staging loop. A minimal producer/consumer split that leaves the macro tile untouched could reveal whether some tensor issue is still being diluted by CTA-wide staging responsibilities.",
-      "expected_bottleneck": "CTA-level staging orchestration and barrier dilution inside the hot-band loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "High. This is a larger orchestration change and can easily hurt tensor issue if the producer/consumer split is wrong.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Reject if barrier falls but tensor activity and hot-band time do not improve, or if the split inflates registers materially."
-    }
-  ],
-  "notes": "Round 9/50 resumes forward optimization from a restored correct surface. The recommended next move is dir_01, which follows the human Ps2r idea on the A side while keeping control flow and CTA staging unchanged so the result stays easy to interpret."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_230631_bf16_gemm_v1_2122558`
-- run dir: `runs/20260419_230631_bf16_gemm_v1_2122558`
-- kernel tag: `bf16_gemm_v1_2122558`
-- round label: `round 8/50`
+- run id: `20260419_230856_bf16_gemm_v1_a80b5af`
+- run dir: `runs/20260419_230856_bf16_gemm_v1_a80b5af`
+- kernel tag: `bf16_gemm_v1_a80b5af`
+- round label: `round 9/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.363136 ms`
-- p10 runtime: `30.103523 ms`
-- p90 runtime: `31.702937 ms`
-- TFLOP/s: `23.944148 TFLOP/s`
-- previous run id: `20260419_230410_bf16_gemm_v1_abefa1e`
-- runtime delta vs previous measured run: `-0.187391 ms`
-- TFLOP/s delta vs previous measured run: `+0.146869 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.431232 ms`
+- p10 runtime: `29.965824 ms`
+- p90 runtime: `30.881075 ms`
+- TFLOP/s: `23.890568 TFLOP/s`
+- previous run id: `20260419_230631_bf16_gemm_v1_2122558`
+- runtime delta vs previous measured run: `+0.068096 ms`
+- TFLOP/s delta vs previous measured run: `-0.053580 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-anchor exactly at the accepted best implementation commit 0d78758 before more experiments`
+- implemented direction name: `Keep the restored control flow and add A-side row-pair lookahead inside the 64x64 PTX microkernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_230631_bf16_gemm_v1_2122558/summary.json`
-- measured commit: `212255834e8215f9f39a12cd699bfa87eb8fb458`
+- raw summary json: `runs/20260419_230856_bf16_gemm_v1_a80b5af/summary.json`
+- measured commit: `a80b5afb975ecc8cf7cdc1e21ce10496d4b0faf4`
 - new best custom: `no`
-- generated at: `2026-04-19T23:06:38-07:00`
+- generated at: `2026-04-19T23:09:03-07:00`
