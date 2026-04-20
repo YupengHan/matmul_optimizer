@@ -701,30 +701,24 @@ __device__ __forceinline__ void ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microke
 }
 
 template <int Step = 0>
-__device__ __forceinline__ void
-ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead(
+__device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag0,
     const PtxWmmaBf16Fragment& a_frag1,
     const PtxWmmaBf16Fragment& a_frag2,
     const PtxWmmaBf16Fragment& a_frag3,
-    const __nv_bfloat16* b_tile,
-    const PtxWmmaBf16Fragment& current_b_frag) {
+    const __nv_bfloat16* b_tile) {
   if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
     constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
-    if constexpr (Step + 1 < FixedHotBandTile128x128::kWarpMmaTilesN) {
-      PtxWmmaBf16Fragment next_b_frag;
-      // Keep a single B fragment live across both 32-row pairs before
-      // advancing so the active PTX branch stops reloading it per pair.
-      ptx_wmma_load_col_fragment_64x64<Step + 1>(next_b_frag, b_tile);
-      ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel<ColIdx>(
-          acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, current_b_frag);
-      ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead<Step + 1>(
-          acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile, next_b_frag);
-    } else {
-      ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel<ColIdx>(
-          acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, current_b_frag);
-    }
+    PtxWmmaBf16Fragment b_frag;
+    // Load one mirrored-column B fragment, consume it across both row pairs,
+    // then advance so the PTX-only branch no longer keeps a next-fragment
+    // lookahead live through the recursive sweep.
+    ptx_wmma_load_col_fragment_64x64<Step>(b_frag, b_tile);
+    ptx_wmma_mma_all_row_pairs_col_64x64_ptx_microkernel<ColIdx>(
+        acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_frag);
+    ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<Step + 1>(
+        acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile);
   }
 }
 
@@ -736,15 +730,13 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64_ptx_microkern
   PtxWmmaBf16Fragment a_frag1;
   PtxWmmaBf16Fragment a_frag2;
   PtxWmmaBf16Fragment a_frag3;
-  PtxWmmaBf16Fragment b_frag;
 
   ptx_wmma_load_a_row(a_frag0, a_tile, kWmmaK);
   ptx_wmma_load_a_row(a_frag1, a_tile + kWmmaM * kWmmaK, kWmmaK);
   ptx_wmma_load_a_row(a_frag2, a_tile + 2 * kWmmaM * kWmmaK, kWmmaK);
   ptx_wmma_load_a_row(a_frag3, a_tile + 3 * kWmmaM * kWmmaK, kWmmaK);
-  ptx_wmma_load_col_fragment_64x64<0>(b_frag, b_tile);
-  ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel_lookahead(
-      acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile, b_frag);
+  ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel(
+      acc_tiles, a_frag0, a_frag1, a_frag2, a_frag3, b_tile);
 }
 
 template <typename TileConfig, int TileIdx = 0>
