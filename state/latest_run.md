@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_002455_bf16_gemm_v1_7864f55`
-- run dir: `runs/20260420_002455_bf16_gemm_v1_7864f55`
-- kernel tag: `bf16_gemm_v1_7864f55`
-- round label: `round 29/50`
+- run id: `20260420_002629_bf16_gemm_v1_1e8ffdd`
+- run dir: `runs/20260420_002629_bf16_gemm_v1_1e8ffdd`
+- kernel tag: `bf16_gemm_v1_1e8ffdd`
+- round label: `round 30/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.668673 ms`
-- p10 runtime: `30.286119 ms`
-- p90 runtime: `31.522304 ms`
-- TFLOP/s: `23.705604 TFLOP/s`
-- previous run id: `20260420_002230_bf16_gemm_v1_7c672be`
-- runtime delta vs previous measured run: `+1.005953 ms`
-- TFLOP/s delta vs previous measured run: `-0.803929 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `27.601408 ms`
+- p10 runtime: `27.201814 ms`
+- p90 runtime: `28.607386 ms`
+- TFLOP/s: `26.339940 TFLOP/s`
+- previous run id: `20260420_002455_bf16_gemm_v1_7864f55`
+- runtime delta vs previous measured run: `-3.067265 ms`
+- TFLOP/s delta vs previous measured run: `+2.634335 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Revisit the 128x128x32 hot-band branch on top of the current grouped-order plus launch-bounds base`
+- implemented direction name: `Restore the current best grouped K16 branch and test the intermediate unroll factor between 2 and 4`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_002455_bf16_gemm_v1_7864f55/summary.json`
-- measured commit: `7864f5515778a7b40f754bd5cb6ac6e0ec083ef2`
+- raw summary json: `runs/20260420_002629_bf16_gemm_v1_1e8ffdd/summary.json`
+- measured commit: `1e8ffddc0cd1587cdd1fd9b6403d24f57c24cc45`
 - new best custom: `no`
-- generated at: `2026-04-20T00:25:03-07:00`
+- generated at: `2026-04-20T00:26:37-07:00`
