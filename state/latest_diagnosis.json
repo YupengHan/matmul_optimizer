@@ -1,88 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_213703",
-  "status": "completed",
-  "created_at": "2026-04-19T21:37:03-07:00",
-  "source_run_id": "20260419_213613_bf16_gemm_v1_5775c08",
-  "source_run_dir": "runs/20260419_213613_bf16_gemm_v1_5775c08",
-  "source_summary_json": "runs/20260419_213613_bf16_gemm_v1_5775c08/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_214140_bf16_gemm_v1_63d2faf",
+  "source_run_dir": "runs/20260419_214140_bf16_gemm_v1_63d2faf",
+  "source_summary_json": "runs/20260419_214140_bf16_gemm_v1_63d2faf/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "recommended_idea_origin": "human-idea+auto-analysis",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "notes": "Round 9 human-idea audit after the round-8 B-feed experiment: Tiling stays accepted because the 64x384 hot band is still the measured macro-shape sweet spot; Coalescing Access, Data Reuse, Async Copy, and Pg2s remain baseline infrastructure; L2 Cache stays rejected because the grouped CTA remap already regressed runtime and hot-band time; Stage stays rejected because the fixed-shape control refactor also regressed; the round-8 warp-local B consumer transform did not beat the accepted base, but it did produce the first meaningful same-family positive signal after those failures: runtime improved by about 0.65 ms over the negative L2 run, hot-band time dropped to about 41.17 us, tensor active rose to about 38.47, short scoreboard improved, `mio_throttle` collapsed to about 0.33, registers stayed at 167, and shared footprint did not grow. That is enough evidence to keep the last two rounds on the B-feed family rather than switching again. Recommended direction dir_01 therefore advances from consumer issue order alone to the user's deeper producer/consumer-layout split inside the same shared-memory budget: keep the new single-fragment streaming consumer path, but physically permute the B shared layout inside each warp group so producer layout and consumer layout are no longer identical.",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea two-level B staging follow-through: footprint-neutral B shared permutation on top of the current streaming consumer path",
-      "hypothesis": "Round 8 suggests the B-feed family is finally moving the right metrics without raising registers or shared memory, but issue-order alone is not enough. The next step is the user's earlier producer-layout / consumer-layout split, done inside the existing footprint: keep the current single-fragment mirrored consumer path, but change the physical placement of B chunks in shared memory so `stage_b_shared_tile_async` writes a bank-friendlier order and `b_shared_col_from_logical` maps logical consumer columns back onto that permuted layout. This keeps macro tiling, stage depth, and cp.async volume fixed while making the producer and consumer views of B deliberately different.",
-      "expected_bottleneck": "Warp-local shared/L1 operand delivery and bank behavior on the hot-band B fragment path rather than CTA-level control flow.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:b_shared_col_from_logical",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_b_row",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Moderate. This is still correctness-sensitive, and the shared permutation has to preserve 16-byte async-copy alignment plus the current footprint. The guardrail is strict: no second B shared tile, no CTA repack, no extra barrier, no stage-depth loss.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Reject if the shared permutation increases footprint, complicates into CTA repack, or leaves hot-band time flat. The family only stays alive while it is shared-neutral and warp-local."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Warp-specialized producer/consumer on top of the current B-feed branch",
-      "hypothesis": "If the final rounds need a materially different branch while staying close to the current positive signal, the next orchestration family is still producer/consumer warp specialization. Apply it on top of the current streaming B-consumer branch rather than the old baseline: let one small producer subset handle staging while the remaining warps stay primarily on MMA. This tests whether the remaining gap is now orchestration rather than raw operand order.",
-      "expected_bottleneck": "All-warps staging and handoff overhead after the most obvious B-fragment issue pressure has already been reduced.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
-      ],
-      "risk": "High. The kernel is still occupancy-limited by registers, so giving up compute warps can easily erase any overlap gain. This is better treated as the backup branch if dir_01 stalls immediately.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if barrier stall drops but runtime and hot-band time do not, or if tensor active falls because too many warps stopped doing MMA."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea Ps2r on the current streaming branch: one-fragment shared-to-register lookahead",
-      "hypothesis": "The current branch already streams one B fragment at a time in mirrored order. The next direct feed-latency bet is to overlap the next B fragment load from shared to registers with the current MMA issue chain, effectively turning the new single-fragment path into a one-step Ps2r pipeline. This is the user's Ps2r idea applied after the round-8 consumer refactor rather than on the older pair-load path.",
-      "expected_bottleneck": "Residual shared-to-register feed latency inside the hot-band 64x64 micro-tile after the first consumer-order cleanup.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "High register risk. The branch is still sitting on the register wall, so a Ps2r lookahead can quickly wipe out the small signal round 8 recovered.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if registers climb or occupancy worsens without a clear hot-band runtime win."
-    }
-  ]
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

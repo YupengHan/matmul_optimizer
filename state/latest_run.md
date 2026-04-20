@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_213613_bf16_gemm_v1_5775c08`
-- run dir: `runs/20260419_213613_bf16_gemm_v1_5775c08`
-- kernel tag: `bf16_gemm_v1_5775c08`
-- round label: `round 8/10`
+- run id: `20260419_214140_bf16_gemm_v1_63d2faf`
+- run dir: `runs/20260419_214140_bf16_gemm_v1_63d2faf`
+- kernel tag: `bf16_gemm_v1_63d2faf`
+- round label: `round 9/10`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.662016 ms`
-- p10 runtime: `30.132327 ms`
-- p90 runtime: `31.270092 ms`
-- TFLOP/s: `23.710751 TFLOP/s`
-- previous run id: `20260419_213009_bf16_gemm_v1_7e51a77`
-- runtime delta vs previous measured run: `-0.648272 ms`
-- TFLOP/s delta vs previous measured run: `+0.490925 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.856704 ms`
+- p10 runtime: `30.341422 ms`
+- p90 runtime: `32.054171 ms`
+- TFLOP/s: `23.561150 TFLOP/s`
+- previous run id: `20260419_213613_bf16_gemm_v1_5775c08`
+- runtime delta vs previous measured run: `+0.194688 ms`
+- TFLOP/s delta vs previous measured run: `-0.149601 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea bank-conflict follow-through: warp-local B consumer transform on the restored accepted base`
+- implemented direction name: `Human idea two-level B staging follow-through: footprint-neutral B shared permutation on top of the current streaming consumer path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_213613_bf16_gemm_v1_5775c08/summary.json`
-- measured commit: `5775c085b600b2078e7adc4489329d3d1dfa5c92`
+- raw summary json: `runs/20260419_214140_bf16_gemm_v1_63d2faf/summary.json`
+- measured commit: `63d2fafdf1de4fcbc09b734f8f6f3a3320e8b1b7`
 - new best custom: `no`
-- generated at: `2026-04-19T21:36:21-07:00`
+- generated at: `2026-04-19T21:41:49-07:00`
