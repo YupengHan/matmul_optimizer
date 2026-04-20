@@ -1,10 +1,32 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Retune The Accepted Grouped-Row=8 PTX Hot Band Around Stage Cadence",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T07:52:47-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_074934",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Retune The Accepted Grouped-Row=8 PTX Hot Band Around Stage Cadence",
+    "hypothesis": "Round 47's grouped-row=8 PTX hot-band path remains the accepted best base at 25.529328 ms, and round 48 showed that keeping one more mirrored-column B fragment live is not the right next lever: mio_throttle only moved 4.77 -> 4.72 and lts throughput only moved 30.02 -> 30.11 while runtime regressed to 25.759745 ms. With DRAM still low at 10.35%, tensor activity only 48.21%, warps active only 16.64%, and barrier still 7.52%, the next highest-upside move is to keep the accepted grouped-row=8 traversal and shift to a structural stage/cadence experiment in the dominant 128x128 PTX hot-band kernel. The existing two-K staged 128x128 path is the most relevant template: borrow its stage turnover or wait/commit cadence, but do not reintroduce B-fragment lookahead as the main mechanism.",
+    "expected_bottleneck": "Synchronization and steady-state K16 stage turnover in the dominant grouped-row=8 PTX hot-band kernel, which is still underfeeding Tensor Cores after the locality win.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1669-1806",
+      "src/kernels/bf16_gemm_v1.cu:1954-2028",
+      "src/kernels/bf16_gemm_v1.cu:151"
+    ],
+    "risk": "This is the highest-upside but also the most structural option. A cadence change can raise shared-memory footprint, lengthen live ranges, perturb occupancy, or undo the current grouped-row=8 stability. The implementation must stay anchored to the accepted grouped-row=8 PTX path rather than reopening the failed B-fragment-live branch.",
+    "metrics_to_recheck": [
+      "median runtime and TFLOP/s against the 25.529328 ms accepted base and the <20 ms user target",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "launch__shared_mem_per_block_allocated",
+      "launch__registers_per_thread"
+    ],
+    "stop_condition": "Stop if the cadence change lowers barrier a little but does not beat 25.529328 ms, or if it improves one stall counter by trading it for higher shared/register pressure."
+  },
+  "notes": "Node C may now implement this one direction."
 }
