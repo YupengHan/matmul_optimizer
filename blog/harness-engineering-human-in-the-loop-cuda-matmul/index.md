@@ -1,4 +1,4 @@
-# Harness Engineering + Human-in-the-Loop: a weekend CUDA matmul project from 800 ms to <30 ms
+# Harness Engineering + Human-in-the-Loop: a weekend CUDA matmul project that beat CUTLASS
 
 This was a weekend project, but it was really a question I wanted to test for myself:
 
