@@ -1,15 +1,86 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_003423",
+  "status": "completed",
+  "created_at": "2026-04-20T00:34:23-07:00",
   "source_run_id": "20260420_003403_bf16_gemm_v1_26d9819",
   "source_run_dir": "runs/20260420_003403_bf16_gemm_v1_26d9819",
   "source_summary_json": "runs/20260420_003403_bf16_gemm_v1_26d9819/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Rewrite the active 128x128 K16 hot-band steady-state around Pg2s/Stage orchestration instead of dead grouped_rows tuning",
+      "hypothesis": "Primary human-idea family for round 33: `Async Copy` + `Pg2s` + `Stage` on the real default path. The measured hot kernel is `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel` launched at `src/kernels/bf16_gemm_v1.cu:1776`, not the grouped-order `128x128x32` kernel. Round 32 changed `kFixedHotBandGroupedRows`, but that knob is only consumed by the inactive `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel`, so the 27.130784 ms result is evidence that we should stop optimizing that dead L2-dispatch knob. On the actual active path, 16-byte wide global access and shared-memory reuse are already present, yet tensor-active is still only 48.24% while barrier stall is 8.04%, mio throttle is 4.31%, and DRAM/L2 are only 31.02% / 26.33%. The next best move is to keep the 128x128 CTA shape and 64x64 warp ownership, but restructure the K16 steady-state so stage recycle / commit / wait / sync are less intrusive: fewer full-CTA synchronization points, cleaner cp.async overlap, and no all-warps-copy behavior that dilutes tensor issue.",
+      "expected_bottleneck": "Active hot-band feed/orchestration overhead in the K16 global-to-shared pipeline, dominated by synchronization and shared/L1/LSU delivery rather than external memory bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:869-895",
+        "src/kernels/bf16_gemm_v1.cu:1630-1726",
+        "src/kernels/bf16_gemm_v1.cu:1776-1783"
+      ],
+      "risk": "Medium-high. The hot loop is already correctness-sensitive, and a deeper or re-phased pipeline can easily regress overlap, shared budget, or register pressure if the new schedule is not tightly bounded.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
+        "launch__registers_per_thread",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if the rewrite fails to lower barrier/mio together or cannot move tensor-active materially upward from the current 48.24% band."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Re-activate and retune the real 256x128 / 64x64 hot-band tiling branch on the default launch path",
+      "hypothesis": "Primary fallback family: `Tiling` plus `Register Reuse`, but only on a branch that is actually executed. The source already contains a dedicated `bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel` with the user's preferred `256x128` CTA and `64x64` warp tiles, yet the default fixed-shape path currently bypasses it. That makes it the only honest way to test the human tiling idea on the active hot band. The hypothesis is that the current 4-warp 128x128 CTA is still paying too much barrier/control cost per unit of math, and that the 256x128 / 64x64 branch can amortize that overhead better if it is promoted onto the real launch path and then retuned for launch bounds / unroll under the current codebase. Coalescing, shared-memory reuse, and cp.async are already present in both branches, so this direction isolates tiling rather than re-testing already-accepted wide-load or reuse ideas.",
+      "expected_bottleneck": "CTA-level math-per-sync ratio and latency hiding on the hot band, with the current 128x128 shape potentially under-amortizing orchestration cost.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:80-102",
+        "src/kernels/bf16_gemm_v1.cu:1367-1463",
+        "src/kernels/bf16_gemm_v1.cu:1755-1783"
+      ],
+      "risk": "Medium. This is a real path change, not a local knob, and the larger CTA may increase register/shared pressure or simply confirm that the current 128x128 branch is still the better fit on sm86.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if moving the 256x128 branch onto the actual hot path does not improve both runtime and tensor/warps behavior versus the current 128x128 default branch."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Open a dedicated PTX microkernel branch for the active hot band with consumer-side B delivery and lighter export",
+      "hypothesis": "High-ceiling family for the 20 ms target: `Bank Conflict` + `Ps2r` + `Register Reuse`, not as a CTA repack but as a hot-band-only PTX microkernel. The current active kernel already uses PTX `wmma.load` / `wmma.mma`, but its fragment residency, B delivery order, and export path are still constrained by the existing shared layout and `c_shared` round-trip. If the current steady-state pipeline remains the limiter, the next materially different move is to split out a dedicated active-hot-band branch where operand delivery is controlled at warp-consumer scope: explicit consumer-side B layout/permute, stronger shared-to-register lookahead than the current one-step helper, and a lighter register-to-output export path that reduces shared bank writes. This is the branch most aligned with the user's request to think beyond incremental polish and toward the 20 ms goal.",
+      "expected_bottleneck": "Warp-consumer operand delivery and export overhead inside the active hot-band kernel after broad pipeline scheduling gains flatten out.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:607-685",
+        "src/kernels/bf16_gemm_v1.cu:781-860",
+        "src/kernels/bf16_gemm_v1.cu:1630-1726",
+        "src/kernels/bf16_gemm_v1.cu:1776-1783"
+      ],
+      "risk": "High. This is the largest implementation step, with meaningful correctness, compile-time, and regression risk if the new PTX path is not kept tightly scoped to the hot band.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
+        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
+        "launch__registers_per_thread",
+        "correctness pass rate on all benchmark cases"
+      ],
+      "stop_condition": "Stop if a tightly scoped PTX branch cannot approach the current runtime without a large correctness or register-pressure penalty."
+    }
+  ],
+  "notes": "Round-33 diagnosis anchored to the real active path, not the dead grouped-order knob. The latest measured run is 27.130784 ms with tensor-active 48.24%, barrier stall 8.04%, mio throttle 4.31%, DRAM throughput 31.02%, L2 throughput 26.33%, registers/thread 94, and register-limited occupancy still at 2 blocks/SM. Important correction from the main agent: the fixed-shape default launch currently calls `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel` at `src/kernels/bf16_gemm_v1.cu:1776`, while `kFixedHotBandGroupedRows` is only consumed by `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel` at `src/kernels/bf16_gemm_v1.cu:1500-1512`. Therefore the round-32 `grouped_rows 4 -> 2` experiment did not modify the default active hot path and should not be treated as an L2-cache success/failure signal for future ranking. Human-idea audit for this round, family by family: `Tiling`: accepted only as a real default-path experiment via the existing 256x128 / 64x64 kernel, not via dead grouped-order tuning. `Coalescing Access`: rejected as a primary direction because the active path already uses 16-byte `cp.async` wide movement in `stage_a_shared_tile_async` / `stage_b_shared_tile_async`, and DRAM is far from saturated. `Data Reuse`: accepted as already present through shared-memory A/B staging, so it is not the next move by itself. `Async Copy`: accepted as a primary family because the copy primitive exists but the orchestration around commit / wait / recycle is still expensive. `Bank Conflict`: deferred as a bounded consumer-side or PTX-microkernel family; do not reintroduce CTA-level repack or extra barriers. `L2 Cache`: rejected for this round because the measured grouped_rows knob is not on the active path and L2 throughput is not the present limiter. `Register Reuse`: accepted as a secondary family, especially inside the 256x128 retile or PTX branch, but not as an isolated tiny tweak. `Pg2s`: accepted as a primary family together with `Async Copy` and `Stage`. `Ps2r`: deferred but still viable inside a more explicit consumer-side PTX path; the current 64x64 helper already has a one-step B-fragment lookahead. `Stage`: accepted as the main diagnosis family because the active hot loop still pays block-wide synchronization around every K16 recycle. Because the target is 20 ms rather than merely beating the 25.92 ms CUTLASS baseline, the ranked directions intentionally focus on actual hot-path orchestration or high-ceiling branch changes rather than small polish."
 }
