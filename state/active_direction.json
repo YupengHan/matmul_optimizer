@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T09:00:55-07:00",
   "source_diagnosis_id": "diagnosis_20260420_090007",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -26,5 +26,5 @@
     ],
     "stop_condition": "Stop if the accepted grouped_rows=8 base is restored but a local refill issue-order retime does not improve time without reopening the rejected mirrored or split-sweep branches."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

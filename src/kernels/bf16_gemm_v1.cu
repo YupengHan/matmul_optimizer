@@ -719,7 +719,7 @@ template <int RowPairBase, int Step>
 __device__ __forceinline__ void ptx_wmma_load_col_fragment_64x64_ptx_microkernel(
     PtxWmmaBf16Fragment& b_frag,
     const __nv_bfloat16* b_tile) {
-  constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+  constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<Step>::kValue;
   ptx_wmma_load_b_row(
       b_frag,
       b_tile + ColIdx * kWmmaN,
@@ -736,7 +736,7 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_ptx_microker
                     RowPairBase + 1 < FixedHotBandTile128x128::kWarpMmaTilesM,
                 "The PTX hot-band microkernel expects valid 64x64 row pairs.");
   if constexpr (Step < FixedHotBandTile128x128::kWarpMmaTilesN) {
-    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+    constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<Step>::kValue;
     PtxWmmaBf16Fragment b_frag;
     ptx_wmma_load_col_fragment_64x64_ptx_microkernel<RowPairBase, Step>(b_frag, b_tile);
     ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
@@ -1996,14 +1996,14 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
         // then reuse a single padded export scratch tile per warp to shorten the
         // store/export live range.
         const int future_tile_k = future_tile_idx * kWmmaK;
-        stage_b_shared_tile_async<FixedHotBandTile128x128>(
-            b_shared[curr_stage],
-            b_block + future_tile_k * kFixedBenchmarkN,
-            kFixedBenchmarkN);
         stage_a_shared_tile_async<FixedHotBandTile128x128>(
             a_shared[curr_stage],
             a_block + future_tile_k,
             kFixedBenchmarkK);
+        stage_b_shared_tile_async<FixedHotBandTile128x128>(
+            b_shared[curr_stage],
+            b_block + future_tile_k * kFixedBenchmarkN,
+            kFixedBenchmarkN);
         cp_async_commit_group();
       }
     }
