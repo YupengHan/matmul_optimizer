@@ -250,6 +250,15 @@ def pick_best_record(
     return min(valid_records, key=lambda item: item["median_runtime_ms"])
 
 
+def find_first_record_below(records: list[dict], threshold_ms: float) -> dict | None:
+    for record in records:
+        if not record.get("correctness_passed", True):
+            continue
+        if record["median_runtime_ms"] < threshold_ms:
+            return record
+    return None
+
+
 def infer_external_bases(records: list[dict], record_by_id: dict[str, dict]) -> dict[str, dict]:
     external_children: dict[str, list[dict]] = defaultdict(list)
     for record in records:
@@ -367,6 +376,7 @@ def build_graph(
     nodes: dict[str, dict] = {}
 
     best_record = pick_best_record(records, official_best_ms=official_best_ms, official_best_commit=official_best_commit)
+    first_cutlass_record = find_first_record_below(records, cutlass_ms)
     best_runtime_ms = official_best_ms if official_best_ms is not None else best_record["median_runtime_ms"]
     subtitle = (
         f"Current best custom kernel: {best_runtime_ms:.2f} ms"
@@ -457,6 +467,10 @@ def build_graph(
             "human": is_human(record),
             "synthetic": False,
             "special": record["run_id"] == best_record["run_id"],
+            "first_cutlass_breakthrough": (
+                first_cutlass_record is not None
+                and record["run_id"] == first_cutlass_record["run_id"]
+            ),
         }
 
     synthetic_layout_order = sorted(
@@ -502,24 +516,56 @@ def build_graph(
     resolve_lane_overlaps(nodes, right_lane_ids, min_gap=16)
 
     content_bottom = max(node["y"] + node["h"] for node in nodes.values())
-    cutlass_y = max(content_bottom + 140, provisional_height - 118)
-    height = cutlass_y + 78 + 70
-
-    nodes["cutlass"] = {
-        "x": center_x - 190,
-        "y": cutlass_y,
-        "w": 380,
-        "h": 78,
-        "fill": "#ECFDF5",
-        "stroke": "#16A34A",
-        "text": "#14532D",
-        "family": "Reference target",
-        "headline": f"CUTLASS | {cutlass_ms:.2f} ms",
-        "lines": ["Local baseline to beat on the same fixed BF16 GEMM benchmark."],
-        "human": False,
-        "synthetic": False,
-        "special": True,
-    }
+    cutlass_gap = best_runtime_ms - cutlass_ms
+    if first_cutlass_record is None:
+        cutlass_y = max(content_bottom + 140, provisional_height - 118)
+        height = cutlass_y + 78 + 70
+        nodes["cutlass"] = {
+            "x": center_x - 190,
+            "y": cutlass_y,
+            "w": 380,
+            "h": 78,
+            "fill": "#ECFDF5",
+            "stroke": "#16A34A",
+            "text": "#14532D",
+            "family": "Reference target",
+            "headline": f"CUTLASS | {cutlass_ms:.2f} ms",
+            "lines": ["Local baseline to beat on the same fixed BF16 GEMM benchmark."],
+            "human": False,
+            "synthetic": False,
+            "special": True,
+            "first_cutlass_breakthrough": False,
+        }
+    else:
+        cutlass_anchor = nodes[first_cutlass_record["run_id"]]
+        cutlass_w = 182
+        cutlass_h = 68
+        if cutlass_anchor["x"] + cutlass_anchor["w"] / 2 < center_x:
+            cutlass_x = side_left_x + side_w + 14
+        else:
+            cutlass_x = side_right_x - cutlass_w - 12
+        cutlass_y = cutlass_anchor["y"] + max((cutlass_anchor["h"] - cutlass_h) / 2, 0)
+        height = max(provisional_height, int(cutlass_y + cutlass_h + 120), int(content_bottom + 110))
+        nodes["cutlass"] = {
+            "x": cutlass_x,
+            "y": cutlass_y,
+            "w": cutlass_w,
+            "h": cutlass_h,
+            "fill": "#ECFDF5",
+            "stroke": "#16A34A",
+            "text": "#14532D",
+            "family": "Reference target",
+            "headline": f"CUTLASS | {cutlass_ms:.2f} ms",
+            "lines": [
+                f"crossed at R{first_cutlass_record['round_index']:02d} | {short_id(first_cutlass_record['run_id'])}",
+                f"custom {first_cutlass_record['median_runtime_ms']:.2f} ms",
+            ],
+            "human": False,
+            "synthetic": False,
+            "special": False,
+            "first_cutlass_breakthrough": False,
+            "preserve_lines": True,
+        }
 
     edges: list[tuple[str, str, str, str]] = []
     if root_external:
@@ -551,14 +597,17 @@ def build_graph(
             kind = "neutral"
         edges.append((parent, record["run_id"], kind, ""))
 
-    gap = best_runtime_ms - cutlass_ms
-    edges.append((best_record["run_id"], "cutlass", "goal", f"gap {gap:.2f} ms"))
+    if first_cutlass_record is None:
+        edges.append((best_record["run_id"], "cutlass", "goal", f"gap {cutlass_gap:.2f} ms"))
+    else:
+        edges.append((first_cutlass_record["run_id"], "cutlass", "goal", "first beat"))
 
     meta = {
         "width": width,
         "height": height,
         "subtitle": subtitle,
         "best_runtime_ms": best_runtime_ms,
+        "cutlass_gap_ms": cutlass_gap,
     }
     return {"nodes": nodes, "edges": edges, "meta": meta}, mainline
 
@@ -656,6 +705,16 @@ def draw_svg_badge(x: float, y: float) -> str:
         f'<rect x="{x}" y="{y}" width="96" height="24" rx="12" fill="#FFF7ED" stroke="#D97706" stroke-width="1.2"/>',
         f'<polygon points="{star}" fill="#D97706"/>',
         svg_text(x + 58, y + 16, "human idea", 10, 700, "#B45309", anchor="middle"),
+    ]
+    return "\n".join(parts)
+
+
+def draw_svg_cutlass_breakthrough_badge(x: float, y: float) -> str:
+    star = " ".join(f"{px:.1f},{py:.1f}" for px, py in star_points(x + 14, y + 11, 7))
+    parts = [
+        f'<rect x="{x}" y="{y}" width="126" height="24" rx="12" fill="#ECFDF5" stroke="#16A34A" stroke-width="1.2"/>',
+        f'<polygon points="{star}" fill="#16A34A"/>',
+        svg_text(x + 72, y + 16, "first < CUTLASS", 10, 800, "#166534", anchor="middle"),
     ]
     return "\n".join(parts)
 
@@ -761,11 +820,21 @@ def render_svg(graph: dict, mainline: list[dict]) -> str:
         svg_parts.append(svg_text(node["x"] + 18, node["y"] + 20, node["family"], 10, 700, node["text"]))
         svg_parts.append(svg_text(node["x"] + 18, node["y"] + 42, node["headline"], 16, 800, node["text"]))
         text_y = node["y"] + 62
-        for line in wrap_svg_text(" ".join(node["lines"]), width=46 if node["w"] > 400 else 36)[:2]:
+        body_lines = (
+            node["lines"][:2]
+            if node.get("preserve_lines")
+            else wrap_svg_text(" ".join(node["lines"]), width=46 if node["w"] > 400 else 36)[:2]
+        )
+        for line in body_lines:
             svg_parts.append(svg_text(node["x"] + 18, text_y, line, 11, 500, node["text"]))
             text_y += 15
         if node.get("human"):
             svg_parts.append(draw_svg_badge(node["x"] + node["w"] - 110, node["y"] + 10))
+        if node.get("first_cutlass_breakthrough"):
+            badge_x = node["x"] + node["w"] - 140
+            if node.get("human"):
+                badge_x -= 118
+            svg_parts.append(draw_svg_cutlass_breakthrough_badge(badge_x, node["y"] + 10))
 
     svg_parts.append(
         svg_text(
@@ -823,6 +892,14 @@ def draw_badge_png(draw: ImageDraw.ImageDraw, x: float, y: float, fonts: dict[st
     draw.rounded_rectangle((x, y, x + 96, y + 24), radius=12, fill="#FFF7ED", outline="#D97706", width=1)
     draw.polygon(star_points(x + 14, y + 12, 7), fill="#D97706")
     draw_centered_text(draw, (x + 24, y, x + 96, y + 24), "human idea", fonts["badge"], "#B45309")
+
+
+def draw_cutlass_breakthrough_badge_png(
+    draw: ImageDraw.ImageDraw, x: float, y: float, fonts: dict[str, ImageFont.ImageFont]
+) -> None:
+    draw.rounded_rectangle((x, y, x + 126, y + 24), radius=12, fill="#ECFDF5", outline="#16A34A", width=1)
+    draw.polygon(star_points(x + 14, y + 12, 7), fill="#16A34A")
+    draw_centered_text(draw, (x + 24, y, x + 126, y + 24), "first < CUTLASS", fonts["badge"], "#166534")
 
 
 def draw_arrow_head(draw: ImageDraw.ImageDraw, end: tuple[float, float], prev: tuple[float, float], color: str) -> None:
@@ -922,11 +999,21 @@ def render_png(graph: dict, output_path: Path) -> None:
         draw.text((x0 + 18, y0 + 9), node["family"], font=fonts["family"], fill=node["text"])
         draw.text((x0 + 18, y0 + 28), node["headline"], font=fonts["headline"], fill=node["text"])
         text_y = y0 + 50
-        for line in textwrap.wrap(" ".join(node["lines"]), width=46 if node["w"] > 400 else 36)[:2]:
+        body_lines = (
+            node["lines"][:2]
+            if node.get("preserve_lines")
+            else textwrap.wrap(" ".join(node["lines"]), width=46 if node["w"] > 400 else 36)[:2]
+        )
+        for line in body_lines:
             draw.text((x0 + 18, text_y), line, font=fonts["body"], fill=node["text"])
             text_y += 14
         if node.get("human"):
             draw_badge_png(draw, x1 - 110, y0 + 10, fonts)
+        if node.get("first_cutlass_breakthrough"):
+            badge_x = x1 - 140
+            if node.get("human"):
+                badge_x -= 118
+            draw_cutlass_breakthrough_badge_png(draw, badge_x, y0 + 10, fonts)
 
     footer = "Auto-generated from state/round_history.jsonl + state/benchmark_baselines.md"
     footer_w, _ = text_size(draw, footer, fonts["footnote"])

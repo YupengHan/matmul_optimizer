@@ -255,6 +255,8 @@ I am not trying to claim a general matmul breakthrough. I am trying to test how 
 
 The tree below is regenerated from the latest tracked round history in the repo, currently through round **83/100**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the round-58 best run.
 
+Because the search has already moved below the local CUTLASS baseline, the chart now places the CUTLASS marker at the point where that threshold was first crossed instead of pinning it to the bottom as a future target. In the current history, that first sub-CUTLASS run is round **46**, version **`22b4466`**, at **25.68 ms**.
+
 At the moment, the official benchmark snapshot in the repo is:
 - custom kernel: **24.57 ms**
 - local CUTLASS baseline: **25.92 ms**
