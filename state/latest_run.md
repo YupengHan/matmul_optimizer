@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_093724_bf16_gemm_v1_1bd482e`
-- run dir: `runs/20260420_093724_bf16_gemm_v1_1bd482e`
-- kernel tag: `bf16_gemm_v1_1bd482e`
-- round label: `round 66/100`
+- run id: `20260420_094558_bf16_gemm_v1_2fc3582`
+- run dir: `runs/20260420_094558_bf16_gemm_v1_2fc3582`
+- kernel tag: `bf16_gemm_v1_2fc3582`
+- round label: `round 67/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.673728 ms`
-- p10 runtime: `25.229309 ms`
-- p90 runtime: `26.315980 ms`
-- TFLOP/s: `28.317641 TFLOP/s`
-- previous run id: `20260420_092926_bf16_gemm_v1_8c2a778`
-- runtime delta vs previous measured run: `-0.018432 ms`
-- TFLOP/s delta vs previous measured run: `+0.020315 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.676801 ms`
+- p10 runtime: `25.353421 ms`
+- p90 runtime: `26.363258 ms`
+- TFLOP/s: `28.314253 TFLOP/s`
+- previous run id: `20260420_093724_bf16_gemm_v1_1bd482e`
+- runtime delta vs previous measured run: `+0.003073 ms`
+- TFLOP/s delta vs previous measured run: `-0.003389 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore Linear PTX Export Order, Then Peel The Fixed-K Steady State`
+- implemented direction name: `Restore the accepted unpeeled base, then tighten PTX export-scratch sync and lifetime while keeping linear export order`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_093724_bf16_gemm_v1_1bd482e/summary.json`
-- measured commit: `1bd482e2bfe04ce086cfad12a909fec3fe6f1aae`
+- raw summary json: `runs/20260420_094558_bf16_gemm_v1_2fc3582/summary.json`
+- measured commit: `2fc3582561e24f9d142567c3e1f11e31401895bd`
 - new best custom: `no`
-- generated at: `2026-04-20T09:37:31-07:00`
+- generated at: `2026-04-20T09:46:05-07:00`
