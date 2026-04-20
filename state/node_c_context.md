@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore accepted base, then test mirrored hot-band column sweep`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_085737`
 - round loop: `round 60/100`
+- hypothesis: `The 25.995744 ms regression came from the row-pair-dependent split column sweep. Restore the accepted grouped_rows=8 + reversed row-pair traversal + one-sync handoff baseline, then try a cleaner PTX hot-band variant that uses the mirrored column sweep uniformly for both row-pairs instead of branching the sweep by row-pair.`
+- expected bottleneck: `Bad instruction-flow and locality interaction from the failed row-pair-dependent column split, rather than the accepted base traversal itself.`
+- code locations: `src/kernels/bf16_gemm_v1.cu: grouped_rows=8 tile setup, src/kernels/bf16_gemm_v1.cu: reversed row-pair traversal loop, src/kernels/bf16_gemm_v1.cu: one-sync handoff sequence, src/kernels/bf16_gemm_v1.cu: hot-band column-order / PTX sweep logic`
+- risk: `Moderate: the mirrored sweep may recover performance only if the accepted base is fully restored first; keep the row-pair-dependent split branch closed.`
+- metrics to re-check: `kernel time vs 25.995744 ms, sm efficiency, branch divergence, shared-memory load/store balance, register pressure`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

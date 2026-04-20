@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `f71a41fdee677a3f78b9124bae317e3e96ba4983`
 - plateau counter: `1`
 - round loop: `round 60/100`
 - rounds remaining: `41`
-- notes: `Node A completed round 59/100. Run node_b to continue round 60/100.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 60/100.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_085737`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Anchored to latest measured run 20260420_085640_bf16_gemm_v1_f71a41f at 25.995744 ms. Use the accepted grouped_rows=8 + reversed row-pair traversal + one-sync handoff base as the starting point and keep rejected branches closed.`
+- dir_01: Restore accepted base, then test mirrored hot-band column sweep | bottleneck: Bad instruction-flow and locality interaction from the failed row-pair-dependent column split, rather than the accepted base traversal itself.
+- dir_02: Recover overlap behind the one-sync handoff | bottleneck: Residual latency in the handoff window between row-pair traversal and the next shared-memory/compute phase.
+- dir_03: Small locality closure only | bottleneck: Minor cache/shared-memory locality losses rather than a structural scheduling problem.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
