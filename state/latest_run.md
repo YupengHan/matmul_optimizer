@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_225440_bf16_gemm_v1_6557fa0`
-- run dir: `runs/20260419_225440_bf16_gemm_v1_6557fa0`
-- kernel tag: `bf16_gemm_v1_6557fa0`
-- round label: `round 4/50`
+- run id: `20260419_225909_bf16_gemm_v1_b50742e`
+- run dir: `runs/20260419_225909_bf16_gemm_v1_b50742e`
+- kernel tag: `bf16_gemm_v1_b50742e`
+- round label: `round 5/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.008207 ms`
-- p10 runtime: `29.412659 ms`
-- p90 runtime: `30.849741 ms`
-- TFLOP/s: `24.227353 TFLOP/s`
-- previous run id: `20260419_224922_bf16_gemm_v1_797c137`
-- runtime delta vs previous measured run: `-0.453264 ms`
-- TFLOP/s delta vs previous measured run: `+0.360501 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.012527 ms`
+- p10 runtime: `29.561840 ms`
+- p90 runtime: `31.041018 ms`
+- TFLOP/s: `24.223865 TFLOP/s`
+- previous run id: `20260419_225440_bf16_gemm_v1_6557fa0`
+- runtime delta vs previous measured run: `+0.004320 ms`
+- TFLOP/s delta vs previous measured run: `-0.003487 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Peel the 452-tile steady state for the shared 64x64 PTX hot-band family`
+- implemented direction name: `Keep the peeled steady state, but restore the proven final-two-tile handoff to recover correctness`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_225440_bf16_gemm_v1_6557fa0/summary.json`
-- measured commit: `6557fa0df424fb14ba776782e32b35635c89bbc0`
+- raw summary json: `runs/20260419_225909_bf16_gemm_v1_b50742e/summary.json`
+- measured commit: `b50742ed0692244d8e518dccedae3d255d61b85c`
 - new best custom: `no`
-- generated at: `2026-04-19T22:54:48-07:00`
+- generated at: `2026-04-19T22:59:16-07:00`

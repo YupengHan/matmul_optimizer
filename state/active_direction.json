@@ -1,29 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Keep the peeled steady state, but restore the proven final-two-tile handoff to recover correctness",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T22:58:15-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_225521",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Keep the peeled steady state, but restore the proven final-two-tile handoff to recover correctness",
-    "hypothesis": "Round 4 produced the clearest positive runtime signal in many rounds: the dominant 256x128 hot-band kernel dropped from 41.080 ms to 40.365 ms and tensor activity rose from 38.75% to 39.28%. That means the fixed-shape steady-state peeling direction is probably correct, but the manual epilogue around the last two K-tiles is not. Instead of abandoning the direction, the next move should keep the branch-free steady-state core and hand the last two iterations back to the original, already-correct next/future/wait0 control sequence. This preserves almost all of the control-flow win while removing the highest-risk cp.async boundary change.",
-    "expected_bottleneck": "Correctness break in the final cp.async stage handoff of the peeled hot-band schedule, not a failure of the hot-band steady-state peeling idea itself.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel"
-    ],
-    "risk": "Moderate but targeted. The performance gain is already measured, and the likely fix surface is the last-two-tile control handoff rather than a full rollback.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-      "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "launch__registers_per_thread"
-    ],
-    "stop_condition": "Reject if correctness still fails after restoring the original tail handoff or if the repaired version gives back almost all of the 0.7 ms main-kernel win."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
