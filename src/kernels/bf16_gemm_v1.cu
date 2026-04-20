@@ -29,6 +29,7 @@ constexpr int kTensorWarpTilesM = 4;
 constexpr int kTensorWarpTilesN = 2;
 constexpr int kAsyncCopyElems = 8;
 constexpr int kAsyncCopyBytes = kAsyncCopyElems * sizeof(__nv_bfloat16);
+constexpr int kHotBandCtaSwizzleGroup = 4;
 
 template <int WarpMmaTilesNValue>
 struct TensorCoreTileConfig {
@@ -616,21 +617,7 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  static_assert(FixedHotBandTile256x128::kWarpMmaTilesM == 4,
-                "A-side row-pair lookahead expects exactly two 16x16 row pairs.");
-
-  PtxWmmaBf16Fragment a_frag00;
-  PtxWmmaBf16Fragment a_frag01;
-  PtxWmmaBf16Fragment a_frag10;
-  PtxWmmaBf16Fragment a_frag11;
-
-  ptx_wmma_load_a_row(a_frag00, a_tile, kWmmaK);
-  ptx_wmma_load_a_row(a_frag01, a_tile + kWmmaM * kWmmaK, kWmmaK);
-  ptx_wmma_load_a_row(a_frag10, a_tile + 2 * kWmmaM * kWmmaK, kWmmaK);
-  ptx_wmma_load_a_row(a_frag11, a_tile + 3 * kWmmaM * kWmmaK, kWmmaK);
-
-  ptx_wmma_accumulate_col_tiles_64x64<0>(acc_tiles, a_frag00, a_frag01, b_tile);
-  ptx_wmma_accumulate_col_tiles_64x64<2>(acc_tiles, a_frag10, a_frag11, b_tile);
+  ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
 }
 
 template <typename TileConfig, int TileIdx = 0>
@@ -842,6 +829,20 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
 
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
+}
+
+__host__ __device__ __forceinline__ int swizzled_hot_band_block_x(
+    int logical_block_x,
+    int logical_block_y,
+    int grid_dim_x) {
+  const int group_base = (logical_block_x / kHotBandCtaSwizzleGroup) * kHotBandCtaSwizzleGroup;
+  const int group_limit = min(group_base + kHotBandCtaSwizzleGroup, grid_dim_x);
+  const int group_size = group_limit - group_base;
+  const int group_offset = logical_block_x - group_base;
+  if ((logical_block_y & 1) == 0 || group_size <= 1) {
+    return logical_block_x;
+  }
+  return group_base + (group_size - 1 - group_offset);
 }
 
 template <typename TileConfig>
@@ -1324,7 +1325,9 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   }
 
   const int block_row = blockIdx.y * FixedHotBandTile256x128::kTensorBlockM;
-  const int block_col = blockIdx.x * FixedHotBandTile256x128::kTensorBlockN;
+  const int logical_block_x =
+      swizzled_hot_band_block_x(blockIdx.x, blockIdx.y, gridDim.x);
+  const int block_col = logical_block_x * FixedHotBandTile256x128::kTensorBlockN;
   const int warp_tile_m = warp_id / FixedHotBandTile256x128::kWarpTilesN;
   const int warp_tile_n = warp_id % FixedHotBandTile256x128::kWarpTilesN;
   const int row = block_row + warp_tile_m * FixedHotBandTile256x128::kWarpTileM;
