@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T23:03:07-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_230227",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order",
+    "hypothesis": "Three rounds proved that the peeled steady-state control idea is fast but not quickly repairable. The next high-signal move is to separate correctness from warp scheduling again: restore the proven generic hot-band loop, keep the shared PTX hot-band family, and apply the user's warp-local register-reuse idea directly by changing the 64x64 B-column sweep from the current left-right mirrored order to an explicit right-left-right-left order. That gives one clean experiment on the accepted-correct surface and tells us whether warp-local operand order is the real remaining headroom.",
+    "expected_bottleneck": "Per-warp operand delivery and register reuse inside the 64x64 PTX hot-band microkernel rather than CTA-level pipeline control.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
+      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel"
+    ],
+    "risk": "Moderate. The control-flow restore is straightforward, and the new behavior is isolated to warp-local fragment order on the proven correct surface.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "launch__registers_per_thread"
+    ],
+    "stop_condition": "Reject if the restored control flow is correct but the right-left-right-left sweep leaves hot-band time flat or regresses relative to the accepted-correct surface."
+  },
+  "notes": "Node C may now implement this one direction."
 }

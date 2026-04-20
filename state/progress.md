@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `b368da06a9ba04f8051906d194e80b09bdad9760`
 - plateau counter: `6`
 - round loop: `round 7/50`
 - rounds remaining: `44`
-- notes: `Node A completed round 6/50. Run node_b to continue round 7/50.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 7/50.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260419_230227`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 7/50 pivots away from peeled control-flow experiments because the main hot-band speedup is real but correctness has not recovered after multiple repair attempts. The recommended next move is therefore dir_01: restore the accepted-correct hot-band loop and test the user's warp-local right-left-right-left register-reuse idea as an isolated experiment.`
+- dir_01: Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order | bottleneck: Per-warp operand delivery and register reuse inside the 64x64 PTX hot-band microkernel rather than CTA-level pipeline control.
+- dir_02: Keep the accepted-correct loop and deepen warp-local Ps2r with next-A-row-pair lookahead | bottleneck: Warp-local shared-to-register latency on the A-side of the 64x64 PTX microkernel.
+- dir_03: Return to a light L2-friendly logical CTA swizzle once correctness is back on the accepted surface | bottleneck: Inter-CTA L2 reuse across neighboring hot-band B tiles.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 

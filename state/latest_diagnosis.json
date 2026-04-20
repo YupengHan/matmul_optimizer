@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_230227",
+  "status": "completed",
+  "created_at": "2026-04-19T23:02:27-07:00",
   "source_run_id": "20260419_230146_bf16_gemm_v1_b368da0",
   "source_run_dir": "runs/20260419_230146_bf16_gemm_v1_b368da0",
   "source_summary_json": "runs/20260419_230146_bf16_gemm_v1_b368da0/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "human+auto-analysis",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order",
+      "hypothesis": "Three rounds proved that the peeled steady-state control idea is fast but not quickly repairable. The next high-signal move is to separate correctness from warp scheduling again: restore the proven generic hot-band loop, keep the shared PTX hot-band family, and apply the user's warp-local register-reuse idea directly by changing the 64x64 B-column sweep from the current left-right mirrored order to an explicit right-left-right-left order. That gives one clean experiment on the accepted-correct surface and tells us whether warp-local operand order is the real remaining headroom.",
+      "expected_bottleneck": "Per-warp operand delivery and register reuse inside the 64x64 PTX hot-band microkernel rather than CTA-level pipeline control.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:PtxWmmaMirroredTileIndex64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel"
+      ],
+      "risk": "Moderate. The control-flow restore is straightforward, and the new behavior is isolated to warp-local fragment order on the proven correct surface.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if the restored control flow is correct but the right-left-right-left sweep leaves hot-band time flat or regresses relative to the accepted-correct surface."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Keep the accepted-correct loop and deepen warp-local Ps2r with next-A-row-pair lookahead",
+      "hypothesis": "If a simple right-left-right-left sweep is too weak, the stronger human Ps2r branch is to prefetch more than the next B fragment. The current PTX microkernel already overlaps one B-fragment load with the current MMA pair, but A row-pair loading still serializes. A next-A-row-pair lookahead on the accepted-correct loop would test whether the remaining gap is really the A-side fragment supply cadence.",
+      "expected_bottleneck": "Warp-local shared-to-register latency on the A-side of the 64x64 PTX microkernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64_lookahead"
+      ],
+      "risk": "Moderate to high. This can easily increase live fragments and damage the current register surface.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if register pressure rises or if flatter short-scoreboard does not convert into a main-kernel runtime win."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Return to a light L2-friendly logical CTA swizzle once correctness is back on the accepted surface",
+      "hypothesis": "The L2 branch is still relevant, but it should not be mixed with a known-incorrect control-flow experiment. Once the kernel is back on the accepted-correct surface, a light logical CTA swizzle remains the cleanest cache-locality test across the 60x25 hot-band grid.",
+      "expected_bottleneck": "Inter-CTA L2 reuse across neighboring hot-band B tiles.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
+        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+      ],
+      "risk": "Moderate. Previous grouped traversal regressed, so this stays a lower-ranked cache-locality branch.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if L2 throughput stays flat or if runtime regresses like the earlier grouped traversal."
+    }
+  ],
+  "notes": "Round 7/50 pivots away from peeled control-flow experiments because the main hot-band speedup is real but correctness has not recovered after multiple repair attempts. The recommended next move is therefore dir_01: restore the accepted-correct hot-band loop and test the user's warp-local right-left-right-left register-reuse idea as an isolated experiment."
 }
