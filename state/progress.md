@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `81bde72e538f33c457ea3cac1335513761c90fd6`
-- plateau counter: `40`
-- round loop: `round 15/17`
-- rounds remaining: `3`
-- notes: `Node C build succeeded for round 15/17. Node A will now measure the new code path.`
+- latest measured commit: `fcc145b823a2c71c2a9055e6fb1d02ec2c51244e`
+- plateau counter: `41`
+- round loop: `round 16/17`
+- rounds remaining: `2`
+- notes: `Node A completed round 15/17. Run node_b to continue round 16/17.`
 
 ## Latest measured custom run
 
-- run id: `20260420_163637_bf16_gemm_v1_81bde72`
-- run dir: `runs/20260420_163637_bf16_gemm_v1_81bde72`
+- run id: `20260420_163839_bf16_gemm_v1_fcc145b`
+- run dir: `runs/20260420_163839_bf16_gemm_v1_fcc145b`
 - correctness: `PASS`
-- median runtime: `25.654704 ms`
-- TFLOP/s: `28.338640 TFLOP/s`
+- median runtime: `26.043296 ms`
+- TFLOP/s: `27.915799 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_163723`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 15/17 diagnosis for run 20260420_163637_bf16_gemm_v1_81bde72. Human-review mapping for this round: keep the broad 64x384 control closed, keep non-PTX 128x128 closed, and keep deeper export cleanup closed. The fresh evidence is that the seam family is the cleanest remaining direction after the broad controls failed: shifting the pivot from 6400 to 6144 recovered the runtime to 25.65470409 ms with DRAM held to 11.25 and long-scoreboard at 5.91. No new explicit human idea family is queued in state/human_review.md, so the ranking now stays narrow for the last rounds: accept one more seam shift first, keep the 4-row grouping as the secondary PTX fallback, and leave prefetch only as a tertiary scoreboard tradeoff.`
-- dir_01: Shift The Hot-Band / Peeled Seam Down One More 256-Row Chunk | bottleneck: Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.
-- dir_02: Keep The 4-Row PTX Grouping As The Last PTX Retry | bottleneck: Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.
-- dir_03: Retry PTX Prefetch Only As A Final Scoreboard Tradeoff | bottleneck: Copy-pipeline handoff timing and future-tile refill cadence in the PTX hot-band steady-state loop.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

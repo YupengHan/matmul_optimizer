@@ -1,80 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_163723",
-  "status": "completed",
-  "created_at": "2026-04-20T16:37:23-07:00",
-  "source_run_id": "20260420_163637_bf16_gemm_v1_81bde72",
-  "source_run_dir": "runs/20260420_163637_bf16_gemm_v1_81bde72",
-  "source_summary_json": "runs/20260420_163637_bf16_gemm_v1_81bde72/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_163839_bf16_gemm_v1_fcc145b",
+  "source_run_dir": "runs/20260420_163839_bf16_gemm_v1_fcc145b",
+  "source_summary_json": "runs/20260420_163839_bf16_gemm_v1_fcc145b/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Shift The Hot-Band / Peeled Seam Down One More 256-Row Chunk",
-      "hypothesis": "Round 14/17 proved that the seam family is viable on top of the accepted PTX/export base: moving the pivot from 6400 to 6144 cut runtime from the failed broad control back down to 25.65470409 ms while keeping DRAM near 11.25 and long-scoreboard near 5.91. It still did not beat the accepted base, but it was the cleanest remaining direction. The next bounded step is to shift the pivot down one more 256-row chunk so the peeled path covers more of the bottom rows, without touching the PTX kernel internals or reopening any broad branch changes.",
-      "expected_bottleneck": "Boundary and launch split cost between the PTX hot-band kernel and the peeled 384-row row-band path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-154",
-        "src/kernels/bf16_gemm_v1.cu:2097-2114"
-      ],
-      "risk": "Medium. The seam family improved cleanly once, but moving too much work into the peeled path can eventually reverse that trend.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop the seam family if this second shift is slower than the 6144 pivot variant or pushes DRAM / barrier materially in the wrong direction."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Keep The 4-Row PTX Grouping As The Last PTX Retry",
-      "hypothesis": "If the deeper seam shift stalls, the 4-row grouping remains the strongest measured PTX-adjacent alternative on top of the accepted export base. It still lost to the accepted base, but it beat the 2-row grouping and the broader controls.",
-      "expected_bottleneck": "Residual CTA grouping and orchestration overhead around the PTX hot-band grouped-row mapping.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:155-156",
-        "src/kernels/bf16_gemm_v1.cu:1969-1979",
-        "src/kernels/bf16_gemm_v1.cu:2097-2104"
-      ],
-      "risk": "Medium. The family already failed to beat the accepted base, so it should stay behind the seam follow-up.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Revisit only if the seam family stalls, and close it again immediately if it remains slower than the accepted PTX base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Retry PTX Prefetch Only As A Final Scoreboard Tradeoff",
-      "hypothesis": "The reopened prefetch family remains tertiary. It reduced long-scoreboard on the accepted export base, but it lost by paying too much barrier. It should only come back if seam and grouping both stall over the last rounds.",
-      "expected_bottleneck": "Copy-pipeline handoff timing and future-tile refill cadence in the PTX hot-band steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1995-2006",
-        "src/kernels/bf16_gemm_v1.cu:2028-2040"
-      ],
-      "risk": "Medium. The family already lost once on the accepted export base, so it should remain a last-resort PTX retry.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Only revisit after the higher-ranked directions stall, and close it again if it still trades scoreboard for barrier without beating the accepted base."
-    }
-  ],
-  "notes": "Round 15/17 diagnosis for run 20260420_163637_bf16_gemm_v1_81bde72. Human-review mapping for this round: keep the broad 64x384 control closed, keep non-PTX 128x128 closed, and keep deeper export cleanup closed. The fresh evidence is that the seam family is the cleanest remaining direction after the broad controls failed: shifting the pivot from 6400 to 6144 recovered the runtime to 25.65470409 ms with DRAM held to 11.25 and long-scoreboard at 5.91. No new explicit human idea family is queued in state/human_review.md, so the ranking now stays narrow for the last rounds: accept one more seam shift first, keep the 4-row grouping as the secondary PTX fallback, and leave prefetch only as a tertiary scoreboard tradeoff."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
