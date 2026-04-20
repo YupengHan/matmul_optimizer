@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_082007_bf16_gemm_v1_f2b7c06`
-- run dir: `runs/20260420_082007_bf16_gemm_v1_f2b7c06`
-- kernel tag: `bf16_gemm_v1_f2b7c06`
-- round label: `round 52/100`
+- run id: `20260420_082654_bf16_gemm_v1_1653a82`
+- run dir: `runs/20260420_082654_bf16_gemm_v1_1653a82`
+- kernel tag: `bf16_gemm_v1_1653a82`
+- round label: `round 53/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.895488 ms`
-- p10 runtime: `24.885940 ms`
-- p90 runtime: `26.069197 ms`
-- TFLOP/s: `29.202859 TFLOP/s`
-- previous run id: `20260420_081140_bf16_gemm_v1_3713ac4`
-- runtime delta vs previous measured run: `-0.821248 ms`
-- TFLOP/s delta vs previous measured run: `+0.932575 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `24.904640 ms`
+- p10 runtime: `24.892109 ms`
+- p90 runtime: `25.447263 ms`
+- TFLOP/s: `29.192127 TFLOP/s`
+- previous run id: `20260420_082007_bf16_gemm_v1_f2b7c06`
+- runtime delta vs previous measured run: `+0.009152 ms`
+- TFLOP/s delta vs previous measured run: `-0.010732 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep The Accepted Unroll2 K16 Base And Retime The Existing Feed Or Issue Handoff`
+- implemented direction name: `Retune The B-First CpAsync Handoff Without Reopening K32 Or Unroll-1`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_082007_bf16_gemm_v1_f2b7c06/summary.json`
-- measured commit: `f2b7c066d6bb259ec12a6d7ccfe63f381a8e8f10`
-- new best custom: `yes`
-- generated at: `2026-04-20T08:20:14-07:00`
+- raw summary json: `runs/20260420_082654_bf16_gemm_v1_1653a82/summary.json`
+- measured commit: `1653a82878dfc5f563cd0ff65442d526874aa9a3`
+- new best custom: `no`
+- generated at: `2026-04-20T08:27:01-07:00`

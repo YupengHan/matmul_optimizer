@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Retune The B-First CpAsync Handoff Without Reopening K32 Or Unroll-1`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_082032`
-- round loop: `round 53/100`
-- hypothesis: `Round 52 established the new accepted best base at 24.895488 ms by narrowing the active PTX hot-band feed/issue retiming to a pure cp.async order swap from A -> B to B -> A. With tensor active still only 48.34 while barrier stall is 6.45, mio throttle is 4.20, long scoreboard is just 0.79, and DRAM is only 9.78, the remaining gap looks like a steady-state handoff problem between cp.async issue, commit/wait timing, and the first PTX B-fragment consumption rather than a raw memory-latency problem. The next move should keep the accepted K16 double-buffer base intact and further narrow the commit/wait or prefetch handoff around the now-proven B-first ordering.`
-- expected bottleneck: `Async-copy feed/issue retiming in the active PTX hot-band steady state, expressed as barrier and MIO stalls rather than long scoreboard.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:332-360, src/kernels/bf16_gemm_v1.cu:1949-1963, src/kernels/bf16_gemm_v1.cu:1982-2005`
-- risk: `This is intentionally narrow, so upside may be incremental. Moving commit/wait or refill timing too far can erase the round-52 win or break the shared-memory visibility contract. Do not reopen the falsified K32 cadence, unroll-1 base, or B-fragment lookahead branches while exploring this.`
-- metrics to re-check: `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, lts__throughput.avg.pct_of_peak_sustained_elapsed`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 54/100`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
