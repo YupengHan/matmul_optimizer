@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Retune PTX Prefetch Handoff On Top Of The Accepted Export Base",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T15:52:14-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_155107",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Retune PTX Prefetch Handoff On Top Of The Accepted Export Base",
+    "hypothesis": "Round 2/17 established a new accepted base at 25.505328 ms, while round 3/17 showed that further export flattening only regressed by 0.040 ms and pushed long-scoreboard back up to 7.75. That means the export family is no longer the best next lever. The next bounded move should keep the accepted export helper intact and retune the PTX `cp.async` handoff itself, starting with the A/B staging order and future-tile refill sequence, to see whether the remaining scoreboard is now feed latency rather than epilogue control.",
+    "expected_bottleneck": "Copy-pipeline handoff timing in the PTX hot-band steady-state loop.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1975-1989",
+      "src/kernels/bf16_gemm_v1.cu:1991-2020",
+      "src/kernels/bf16_gemm_v1.cu:1056-1099"
+    ],
+    "risk": "Medium. This is a clean family shift on top of the accepted base, but changing the steady-state prefetch order can easily reshuffle barrier and scoreboard stalls without a net runtime win.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "correctness"
+    ],
+    "stop_condition": "Stop this family if one bounded retime leaves runtime flat or simply trades scoreboard for barrier without beating 25.50532818 ms."
+  },
+  "notes": "Node C may now implement this one direction."
 }
