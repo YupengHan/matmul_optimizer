@@ -1,10 +1,29 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Apply peeled steady-state only to the 8-warp 256x128 hot band and leave the residual 64x128 path on the proven generic loop",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T23:00:33-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_225949",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Apply peeled steady-state only to the 8-warp 256x128 hot band and leave the residual 64x128 path on the proven generic loop",
+    "hypothesis": "Two rounds in a row show the same pattern: the main 256x128 hot-band kernel gets materially faster, but correctness fails. The most likely explanation is no longer 'steady-state peeling is wrong everywhere'; it is that the shared peeled schedule is valid for the dominant 8-warp hot-band kernel but not for the 2-warp residual 64x128 variant that was added in round 3. The next move should therefore split the behavior by TileConfig: keep the peeled steady-state on the main hot band where the win was measured, and restore the original generic per-tile control path on the residual kernel to see whether correctness returns without giving back the main-kernel gain.",
+    "expected_bottleneck": "Main hot-band control overhead is still the target, but correctness risk is likely concentrated in the smaller residual 64x128 variant rather than the dominant 256x128 kernel.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
+      "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+    ],
+    "risk": "Moderate and well-bounded. This is a surgical split of a winning-but-incorrect schedule, not a new pipeline family.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+      "runs/*/ncu_metrics.csv residual 64x128 hot-band gpu__time_duration.sum",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Reject if correctness still fails after the split or if the main hot-band kernel loses most of the peeled steady-state gain."
+  },
+  "notes": "Node C may now implement this one direction."
 }
