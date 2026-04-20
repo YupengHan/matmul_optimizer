@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 17/50` with `34` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 18/50` with `33` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260419_235645`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human-idea reflection for round 17: accepted as primary are Stage, Async Copy, Pg2s, Ps2r, and Data Reuse because the corrected 128x128 path established that orchestration, not macro tiling, is what unlocked the new best custom runtime. Tiling 256x128 with 64x64 warp tiles is deferred because the 128x128 family has not yet been fully exploited and already beats the prior best custom result. Coalescing Access and Bank Conflict are deferred again because mio-throttle and scoreboard pressure are not the dominant signals in the corrected run. Register Reuse is also deferred because the current gain came from stage timing rather than a new register schedule. The L2 cache / block-order clue remains a valid later experiment, but only after the hot-band pipeline is stable.`
-- dir_01: Re-enable the 128x128x32 hot-band steady-state with the proven consume-before-overwrite fence | bottleneck: Mainloop control and overlap efficiency in the corrected 128x128 family. The target is to raise tensor active back toward the earlier incorrect K32/K16 peaks without reopening the shared-stage race.
-- dir_02: Tighten the K16 consume fence instead of fencing every iteration with a full CTA barrier | bottleneck: Barrier overhead inside the corrected K16 mainloop rather than memory bandwidth or a macro-tile limitation.
-- dir_03: Try an L2-friendly CTA-order clue only after the corrected hot-band pipeline stabilizes | bottleneck: L2 reuse and block-issue locality rather than tensor-core delivery within a CTA.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

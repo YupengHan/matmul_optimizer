@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_235558_bf16_gemm_v1_be44358`
-- run dir: `runs/20260419_235558_bf16_gemm_v1_be44358`
-- kernel tag: `bf16_gemm_v1_be44358`
-- round label: `round 16/50`
+- run id: `20260419_235839_bf16_gemm_v1_f97d68d`
+- run dir: `runs/20260419_235839_bf16_gemm_v1_f97d68d`
+- kernel tag: `bf16_gemm_v1_f97d68d`
+- round label: `round 17/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `29.204992 ms`
-- p10 runtime: `28.606669 ms`
-- p90 runtime: `30.135808 ms`
-- TFLOP/s: `24.893669 TFLOP/s`
-- previous run id: `20260419_233546_bf16_gemm_v1_b42811c`
-- runtime delta vs previous measured run: `+0.841728 ms`
-- TFLOP/s delta vs previous measured run: `-0.738762 TFLOP/s`
+- median runtime: `30.888449 ms`
+- p10 runtime: `30.405427 ms`
+- p90 runtime: `32.060210 ms`
+- TFLOP/s: `23.536935 TFLOP/s`
+- previous run id: `20260419_235558_bf16_gemm_v1_be44358`
+- runtime delta vs previous measured run: `+1.683456 ms`
+- TFLOP/s delta vs previous measured run: `-1.356734 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Make the 128x128 hot-band stage reuse safe before the next cp.async overwrite`
+- implemented direction name: `Re-enable the 128x128x32 hot-band steady-state with the proven consume-before-overwrite fence`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_235558_bf16_gemm_v1_be44358/summary.json`
-- measured commit: `be44358062dd87db8692cf1a8ce8017bab55a65d`
-- new best custom: `yes`
-- generated at: `2026-04-19T23:56:06-07:00`
+- raw summary json: `runs/20260419_235839_bf16_gemm_v1_f97d68d/summary.json`
+- measured commit: `f97d68dc8a9c95ad94ac9afe3383c14343d2694e`
+- new best custom: `no`
+- generated at: `2026-04-19T23:58:47-07:00`
