@@ -6,46 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `de7e8be6e77487fbeecd095db66faa31c991de1e`
+- latest measured commit: `57d08c3396876293a5e7c223a96cb3da09cca4a9`
 - plateau counter: `0`
-- round loop: `round 56/100`
-- rounds remaining: `45`
-- notes: `Node C build succeeded for round 56/100. Node A will now measure the new code path.`
+- round loop: `round 57/100`
+- rounds remaining: `44`
+- notes: `Node A completed round 56/100. Run node_b to continue round 57/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_083902_bf16_gemm_v1_de7e8be`
-- run dir: `runs/20260420_083902_bf16_gemm_v1_de7e8be`
+- run id: `20260420_084312_bf16_gemm_v1_57d08c3`
+- run dir: `runs/20260420_084312_bf16_gemm_v1_57d08c3`
 - correctness: `PASS`
-- median runtime: `24.849423 ms`
-- TFLOP/s: `29.256994 TFLOP/s`
+- median runtime: `24.713584 ms`
+- TFLOP/s: `29.417806 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 - result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_084003`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 56/100 diagnosis anchored to run 20260420_083902_bf16_gemm_v1_de7e8be at 24.849423 ms. Rejected this round: reopening warmup-order branch, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, or wider shared-memory rewrites.`
-- dir_01: Steady-state barrier / handoff retime | bottleneck: Barrier latency at the active hot-band handoff, not stage count, macro tiling, grouped-row count, or warmup-order mechanics.
-- dir_02: PTX hot-band consumer-order refinement | bottleneck: Consumer-side ordering detail in the PTX hot-band path, especially row-pair traversal or lane-local reuse, with the current run still showing barrier as the primary exposed issue.
-- dir_03: Hot-band L2 / grouped-row launch-order locality | bottleneck: L2 cache locality and grouped-row launch order rather than the steady-state barrier limiter.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-1.068465 ms`, `0.958775x` slower than CUTLASS
+- current best custom gap: `-1.204305 ms`, `0.953534x` slower than CUTLASS

@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 56/100` with `45` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 57/100` with `44` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260420_084003`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 56/100 diagnosis anchored to run 20260420_083902_bf16_gemm_v1_de7e8be at 24.849423 ms. Rejected this round: reopening warmup-order branch, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, or wider shared-memory rewrites.`
-- dir_01: Steady-state barrier / handoff retime | bottleneck: Barrier latency at the active hot-band handoff, not stage count, macro tiling, grouped-row count, or warmup-order mechanics.
-- dir_02: PTX hot-band consumer-order refinement | bottleneck: Consumer-side ordering detail in the PTX hot-band path, especially row-pair traversal or lane-local reuse, with the current run still showing barrier as the primary exposed issue.
-- dir_03: Hot-band L2 / grouped-row launch-order locality | bottleneck: L2 cache locality and grouped-row launch order rather than the steady-state barrier limiter.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
