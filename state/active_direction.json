@@ -1,10 +1,27 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore the new best custom branch `5dd9f0d` and discard the grouped-CTA traversal",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T22:14:52-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_221410",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Restore the new best custom branch `5dd9f0d` and discard the grouped-CTA traversal",
+    "hypothesis": "Round 5 cleanly falsified the L2-launch-order clue as an implementation branch. The grouped traversal kept correctness, slightly improved the hot-band kernel to about 40.70 us, and even nudged headline tensor activity up, but overall runtime regressed from 29.432832 ms to 30.692336 ms. That means the remap is not a viable surface for the next 25 rounds even if one sub-kernel metric looks nicer. The first move should therefore be to restore the correctness-valid best custom branch `5dd9f0d` before trying another family.",
+    "expected_bottleneck": "Not a new bottleneck attack; this is a branch reset after a structurally negative CTA-traversal experiment.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "risk": "Low. The restore is local and measured. The only cost is one recovery round, but continuing from the slower grouped-traversal branch is less defensible.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+      "launch__registers_per_thread"
+    ],
+    "stop_condition": "If the restored branch does not come back near the recorded 29.43 ms behavior, stop and investigate implementation drift before another experiment."
+  },
+  "notes": "Node C may now implement this one direction."
 }
