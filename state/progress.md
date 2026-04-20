@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `11f04271ca6d1544510b98163a61027d6cef8c5d`
 - plateau counter: `0`
 - round loop: `round 21/50`
 - rounds remaining: `30`
-- notes: `Node A completed round 20/50. Run node_b to continue round 21/50.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 21/50.`
 
 ## Latest measured custom run
 
@@ -29,19 +29,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_001011`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human-idea reflection for round 21: L2 Cache is now promoted to the primary family because the accepted 128x128 K16 path has stabilized and the recent CTA-local experiments either regressed or delivered only tiny gains. Stage, Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted as the fixed pipeline under the current base rather than the next thing to perturb. Register Reuse is deferred after the round-19 launch-bounds failure. Tiling 256x128 remains rejected on measured evidence. Coalescing Access and Bank Conflict are still deferred because current wins and losses have not been driven mainly by those signals.`
+- dir_01: Keep the accepted 128x128 K16 kernel and apply an L2-friendly grouped CTA order on the hot band | bottleneck: L2 / B-tile reuse across CTAs rather than within-CTA shared-memory orchestration.
+- dir_02: Hold the accepted base fixed and continue shaving barrier work inside the K16 steady-state | bottleneck: Residual barrier overhead in the accepted K16 hot-band loop.
+- dir_03: Revisit a mild compiler register hint only after the accepted base survives the L2 pass unchanged | bottleneck: Compiler allocation quality rather than CTA-local algorithm shape.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
