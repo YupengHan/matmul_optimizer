@@ -1,78 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_225949",
-  "status": "completed",
-  "created_at": "2026-04-19T22:59:49-07:00",
-  "source_run_id": "20260419_225909_bf16_gemm_v1_b50742e",
-  "source_run_dir": "runs/20260419_225909_bf16_gemm_v1_b50742e",
-  "source_summary_json": "runs/20260419_225909_bf16_gemm_v1_b50742e/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_230146_bf16_gemm_v1_b368da0",
+  "source_run_dir": "runs/20260419_230146_bf16_gemm_v1_b368da0",
+  "source_summary_json": "runs/20260419_230146_bf16_gemm_v1_b368da0/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "human+auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Apply peeled steady-state only to the 8-warp 256x128 hot band and leave the residual 64x128 path on the proven generic loop",
-      "hypothesis": "Two rounds in a row show the same pattern: the main 256x128 hot-band kernel gets materially faster, but correctness fails. The most likely explanation is no longer 'steady-state peeling is wrong everywhere'; it is that the shared peeled schedule is valid for the dominant 8-warp hot-band kernel but not for the 2-warp residual 64x128 variant that was added in round 3. The next move should therefore split the behavior by TileConfig: keep the peeled steady-state on the main hot band where the win was measured, and restore the original generic per-tile control path on the residual kernel to see whether correctness returns without giving back the main-kernel gain.",
-      "expected_bottleneck": "Main hot-band control overhead is still the target, but correctness risk is likely concentrated in the smaller residual 64x128 variant rather than the dominant 256x128 kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Moderate and well-bounded. This is a surgical split of a winning-but-incorrect schedule, not a new pipeline family.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv residual 64x128 hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Reject if correctness still fails after the split or if the main hot-band kernel loses most of the peeled steady-state gain."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Re-anchor on the accepted-correct surface and push warp-local Ps2r plus right-left register reuse",
-      "hypothesis": "If the split steady-state experiment still fails, the next human-idea branch with the cleanest upside remains warp-local operand scheduling. On the accepted-correct 64x384-derived surface, CTA-level staging was already in a decent place, but tensor activity stayed under 39%. That makes the human Ps2r/register-reuse idea the strongest fallback: prefetch and reorder fragments inside the 64x64 PTX warp microkernel rather than continue fighting cp.async boundary correctness.",
-      "expected_bottleneck": "Per-warp operand delivery and register reuse inside the 64x64 PTX microkernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64_lookahead",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64"
-      ],
-      "risk": "Moderate to high. This branch can inflate live fragment count and erase the current register/occupancy surface.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if register pressure climbs or if short-scoreboard changes do not turn into a measurable main-kernel time win."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Revisit a light L2-friendly logical CTA swizzle after the correctness branch settles",
-      "hypothesis": "The user's L2-cache idea is still available, and the hot-band grid remains a large, regular 60x25 launch. If the control-flow branch settles, a light logical CTA swizzle remains the best cache-locality experiment that does not touch the inner MMA pipeline. This is ranked third because correctness is currently the gating issue.",
-      "expected_bottleneck": "Inter-CTA L2 locality across hot-band B tiles.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
-        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
-      ],
-      "risk": "Moderate. Earlier grouped traversal regressed, so any revisit must stay light and easy to back out.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Reject if L2 throughput stays flat or if runtime regresses like the earlier grouped traversal."
-    }
-  ],
-  "notes": "Round 6/50 still shows an incorrect but faster peeled steady-state: the main 256x128 hot-band kernel improved again to about 40.131 ms, which strengthens the case that the control-flow idea is sound but the shared peeled schedule is not safe across both tile configs. The recommended next move is therefore dir_01: split the behavior by TileConfig and keep the peeled schedule only on the dominant 8-warp main hot band while restoring the residual 64x128 path to the proven generic loop."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_225909_bf16_gemm_v1_b50742e`
-- run dir: `runs/20260419_225909_bf16_gemm_v1_b50742e`
-- kernel tag: `bf16_gemm_v1_b50742e`
-- round label: `round 5/50`
+- run id: `20260419_230146_bf16_gemm_v1_b368da0`
+- run dir: `runs/20260419_230146_bf16_gemm_v1_b368da0`
+- kernel tag: `bf16_gemm_v1_b368da0`
+- round label: `round 6/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.012527 ms`
-- p10 runtime: `29.561840 ms`
-- p90 runtime: `31.041018 ms`
-- TFLOP/s: `24.223865 TFLOP/s`
-- previous run id: `20260419_225440_bf16_gemm_v1_6557fa0`
-- runtime delta vs previous measured run: `+0.004320 ms`
-- TFLOP/s delta vs previous measured run: `-0.003487 TFLOP/s`
+- median runtime: `30.106624 ms`
+- p10 runtime: `29.721537 ms`
+- p90 runtime: `30.882099 ms`
+- TFLOP/s: `24.148155 TFLOP/s`
+- previous run id: `20260419_225909_bf16_gemm_v1_b50742e`
+- runtime delta vs previous measured run: `+0.094096 ms`
+- TFLOP/s delta vs previous measured run: `-0.075710 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the peeled steady state, but restore the proven final-two-tile handoff to recover correctness`
+- implemented direction name: `Apply peeled steady-state only to the 8-warp 256x128 hot band and leave the residual 64x128 path on the proven generic loop`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_225909_bf16_gemm_v1_b50742e/summary.json`
-- measured commit: `b50742ed0692244d8e518dccedae3d255d61b85c`
+- raw summary json: `runs/20260419_230146_bf16_gemm_v1_b368da0/summary.json`
+- measured commit: `b368da06a9ba04f8051906d194e80b09bdad9760`
 - new best custom: `no`
-- generated at: `2026-04-19T22:59:16-07:00`
+- generated at: `2026-04-19T23:01:54-07:00`
