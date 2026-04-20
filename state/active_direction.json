@@ -1,10 +1,30 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Trim the hot-band export path by batching 64x64 stores vertically instead of horizontally",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T22:35:44-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_223457",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Trim the hot-band export path by batching 64x64 stores vertically instead of horizontally",
+    "hypothesis": "The dominant hot-band kernel is back on the best known surface and recent copy / consumer experiments have mostly been negative. The current 64x64 export helper still pays one `__syncwarp()` per row and per column pair, which means eight warp synchronizations to export the sixteen 16x16 accumulator tiles. Because each warp only has two `c_shared` scratch stages, a practical next move is to flip the batching dimension: use those two stages to store two rows for the same column tile, then export them together. That preserves shared footprint and accumulator layout while potentially cutting the export-side warp sync count in half.",
+    "expected_bottleneck": "Hot-band epilogue / export synchronization and shared-memory round-trip overhead.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x64",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_row_pairs_64x64",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64"
+    ],
+    "risk": "Moderate. The change is local and footprint-neutral, but the export path is correctness-sensitive and the accumulator-to-output mapping must stay exact.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "launch__registers_per_thread"
+    ],
+    "stop_condition": "Reject if correctness breaks, if registers rise materially, or if the hot-band time stays flat."
+  },
+  "notes": "Node C may now implement this one direction."
 }
