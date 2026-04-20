@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_200532",
-  "status": "completed",
-  "created_at": "2026-04-19T20:05:32-07:00",
-  "source_run_id": "20260419_200457_bf16_gemm_v1_76622e3",
-  "source_run_dir": "runs/20260419_200457_bf16_gemm_v1_76622e3",
-  "source_summary_json": "runs/20260419_200457_bf16_gemm_v1_76622e3/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_201001_bf16_gemm_v1_b65fd6c",
+  "source_run_dir": "runs/20260419_201001_bf16_gemm_v1_b65fd6c",
+  "source_summary_json": "runs/20260419_201001_bf16_gemm_v1_b65fd6c/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 5 Bank conflict fallback: restore the accepted 64x384 base and try a warp-local B-consumer transform with zero extra CTA repack",
-      "hypothesis": "Round 18 and round 19 proved that the half-panel family has real occupancy upside, but they also proved that it is not a one-round-away correct branch: round 19 still failed all correctness cases, regressed to 31.338 ms, and only improved the error shape rather than clearing it. With one round left, the right move is to return to the last correct accepted base b13027c at 30.0528 ms and spend the final implementation budget on the user's strict B-feed rule: attack the B consumer layout at the warp boundary only, without a second shared tile, without new CTA barriers, and without reducing stage depth. The measured accepted-base history already says 64x384 is the best correct tile width on this GPU and shape, so the final round should be a correct-branch feed experiment rather than another correctness rescue on the half-panel branch.",
-      "expected_bottleneck": "Shared/L1/bank behavior on the stable 64x384 hot path rather than occupancy. The goal is to improve operand delivery without destabilizing correctness.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_384",
-        "src/kernels/bf16_gemm_v1.cu:accumulate_peeled_shared_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel"
-      ],
-      "risk": "This is lower risk than continuing half-panel, but it is also lower ceiling. The final round may still finish near the accepted base rather than materially below it.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "shared mem / block allocated"
-      ],
-      "stop_condition": "Stop if the change increases shared memory footprint, adds CTA barriers, reduces the current stage depth, or fails correctness. The final branch must stay on a correct implementation."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 7 last-chance sparse-error repair: keep the half-panel branch and hunt the remaining outlier path only",
-      "hypothesis": "Round 19 materially improved the error shape: case_00 mean_abs_err fell to about 0.034, close to the correct accepted-base mean, while max_abs_err dropped from the mid-teens to around 9. That means the branch is no longer broadly wrong; it likely has a sparse residual ownership or export bug. If the user values ceiling above final-round prudence, a last surgical fix that targets the remaining outlier path could still recover the 2-block occupancy branch. However, after two rounds of repair, this is no longer the best expected-value move for the final slot.",
-      "expected_bottleneck": "Residual sparse correctness bug in the half-panel path, likely in the remaining lane/local-half ownership contract or export path rather than feed throughput.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:HalfPanelIdentity64x32",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x32",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_control_64x32",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "Highest risk of the three directions. Another repair round can easily end with a still-incorrect kernel and no new accepted result at the end of the 20-round budget.",
-      "metrics_to_recheck": [
-        "correctness_case_* max_abs_err / mean_abs_err",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Only continue if the round is explicitly being used as a ceiling bet. Reject if correctness still fails after another targeted repair."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 10 Stage / human idea 4 epilogue budget: return to the accepted base and trim the steady-state barrier or c_shared export path instead of touching B layout",
-      "hypothesis": "If the final round should stay on a correct branch but avoid the B-layout experiment, the other disciplined option is to restore the accepted base and chase a small overlap win by trimming barrier/export tax in the fixed 64x384 peeled kernel. This is lower upside than the warp-local B-consumer transform, because the accepted base already pushed barrier and mio down materially, but it remains a valid correct-branch final-round move. It maps the user's stage and epilogue-budget ideas onto the already measured correct kernel rather than the unstable half-panel branch.",
-      "expected_bottleneck": "Residual steady-state barrier/export overhead on the accepted 64x384 path, not register pressure.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:advance_peeled_hot_stage_ptx",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_384",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_peeled_kernel"
-      ],
-      "risk": "Likely the lowest upside of the three options. It may produce only noise-level change relative to the accepted base.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Use only if the final round wants the safest possible correct-branch change. Reject if runtime regresses without a compensating correctness or pipeline simplification benefit."
-    }
-  ],
-  "notes": "Round 20 human-idea audit against measured evidence: Tiling is accepted historically, but the final-round implication is now to return to the correct 64x384 accepted base rather than keep the 256x128 half-panel branch alive, because the half-panel family remained incorrect after two repair rounds. Coalescing Access is accepted as baseline because 16-byte cp.async staging is already in place; Data Reuse is accepted as baseline because both the accepted base and the half-panel branch already depend on shared-memory reuse; Async Copy is accepted as baseline for the same reason; Bank Conflict is accepted as the primary final-round family because the user specifically asked that any renewed B-feed experiment stay warp-local and avoid CTA repack overhead; L2 Cache swizzle is deferred because neither the accepted base nor the latest failed run looks L2-bound; Register Reuse is rejected for the final round as a primary family because the half-panel branch still fails correctness despite strong occupancy; Pg2s is accepted as baseline because double-buffer global-to-shared prefetch is already present; Ps2r is deferred because A-side reuse only matters if the half-panel branch is first made correct; Stage is accepted as a secondary correct-branch family, but not the top pick, because the accepted base already reduced barrier and mio substantially. Recommended direction is dir_01 because the last round should end on the correct branch and still test one auditable feed idea that respects the user's hard constraints."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
