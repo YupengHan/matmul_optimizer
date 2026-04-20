@@ -1,69 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_002144",
-  "status": "completed",
-  "created_at": "2026-04-20T00:21:44-07:00",
-  "source_run_id": "20260420_002119_bf16_gemm_v1_c26ac4f",
-  "source_run_dir": "runs/20260420_002119_bf16_gemm_v1_c26ac4f",
-  "source_summary_json": "runs/20260420_002119_bf16_gemm_v1_c26ac4f/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_002230_bf16_gemm_v1_7c672be",
+  "source_run_dir": "runs/20260420_002230_bf16_gemm_v1_7c672be",
+  "source_summary_json": "runs/20260420_002230_bf16_gemm_v1_7c672be/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep the current best branch and raise the hot-band K16 loop to the next small unroll factor",
-      "hypothesis": "Round 27 confirmed that the lighter compiler approach to fixed-loop overhead works: restoring the best branch and moving away from `unroll 1` delivered a large gain without disturbing correctness. The next logical move is to stay on that axis and raise the K16 hot-band loop to the next small unroll factor. This keeps the same grouped-order base, the same `launch_bounds(128, 2)` clue, and the same control structure, while giving ptxas more room to schedule across adjacent iterations.",
-      "expected_bottleneck": "Residual loop-control and scheduling overhead in the current best hot-band K16 kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1680"
-      ],
-      "risk": "Larger unroll factors can quickly increase register pressure or code size. The gain may flatten or reverse after the first successful step.",
-      "metrics_to_recheck": [
-        "correctness pass rate on all benchmark cases",
-        "median runtime",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the higher unroll factor regresses runtime or pushes register pressure up enough to undo the round-27 win."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Freeze the current best branch and revisit one more mild compiler clue only if higher unrolling stalls",
-      "hypothesis": "If the next unroll step flattens out, the compiler-guidance axis is still live, but the next change should remain small and local to the current best branch.",
-      "expected_bottleneck": "Compiler codegen refinement on the grouped_rows=8 plus `launch_bounds(128, 2)` base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1611",
-        "src/kernels/bf16_gemm_v1.cu:1680"
-      ],
-      "risk": "Diminishing returns and codegen instability after multiple compiler-driven changes.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the best branch remains clearly strongest after the next unroll test."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Hold the current best branch fixed and return to tiny barrier-side cleanup only if compiler tuning saturates",
-      "hypothesis": "If compiler-side tuning saturates, the remaining bounded move is still small Stage-side cleanup under the current best branch.",
-      "expected_bottleneck": "Residual barrier overhead in the current best hot-band kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1695",
-        "src/kernels/bf16_gemm_v1.cu:1708"
-      ],
-      "risk": "Very limited headroom and correctness sensitivity.",
-      "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the compiler-tuned branch already minimizes barrier impact sufficiently."
-    }
-  ],
-  "notes": "Human-idea reflection for round 28: Register Reuse / compiler scheduling remains the primary family because grouped ordering and `launch_bounds(128, 2)` are already fixed into the base, and the first unroll increase produced another large measured gain. L2 Cache stays accepted and fixed at grouped_rows=8. Stage remains accepted as background structure but is no longer the first lever to perturb. Tiling 256x128, aggressive launch-bounds, and the peeled schedule remain rejected."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
