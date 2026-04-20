@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore accepted grouped_rows=8 base, then test 8->6 hot-band narrowing`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_091413`
 - round loop: `round 64/100`
+- hypothesis: `The accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff + unroll 2 base is still the best locality shape, and the remaining question is whether a narrower kFixedHotBandPtxGroupedRows value of 6 preserves enough reuse without reintroducing the DRAM growth seen at grouped_rows=4.`
+- expected bottleneck: `Locality loss in the hot-band PTX consumer ordering and row reuse window, not the broader sweep or sync structure.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:kFixedHotBandPtxGroupedRows, src/kernels/bf16_gemm_v1.cu:kFixedHotBandUnroll, src/kernels/bf16_gemm_v1.cu:grouped_rows=8 accepted base path, src/kernels/bf16_gemm_v1.cu:right-left PTX sweep and one-sync handoff`
+- risk: `If 6 is too narrow, it may recover less reuse than 8 while still missing the DRAM amplification seen with grouped_rows=4; however it is the cheapest remaining locality change on the accepted base.`
+- metrics to re-check: `runtime_ms versus 25.934336 ms, DRAM throughput / traffic, L2 hit rate, achieved occupancy, warp stall mix around the handoff`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
