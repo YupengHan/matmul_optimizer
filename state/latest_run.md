@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_080414_bf16_gemm_v1_92cecc3`
-- run dir: `runs/20260420_080414_bf16_gemm_v1_92cecc3`
-- kernel tag: `bf16_gemm_v1_92cecc3`
-- round label: `round 50/100`
+- run id: `20260420_081140_bf16_gemm_v1_3713ac4`
+- run dir: `runs/20260420_081140_bf16_gemm_v1_3713ac4`
+- kernel tag: `bf16_gemm_v1_3713ac4`
+- round label: `round 51/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.128896 ms`
-- p10 runtime: `25.700045 ms`
-- p90 runtime: `26.885530 ms`
-- TFLOP/s: `27.824345 TFLOP/s`
-- previous run id: `20260420_075705_bf16_gemm_v1_47484fa`
-- runtime delta vs previous measured run: `-5.599328 ms`
-- TFLOP/s delta vs previous measured run: `+4.910380 TFLOP/s`
+- median runtime: `25.716736 ms`
+- p10 runtime: `25.288294 ms`
+- p90 runtime: `26.797158 ms`
+- TFLOP/s: `28.270284 TFLOP/s`
+- previous run id: `20260420_080414_bf16_gemm_v1_92cecc3`
+- runtime delta vs previous measured run: `-0.412160 ms`
+- TFLOP/s delta vs previous measured run: `+0.445938 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Hold Grouped-Row=8 K16 Fixed And Trim PTX Export Or Operand Live Range`
+- implemented direction name: `Recover Accepted K16 Through Selective Feed/Issue Retiming`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_080414_bf16_gemm_v1_92cecc3/summary.json`
-- measured commit: `92cecc34d4a3c3f2e9e71d077cd466f6effba291`
+- raw summary json: `runs/20260420_081140_bf16_gemm_v1_3713ac4/summary.json`
+- measured commit: `3713ac4a81a442594f565309bb52b84291b0e391`
 - new best custom: `no`
-- generated at: `2026-04-20T08:04:22-07:00`
+- generated at: `2026-04-20T08:11:47-07:00`

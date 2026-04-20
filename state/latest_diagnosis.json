@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_080439",
-  "status": "completed",
-  "created_at": "2026-04-20T08:04:39-07:00",
-  "source_run_id": "20260420_080414_bf16_gemm_v1_92cecc3",
-  "source_run_dir": "runs/20260420_080414_bf16_gemm_v1_92cecc3",
-  "source_summary_json": "runs/20260420_080414_bf16_gemm_v1_92cecc3/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_081140_bf16_gemm_v1_3713ac4",
+  "source_run_dir": "runs/20260420_081140_bf16_gemm_v1_3713ac4",
+  "source_summary_json": "runs/20260420_081140_bf16_gemm_v1_3713ac4/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Recover Accepted K16 Through Selective Feed/Issue Retiming",
-      "hypothesis": "Round 47's grouped-row=8 plus K16 hot band at 25.529328 ms remains the accepted best base. Round 50 restored that same grouped-row=8 plus K16 surface but forced the active PTX main loop to `#pragma unroll 1`, landing at 26.128896 ms, still about 0.60 ms slower. The key evidence is the stall mix: `mio_throttle 5.81 -> 3.83`, `short_scoreboard 2.82 -> 0.71`, `lts 26.91 -> 30.97`, and `barrier 9.18 -> 7.18`. That says the dominant 128x128 PTX hot band still has real feed/issue structure to mine, but the full `unroll 1` form over-serialized the loop and gave back throughput. The best next move is therefore not to keep `unroll 1` as a base, but to restore the accepted grouped-row=8 plus K16 branch and selectively retime K16 stage turnover, `cp.async` wait or commit placement, or the row-pair consume order so the cleaner stall mix survives without sacrificing total issue density.",
-      "expected_bottleneck": "Feed/issue scheduling and K16 stage-turnover latency in the dominant grouped-row=8 128x128 PTX hot-band microkernel, not raw DRAM bandwidth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:721-769",
-        "src/kernels/bf16_gemm_v1.cu:1016-1040",
-        "src/kernels/bf16_gemm_v1.cu:1949-2001"
-      ],
-      "risk": "This is the highest-upside direction, but it can easily drift into the wrong branch. A coarse retime can recreate the throughput loss from full `unroll 1`, and a more aggressive scheduling tweak can accidentally reintroduce extra-live B behavior or higher register pressure. The implementation must stay anchored to grouped-row=8 plus K16 as the accepted base rather than promoting `unroll 1` itself.",
-      "metrics_to_recheck": [
-        "median runtime and TFLOP/s versus the 25.529328 ms accepted base and the <20 ms target",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the stall mix stays cleaner but runtime still does not beat 25.529328 ms, or if the retime effectively becomes another full-loop `unroll 1` downgrade."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim Operand And Export Lifetime On The Accepted PTX Surface",
-      "hypothesis": "The round-50 result suggests some of the hot-band loss is still live-range or issue-pressure related rather than purely memory-bound. The PTX microkernel deliberately reloads mirrored B fragments per row pair to keep B lifetime narrow, but the A row-pair fragments and the single-stage PTX export path still create a long dependent sequence inside the same dominant kernel. A narrower follow-up than dir_01 is to keep grouped-row=8 plus K16 unchanged and trim only operand or export lifetime inside the PTX path: shorten A-row-pair residency, reduce export serialization, or tighten the handoff around the one-stage PTX export scratch without reopening the disproved extra-live-B branch.",
-      "expected_bottleneck": "Operand lifetime and export-side issue pressure inside the grouped-row=8 PTX hot band, which may still be suppressing warp readiness after locality already improved.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:743-760",
-        "src/kernels/bf16_gemm_v1.cu:974-1013",
-        "src/kernels/bf16_gemm_v1.cu:2008-2009"
-      ],
-      "risk": "This is easy to overfit. A small source-level cleanup can silently raise registers, disturb scheduling, or turn back into a disguised Ps2r experiment by keeping more data live than intended. It stays rank 2 because the evidence is real, but the surface must remain narrow and still trace back to the accepted grouped-row=8 plus K16 branch.",
-      "metrics_to_recheck": [
-        "median runtime and TFLOP/s",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if register count or warp readiness regresses, or if the change starts looking like another extra-live-B or rolling-window retention experiment."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Keep Grouped-Row=8 K16 And Probe One Narrow Locality Or Shared-Layout Refinement",
-      "hypothesis": "Grouped-row=8 plus K16 is still the accepted base because the locality win is real, and round 50's `unroll 1` result pushed `lts__throughput` even higher to 30.97 while keeping DRAM modest. That keeps the L2 and shared-layout families alive, but only as a third-ranked micro-probe. The right scope is a very small grouped-row traversal or within-group ordering adjustment, or a minimal B-shared mapping or padding refinement, that preserves the accepted grouped-row=8 plus K16 PTX hot band and tests whether a little more locality or less shared-bank friction can reduce remaining MIO-side pressure without reopening a broad branch.",
-      "expected_bottleneck": "Residual L2 locality and shared-layout friction in the accepted grouped-row=8 PTX hot band, expressed more as MIO or bank-side inefficiency than as raw global-memory saturation.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156-156",
-        "src/kernels/bf16_gemm_v1.cu:1016-1040",
-        "src/kernels/bf16_gemm_v1.cu:1919-1936"
-      ],
-      "risk": "This is likely incremental and can easily land in noise. A careless remap can give back the accepted grouped-row=8 win, move L2 or bank counters without lowering runtime, or accidentally perturb the proven feed path. It is therefore rank 3 rather than the main bet.",
-      "metrics_to_recheck": [
-        "median runtime delta versus the 25.529328 ms accepted base",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if locality or bank metrics move without a clear runtime drop, because the real target remains <20 ms rather than only preserving a mild CUTLASS edge."
-    }
-  ],
-  "notes": "- grouped-row=8 + K16 from round 47 (`20260420_074331_bf16_gemm_v1_17a33b2`) remains the accepted best base at `25.529328 ms`.\n- round 50 restored grouped-row=8 + K16 and set the active PTX main loop to `#pragma unroll 1`; runtime came back to `26.128896 ms`, still about `0.60 ms` slower than the accepted base.\n- `#pragma unroll 1` is not the accepted base, but it exposed real feed or issue signal: `mio_throttle 5.81 -> 3.83`, `short_scoreboard 2.82 -> 0.71`, `lts 26.91 -> 30.97`, and `barrier 9.18 -> 7.18`.\n- next round's highest-value attempt is `dir_01`: recover accepted-base throughput while keeping the improved stall mix via selective feed or issue retiming, not by promoting full `unroll 1`.\n- Coalescing Access: not the lead family now; 16-byte async copies and the current access pattern already captured the large coalescing win.\n- Data Reuse: still valid because grouped-row=8 remains the accepted base, but the scope is now a narrow within-branch reuse refinement rather than a broad new remap.\n- Async Copy: already present and useful via `cp.async`; the next move should retime the existing mechanism, not invent another copy path.\n- Bank Conflict: still worth a third-ranked micro-probe because shared-side friction can still leak into MIO pressure, but it is secondary to feed or issue retiming on the accepted base.\n- L2 Cache: clearly still real because the accepted base came from grouped-row locality and round 50 lifted L2 further, but cache work should stay narrow and must preserve grouped-row=8 + K16.\n- Register Reuse: still an active family, especially around operand and export lifetime, but do not reopen the disproved extra-live-B route.\n- Pg2s: not the current limiter family; global-to-shared movement already looks competent enough that another producer-side rewrite is not the best next round.\n- Ps2r: explicit caution family; keep any reuse work away from extra-live-B or rolling-window lookahead, because that branch already failed to hold the accepted base.\n- Stage: still the most important family, but in the constrained K16 form of feed or issue cadence retuning inside the accepted microkernel, not as another K32 pivot and not by treating `unroll 1` as the new base.\n- Target framing stays unchanged: the user goal is still `<20 ms`, not merely beating CUTLASS."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
