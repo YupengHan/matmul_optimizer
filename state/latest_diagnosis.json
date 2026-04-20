@@ -1,15 +1,80 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_182158",
+  "status": "completed",
+  "created_at": "2026-04-19T18:21:58-07:00",
   "source_run_id": "20260419_181807_bf16_gemm_v1_3dd4394",
   "source_run_dir": "runs/20260419_181807_bf16_gemm_v1_3dd4394",
   "source_summary_json": "runs/20260419_181807_bf16_gemm_v1_3dd4394/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea 10 Stage: revert the catastrophic __noinline__ reg-squeeze split and continue from the round-8 checkpoint",
+      "hypothesis": "Round 9 is strong negative evidence against one specific implementation strategy, not against the whole Stage family. The family-level evidence is still round 8: first correct result, barrier 4.60, long scoreboard 1.21, mio 0.71, with only a modest runtime gap versus the accepted base. Round 9 then cut registers from 132 to 126 and opened occupancy_limit_registers from 1 to 2, but tensor active collapsed from 35.12 to 3.36 while DRAM throughput jumped to 90.96 and long scoreboard to 40.26. That is not a normal miss on the occupancy cliff; it is a broken code-shape signature consistent with the new __noinline__ pipeline and export split forcing accumulator or pipeline state out of the efficient inline path and turning the hot kernel into a memory-dominated engine. The right next move is to restore the round-8 inline Stage checkpoint first and only continue Stage from there.",
+      "expected_bottleneck": "Broken code generation and likely spill-like memory domination from the __noinline__ split, visible as extreme DRAM throughput, long scoreboard, and mio rather than useful tensor issue.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:505-518",
+        "src/kernels/bf16_gemm_v1.cu:915-987",
+        "src/kernels/bf16_gemm_v1.cu:990-1043"
+      ],
+      "risk": "This spends one round on recovery rather than direct forward progress, and if the restored round-8 code shape still cannot get closer to the accepted base then the Stage family loses its strongest justification for remaining primary.",
+      "metrics_to_recheck": [
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
+        "launch__occupancy_limit_registers",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if reverting away from the __noinline__ split does not restore something close to the round-8 signature, meaning tensor active back near the mid-30s with barrier, long scoreboard, and mio back down sharply and runtime back near the 35-36 ms range. If that recovery does not happen, abandon the current Stage branch as primary."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea 7 Register reuse: pivot to warp-local RLRL accumulator traversal on the stable 64x384 PTX base",
+      "hypothesis": "If Stage has to be demoted after the recovery attempt, the next best family is not another feed rewrite but warp-internal issue efficiency. The accepted base still has only middling tensor active, and round 8 showed that even crushing barrier, mio, and long scoreboard does not automatically create a runtime win. That points to remaining waste inside the 12-fragment PTX sweep itself. A right-left-right-left style accumulator traversal or similar warp-local reuse order change is materially different from the rejected explicit half-panel compute path and from the round-9 codegen split, and it attacks the residual issue efficiency on a healthier code shape.",
+      "expected_bottleneck": "Warp-internal issue order and fragment reuse inefficiency inside the 64x384 PTX accumulate sweep, showing up mainly as residual tensor underfill and short-latency scheduling waste rather than CTA-level feed stalls.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:323-408",
+        "src/kernels/bf16_gemm_v1.cu:823-840",
+        "src/kernels/bf16_gemm_v1.cu:948-981"
+      ],
+      "risk": "This can drift into the already-rejected pair-compaction or explicit half-panel compute families if it stops being a pure traversal change. It also may have lower ceiling than the Stage family if feed overlap really is the larger missing piece.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if tensor active does not rise and short-scoreboard does not improve on the restored accepted base; that would mean warp-local traversal is not the limiting factor."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea 9 Ps2r: return to the earlier inline shared-to-register lookahead as the safer latency-hiding fallback",
+      "hypothesis": "Idea 9 never produced a win, but it did produce one real signal earlier: a lower long-scoreboard stall without collapsing the kernel shape. Round 9 now shows that aggressive code-shape surgery around the Stage pipeline can backfire catastrophically, so the safer fallback family is to revisit the flatter inline Ps2r lookahead on the stable accepted base instead of pushing deeper structural overlap again. This keeps the hot-band PTX branch, stays away from the failed producer split and bank-feed rewrite families, and gives a bounded latency-hiding option if Stage recovery is not worth another round.",
+      "expected_bottleneck": "Shared-to-register latency hiding inside the PTX hot sweep, with long scoreboard as the main metric and tensor active as the payoff metric.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:267-289",
+        "src/kernels/bf16_gemm_v1.cu:395-408",
+        "src/kernels/bf16_gemm_v1.cu:823-840"
+      ],
+      "risk": "The family already showed positive-but-insufficient evidence, so it may only recover a small amount of latency without changing the overall runtime ranking. It should stay inline and narrow; if it grows into another structural rewrite it repeats the same fragility mistake.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "median runtime"
+      ],
+      "stop_condition": "Stop if long-scoreboard does not improve materially on the restored accepted base or if runtime remains flat; then Ps2r is not a competitive fallback family."
+    }
+  ],
+  "notes": "Round 10 is a revert-and-continue move, not a clean continue and not yet a pivot. The Stage family should be continued from the round-8 checkpoint and explicitly not from the current round-9 code shape. Round 8 is still the relevant family evidence: it was correct, it slashed barrier, long-scoreboard, and mio, and it reduced registers and shared-memory budget without destroying tensor issue. Round 9 then tried to force the branch under the occupancy cliff by splitting the hot pipeline and export path into __noinline__ helpers. The result was catastrophic but informative: occupancy_limit_registers opened to 2 and active warps rose to 33.22, yet tensor active collapsed to 3.36, long scoreboard exploded to 40.26, mio to 18.47, and DRAM throughput to 90.96. That means the occupancy change was purchased by a broken code shape, not a healthier hot kernel. The correct diagnosis is therefore to reject the round-9 reg-squeeze implementation strategy, restore the round-8 inline Stage checkpoint, and only then decide whether Stage still merits further refinement.\n\nHuman idea audit for this round:\n1. Tiling (256x128 block, 64x64 warp): reject-for-this-round. The existing tile sweep still says 64x384 is the measured sweet spot, and the current failure is code-shape-driven rather than tile-shape-driven.\n2. Coalescing Access: defer. Wide 16-byte global access is already present, so it is not the first lever to pull from this failure.\n3. Data Reuse: accept-now as an already adopted baseline, not as a new primary family. Shared-memory reuse of A and B is not what failed in round 9.\n4. Async Copy: accept-now within the Stage family, but only through the round-8-style inline pipeline. The round-9 helper split is negative evidence against further codegen surgery here.\n5. Bank Conflict: reject-for-this-round. The current catastrophic signature is not a bank-conflict signature, and prior B-feed experiments were negative.\n6. L2 Cache: reject-for-this-round. The measured failure is dominated by a broken hot-kernel code shape, not by an L2 hit-rate problem.\n7. Register Reuse: accept-now as the top pivot candidate if Stage recovery fails. It attacks residual warp-issue efficiency without reopening the failed feed-path rewrites.\n8. Pg2s: accept-now only as existing baseline behavior. Global-to-shared double buffering is already present and is not the new decision point.\n9. Ps2r: defer as the safer fallback family. It showed earlier positive-but-insufficient evidence and is still more credible than a fresh structural pivot if Stage must be demoted.\n10. Stage: accept-now, but only as a revert-and-continue family. Continue the family from the round-8 checkpoint; abandon building on the current round-9 __noinline__ codegen."
 }
