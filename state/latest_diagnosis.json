@@ -1,74 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_001011",
-  "status": "completed",
-  "created_at": "2026-04-20T00:10:11-07:00",
-  "source_run_id": "20260420_000930_bf16_gemm_v1_11f0427",
-  "source_run_dir": "runs/20260420_000930_bf16_gemm_v1_11f0427",
-  "source_summary_json": "runs/20260420_000930_bf16_gemm_v1_11f0427/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_001122_bf16_gemm_v1_273d63c",
+  "source_run_dir": "runs/20260420_001122_bf16_gemm_v1_273d63c",
+  "source_summary_json": "runs/20260420_001122_bf16_gemm_v1_273d63c/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep the accepted 128x128 K16 kernel and apply an L2-friendly grouped CTA order on the hot band",
-      "hypothesis": "The hot-band kernel is now stable enough that the next credible upside is orthogonal to CTA-local staging. The user's L2-cache idea fits the current evidence: tensor active is reasonable, shared footprint is already minimized, and the remaining gap to CUTLASS may come from cross-CTA B reuse. A grouped traversal of the fixed 60x50 hot-band tile grid, similar in spirit to Triton-style grouped ordering, can keep neighboring launched CTAs on the same small set of B tiles for longer without changing the kernel's inner pipeline.",
-      "expected_bottleneck": "L2 / B-tile reuse across CTAs rather than within-CTA shared-memory orchestration.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1635",
-        "src/kernels/bf16_gemm_v1.cu:1757"
-      ],
-      "risk": "CUDA does not guarantee issue order, so the gain may be small or noisy. The mapping must also preserve full coverage of the fixed hot-band grid with no duplicate or skipped tiles.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness pass rate"
-      ],
-      "stop_condition": "Stop if the remap leaves runtime flat within noise or if the grouped order complicates the fixed-path launch without a measurable L2 shift."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Hold the accepted base fixed and continue shaving barrier work inside the K16 steady-state",
-      "hypothesis": "If the L2 clue does not move, the safest remaining local optimization is still barrier trimming on the accepted 128x128 K16 path. Round 20 already removed the guaranteed-useless tail fences; the next variant would have to keep correctness intact while further narrowing rendezvous points.",
-      "expected_bottleneck": "Residual barrier overhead in the accepted K16 hot-band loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1678",
-        "src/kernels/bf16_gemm_v1.cu:1683",
-        "src/kernels/bf16_gemm_v1.cu:1694"
-      ],
-      "risk": "The remaining room is small and correctness-sensitive. A slight mistake can reopen the stage race for a marginal theoretical gain.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness pass rate"
-      ],
-      "stop_condition": "Stop if correctness fails or if barrier metrics move less than noise."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Revisit a mild compiler register hint only after the accepted base survives the L2 pass unchanged",
-      "hypothesis": "The register idea is not dead, but round 19 proved that aggressive pressure is harmful. If L2 ordering is neutral, a later round could try a strictly weaker compiler hint on the accepted base, one that does not target a higher resident-block count.",
-      "expected_bottleneck": "Compiler allocation quality rather than CTA-local algorithm shape.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1610",
-        "src/kernels/bf16_gemm_v1.cu:1757"
-      ],
-      "risk": "Easy to waste more rounds here after the severe round-19 failure. This should stay behind the L2 experiment.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "median runtime",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the hint again pushes the kernel toward the memory-stall signature seen in round 19."
-    }
-  ],
-  "notes": "Human-idea reflection for round 21: L2 Cache is now promoted to the primary family because the accepted 128x128 K16 path has stabilized and the recent CTA-local experiments either regressed or delivered only tiny gains. Stage, Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted as the fixed pipeline under the current base rather than the next thing to perturb. Register Reuse is deferred after the round-19 launch-bounds failure. Tiling 256x128 remains rejected on measured evidence. Coalescing Access and Bank Conflict are still deferred because current wins and losses have not been driven mainly by those signals."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

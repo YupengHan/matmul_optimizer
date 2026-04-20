@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_000930_bf16_gemm_v1_11f0427`
-- run dir: `runs/20260420_000930_bf16_gemm_v1_11f0427`
-- kernel tag: `bf16_gemm_v1_11f0427`
-- round label: `round 20/50`
+- run id: `20260420_001122_bf16_gemm_v1_273d63c`
+- run dir: `runs/20260420_001122_bf16_gemm_v1_273d63c`
+- kernel tag: `bf16_gemm_v1_273d63c`
+- round label: `round 21/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `29.116928 ms`
-- p10 runtime: `28.660019 ms`
-- p90 runtime: `29.933670 ms`
-- TFLOP/s: `24.968960 TFLOP/s`
-- previous run id: `20260420_000504_bf16_gemm_v1_f35aea8`
-- runtime delta vs previous measured run: `-31.492609 ms`
-- TFLOP/s delta vs previous measured run: `+12.973828 TFLOP/s`
+- median runtime: `28.949504 ms`
+- p10 runtime: `28.400743 ms`
+- p90 runtime: `30.191193 ms`
+- TFLOP/s: `25.113364 TFLOP/s`
+- previous run id: `20260420_000930_bf16_gemm_v1_11f0427`
+- runtime delta vs previous measured run: `-0.167424 ms`
+- TFLOP/s delta vs previous measured run: `+0.144403 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the accepted 128x128 K16 base and scope the consume fence only to real stage overwrites`
+- implemented direction name: `Keep the accepted 128x128 K16 kernel and apply an L2-friendly grouped CTA order on the hot band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_000930_bf16_gemm_v1_11f0427/summary.json`
-- measured commit: `11f04271ca6d1544510b98163a61027d6cef8c5d`
+- raw summary json: `runs/20260420_001122_bf16_gemm_v1_273d63c/summary.json`
+- measured commit: `273d63c0dca706eb94e279d165295463933a4b5c`
 - new best custom: `yes`
-- generated at: `2026-04-20T00:09:38-07:00`
+- generated at: `2026-04-20T00:11:30-07:00`
