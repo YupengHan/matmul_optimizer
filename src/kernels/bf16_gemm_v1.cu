@@ -209,6 +209,12 @@ __device__ __forceinline__ void cp_async_wait_group_1() {
 #endif
 }
 
+__device__ __forceinline__ void cp_async_wait_group_2() {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
+  asm volatile("cp.async.wait_group 2;\n" ::);
+#endif
+}
+
 __device__ __forceinline__ void store_bfloat162_pair(
     __nv_bfloat16* dst,
     const float2 values) {
@@ -853,24 +859,68 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
   next_stage = consumed_stage;
 }
 
+template <typename TileConfig>
+__device__ __forceinline__ void advance_peeled_hot_stage_ptx_deep(
+    PtxWmmaAccTileSet384& acc_tiles,
+    __nv_bfloat16 a_shared[][TileConfig::kASharedTileElems],
+    __nv_bfloat16 b_shared[][TileConfig::kBSharedTileElems],
+    const __nv_bfloat16* a_block,
+    const __nv_bfloat16* b_block,
+    int future_tile_k,
+    int warp_tile_m,
+    int warp_tile_n,
+    int& curr_stage,
+    int& next_stage,
+    int& prefetch_stage) {
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  // With three full A/B stages in flight, only wait for the next consumer stage
+  // to become ready before recycling the just-consumed slot. One later stage can
+  // stay pending while the current warp group keeps issuing mma.
+  cp_async_wait_group_1();
+  __syncthreads();
+
+  stage_a_shared_tile_async<TileConfig>(
+      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(
+      b_shared[curr_stage],
+      b_block + future_tile_k * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+
+  const int consumed_stage = curr_stage;
+  curr_stage = next_stage;
+  next_stage = prefetch_stage;
+  prefetch_stage = consumed_stage;
+}
+
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
+  constexpr int kHotStageCount = 3;
   static_assert(FixedKTiles > 3, "Pairwise peeled fixed-shape kernel expects at least four K-tiles.");
   static_assert((FixedKTiles % 2) == 0, "Pairwise peeled fixed-shape kernel expects an even K-tile count.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
                 "Fixed-shape peeled kernel must match the benchmark K dimension.");
   static_assert(TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN,
                 "The PTX hot-band branch is only expected for the fixed 64x384 kernel.");
+  static_assert(
+      kHotStageCount * (TileConfig::kASharedTileElems + TileConfig::kBSharedTileElems) *
+              sizeof(__nv_bfloat16) <=
+          TileConfig::kStaticSharedByteBudget,
+      "Hot Tile384 stage-depth branch exceeds the static shared-memory budget.");
+  static_assert(
+      kHotStageCount * TileConfig::kBSharedTileElems * sizeof(__nv_bfloat16) >=
+          TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
+              TileConfig::kCSharedTileElemsPerWarp * sizeof(float),
+      "Hot Tile384 export scratch must fit inside the overlaid B-stage storage.");
 
-  __shared__ __align__(16) __nv_bfloat16 a_shared[2][TileConfig::kASharedTileElems];
-  __shared__ __align__(16) __nv_bfloat16 b_shared[2][TileConfig::kBSharedTileElems];
-  __shared__ __align__(16)
-      float c_shared[TileConfig::kCSharedStageCount * TileConfig::kWarpsPerBlock *
-                     TileConfig::kCSharedTileElemsPerWarp];
+  __shared__ __align__(16) __nv_bfloat16 a_shared[kHotStageCount][TileConfig::kASharedTileElems];
+  __shared__ __align__(16) __nv_bfloat16 b_shared[kHotStageCount][TileConfig::kBSharedTileElems];
 
   const int warp_id = threadIdx.x / kWarpSize;
   const int lane_id = threadIdx.x % kWarpSize;
@@ -891,6 +941,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
 
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
+  float* c_shared = reinterpret_cast<float*>(b_shared);
 
   stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
   stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
@@ -901,41 +952,43 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
   cp_async_commit_group();
-  cp_async_wait_group_1();
+  stage_a_shared_tile_async<TileConfig>(a_shared[2], a_block + 2 * kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(
+      b_shared[2],
+      b_block + 2 * kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+  cp_async_wait_group_2();
   __syncthreads();
 
   int curr_stage = 0;
   int next_stage = 1;
+  int prefetch_stage = 2;
 
   #pragma unroll 1
-  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; tile_idx += 2) {
-    const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
-    const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
-
-    advance_peeled_hot_stage_ptx<TileConfig>(
+  for (int tile_idx = 0; tile_idx < FixedKTiles - kHotStageCount; ++tile_idx) {
+    const int future_tile_k = (tile_idx + kHotStageCount) * kWmmaK;
+    advance_peeled_hot_stage_ptx_deep<TileConfig>(
         acc_tiles,
         a_shared,
         b_shared,
         a_block,
         b_block,
-        first_future_tile_k,
+        future_tile_k,
         warp_tile_m,
         warp_tile_n,
         curr_stage,
-        next_stage);
-
-    advance_peeled_hot_stage_ptx<TileConfig>(
-        acc_tiles,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        second_future_tile_k,
-        warp_tile_m,
-        warp_tile_n,
-        curr_stage,
-        next_stage);
+        next_stage,
+        prefetch_stage);
   }
+
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  cp_async_wait_group_1();
+  __syncthreads();
+  curr_stage = next_stage;
+  next_stage = prefetch_stage;
 
   accumulate_peeled_shared_stage_ptx<TileConfig>(
       acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
