@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_221542_bf16_gemm_v1_6ae3d5d`
-- run dir: `runs/20260419_221542_bf16_gemm_v1_6ae3d5d`
-- kernel tag: `bf16_gemm_v1_6ae3d5d`
-- round label: `round 6/30`
+- run id: `20260419_221757_bf16_gemm_v1_9d84c09`
+- run dir: `runs/20260419_221757_bf16_gemm_v1_9d84c09`
+- kernel tag: `bf16_gemm_v1_9d84c09`
+- round label: `round 7/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.304256 ms`
-- p10 runtime: `29.537280 ms`
-- p90 runtime: `31.651664 ms`
-- TFLOP/s: `23.990670 TFLOP/s`
-- previous run id: `20260419_221322_bf16_gemm_v1_d1b835e`
-- runtime delta vs previous measured run: `-0.388080 ms`
-- TFLOP/s delta vs previous measured run: `+0.303343 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.769152 ms`
+- p10 runtime: `30.467175 ms`
+- p90 runtime: `31.545652 ms`
+- TFLOP/s: `23.628192 TFLOP/s`
+- previous run id: `20260419_221542_bf16_gemm_v1_6ae3d5d`
+- runtime delta vs previous measured run: `+0.464895 ms`
+- TFLOP/s delta vs previous measured run: `-0.362478 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the new best custom branch `5dd9f0d` and discard the grouped-CTA traversal`
+- implemented direction name: `Human idea bank conflict: reverse the mirrored 64x64 B sweep into a `Right Left Right Left` order`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_221542_bf16_gemm_v1_6ae3d5d/summary.json`
-- measured commit: `6ae3d5dde945d7280c330554c03cd23242093c26`
+- raw summary json: `runs/20260419_221757_bf16_gemm_v1_9d84c09/summary.json`
+- measured commit: `9d84c09b3ca47275ec766af61a4a51c0a4ebdcee`
 - new best custom: `no`
-- generated at: `2026-04-19T22:15:50-07:00`
+- generated at: `2026-04-19T22:18:06-07:00`
