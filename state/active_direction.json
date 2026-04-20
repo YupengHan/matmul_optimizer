@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-19T18:15:10-07:00",
   "source_diagnosis_id": "node_b_20260419_181340_round09_512448e",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -27,5 +27,5 @@
     ],
     "stop_condition": "Stop if registers/thread stays above 128 or runtime is still clearly slower than the 33.12844658 ms accepted base without a clear tensor-active gain; at that point the Stage family is not converting its overlap advantage."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
