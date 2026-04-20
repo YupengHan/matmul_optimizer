@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `6`
-- remaining rounds: `14`
-- current round label: `round 7/20`
+- completed rounds: `7`
+- remaining rounds: `13`
+- current round label: `round 8/20`
 - auto use recommended: `yes`
 - accepted base run id: `20260419_142213_bf16_gemm_v1_9bdc160`
 - accepted base measured commit: `9bdc160ee2a6ef0f1171c09f4cf72f7dd081cab1`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T14:22:54-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 7/20. Node A will measure the result next.`
+- notes: `Completed round 7/20. Continue with node_b for round 8/20. Accepted base: 20260419_142213_bf16_gemm_v1_9bdc160 at 33.128447 ms.`
 
 ## Last completed round
 
-- round: `6/20`
+- round: `7/20`
 - direction: `dir_01`
-- direction name: `Human idea 9 Ps2r: slice-local two-fragment ping-pong on the full-width PTX sweep`
+- direction name: `Human idea 10 Stage: structural pivot to a true deeper hot-band pipeline, budgeted around the export path`
 - verdict: `regressed`
-- runtime delta: `+0.095760 ms`
-- TFLOP/s delta: `-0.061415 TFLOP/s`
-- run dir: `runs/20260419_174642_bf16_gemm_v1_52a3af6`
-- ncu rep path: `runs/20260419_174642_bf16_gemm_v1_52a3af6/ncu_profile.ncu-rep`
+- runtime delta: `+2.136576 ms`
+- TFLOP/s delta: `-1.284960 TFLOP/s`
+- run dir: `runs/20260419_180238_bf16_gemm_v1_24b96ad`
+- ncu rep path: `runs/20260419_180238_bf16_gemm_v1_24b96ad/ncu_profile.ncu-rep`

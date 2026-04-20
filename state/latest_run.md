@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_174642_bf16_gemm_v1_52a3af6`
-- run dir: `runs/20260419_174642_bf16_gemm_v1_52a3af6`
-- kernel tag: `bf16_gemm_v1_52a3af6`
-- round label: `round 6/20`
+- run id: `20260419_180238_bf16_gemm_v1_24b96ad`
+- run dir: `runs/20260419_180238_bf16_gemm_v1_24b96ad`
+- kernel tag: `bf16_gemm_v1_24b96ad`
+- round label: `round 7/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `33.716736 ms`
-- p10 runtime: `33.147833 ms`
-- p90 runtime: `34.942772 ms`
-- TFLOP/s: `21.562568 TFLOP/s`
-- previous run id: `20260419_174014_bf16_gemm_v1_eff433a`
-- runtime delta vs previous measured run: `+0.095760 ms`
-- TFLOP/s delta vs previous measured run: `-0.061415 TFLOP/s`
+- median runtime: `35.853312 ms`
+- p10 runtime: `35.420058 ms`
+- p90 runtime: `36.710503 ms`
+- TFLOP/s: `20.277609 TFLOP/s`
+- previous run id: `20260419_174642_bf16_gemm_v1_52a3af6`
+- runtime delta vs previous measured run: `+2.136576 ms`
+- TFLOP/s delta vs previous measured run: `-1.284960 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 9 Ps2r: slice-local two-fragment ping-pong on the full-width PTX sweep`
+- implemented direction name: `Human idea 10 Stage: structural pivot to a true deeper hot-band pipeline, budgeted around the export path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_174642_bf16_gemm_v1_52a3af6/summary.json`
-- measured commit: `52a3af636bfe7050aaf0eeab255ff6c111eb0e01`
+- raw summary json: `runs/20260419_180238_bf16_gemm_v1_24b96ad/summary.json`
+- measured commit: `24b96ad3cf56a64238eb7c32cb3f4aa09b31aaca`
 - new best custom: `no`
-- generated at: `2026-04-19T17:46:50-07:00`
+- generated at: `2026-04-19T18:02:47-07:00`
