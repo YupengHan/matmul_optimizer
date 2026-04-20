@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_112500",
+  "status": "completed",
+  "created_at": "2026-04-20T11:25:00-07:00",
   "source_run_id": "20260420_112149_bf16_gemm_v1_9a4bb85",
   "source_run_dir": "runs/20260420_112149_bf16_gemm_v1_9a4bb85",
   "source_summary_json": "runs/20260420_112149_bf16_gemm_v1_9a4bb85/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure",
+      "hypothesis": "The latest run is still compute/schedule limited rather than memory bound: tensor activity is 48.21%, SM throughput is 47.80%, warps active are only 16.57%, and launch occupancy is still limited by registers. The hottest measured kernel is the 128x128 PTX microkernel, so the best next move is to keep its semantics fixed and flatten the recursive PTX compute helpers that feed the accepted row-pair / column issue order. That should shorten live ranges, reduce compiler scheduling friction, and give the same math a better chance to run with more resident warps.",
+      "expected_bottleneck": "Register pressure and compiler scheduling friction inside the active PTX hot-band compute path, which is consistent with launch__occupancy_limit_registers = 2 and the low achieved warps-active number.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:719-781",
+        "src/kernels/bf16_gemm_v1.cu:1908-2012"
+      ],
+      "risk": "Medium. This is the most direct way to attack the register-limited profile, but it can easily turn into a no-op if the helper flattening does not materially change live ranges or PTX codegen.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the helper rewrite changes the accepted consume order, fails to reduce register pressure or raise achieved warps, or does not beat the latest measured 24.69619179 ms run."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Revisit The 256x128 Auxiliary Hot-Band Path As A Separate Schedule Family",
+      "hypothesis": "The previous round improved by retuning the auxiliary 256x128 schedule, so that family is still worth keeping alive as a distinct bounded option. It is not the hottest measured kernel in this run, but it remains the cleanest alternative hot-band schedule if the PTX helper flattening does not produce enough gain. The idea is to keep the auxiliary path explicitly isolated and see whether a slightly different local schedule, tile grouping, or dispatch preference can recover more tensor utilization without widening the kernel surface.",
+      "expected_bottleneck": "Compute scheduling and latency hiding on the auxiliary 256x128 hot-band path, not DRAM bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1159-1205",
+        "src/kernels/bf16_gemm_v1.cu:1539-1606",
+        "src/kernels/bf16_gemm_v1.cu:2042-2058"
+      ],
+      "risk": "Medium-high. This path is distinct from the measured PTX microkernel, but it is also easier to over-rank because it is an alternate schedule rather than the hottest path in the current profile.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "tflops",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the auxiliary-path retune cannot be kept isolated, or if it does not show a plausible path to improve the latest measured run beyond 24.69619179 ms."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Trim PTX Export Helper Shape Without Changing Store Semantics",
+      "hypothesis": "Barrier stall is still real at 6.38%, but the memory-side signals are not dominant, so export cleanup should stay low priority. If there is any residual low-risk PTX-side win left after the compute-helper rewrite, it is in the store/export helpers: keep the exact sync count and linear export order, but simplify the helper shape or hoist invariant scratch arithmetic so the compiler emits less overhead around writeback.",
+      "expected_bottleneck": "Residual export-side instruction overhead and register clutter around the PTX writeback path, not global memory bandwidth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:904-1025",
+        "src/kernels/bf16_gemm_v1.cu:1908-2012"
+      ],
+      "risk": "Low-medium. This is correctness-sensitive and the upside is capped, but it is still a distinct family from the compute-helper and auxiliary-path directions.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the export helper cleanup changes sync behavior or store order, or if runtime stays flat versus the latest measured run."
+    }
+  ],
+  "notes": "Latest measured run: 24.69619179 ms with tensor active 48.21, barrier 6.38, long scoreboard 3.74, mio 3.33, and launch__occupancy_limit_registers = 2. That reads as compute/schedule limited with a register ceiling, not DRAM bound. Human-idea audit for this round: register-pressure reduction is accepted as the primary family because the profile is occupancy-limited; auxiliary 256x128 scheduling is accepted as a separate bounded family because the previous round already improved that path; export helper cleanup is deferred to low rank because barrier is present but not dominant; coalescing / global-memory widening is deferred because DRAM is only 9.73%; shared-memory / bank-conflict work is deferred because the profile does not show a strong shared-memory stall signature; launch-order locality is rejected for now because the evidence does not point to it and prior snake-style locality work regressed."
 }
