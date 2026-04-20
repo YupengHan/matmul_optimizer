@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore Exact Round-69 Base And Recheck Export Lifetime From There",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T11:09:56-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_110400",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Restore Exact Round-69 Base And Recheck Export Lifetime From There",
-    "hypothesis": "Round 71 changed PTX issue grouping inside the 64x64 compute helpers by flattening the recursive right-left column issue into an explicit Step 0/1/2/3 sequence, then remeasured 25.7464323 ms. That improved relative to round 70 but stayed slower than the exact round-69 base at 25.49913597 ms, so this explicit PTX helper issue-grouping variant is not a win on the exact base and should be closed negative. With grouped_rows sweeps, snake launch-order locality, fixed-K peeling, export traversal changes, A-first refill, consumer-order sweeps, broad stage overexpansions, and the narrow handoff-closure family already closed, the best remaining bounded family on the active default path is a low-rank export-lifetime recheck from the exact round-69 base. This keeps grouped_rows=8, the accepted right-left 64x64 consume order, reversed row-pair traversal, linear export traversal, one-sync steady-state handoff, B-first refill, and accepted helper shapes fixed, and only asks whether a carefully re-scoped export-lifetime edit can move runtime from the true reproducible base rather than from a drifted branch.",
-    "expected_bottleneck": "Residual shared export lifetime and barrier cost on the active PTX hot-band path. This is no longer a high-ceiling family, but it is still the cleanest bounded move that touches the exact default path without reopening any already-closed PTX compute-order experiments.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:134 FixedHotBandTile128x128PtxExportScratch",
-      "src/kernels/bf16_gemm_v1.cu:1000 ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel",
-      "src/kernels/bf16_gemm_v1.cu:1016 export-side sync sequence on the exact base",
-      "src/kernels/bf16_gemm_v1.cu:2025 ptx_wmma_store_tile_pairs_64x64_ptx_microkernel call site in the active PTX kernel"
-    ],
-    "risk": "Medium. Round 67 already showed that one obvious export-side sync removal is not a primary runtime lever, so this family can easily consume a round without moving the needle. Any recheck must keep linear export traversal intact and avoid reopening the already-closed traversal family.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-      "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "stop_condition": "Stop if an export-lifetime recheck from the exact round-69 base does not beat that 25.49913597 ms baseline or if it requires changing export traversal semantics."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

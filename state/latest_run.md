@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_110307_bf16_gemm_v1_11e5dae`
-- run dir: `runs/20260420_110307_bf16_gemm_v1_11e5dae`
-- kernel tag: `bf16_gemm_v1_11e5dae`
-- round label: `round 71/100`
+- run id: `20260420_111141_bf16_gemm_v1_29b11d5`
+- run dir: `runs/20260420_111141_bf16_gemm_v1_29b11d5`
+- kernel tag: `bf16_gemm_v1_29b11d5`
+- round label: `round 72/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.746432 ms`
-- p10 runtime: `25.406345 ms`
-- p90 runtime: `26.496003 ms`
-- TFLOP/s: `28.237676 TFLOP/s`
-- previous run id: `20260420_105642_bf16_gemm_v1_5a21584`
-- runtime delta vs previous measured run: `-0.160768 ms`
-- TFLOP/s delta vs previous measured run: `+0.175229 TFLOP/s`
+- median runtime: `25.598976 ms`
+- p10 runtime: `25.119319 ms`
+- p90 runtime: `26.882355 ms`
+- TFLOP/s: `28.400332 TFLOP/s`
+- previous run id: `20260420_110307_bf16_gemm_v1_11e5dae`
+- runtime delta vs previous measured run: `-0.147456 ms`
+- TFLOP/s delta vs previous measured run: `+0.162656 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the exact round-69 base, then change PTX issue grouping inside the 64x64 compute helpers without changing accepted traversal semantics`
+- implemented direction name: `Restore Exact Round-69 Base And Recheck Export Lifetime From There`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_110307_bf16_gemm_v1_11e5dae/summary.json`
-- measured commit: `11e5daeb5a66a62b66c1d61a4bf59d47622a76ec`
+- raw summary json: `runs/20260420_111141_bf16_gemm_v1_29b11d5/summary.json`
+- measured commit: `29b11d564fce6a7df3ff24a0310d698a86fe996a`
 - new best custom: `no`
-- generated at: `2026-04-20T11:03:15-07:00`
+- generated at: `2026-04-20T11:11:49-07:00`
