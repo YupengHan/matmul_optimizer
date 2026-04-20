@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_085928_bf16_gemm_v1_9ee9b48`
-- run dir: `runs/20260420_085928_bf16_gemm_v1_9ee9b48`
-- kernel tag: `bf16_gemm_v1_9ee9b48`
-- round label: `round 60/100`
+- run id: `20260420_090210_bf16_gemm_v1_06ebe93`
+- run dir: `runs/20260420_090210_bf16_gemm_v1_06ebe93`
+- kernel tag: `bf16_gemm_v1_06ebe93`
+- round label: `round 61/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.821696 ms`
-- p10 runtime: `25.380761 ms`
-- p90 runtime: `26.590209 ms`
-- TFLOP/s: `28.155370 TFLOP/s`
-- previous run id: `20260420_085640_bf16_gemm_v1_f71a41f`
-- runtime delta vs previous measured run: `-0.174047 ms`
-- TFLOP/s delta vs previous measured run: `+0.188507 TFLOP/s`
+- median runtime: `25.634208 ms`
+- p10 runtime: `25.393972 ms`
+- p90 runtime: `26.674464 ms`
+- TFLOP/s: `28.361299 TFLOP/s`
+- previous run id: `20260420_085928_bf16_gemm_v1_9ee9b48`
+- runtime delta vs previous measured run: `-0.187489 ms`
+- TFLOP/s delta vs previous measured run: `+0.205928 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore accepted base, then test mirrored hot-band column sweep`
+- implemented direction name: `Restore accepted base, then retime refill issue order`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_085928_bf16_gemm_v1_9ee9b48/summary.json`
-- measured commit: `9ee9b48dfb73b37b1d93ab38ac84f5dd17f596a2`
+- raw summary json: `runs/20260420_090210_bf16_gemm_v1_06ebe93/summary.json`
+- measured commit: `06ebe93a00afa1ff8f20c5f4b4c89ec9cf1bbe89`
 - new best custom: `no`
-- generated at: `2026-04-20T08:59:36-07:00`
+- generated at: `2026-04-20T09:02:17-07:00`
