@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_105103",
-  "status": "completed",
-  "created_at": "2026-04-20T10:51:03-07:00",
-  "source_run_id": "20260420_105019_bf16_gemm_v1_3a888bc",
-  "source_run_dir": "runs/20260420_105019_bf16_gemm_v1_3a888bc",
-  "source_summary_json": "runs/20260420_105019_bf16_gemm_v1_3a888bc/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_105642_bf16_gemm_v1_5a21584",
+  "source_run_dir": "runs/20260420_105642_bf16_gemm_v1_5a21584",
+  "source_summary_json": "runs/20260420_105642_bf16_gemm_v1_5a21584/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Keep The Exact Current Base And Tighten The One-Sync Handoff",
-      "hypothesis": "Round 69 restored the implementation surface in src/kernels/bf16_gemm_v1.cu back to the historical round-58 accepted commit, with only semantically equivalent future_tile_k arithmetic or comment shape left different, and it still measured 25.49913597 ms. That means the currently reproducible exact base in this environment is about 25.50 ms, not the historical 24.57 ms snapshot. On that exact base, the remaining visibly material stall is barrier at 6.41, while long_scoreboard is already down to 3.98 and mio to 3.21. The next highest-value open family is therefore a very narrow one-sync handoff closure on the exact current base: keep grouped_rows=8, the right-left 64x64 PTX consume order, reversed PTX compute row-pair traversal, linear export traversal, B-first refill, active-loop unroll 2, accepted 256x128 unroll 1, and accepted helper shapes fixed, and only tighten the wait_group_0 plus __syncthreads handoff around the future-tile refill without reopening fixed-K peeling, A-first refill, K32 cadence, or extra-live staging.",
-      "expected_bottleneck": "Residual synchronization overhead in the active PTX hot-band steady-state handoff. The exact-base profile is no longer dominated by export-lifetime or large scoreboard effects, but barrier is still materially above the old round-58 snapshot, making the current one-sync handoff the best open synchronization-family target.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1961 B-first prologue staging in the active PTX kernel",
-        "src/kernels/bf16_gemm_v1.cu:1977 active PTX hot-band loop with unroll 2",
-        "src/kernels/bf16_gemm_v1.cu:1994 exact-base one-sync handoff with cp_async_wait_group_0 and __syncthreads",
-        "src/kernels/bf16_gemm_v1.cu:1998 B-first future-tile refill path on the exact current base"
-      ],
-      "risk": "Medium. This direction becomes bad if it drifts into any already-closed family: fixed-K peeling, deeper staging, A-first refill, extra-live lookahead, or K32 cadence. The implementation boundary must stay very narrow and preserve the accepted base semantics.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the narrow one-sync handoff closure cannot improve on the current reproducible exact base of about 25.50 ms, or if barrier remains flat without a compensating tensor-activity gain."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Re-Test Export Lifetime From The Exact Base, But Only As A Low-Rank Check",
-      "hypothesis": "Round 67 already showed that removing the second export-side syncwarp alone is not a primary runtime lever, so export-lifetime closure should no longer be rank 1. Still, after the exact-base restore in round 69, there is a bounded low-priority experiment left: re-test a carefully constrained export-lifetime change from the true current base rather than from a drifted branch, while keeping linear export traversal, grouped_rows=8, and the accepted helper shapes intact. This is not a recommendation to reopen export traversal changes; it is a low-rank sanity check on the exact base now that the reproducible baseline is known.",
-      "expected_bottleneck": "Export scratch lifetime and warp-level export synchronization as a secondary shared-memory family, not the primary runtime limiter. The evidence says this family is lower priority, but it remains one materially different fallback if the handoff closure underperforms.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134 FixedHotBandTile128x128PtxExportScratch",
-        "src/kernels/bf16_gemm_v1.cu:986 ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:1002 first export-side syncwarp on the exact current base",
-        "src/kernels/bf16_gemm_v1.cu:1015 ptx_wmma_store_tile_pairs_64x64_ptx_microkernel"
-      ],
-      "risk": "Medium to high. This family is easy to overvalue because it moves visible synchronization instructions, but round 67 already warned that it does not move runtime much by itself. Any re-test must stay linear in export order and avoid reintroducing the already-closed export traversal changes.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if an export-lifetime retest from the exact base does not beat the current reproducible base or if it requires changing export traversal or helper order semantics."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Preserve Accepted Consume Order And Try A Bounded PTX Issue-Order Move",
-      "hypothesis": "With grouped_rows sweeps, snake locality, fixed-K peeling, export traversal changes, and consumer-order sweeps all closed negative, one higher-ceiling family remains open: a bounded PTX hot-band issue-order move that preserves the accepted order semantics but changes how that order is expressed. The exact base already fixes the right-left 64x64 PTX consume order and the reversed PTX compute row-pair traversal, so this direction must not search new orders. Instead it can only tighten helper structure, load-to-mma issue grouping, or warp-local instruction locality while preserving the accepted order itself. This is higher risk than the narrow handoff closure, but it is still materially different from both the synchronization-family and the low-rank export-lifetime fallback.",
-      "expected_bottleneck": "Warp-level issue packing and instruction locality inside the active PTX helper stack, not CTA-level locality or export traversal. The goal is to increase tensor issue efficiency without changing the accepted consume or row-pair order semantics.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:608 PtxWmmaHotBandTileIndex64x64 accepted right-left consume order",
-        "src/kernels/bf16_gemm_v1.cu:752 ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel reversed row-pair traversal",
-        "src/kernels/bf16_gemm_v1.cu:777 ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel",
-        "src/kernels/bf16_gemm_v1.cu:1991 active PTX hot-band accumulate call site on the exact base"
-      ],
-      "risk": "High. This family can easily turn into a disguised consumer-order sweep or row-pair restructuring, both of which are already closed negative. It also risks trading one stall family for another without improving the exact-base runtime.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if the bounded PTX issue-order move changes the accepted order semantics or fails to improve tensor activity enough to justify the added implementation risk."
-    }
-  ],
-  "notes": "Goal remains below 20 ms. The historical accepted best is still round 58 at 24.57088089 ms on commit 4e5579ec72e9b1f05820c895c0315235d66f30cd, but round 69 restored the implementation surface in src/kernels/bf16_gemm_v1.cu back to that accepted commit and re-measured only 25.49913597 ms. The only remaining diff is semantically equivalent future_tile_k arithmetic or comment shape, so the currently reproducible exact base in the present environment should be treated as about 25.50 ms, not 24.57 ms. The current exact-base metrics are tensor 48.18, dram 10.13, lts 31.11, barrier 6.41, long_scoreboard 3.98, mio 3.21, and warps_active 16.60. Round 68 snake locality is closed negative. Round 67 export-side second-sync removal is not a primary runtime lever. Fixed-K peeling, export traversal reversal, grouped_rows sweeps, A-first refill, consumer-order sweeps, and stage overexpansions remain closed negative. The active accepted surface should now be treated as: grouped_rows=8, right-left 64x64 PTX consume order, reversed PTX compute row-pair traversal, linear export traversal, one-sync steady-state handoff, B-first refill, active-loop unroll 2, accepted 256x128 unroll 1, and accepted helper shapes. Human-idea audit for this round: tiling is rejected as a search family because grouped_rows retunes and alternative active tilings are already closed negative, while the accepted 256x128 unroll-1 helper surface is simply part of the exact base; coalescing and wide global access are accepted as already implemented through 16-byte async staging and are not the next differentiator; shared-memory reuse is accepted as the working base for A and B; async copy is accepted only in the current K16 two-stage B-first form, with the recommended direction using a very narrow one-sync handoff closure rather than any refill-order change; bank-conflict handling is accepted in the current linear export path, but export-lifetime closure is now explicitly low rank after round 67 stayed flat; L2 locality is rejected for ranking this round because snake locality is already closed negative; register reuse Right-Left-Right-Left is accepted as the fixed PTX consume base and should not be swept again; Pg2s double buffer is accepted and is the primary family for the recommended one-sync handoff closure; Ps2r double buffer is accepted in the current helper stack and should remain fixed except for a bounded issue-order experiment that preserves accepted consume order; stage and multi-buffer are accepted only as the present two-stage baseline, and stage overexpansions remain closed negative."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
