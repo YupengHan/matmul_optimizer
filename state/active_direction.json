@@ -1,10 +1,30 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Activate The Existing 128x128 Two-Stage Hot-Band Kernel",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T11:45:44-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_114507",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Activate The Existing 128x128 Two-Stage Hot-Band Kernel",
+    "hypothesis": "The staged K32 family is now closed-negative, but the simpler 128x128 two-stage sibling is still a distinct PTX-adjacent family that can reduce barrier and scoreboard pressure while keeping the restored hot-band baseline structure intact.",
+    "expected_bottleneck": "Residual synchronization and latency-hiding overhead in the hot-band steady state, with lower occupancy pressure than the failed K32 staging variant.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1822-1920",
+      "src/kernels/bf16_gemm_v1.cu:2044-2105"
+    ],
+    "risk": "Medium. It is adjacent to the current restored baseline and may still inherit the same launch geometry limits, but it is materially different from the closed K32 staged family.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "launch__occupancy_limit_registers"
+    ],
+    "stop_condition": "Keep this family only if the next measured run beats the restored PTX baseline by a clear margin or at least moves barrier/scoreboard stalls back toward the round-78 profile; otherwise close it and move to a bounded cleanup family."
+  },
+  "notes": "Node C may now implement this one direction."
 }

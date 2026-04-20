@@ -1,15 +1,79 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_114507",
+  "status": "completed",
+  "created_at": "2026-04-20T11:45:07-0700",
   "source_run_id": "20260420_114346_bf16_gemm_v1_a7d3817",
   "source_run_dir": "runs/20260420_114346_bf16_gemm_v1_a7d3817",
   "source_summary_json": "runs/20260420_114346_bf16_gemm_v1_a7d3817/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Activate The Existing 128x128 Two-Stage Hot-Band Kernel",
+      "hypothesis": "The staged K32 family is now closed-negative, but the simpler 128x128 two-stage sibling is still a distinct PTX-adjacent family that can reduce barrier and scoreboard pressure while keeping the restored hot-band baseline structure intact.",
+      "expected_bottleneck": "Residual synchronization and latency-hiding overhead in the hot-band steady state, with lower occupancy pressure than the failed K32 staging variant.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1822-1920",
+        "src/kernels/bf16_gemm_v1.cu:2044-2105"
+      ],
+      "risk": "Medium. It is adjacent to the current restored baseline and may still inherit the same launch geometry limits, but it is materially different from the closed K32 staged family.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Keep this family only if the next measured run beats the restored PTX baseline by a clear margin or at least moves barrier/scoreboard stalls back toward the round-78 profile; otherwise close it and move to a bounded cleanup family."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Trim PTX Export And Scratch Shape On The Restored Baseline",
+      "hypothesis": "The restored PTX baseline is still carrying avoidable export/scratch overhead in the epilogue path, so a bounded cleanup that preserves the hot-band dispatch but shrinks scratch traffic or instruction count may recover some runtime without reopening the closed promotion families.",
+      "expected_bottleneck": "PTX epilogue overhead, register pressure around the export path, and secondary synchronization cost rather than raw tensor throughput.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:926-1044",
+        "src/kernels/bf16_gemm_v1.cu:1928-2034"
+      ],
+      "risk": "Low to medium. The change surface is narrow, but the upside is also limited because the current profile is already back in the restored PTX shape.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if the cleanup does not produce a measurable runtime improvement or if the profile simply shifts stalls without reducing the total hot-band cost."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Bound The 128x128 PTX Hot-Band Grouping Window",
+      "hypothesis": "If the restored baseline slowdown is partly driven by group sizing and peeled-row coordination rather than the core MMA loop, a narrower PTX grouping window may reduce coordination overhead without reverting to the closed default-dispatch promotion families.",
+      "expected_bottleneck": "Group coordination and tail-peeled row-band overhead inside the PTX hot-band path, not the staged K32 pipeline itself.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1953-1967",
+        "src/kernels/bf16_gemm_v1.cu:2093-2105"
+      ],
+      "risk": "Medium to high. This is still close to the restored baseline and may turn into a no-op if the slowdown is environmental rather than geometric.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Abandon this family if the next run stays near the current 31.55 ms level or if the stall mix does not materially change versus the restored PTX baseline."
+    }
+  ],
+  "notes": "Round 79/100 diagnosis for run 20260420_114346_bf16_gemm_v1_a7d3817. The staged K32 family is now explicitly closed-negative: the round-79 measurement regressed to 31.55292797 ms with tensor active 39.90, barrier 10.02, long scoreboard 5.76, mio 4.98, and dram 23.54. The restored PTX baseline from round 78 remains the current reference shape in this environment, but the source surface alone does not explain the slowdown back to 25.97375965 ms and should not be treated as an unresolved launch-path difference. Do not reopen the broad default-dispatch promotion family unless a concrete new hypothesis appears."
 }
