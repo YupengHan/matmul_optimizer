@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_171842_bf16_gemm_v1_74f163a`
-- run dir: `runs/20260419_171842_bf16_gemm_v1_74f163a`
-- kernel tag: `bf16_gemm_v1_74f163a`
-- round label: `round 3/20`
+- run id: `20260419_173241_bf16_gemm_v1_d2a8c31`
+- run dir: `runs/20260419_173241_bf16_gemm_v1_d2a8c31`
+- kernel tag: `bf16_gemm_v1_d2a8c31`
+- round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `33.592319 ms`
-- p10 runtime: `33.091892 ms`
-- p90 runtime: `34.615910 ms`
-- TFLOP/s: `21.642430 TFLOP/s`
-- previous run id: `20260419_170714_bf16_gemm_v1_1930e3f`
-- runtime delta vs previous measured run: `-1.117104 ms`
-- TFLOP/s delta vs previous measured run: `+0.696550 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `33.840641 ms`
+- p10 runtime: `33.173503 ms`
+- p90 runtime: `34.775449 ms`
+- TFLOP/s: `21.483619 TFLOP/s`
+- previous run id: `20260419_171842_bf16_gemm_v1_74f163a`
+- runtime delta vs previous measured run: `+0.248322 ms`
+- TFLOP/s delta vs previous measured run: `-0.158811 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Asymmetric PTX two-stage handoff retime without new barriers`
+- implemented direction name: `Register-first PTX pair export that shrinks hot-band c_shared scratch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_171842_bf16_gemm_v1_74f163a/summary.json`
-- measured commit: `74f163a73e572099933f7558d0e3413019613a7b`
+- raw summary json: `runs/20260419_173241_bf16_gemm_v1_d2a8c31/summary.json`
+- measured commit: `d2a8c31f98c1d53543545641a9b37e15afdbd931`
 - new best custom: `no`
-- generated at: `2026-04-19T17:18:51-07:00`
+- generated at: `2026-04-19T17:32:51-07:00`
