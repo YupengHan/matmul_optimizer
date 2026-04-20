@@ -1,70 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_002004",
-  "status": "completed",
-  "created_at": "2026-04-20T00:20:04-07:00",
-  "source_run_id": "20260420_001930_bf16_gemm_v1_b4f4a28",
-  "source_run_dir": "runs/20260420_001930_bf16_gemm_v1_b4f4a28",
-  "source_summary_json": "runs/20260420_001930_bf16_gemm_v1_b4f4a28/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_002119_bf16_gemm_v1_c26ac4f",
+  "source_run_dir": "runs/20260420_002119_bf16_gemm_v1_c26ac4f",
+  "source_summary_json": "runs/20260420_002119_bf16_gemm_v1_c26ac4f/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the current best branch and raise the hot-band K16 loop from unroll-1 to a small fixed unroll factor",
-      "hypothesis": "Round 26 showed that fully peeling the fixed loop was too invasive for the current best branch, but the motivation behind it still stands: the hot-band K16 mainloop is carrying control overhead. The next lower-risk move is to restore the grouped_rows=8 plus `launch_bounds(128, 2)` winner and let the compiler unroll the fixed K loop by a small factor instead of forcing `#pragma unroll 1`. A factor like 2 keeps the original control structure and wait semantics while still giving ptxas room to remove some branch / scheduling overhead.",
-      "expected_bottleneck": "Loop-control overhead in the accepted hot-band K16 kernel, approached through milder compiler unrolling rather than manual schedule peeling.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1671"
-      ],
-      "risk": "Even a small unroll factor can perturb register pressure or code size. The risk is much lower than the peeled-schedule rewrite because the algorithm stays the same.",
-      "metrics_to_recheck": [
-        "correctness pass rate on all benchmark cases",
-        "median runtime",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the unrolled version regresses runtime or bloats register usage enough to lose the round-25 gain."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore the current best branch unchanged and revisit tiny barrier-side cleanup only if unrolling stalls",
-      "hypothesis": "If light unrolling is neutral, the safest fallback remains the current best branch with only very small Stage-side cleanup. That keeps the strongest measured structure intact.",
-      "expected_bottleneck": "Residual barrier overhead under the grouped_rows=8 plus `launch_bounds(128, 2)` base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1686",
-        "src/kernels/bf16_gemm_v1.cu:1699"
-      ],
-      "risk": "Small headroom and correctness sensitivity.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "correctness pass rate"
-      ],
-      "stop_condition": "Stop if the change does not beat the current best."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Freeze the current best branch and revisit a neighboring compiler clue only after the unroll result is known",
-      "hypothesis": "Compiler guidance is still clearly active, but the next clue should stay small and local until the milder unroll experiment is settled.",
-      "expected_bottleneck": "Compiler codegen refinement on the current best branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1611",
-        "src/kernels/bf16_gemm_v1.cu:1671"
-      ],
-      "risk": "Diminishing returns and codegen instability remain the main dangers.",
-      "metrics_to_recheck": [
-        "launch__registers_per_thread",
-        "median runtime"
-      ],
-      "stop_condition": "Stop if the current best branch remains clearly superior to neighboring compiler variants."
-    }
-  ],
-  "notes": "Human-idea reflection for round 27: Stage remains relevant, but after the failed peeled rewrite the right interpretation is now 'reduce control overhead gently' rather than 'rewrite the loop schedule.' Register Reuse / compiler guidance also remains active because the best branch still relies on grouped L2 ordering plus `launch_bounds(128, 2)`. L2 Cache stays accepted and fixed at grouped_rows=8. Tiling 256x128, aggressive launch-bounds, and the peeled schedule are now rejected on measured evidence. Coalescing Access and Bank Conflict remain deferred."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

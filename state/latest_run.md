@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_001930_bf16_gemm_v1_b4f4a28`
-- run dir: `runs/20260420_001930_bf16_gemm_v1_b4f4a28`
-- kernel tag: `bf16_gemm_v1_b4f4a28`
-- round label: `round 26/50`
+- run id: `20260420_002119_bf16_gemm_v1_c26ac4f`
+- run dir: `runs/20260420_002119_bf16_gemm_v1_c26ac4f`
+- kernel tag: `bf16_gemm_v1_c26ac4f`
+- round label: `round 27/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.002625 ms`
-- p10 runtime: `30.567322 ms`
-- p90 runtime: `31.999278 ms`
-- TFLOP/s: `23.450254 TFLOP/s`
-- previous run id: `20260420_001707_bf16_gemm_v1_8a2834a`
-- runtime delta vs previous measured run: `+3.775360 ms`
-- TFLOP/s delta vs previous measured run: `-3.251636 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `27.022336 ms`
+- p10 runtime: `26.535497 ms`
+- p90 runtime: `28.452864 ms`
+- TFLOP/s: `26.904388 TFLOP/s`
+- previous run id: `20260420_001930_bf16_gemm_v1_b4f4a28`
+- runtime delta vs previous measured run: `-3.980289 ms`
+- TFLOP/s delta vs previous measured run: `+3.454134 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the current best branch and peel the fixed 452-tile K loop into steady-state plus epilogue`
+- implemented direction name: `Restore the current best branch and raise the hot-band K16 loop from unroll-1 to a small fixed unroll factor`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_001930_bf16_gemm_v1_b4f4a28/summary.json`
-- measured commit: `b4f4a28d3f4f13c71f287127a37f5fe71a5b930c`
-- new best custom: `no`
-- generated at: `2026-04-20T00:19:38-07:00`
+- raw summary json: `runs/20260420_002119_bf16_gemm_v1_c26ac4f/summary.json`
+- measured commit: `c26ac4fdc00ad89cefc324b30d4fc8758fb4d0af`
+- new best custom: `yes`
+- generated at: `2026-04-20T00:21:26-07:00`
