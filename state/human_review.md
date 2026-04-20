@@ -33,6 +33,8 @@
 ## Human ideas for future node_b
 
 - For the next `node_b` diagnosis and later rounds, combine measured evidence with these user-provided priors instead of relying on auto-analysis alone.
+- Starting from `round 5`, every `node_b` must reflect these items one by one, then pick one primary idea family for the recommended direction.
+- The diagnosis `notes` should explicitly record which items were accepted, deferred, or rejected for that round and why the measurement evidence supports that choice.
 - Tiling prior: prefer directions that seriously evaluate `256x128` block tiling with `64x64` warp tiling when the code path and shared/register budget make that plausible.
 - Global-memory feed prior: favor wide, coalesced global-memory access patterns and non-blocking async-copy usage.
 - Reuse prior: keep leaning on shared-memory reuse for both A and B, and evaluate stronger `Pg2s` double-buffer prefetching from global to shared plus `Ps2r` double-buffer prefetching from shared to registers.

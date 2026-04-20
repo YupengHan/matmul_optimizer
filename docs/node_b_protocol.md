@@ -67,11 +67,24 @@ It must contain:
 - `metrics_to_recheck`
 - `stop_condition`
 
+The top-level `notes` field should be used when useful to record human-guided ranking rationale.
+
 ## Direction quality bar
 
 The three directions should be materially different. Do not submit three small variants of the same idea.
 
 The recommended direction should be the best expected upside / implementation-risk tradeoff for the next loop.
+
+From round 5 onward, diagnosis must also explicitly reflect the user-provided human ideas from `state/human_review.md` instead of treating them as soft background context only.
+
+That reflection must:
+
+- review the listed idea families one by one against the latest measured evidence
+- say which ideas are being accepted, deferred, or rejected for this round
+- choose one primary idea family for the recommended direction
+- explain why the measured evidence makes that family the next best move
+
+The three directions do not need extra schema fields for this, but their `hypothesis` text and the diagnosis `notes` should make the mapping auditable.
 
 ## State updates
 
