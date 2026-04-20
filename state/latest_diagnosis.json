@@ -1,15 +1,77 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_000002",
+  "status": "completed",
+  "created_at": "2026-04-20T00:00:02-07:00",
   "source_run_id": "20260419_235839_bf16_gemm_v1_f97d68d",
   "source_run_dir": "runs/20260419_235839_bf16_gemm_v1_f97d68d",
   "source_summary_json": "runs/20260419_235839_bf16_gemm_v1_f97d68d/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Try the 256x128 hot-band CTA with 64x64 warp tiles on top of the proven K16 stage contract",
+      "hypothesis": "The corrected 128x128 K16 branch is our current best result, while the 128x128x32 branch proved that making the pipeline deeper is not enough and actually hurt active warps. That shifts the next priority toward the user's explicit tiling idea: a 256x128 CTA with the same 64x64 warp tile. This keeps the proven K16 double-buffer contract, keeps wide cp.async staging and shared-memory reuse intact, and increases the hot-band CTA to eight warps so the kernel can test whether more in-flight warps recover tensor issue without reopening the stage-race problem.",
+      "expected_bottleneck": "CTA shape and active-warps pressure in the hot-band kernel, not deeper staging. The target is to improve warp residency and tensor issue while retaining the already-correct async-copy pipeline.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1366",
+        "src/kernels/bf16_gemm_v1.cu:1423",
+        "src/kernels/bf16_gemm_v1.cu:1754"
+      ],
+      "risk": "The 256x128 CTA may increase shared or register pressure enough to offset the extra warps. It likely needs the same consume-before-overwrite fence as the corrected 128x128 K16 path, otherwise the old stage race may simply reappear in a larger block.",
+      "metrics_to_recheck": [
+        "correctness pass rate on all benchmark cases",
+        "median runtime",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if correctness regresses, or if the wider CTA still fails to beat the corrected 128x128 K16 baseline at 29.20 ms."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Keep 128x128 K16 as the base and narrow the new consume fence only at the stage handoff",
+      "hypothesis": "If CTA-shape exploration stalls, the safest next improvement remains the current 128x128 K16 winner with a tighter synchronization schedule. The corrected path spends about 10% of warp issue in barrier stall, so there is still room to recover some of the round-16 regression without reintroducing the K32 occupancy hit.",
+      "expected_bottleneck": "Barrier overhead within the accepted 128x128 K16 hot-band loop.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1609",
+        "src/kernels/bf16_gemm_v1.cu:1676",
+        "src/kernels/bf16_gemm_v1.cu:1692"
+      ],
+      "risk": "Any fence narrowing can silently bring back the same race that broke round 15. This path has lower surface area but a smaller upside ceiling than the CTA-shape change.",
+      "metrics_to_recheck": [
+        "correctness pass rate",
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if any correctness case fails again, or if the reduced barrier scheme cannot beat the accepted 29.20 ms result."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Reserve the L2-friendly block-order clue for after the hot-band CTA shape stabilizes",
+      "hypothesis": "The user-provided L2 idea remains reasonable, but the last two rounds showed that hot-band orchestration and CTA shape still dominate outcomes. An L2-friendly block order or swizzle hint is more credible once the best hot-band kernel family is stable enough that second-order cache effects can show through.",
+      "expected_bottleneck": "Inter-CTA cache reuse rather than within-CTA tensor feed.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1732",
+        "src/runner/main.cpp:135"
+      ],
+      "risk": "CUDA gives weak control over block issue order, so this can easily become a no-op with extra code complexity.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if CTA-local tensor/barrier behavior is still the main limiter, or if the hint requires a wider launch refactor than one round justifies."
+    }
+  ],
+  "notes": "Human-idea reflection for round 18: the primary accepted family is now Tiling, specifically the user-requested 256x128 block with 64x64 warp tiles, because the corrected 128x128 K16 path proved the base pipeline while the deeper 128x128x32 path hurt active warps. Async Copy, Pg2s, Ps2r, and Data Reuse remain accepted supporting mechanisms because the fixed hot-band kernels already rely on them and the next experiment should preserve that machinery. Coalescing Access and Bank Conflict are deferred because the current regressions are not showing mio- or bank-dominated signatures. Register Reuse is deferred because the latest failure mode was lower active warps rather than obvious fragment residency waste. The L2 cache / block-order clue remains deferred until the best CTA shape is established."
 }
