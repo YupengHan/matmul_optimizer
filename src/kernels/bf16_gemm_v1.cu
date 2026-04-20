@@ -932,6 +932,12 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const __nv_bfloat16* b,
     __nv_bfloat16* c);
 
+template <int FixedKTiles>
+__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
+    const __nv_bfloat16* a,
+    const __nv_bfloat16* b,
+    __nv_bfloat16* c);
+
 template <typename TileConfig, int FixedKTiles>
 void launch_fixed_peeled_hot_band_row_band(
     const __nv_bfloat16* a,
@@ -1731,6 +1737,113 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
 #endif
 }
 
+template <int FixedKTiles>
+__global__ __launch_bounds__(128, 2)
+void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
+    const __nv_bfloat16* a,
+    const __nv_bfloat16* b,
+    __nv_bfloat16* c) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
+  static_assert(FixedKTiles > 1,
+                "The 128x128 PTX microkernel branch expects at least two K-tiles.");
+  static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
+                "The 128x128 PTX microkernel branch must match the benchmark K dimension.");
+  __shared__ __align__(16)
+      __nv_bfloat16 a_shared[2][FixedHotBandTile128x128::kASharedTileElems];
+  __shared__ __align__(16)
+      __nv_bfloat16 b_shared[2][FixedHotBandTile128x128::kBSharedTileElems];
+  __shared__ __align__(16)
+      float c_shared[FixedHotBandTile128x128::kCSharedStageCount *
+                     FixedHotBandTile128x128::kWarpsPerBlock *
+                     FixedHotBandTile128x128::kCSharedTileElemsPerWarp];
+
+  const int warp_id = threadIdx.x / kWarpSize;
+  const int lane_id = threadIdx.x % kWarpSize;
+
+  if (warp_id >= FixedHotBandTile128x128::kWarpsPerBlock) {
+    return;
+  }
+
+  const int block_row = blockIdx.y * FixedHotBandTile128x128::kTensorBlockM;
+  const int block_col = blockIdx.x * FixedHotBandTile128x128::kTensorBlockN;
+  const int warp_tile_m = warp_id / FixedHotBandTile128x128::kWarpTilesN;
+  const int warp_tile_n = warp_id % FixedHotBandTile128x128::kWarpTilesN;
+  const int row = block_row + warp_tile_m * FixedHotBandTile128x128::kWarpTileM;
+  const int col = block_col + warp_tile_n * FixedHotBandTile128x128::kWarpTileN;
+
+  PtxWmmaAccTileSet64x64 acc_tiles;
+  ptx_wmma_fill_zero_tile_set(acc_tiles);
+
+  const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
+  const __nv_bfloat16* b_block = b + block_col;
+
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
+      a_shared[0], a_block, kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile128x128>(
+      b_shared[0], b_block, kFixedBenchmarkN);
+  cp_async_commit_group();
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
+      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile128x128>(
+      b_shared[1],
+      b_block + kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+  cp_async_wait_group_1();
+  __syncthreads();
+
+  #pragma unroll 2
+  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
+    const int curr_stage = tile_idx & 1;
+    const int next_tile_idx = tile_idx + 1;
+    const int future_tile_idx = tile_idx + 2;
+
+    const __nv_bfloat16* a_tile =
+        a_shared[curr_stage] +
+        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] +
+        b_shared_col_from_logical<FixedHotBandTile128x128>(
+            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+
+    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+
+    if (future_tile_idx < FixedKTiles) {
+      // Keep the restored accepted base intact while isolating future PTX work
+      // to this active hot-band branch symbol.
+      __syncthreads();
+      const int future_tile_k = future_tile_idx * kWmmaK;
+      stage_a_shared_tile_async<FixedHotBandTile128x128>(
+          a_shared[curr_stage],
+          a_block + future_tile_k,
+          kFixedBenchmarkK);
+      stage_b_shared_tile_async<FixedHotBandTile128x128>(
+          b_shared[curr_stage],
+          b_block + future_tile_k * kFixedBenchmarkN,
+          kFixedBenchmarkN);
+      cp_async_commit_group();
+    }
+
+    if (next_tile_idx < FixedKTiles) {
+      if (future_tile_idx < FixedKTiles) {
+        cp_async_wait_group_1();
+      } else {
+        cp_async_wait_group_0();
+      }
+      __syncthreads();
+    }
+  }
+
+  __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
+  ptx_wmma_store_tile_pairs_64x64<FixedHotBandTile128x128>(
+      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+#else
+  (void)a;
+  (void)b;
+  (void)c;
+#endif
+}
+
 }  // namespace
 
 bool launch_bf16_gemm_v1(
@@ -1773,12 +1886,12 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
           kFixedBenchmarkKTiles><<<
-              dim3(kFixedHotBandN / FixedHotBandTile256x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
+              dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
+                   kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
                    1),
-              dim3(FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize, 1, 1),
+              dim3(FixedHotBandTile128x128::kWarpsPerBlock * kWarpSize, 1, 1),
               0,
               stream>>>(a, b, c);
 
