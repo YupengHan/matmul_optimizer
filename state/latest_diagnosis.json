@@ -1,78 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_085737",
-  "status": "completed",
-  "created_at": "2026-04-20T08:57:37-07:00",
-  "source_run_id": "20260420_085640_bf16_gemm_v1_f71a41f",
-  "source_run_dir": "runs/20260420_085640_bf16_gemm_v1_f71a41f",
-  "source_summary_json": "runs/20260420_085640_bf16_gemm_v1_f71a41f/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_085928_bf16_gemm_v1_9ee9b48",
+  "source_run_dir": "runs/20260420_085928_bf16_gemm_v1_9ee9b48",
+  "source_summary_json": "runs/20260420_085928_bf16_gemm_v1_9ee9b48/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore accepted base, then test mirrored hot-band column sweep",
-      "hypothesis": "The 25.995744 ms regression came from the row-pair-dependent split column sweep. Restore the accepted grouped_rows=8 + reversed row-pair traversal + one-sync handoff baseline, then try a cleaner PTX hot-band variant that uses the mirrored column sweep uniformly for both row-pairs instead of branching the sweep by row-pair.",
-      "expected_bottleneck": "Bad instruction-flow and locality interaction from the failed row-pair-dependent column split, rather than the accepted base traversal itself.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: grouped_rows=8 tile setup",
-        "src/kernels/bf16_gemm_v1.cu: reversed row-pair traversal loop",
-        "src/kernels/bf16_gemm_v1.cu: one-sync handoff sequence",
-        "src/kernels/bf16_gemm_v1.cu: hot-band column-order / PTX sweep logic"
-      ],
-      "risk": "Moderate: the mirrored sweep may recover performance only if the accepted base is fully restored first; keep the row-pair-dependent split branch closed.",
-      "metrics_to_recheck": [
-        "kernel time vs 25.995744 ms",
-        "sm efficiency",
-        "branch divergence",
-        "shared-memory load/store balance",
-        "register pressure"
-      ],
-      "stop_condition": "If the mirrored sweep does not beat the measured regression while preserving the accepted base behavior, close this branch and do not reopen the row-pair-dependent split."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Recover overlap behind the one-sync handoff",
-      "hypothesis": "Once the accepted grouped_rows=8 baseline is restored, there may still be slack after the one-sync handoff that can be recovered by carefully overlapping producer/consumer work without reopening the failed split-sweep logic.",
-      "expected_bottleneck": "Residual latency in the handoff window between row-pair traversal and the next shared-memory/compute phase.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: one-sync handoff sequence",
-        "src/kernels/bf16_gemm_v1.cu: shared-memory staging around the handoff",
-        "src/kernels/bf16_gemm_v1.cu: row-pair traversal boundary"
-      ],
-      "risk": "Higher complexity and easier to regress correctness than dir_01; keep the change local and avoid broad pipeline rewrites.",
-      "metrics_to_recheck": [
-        "kernel time",
-        "stall reasons around synchronization",
-        "eligible warps per cycle",
-        "memory pipe utilization"
-      ],
-      "stop_condition": "If overlap changes force additional syncs or weaken the accepted traversal order, revert and stop."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Small locality closure only",
-      "hypothesis": "A narrower locality-only cleanup may help if the current accepted base already exposes the main ceiling, but grouped_rows=16 should remain explicitly closed after the regression history.",
-      "expected_bottleneck": "Minor cache/shared-memory locality losses rather than a structural scheduling problem.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu: grouped_rows=8 locality path",
-        "src/kernels/bf16_gemm_v1.cu: load reuse / address sequencing",
-        "src/kernels/bf16_gemm_v1.cu: grouped_rows=16 branch guard"
-      ],
-      "risk": "Low upside if the dominant issue is still the traversal/sweep shape; grouped_rows=16 should stay closed.",
-      "metrics_to_recheck": [
-        "kernel time",
-        "L1/TEX hit rate",
-        "shared-memory bank conflicts",
-        "global load efficiency"
-      ],
-      "stop_condition": "Do not expand beyond locality-only edits; if grouped_rows=16 is needed, treat that as a rejected branch for this round."
-    }
-  ],
-  "notes": "Anchored to latest measured run 20260420_085640_bf16_gemm_v1_f71a41f at 25.995744 ms. Use the accepted grouped_rows=8 + reversed row-pair traversal + one-sync handoff base as the starting point and keep rejected branches closed."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
