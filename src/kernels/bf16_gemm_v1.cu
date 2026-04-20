@@ -796,47 +796,6 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   }
 }
 
-template <typename TileConfig, int ProducerWarps>
-__device__ __forceinline__ void stage_a_shared_tile_async_producer(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  static_assert(ProducerWarps > 0 && ProducerWarps <= TileConfig::kWarpsPerBlock,
-                "Producer warp count must fit inside the CTA.");
-  constexpr int kProducerThreads = ProducerWarps * kWarpSize;
-  if (threadIdx.x >= kProducerThreads) {
-    return;
-  }
-  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kAAsyncCopiesPerTile; copy_idx += kProducerThreads) {
-    const int row = copy_idx / TileConfig::kAAsyncCopiesPerRow;
-    const int col = (copy_idx % TileConfig::kAAsyncCopiesPerRow) * kAsyncCopyElems;
-    cp_async_copy_16_bytes(
-        shared_tile + row * kWmmaK + col,
-        global_tile + row * global_stride + col);
-  }
-}
-
-template <typename TileConfig, int ProducerWarps>
-__device__ __forceinline__ void stage_b_shared_tile_async_producer(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  static_assert(ProducerWarps > 0 && ProducerWarps <= TileConfig::kWarpsPerBlock,
-                "Producer warp count must fit inside the CTA.");
-  constexpr int kProducerThreads = ProducerWarps * kWarpSize;
-  if (threadIdx.x >= kProducerThreads) {
-    return;
-  }
-  for (int copy_idx = threadIdx.x; copy_idx < TileConfig::kBAsyncCopiesPerTile; copy_idx += kProducerThreads) {
-    const int row = copy_idx / TileConfig::kBAsyncCopiesPerRow;
-    const int logical_col = (copy_idx % TileConfig::kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int shared_col = b_shared_col_from_logical<TileConfig>(logical_col);
-    cp_async_copy_16_bytes(
-        shared_tile + row * TileConfig::kBSharedStride + shared_col,
-        global_tile + row * global_stride + logical_col);
-  }
-}
-
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
 }
@@ -1300,7 +1259,6 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
-  constexpr int kProducerWarps = 2;
   static_assert(FixedKTiles > 1,
                 "The 256x128 fixed hot-band kernel expects at least two K-tiles.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
@@ -1334,14 +1292,14 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async_producer<FixedHotBandTile256x128, kProducerWarps>(
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
       a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async_producer<FixedHotBandTile256x128, kProducerWarps>(
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
       b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  stage_a_shared_tile_async_producer<FixedHotBandTile256x128, kProducerWarps>(
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
       a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async_producer<FixedHotBandTile256x128, kProducerWarps>(
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
@@ -1367,11 +1325,11 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
 
     if (future_tile_idx < FixedKTiles) {
       const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async_producer<FixedHotBandTile256x128, kProducerWarps>(
+      stage_a_shared_tile_async<FixedHotBandTile256x128>(
           a_shared[curr_stage],
           a_block + future_tile_k,
           kFixedBenchmarkK);
-      stage_b_shared_tile_async_producer<FixedHotBandTile256x128, kProducerWarps>(
+      stage_b_shared_tile_async<FixedHotBandTile256x128>(
           b_shared[curr_stage],
           b_block + future_tile_k * kFixedBenchmarkN,
           kFixedBenchmarkN);
