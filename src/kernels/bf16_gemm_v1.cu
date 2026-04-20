@@ -23,7 +23,6 @@ constexpr int kWmmaK = 16;
 constexpr int kWarpSize = 32;
 constexpr int kEpilogueVecElems = 2;
 constexpr int kEpilogueQuadElems = 4;
-constexpr int kHalfPanelWarpMmaTilesN = 2;
 // Expand the CTA along M to a fixed 4x2 warp layout so each staged K-slice
 // feeds eight warps while preserving the round-7 N-side organization.
 constexpr int kTensorWarpTilesM = 4;
@@ -77,7 +76,6 @@ using TensorCoreTile256 = TensorCoreTileConfig<8>;
 using TensorCoreTile320 = TensorCoreTileConfig<10>;
 using TensorCoreTile384 = TensorCoreTileConfig<12>;
 using TensorCoreTile480 = TensorCoreTileConfig<15>;
-constexpr int kSerialMicroPanelTiles384 = TensorCoreTile384::kWarpMmaTilesN / 2;
 
 struct FixedHotBandTile256x128 {
   static constexpr int kWarpTilesM = kTensorWarpTilesM;
@@ -117,13 +115,6 @@ constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
-constexpr int kHalfPanelWarpGroupCols = kHalfPanelWarpMmaTilesN * kWmmaN;
-constexpr int kHalfPanelTensorBlockN = kTensorWarpTilesN * kHalfPanelWarpGroupCols;
-constexpr int kHalfPanelBSharedStride = kHalfPanelTensorBlockN + kAsyncCopyElems;
-constexpr int kHalfPanelBAsyncCopiesPerRow = kHalfPanelTensorBlockN / kAsyncCopyElems;
-constexpr int kHalfPanelBAsyncCopiesPerTile = kWmmaK * kHalfPanelBAsyncCopiesPerRow;
-constexpr int kHalfPanelPassCount64x32 =
-    FixedHotBandTile256x128::kWarpMmaTilesN / kHalfPanelWarpMmaTilesN;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
 
 static_assert(kAsyncCopyBytes == 16, "Tensor-core staging expects 16-byte async copies.");
@@ -246,69 +237,10 @@ static_assert(FixedHotBandTile256x128::kASharedBytes +
                           FixedHotBandTile256x128::kCSharedTileBytesPerWarp <=
                   FixedHotBandTile256x128::kStaticSharedByteBudget,
               "The pivot hot-band shared-memory budget must fit on sm86.");
-static_assert(kHalfPanelWarpGroupCols == 32,
-              "The 64x32 half-panel path expects a 32-column warp-group span.");
-static_assert(kHalfPanelTensorBlockN == 64,
-              "The 64x32 half-panel path expects a 64-column compact staged tile.");
-static_assert((FixedHotBandTile256x128::kWarpMmaTilesN % kHalfPanelWarpMmaTilesN) == 0,
-              "The 256x128 hot-band warp tile must split evenly into 64x32 halves.");
-static_assert((kHalfPanelBSharedStride % kAsyncCopyElems) == 0,
-              "The compact half-panel B stride must stay 16-byte aligned.");
 static_assert(kLegacyFixedMainRegionN + kLegacyFixedMiddleRegionN + kFixedTailRegionN == kFixedBenchmarkN, "Legacy main/middle/tail split must cover the fixed benchmark width exactly.");
 static_assert(kFixedHotBandN + kFixedTailRegionN == kFixedBenchmarkN, "Hot-band plus tail split must cover the fixed benchmark width exactly.");
 static_assert((kWmmaN % kEpilogueVecElems) == 0, "Epilogue vector stores require adjacent column pairs.");
 static_assert((kWmmaN % kEpilogueQuadElems) == 0, "Quad epilogue stores require adjacent groups of four columns.");
-
-template <int HalfPanelColBase>
-struct HalfPanelIdentity64x32 {
-  static_assert(HalfPanelColBase >= 0 &&
-                    HalfPanelColBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesN &&
-                    (HalfPanelColBase % 2) == 0,
-                "Half-panel identity expects a valid 64x32 panel base.");
-  static constexpr int kTileCols = 2;
-  static constexpr int kPanelBaseTileCol = HalfPanelColBase;
-  static constexpr int kHalfPanelIndex = kPanelBaseTileCol / kHalfPanelWarpMmaTilesN;
-  static constexpr int kWarpGroupCols = kHalfPanelWarpGroupCols;
-  static constexpr int kTensorBlockCols = kHalfPanelTensorBlockN;
-  static constexpr int kBSharedStride = kHalfPanelBSharedStride;
-  static constexpr int kBAsyncCopiesPerRow = kHalfPanelBAsyncCopiesPerRow;
-  static constexpr int kBAsyncCopiesPerTile = kHalfPanelBAsyncCopiesPerTile;
-  static constexpr int kWarpTileColBase = kHalfPanelIndex * kWarpGroupCols;
-
-  template <int LocalTileCol>
-  static constexpr int kLocalTileCol = LocalTileCol;
-
-  template <int LocalTileCol>
-  static constexpr int kSharedTileColOffset = LocalTileCol * kWmmaN;
-
-  __host__ __device__ static __forceinline__ int compact_shared_col_from_logical(
-      int logical_col) {
-    return logical_col + (logical_col / kWarpGroupCols) * kAsyncCopyElems;
-  }
-
-  __host__ __device__ static __forceinline__ int warp_compact_logical_col_base(
-      int warp_tile_n) {
-    return warp_tile_n * kWarpGroupCols;
-  }
-
-  __host__ __device__ static __forceinline__ int warp_shared_col_base(
-      int warp_tile_n) {
-    return compact_shared_col_from_logical(warp_compact_logical_col_base(warp_tile_n));
-  }
-
-  __host__ __device__ static __forceinline__ int full_logical_col_from_compact(
-      int compact_logical_col) {
-    const int warp_group = compact_logical_col / kWarpGroupCols;
-    const int local_col = compact_logical_col - warp_group * kWarpGroupCols;
-    return warp_group * FixedHotBandTile256x128::kWarpGroupCols +
-           kWarpTileColBase + local_col;
-  }
-
-  template <int LocalTileCol>
-  __host__ __device__ static __forceinline__ int global_output_tile_col_offset() {
-    return kWarpTileColBase + kSharedTileColOffset<LocalTileCol>;
-  }
-};
 
 __device__ __forceinline__ void cp_async_copy_16_bytes(
     __nv_bfloat16* dst,
@@ -383,17 +315,9 @@ struct PtxWmmaAccTileSet384 {
   PtxWmmaAccFragment tile11;
 };
 
-struct PtxWmmaAccTileSet192 {
-  PtxWmmaAccFragment tile[kSerialMicroPanelTiles384];
-};
-
 struct PtxWmmaAccTileSet64x64 {
   PtxWmmaAccFragment tile[FixedHotBandTile256x128::kWarpMmaTilesM *
                           FixedHotBandTile256x128::kWarpMmaTilesN];
-};
-
-struct PtxWmmaAccTileSet64x32 {
-  PtxWmmaAccFragment tile[FixedHotBandTile256x128::kWarpMmaTilesM * 2];
 };
 
 __device__ __forceinline__ void ptx_wmma_fill_zero(PtxWmmaAccFragment& frag) {
@@ -522,22 +446,6 @@ __device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
   }
 }
 
-template <int TileIdx>
-__device__ __forceinline__ PtxWmmaAccFragment& ptx_wmma_acc_tile(
-    PtxWmmaAccTileSet192& tiles) {
-  static_assert(TileIdx >= 0 && TileIdx < kSerialMicroPanelTiles384,
-                "Tile192 PTX accumulator index out of range.");
-  return tiles.tile[TileIdx];
-}
-
-template <int TileIdx>
-__device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
-    const PtxWmmaAccTileSet192& tiles) {
-  static_assert(TileIdx >= 0 && TileIdx < kSerialMicroPanelTiles384,
-                "Tile192 PTX accumulator index out of range.");
-  return tiles.tile[TileIdx];
-}
-
 template <int TileRow, int TileCol>
 __device__ __forceinline__ PtxWmmaAccFragment& ptx_wmma_acc_tile(
     PtxWmmaAccTileSet64x64& tiles) {
@@ -558,38 +466,10 @@ __device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
   return tiles.tile[TileRow * FixedHotBandTile256x128::kWarpMmaTilesN + TileCol];
 }
 
-template <int TileRow, int TileCol>
-__device__ __forceinline__ PtxWmmaAccFragment& ptx_wmma_acc_tile(
-    PtxWmmaAccTileSet64x32& tiles) {
-  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
-                "64x32 PTX accumulator row index out of range.");
-  static_assert(TileCol >= 0 && TileCol < 2,
-                "64x32 PTX accumulator col index out of range.");
-  return tiles.tile[TileRow * 2 + TileCol];
-}
-
-template <int TileRow, int TileCol>
-__device__ __forceinline__ const PtxWmmaAccFragment& ptx_wmma_acc_tile(
-    const PtxWmmaAccTileSet64x32& tiles) {
-  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
-                "64x32 PTX accumulator row index out of range.");
-  static_assert(TileCol >= 0 && TileCol < 2,
-                "64x32 PTX accumulator col index out of range.");
-  return tiles.tile[TileRow * 2 + TileCol];
-}
-
 template <int TileIdx = 0>
 __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384& tiles) {
   if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
     ptx_wmma_fill_zero(ptx_wmma_acc_tile<TileIdx>(tiles));
-    ptx_wmma_fill_zero_tile_set<TileIdx + 1>(tiles);
-  }
-}
-
-template <int TileIdx = 0>
-__device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet192& tiles) {
-  if constexpr (TileIdx < kSerialMicroPanelTiles384) {
-    ptx_wmma_fill_zero(tiles.tile[TileIdx]);
     ptx_wmma_fill_zero_tile_set<TileIdx + 1>(tiles);
   }
 }
@@ -603,14 +483,6 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet64x
   }
 }
 
-template <int TileIdx = 0>
-__device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet64x32& tiles) {
-  if constexpr (TileIdx < FixedHotBandTile256x128::kWarpMmaTilesM * 2) {
-    ptx_wmma_fill_zero(tiles.tile[TileIdx]);
-    ptx_wmma_fill_zero_tile_set<TileIdx + 1>(tiles);
-  }
-}
-
 template <int Step>
 struct PtxWmmaMirroredTileIndex384 {
   static_assert(Step >= 0 && Step < TensorCoreTile384::kWarpMmaTilesN,
@@ -618,15 +490,6 @@ struct PtxWmmaMirroredTileIndex384 {
   static constexpr int kValue =
       (Step & 1) == 0 ? (Step / 2)
                       : (TensorCoreTile384::kWarpMmaTilesN - 1 - (Step / 2));
-};
-
-template <int Step>
-struct PtxWmmaMirroredTileIndex192 {
-  static_assert(Step >= 0 && Step < kSerialMicroPanelTiles384,
-                "Tile192 mirrored sweep step out of range.");
-  static constexpr int kValue =
-      (Step & 1) == 0 ? (Step / 2)
-                      : (kSerialMicroPanelTiles384 - 1 - (Step / 2));
 };
 
 template <int Step = 0>
@@ -643,24 +506,6 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
         TensorCoreTile384::kBSharedStride);
     ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
     ptx_wmma_accumulate_tile_set_384<Step + 1>(acc_tiles, a_frag, b_tile);
-  }
-}
-
-template <int GlobalTileBase, int Step = 0>
-__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_192(
-    PtxWmmaAccTileSet192& acc_tiles,
-    const PtxWmmaBf16Fragment& a_frag,
-    const __nv_bfloat16* b_tile) {
-  if constexpr (Step < kSerialMicroPanelTiles384) {
-    constexpr int LocalTileIdx = PtxWmmaMirroredTileIndex192<Step>::kValue;
-    constexpr int GlobalTileIdx = GlobalTileBase + LocalTileIdx;
-    PtxWmmaBf16Fragment b_frag;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + GlobalTileIdx * kWmmaN,
-        TensorCoreTile384::kBSharedStride);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<LocalTileIdx>(acc_tiles), a_frag, b_frag);
-    ptx_wmma_accumulate_tile_set_192<GlobalTileBase, Step + 1>(acc_tiles, a_frag, b_tile);
   }
 }
 
@@ -747,79 +592,6 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
   ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
-}
-
-template <int HalfPanelColBase, int RowPairBase>
-__device__ __forceinline__ void ptx_wmma_mma_row_pair_64x32(
-    PtxWmmaAccTileSet64x32& acc_tiles,
-    const PtxWmmaBf16Fragment& a_frag0,
-    const PtxWmmaBf16Fragment& a_frag1,
-    const PtxWmmaBf16Fragment& b_frag0,
-    const PtxWmmaBf16Fragment& b_frag1) {
-  using Panel = HalfPanelIdentity64x32<HalfPanelColBase>;
-  static_assert(RowPairBase >= 0 &&
-                    RowPairBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesM,
-                "64x32 row-pair MMA helper expects a valid 2-row pair.");
-  ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase, Panel::template kLocalTileCol<0>>(acc_tiles),
-      a_frag0,
-      b_frag0);
-  ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase, Panel::template kLocalTileCol<1>>(acc_tiles),
-      a_frag0,
-      b_frag1);
-  ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase + 1, Panel::template kLocalTileCol<0>>(acc_tiles),
-      a_frag1,
-      b_frag0);
-  ptx_wmma_mma_row_row(
-      ptx_wmma_acc_tile<RowPairBase + 1, Panel::template kLocalTileCol<1>>(acc_tiles),
-      a_frag1,
-      b_frag1);
-}
-
-template <int HalfPanelColBase, int RowPairBase = 0>
-__device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x32(
-    PtxWmmaAccTileSet64x32& acc_tiles,
-    const __nv_bfloat16* a_tile,
-    const PtxWmmaBf16Fragment& b_frag0,
-    const PtxWmmaBf16Fragment& b_frag1) {
-  if constexpr (RowPairBase < FixedHotBandTile256x128::kWarpMmaTilesM) {
-    PtxWmmaBf16Fragment a_frag0;
-    PtxWmmaBf16Fragment a_frag1;
-    ptx_wmma_load_a_row(
-        a_frag0,
-        a_tile + RowPairBase * kWmmaM * kWmmaK,
-        kWmmaK);
-    ptx_wmma_load_a_row(
-        a_frag1,
-        a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
-        kWmmaK);
-    ptx_wmma_mma_row_pair_64x32<HalfPanelColBase, RowPairBase>(
-        acc_tiles, a_frag0, a_frag1, b_frag0, b_frag1);
-    ptx_wmma_accumulate_row_pairs_64x32<HalfPanelColBase, RowPairBase + 2>(
-        acc_tiles, a_tile, b_frag0, b_frag1);
-  }
-}
-
-template <int HalfPanelColBase>
-__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x32(
-    PtxWmmaAccTileSet64x32& acc_tiles,
-    const __nv_bfloat16* a_tile,
-    const __nv_bfloat16* b_tile) {
-  using Panel = HalfPanelIdentity64x32<HalfPanelColBase>;
-  PtxWmmaBf16Fragment b_frag0;
-  PtxWmmaBf16Fragment b_frag1;
-  ptx_wmma_load_b_row(
-      b_frag0,
-      b_tile + Panel::template kSharedTileColOffset<0>,
-      Panel::kBSharedStride);
-  ptx_wmma_load_b_row(
-      b_frag1,
-      b_tile + Panel::template kSharedTileColOffset<1>,
-      Panel::kBSharedStride);
-  ptx_wmma_accumulate_row_pairs_64x32<HalfPanelColBase>(
-      acc_tiles, a_tile, b_frag0, b_frag1);
 }
 
 template <typename TileConfig, int TileIdx = 0>
@@ -916,73 +688,6 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_384(
   }
 }
 
-template <int GlobalTileIdx>
-__device__ __forceinline__ void ptx_export_shared_tile_quads_192(
-    const float* warp_c_tile,
-    __nv_bfloat16* c_tile_base,
-    int lane_id) {
-  static_assert(GlobalTileIdx >= 0 && GlobalTileIdx < TensorCoreTile384::kWarpMmaTilesN,
-                "Tile192 export tile index out of range.");
-  const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
-  constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
-  constexpr int kQuadsPerTile = TensorCoreTile384::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
-
-  #pragma unroll
-  for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
-    const int local_row = quad_idx / kQuadsPerRow;
-    const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
-    store_bfloat164_quad(
-        c_tile_base + local_row * kFixedBenchmarkN + GlobalTileIdx * kWmmaN + local_col,
-        warp_c_tile_quads[quad_idx]);
-  }
-}
-
-template <typename TileConfig, int GlobalTileBase, int TilePairBase = 0>
-__device__ __forceinline__ void ptx_wmma_store_tile_pairs_192(
-    const PtxWmmaAccTileSet192& acc_tiles,
-    float* c_shared,
-    __nv_bfloat16* c_tile_base,
-    int warp_id,
-    int lane_id) {
-  static_assert(TileConfig::kCSharedStageCount == 2,
-                "Tile192 pair export batching requires the two-stage Tile384 c_shared scratch.");
-  if constexpr (TilePairBase < kSerialMicroPanelTiles384) {
-    constexpr int kCSharedStageStride =
-        TileConfig::kWarpsPerBlock * TileConfig::kCSharedTileElemsPerWarp;
-    constexpr int GlobalTileIdx0 = GlobalTileBase + TilePairBase;
-    float* warp_c_tile_stage0 =
-        c_shared + warp_id * TileConfig::kCSharedTileElemsPerWarp;
-
-    ptx_wmma_store_d_row_shared(
-        warp_c_tile_stage0,
-        ptx_wmma_acc_tile<TilePairBase>(acc_tiles),
-        kWmmaN);
-
-    if constexpr (TilePairBase + 1 < kSerialMicroPanelTiles384) {
-      constexpr int GlobalTileIdx1 = GlobalTileBase + TilePairBase + 1;
-      float* warp_c_tile_stage1 =
-          c_shared + kCSharedStageStride + warp_id * TileConfig::kCSharedTileElemsPerWarp;
-      ptx_wmma_store_d_row_shared(
-          warp_c_tile_stage1,
-          ptx_wmma_acc_tile<TilePairBase + 1>(acc_tiles),
-          kWmmaN);
-      __syncwarp();
-
-      ptx_export_shared_tile_quads_192<GlobalTileIdx0>(
-          warp_c_tile_stage0, c_tile_base, lane_id);
-      ptx_export_shared_tile_quads_192<GlobalTileIdx1>(
-          warp_c_tile_stage1, c_tile_base, lane_id);
-
-      ptx_wmma_store_tile_pairs_192<TileConfig, GlobalTileBase, TilePairBase + 2>(
-          acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-    } else {
-      __syncwarp();
-      ptx_export_shared_tile_quads_192<GlobalTileIdx0>(
-          warp_c_tile_stage0, c_tile_base, lane_id);
-    }
-  }
-}
-
 template <int TileRow, int TileCol>
 __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64(
     const float* warp_c_tile,
@@ -1062,70 +767,6 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
   }
 }
 
-template <int TileRow, int TileCol>
-__device__ __forceinline__ void ptx_export_shared_tile_quads_64x32(
-    const float* warp_c_tile,
-    __nv_bfloat16* c_panel_tile_base,
-    int lane_id) {
-  static_assert(TileRow >= 0 && TileRow < FixedHotBandTile256x128::kWarpMmaTilesM,
-                "64x32 export tile row index out of range.");
-  static_assert(TileCol >= 0 && TileCol < 2,
-                "64x32 export tile col index out of range.");
-  const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
-  constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
-  constexpr int kQuadsPerTile =
-      FixedHotBandTile256x128::kCSharedTileElemsPerWarp / kEpilogueQuadElems;
-
-  #pragma unroll
-  for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
-    const int local_row = quad_idx / kQuadsPerRow;
-    const int local_col = (quad_idx % kQuadsPerRow) * kEpilogueQuadElems;
-    store_bfloat164_quad(
-        c_panel_tile_base + TileRow * kWmmaM * kFixedBenchmarkN +
-            TileCol * kWmmaN +
-            local_row * kFixedBenchmarkN + local_col,
-        warp_c_tile_quads[quad_idx]);
-  }
-}
-
-template <int HalfPanelColBase, int TileRow = 0>
-__device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x32(
-    const PtxWmmaAccTileSet64x32& acc_tiles,
-    float* c_shared,
-    __nv_bfloat16* c_panel_tile_base,
-    int warp_id,
-    int lane_id) {
-  using Panel = HalfPanelIdentity64x32<HalfPanelColBase>;
-  if constexpr (TileRow < FixedHotBandTile256x128::kWarpMmaTilesM) {
-    constexpr int kCSharedStageStride =
-        FixedHotBandTile256x128::kWarpsPerBlock *
-        FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
-    float* warp_c_tile_stage0 =
-        c_shared + warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
-    float* warp_c_tile_stage1 =
-        c_shared + kCSharedStageStride +
-        warp_id * FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
-
-    ptx_wmma_store_d_row_shared(
-        warp_c_tile_stage0,
-        ptx_wmma_acc_tile<TileRow, Panel::template kLocalTileCol<0>>(acc_tiles),
-        kWmmaN);
-    ptx_wmma_store_d_row_shared(
-        warp_c_tile_stage1,
-        ptx_wmma_acc_tile<TileRow, Panel::template kLocalTileCol<1>>(acc_tiles),
-        kWmmaN);
-    __syncwarp();
-
-    ptx_export_shared_tile_quads_64x32<TileRow, 0>(
-        warp_c_tile_stage0, c_panel_tile_base, lane_id);
-    ptx_export_shared_tile_quads_64x32<TileRow, 1>(
-        warp_c_tile_stage1, c_panel_tile_base, lane_id);
-
-    ptx_wmma_store_tile_pairs_64x32<HalfPanelColBase, TileRow + 1>(
-        acc_tiles, c_shared, c_panel_tile_base, warp_id, lane_id);
-  }
-}
-
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
@@ -1157,151 +798,6 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
     cp_async_copy_16_bytes(
         shared_tile + row * TileConfig::kBSharedStride + shared_col,
         global_tile + row * global_stride + logical_col);
-  }
-}
-
-template <int HalfPanelColBase>
-__device__ __forceinline__ void stage_b_half_panel_shared_tile_async(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  using Panel = HalfPanelIdentity64x32<HalfPanelColBase>;
-  for (int copy_idx = threadIdx.x; copy_idx < Panel::kBAsyncCopiesPerTile;
-       copy_idx += blockDim.x) {
-    const int row = copy_idx / Panel::kBAsyncCopiesPerRow;
-    const int compact_logical_col =
-        (copy_idx % Panel::kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int shared_col = Panel::compact_shared_col_from_logical(compact_logical_col);
-    const int full_logical_col =
-        Panel::full_logical_col_from_compact(compact_logical_col);
-    cp_async_copy_16_bytes(
-        shared_tile + row * Panel::kBSharedStride + shared_col,
-        global_tile + row * global_stride + full_logical_col);
-  }
-}
-
-template <int HalfPanelColBase, int FixedKTiles>
-__device__ __forceinline__ void ptx_wmma_run_half_panel_pass_64x32(
-    __nv_bfloat16 a_shared[][FixedHotBandTile256x128::kASharedTileElems],
-    __nv_bfloat16 b_shared[][FixedHotBandTile256x128::kBSharedTileElems],
-    float* c_shared,
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    __nv_bfloat16* c_warp_tile_base,
-    int warp_tile_m,
-    int warp_tile_n,
-    int warp_id,
-    int lane_id) {
-  using Panel = HalfPanelIdentity64x32<HalfPanelColBase>;
-  static_assert(Panel::kTileCols == 2,
-                "64x32 half-panel pass expects exactly two local MMA tile columns.");
-
-  PtxWmmaAccTileSet64x32 acc_tiles;
-  ptx_wmma_fill_zero_tile_set(acc_tiles);
-
-  stage_a_shared_tile_async<FixedHotBandTile256x128>(
-      a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_half_panel_shared_tile_async<HalfPanelColBase>(
-      b_shared[0], b_block, kFixedBenchmarkN);
-  cp_async_commit_group();
-  stage_a_shared_tile_async<FixedHotBandTile256x128>(
-      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_half_panel_shared_tile_async<HalfPanelColBase>(
-      b_shared[1],
-      b_block + kWmmaK * kFixedBenchmarkN,
-      kFixedBenchmarkN);
-  cp_async_commit_group();
-  cp_async_wait_group_1();
-  __syncthreads();
-
-  #pragma unroll 1
-  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
-    const int curr_stage = tile_idx & 1;
-    const int next_tile_idx = tile_idx + 1;
-    const int future_tile_idx = tile_idx + 2;
-
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile256x128::kWarpTileM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        Panel::warp_shared_col_base(warp_tile_n);
-
-    ptx_wmma_accumulate_tile_set_64x32<HalfPanelColBase>(acc_tiles, a_tile, b_tile);
-
-    if (future_tile_idx < FixedKTiles) {
-      const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async<FixedHotBandTile256x128>(
-          a_shared[curr_stage],
-          a_block + future_tile_k,
-          kFixedBenchmarkK);
-      stage_b_half_panel_shared_tile_async<HalfPanelColBase>(
-          b_shared[curr_stage],
-          b_block + future_tile_k * kFixedBenchmarkN,
-          kFixedBenchmarkN);
-      cp_async_commit_group();
-    }
-
-    if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
-        cp_async_wait_group_1();
-      } else {
-        cp_async_wait_group_0();
-      }
-      __syncthreads();
-    }
-  }
-
-  __nv_bfloat16* c_panel_tile_base =
-      c_warp_tile_base + Panel::template global_output_tile_col_offset<0>();
-  ptx_wmma_store_tile_pairs_64x32<HalfPanelColBase>(
-      acc_tiles, c_shared, c_panel_tile_base, warp_id, lane_id);
-  // The half-panel family is still chasing a sparse nondeterministic correctness
-  // bug. End each pass with an explicit CTA handoff so the next local-half pass
-  // cannot inherit any lingering async-group or shared-state ambiguity.
-  cp_async_wait_group_0();
-  __syncthreads();
-}
-
-template <int HalfPanelIndex = 0, int FixedKTiles>
-__device__ __forceinline__ void ptx_wmma_run_half_panel_control_64x32(
-    __nv_bfloat16 a_shared[][FixedHotBandTile256x128::kASharedTileElems],
-    __nv_bfloat16 b_shared[][FixedHotBandTile256x128::kBSharedTileElems],
-    float* c_shared,
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    __nv_bfloat16* c_warp_tile_base,
-    int warp_tile_m,
-    int warp_tile_n,
-    int warp_id,
-    int lane_id) {
-  if constexpr (HalfPanelIndex < kHalfPanelPassCount64x32) {
-    constexpr int kHalfPanelColBase = HalfPanelIndex * kHalfPanelWarpMmaTilesN;
-    ptx_wmma_run_half_panel_pass_64x32<kHalfPanelColBase, FixedKTiles>(
-        a_shared,
-        b_shared,
-        c_shared,
-        a_block,
-        b_block,
-        c_warp_tile_base,
-        warp_tile_m,
-        warp_tile_n,
-        warp_id,
-        lane_id);
-    if constexpr (HalfPanelIndex + 1 < kHalfPanelPassCount64x32) {
-      __syncthreads();
-      ptx_wmma_run_half_panel_control_64x32<HalfPanelIndex + 1, FixedKTiles>(
-          a_shared,
-          b_shared,
-          c_shared,
-          a_block,
-          b_block,
-          c_warp_tile_base,
-          warp_tile_m,
-          warp_tile_n,
-          warp_id,
-          lane_id);
-    }
   }
 }
 
@@ -1618,29 +1114,6 @@ __device__ __forceinline__ void accumulate_peeled_shared_stage_ptx(
   ptx_wmma_accumulate_tile_set_384(acc_tiles, a_frag, b_tile);
 }
 
-template <typename TileConfig, int GlobalTileBase>
-__device__ __forceinline__ void accumulate_peeled_shared_stage_ptx_192(
-    PtxWmmaAccTileSet192& acc_tiles,
-    const __nv_bfloat16* a_stage,
-    const __nv_bfloat16* b_stage,
-    int warp_tile_m,
-    int warp_tile_n) {
-  static_assert(TileConfig::kTensorBlockN == TensorCoreTile384::kTensorBlockN,
-                "The Tile192 PTX accumulator helper is only valid on the hot-band kernel.");
-  static_assert(GlobalTileBase >= 0 &&
-                    GlobalTileBase + kSerialMicroPanelTiles384 <= TensorCoreTile384::kWarpMmaTilesN,
-                "Tile192 panel base must select a valid six-tile micro-panel.");
-  PtxWmmaBf16Fragment a_frag;
-
-  const __nv_bfloat16* a_tile =
-      a_stage + warp_tile_m * kWmmaM * kWmmaK;
-  const __nv_bfloat16* b_tile =
-      b_stage + b_shared_col_from_logical<TileConfig>(warp_tile_n * TileConfig::kWarpGroupCols);
-
-  ptx_wmma_load_a_row(a_frag, a_tile, kWmmaK);
-  ptx_wmma_accumulate_tile_set_192<GlobalTileBase>(acc_tiles, a_frag, b_tile);
-}
-
 template <typename TileConfig>
 __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
     PtxWmmaAccTileSet384& acc_tiles,
@@ -1676,111 +1149,6 @@ __device__ __forceinline__ void advance_peeled_hot_stage_ptx(
   next_stage = consumed_stage;
 }
 
-template <typename TileConfig, int GlobalTileBase>
-__device__ __forceinline__ void advance_peeled_hot_stage_ptx_192(
-    PtxWmmaAccTileSet192& acc_tiles,
-    __nv_bfloat16 a_shared[][TileConfig::kASharedTileElems],
-    __nv_bfloat16 b_shared[][TileConfig::kBSharedTileElems],
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    int future_tile_k,
-    int warp_tile_m,
-    int warp_tile_n,
-    int& curr_stage,
-    int& next_stage) {
-  accumulate_peeled_shared_stage_ptx_192<TileConfig, GlobalTileBase>(
-      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-
-  cp_async_wait_group_0();
-  __syncthreads();
-
-  stage_a_shared_tile_async<TileConfig>(
-      a_shared[curr_stage], a_block + future_tile_k, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(
-      b_shared[curr_stage],
-      b_block + future_tile_k * kFixedBenchmarkN,
-      kFixedBenchmarkN);
-  cp_async_commit_group();
-
-  const int consumed_stage = curr_stage;
-  curr_stage = next_stage;
-  next_stage = consumed_stage;
-}
-
-template <typename TileConfig, int FixedKTiles, int GlobalTileBase>
-__device__ __forceinline__ void run_fixed_peeled_panel_pass_192(
-    __nv_bfloat16 a_shared[][TileConfig::kASharedTileElems],
-    __nv_bfloat16 b_shared[][TileConfig::kBSharedTileElems],
-    float* c_shared,
-    const __nv_bfloat16* a_block,
-    const __nv_bfloat16* b_block,
-    __nv_bfloat16* c_tile_base,
-    int warp_id,
-    int lane_id,
-    int warp_tile_m,
-    int warp_tile_n) {
-  PtxWmmaAccTileSet192 acc_tiles;
-  ptx_wmma_fill_zero_tile_set(acc_tiles);
-
-  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
-  cp_async_commit_group();
-  stage_a_shared_tile_async<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async<TileConfig>(
-      b_shared[1],
-      b_block + kWmmaK * kFixedBenchmarkN,
-      kFixedBenchmarkN);
-  cp_async_commit_group();
-  cp_async_wait_group_1();
-  __syncthreads();
-
-  int curr_stage = 0;
-  int next_stage = 1;
-
-  #pragma unroll 1
-  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; tile_idx += 2) {
-    const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
-    const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
-
-    advance_peeled_hot_stage_ptx_192<TileConfig, GlobalTileBase>(
-        acc_tiles,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        first_future_tile_k,
-        warp_tile_m,
-        warp_tile_n,
-        curr_stage,
-        next_stage);
-
-    advance_peeled_hot_stage_ptx_192<TileConfig, GlobalTileBase>(
-        acc_tiles,
-        a_shared,
-        b_shared,
-        a_block,
-        b_block,
-        second_future_tile_k,
-        warp_tile_m,
-        warp_tile_n,
-        curr_stage,
-        next_stage);
-  }
-
-  accumulate_peeled_shared_stage_ptx_192<TileConfig, GlobalTileBase>(
-      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-
-  cp_async_wait_group_0();
-  __syncthreads();
-  curr_stage = next_stage;
-
-  accumulate_peeled_shared_stage_ptx_192<TileConfig, GlobalTileBase>(
-      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
-
-  ptx_wmma_store_tile_pairs_192<TileConfig, GlobalTileBase>(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-}
-
 template <typename TileConfig, int FixedKTiles>
 __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
     const __nv_bfloat16* a,
@@ -1814,34 +1182,75 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   const int row = block_row + warp_tile_m * kWmmaM;
   const int col = block_col + warp_tile_n * TileConfig::kWarpMmaTilesN * kWmmaN;
 
+  PtxWmmaAccTileSet384 acc_tiles;
+  ptx_wmma_fill_zero_tile_set(acc_tiles);
+
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
-  __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  static_assert(TileConfig::kCSharedStageCount == 2,
-                "The phased 64x384 kernel expects paired c_shared export scratch.");
-  run_fixed_peeled_panel_pass_192<TileConfig, FixedKTiles, 0>(
-      a_shared,
-      b_shared,
-      c_shared,
-      a_block,
-      b_block,
-      c_tile_base,
-      warp_id,
-      lane_id,
-      warp_tile_m,
-      warp_tile_n);
+
+  stage_a_shared_tile_async<TileConfig>(a_shared[0], a_block, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(b_shared[0], b_block, kFixedBenchmarkN);
+  cp_async_commit_group();
+  stage_a_shared_tile_async<TileConfig>(a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async<TileConfig>(
+      b_shared[1],
+      b_block + kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+  cp_async_wait_group_1();
   __syncthreads();
-  run_fixed_peeled_panel_pass_192<TileConfig, FixedKTiles, kSerialMicroPanelTiles384>(
-      a_shared,
-      b_shared,
-      c_shared,
-      a_block,
-      b_block,
-      c_tile_base,
-      warp_id,
-      lane_id,
-      warp_tile_m,
-      warp_tile_n);
+
+  int curr_stage = 0;
+  int next_stage = 1;
+
+  #pragma unroll 1
+  for (int tile_idx = 0; tile_idx < FixedKTiles - 2; tile_idx += 2) {
+    const int first_future_tile_k = (tile_idx + 2) * kWmmaK;
+    const int second_future_tile_k = (tile_idx + 3) * kWmmaK;
+
+    advance_peeled_hot_stage_ptx<TileConfig>(
+        acc_tiles,
+        a_shared,
+        b_shared,
+        a_block,
+        b_block,
+        first_future_tile_k,
+        warp_tile_m,
+        warp_tile_n,
+        curr_stage,
+        next_stage);
+
+    advance_peeled_hot_stage_ptx<TileConfig>(
+        acc_tiles,
+        a_shared,
+        b_shared,
+        a_block,
+        b_block,
+        second_future_tile_k,
+        warp_tile_m,
+        warp_tile_n,
+        curr_stage,
+        next_stage);
+  }
+
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  cp_async_wait_group_0();
+  __syncthreads();
+  curr_stage = next_stage;
+
+  accumulate_peeled_shared_stage_ptx<TileConfig>(
+      acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
+
+  __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
+  if constexpr (TileConfig::kCSharedStageCount == 2) {
+    ptx_wmma_store_tile_pairs_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  } else {
+    ptx_wmma_store_tile_set_384<TileConfig>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 #else
   (void)a;
   (void)b;
@@ -1882,20 +1291,68 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
   const int row = block_row + warp_tile_m * FixedHotBandTile256x128::kWarpTileM;
   const int col = block_col + warp_tile_n * FixedHotBandTile256x128::kWarpTileN;
 
+  PtxWmmaAccTileSet64x64 acc_tiles;
+  ptx_wmma_fill_zero_tile_set(acc_tiles);
+
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
+
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+      a_shared[0], a_block, kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+      b_shared[0], b_block, kFixedBenchmarkN);
+  cp_async_commit_group();
+  stage_a_shared_tile_async<FixedHotBandTile256x128>(
+      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
+  stage_b_shared_tile_async<FixedHotBandTile256x128>(
+      b_shared[1],
+      b_block + kWmmaK * kFixedBenchmarkN,
+      kFixedBenchmarkN);
+  cp_async_commit_group();
+  cp_async_wait_group_1();
+  __syncthreads();
+
+  #pragma unroll 1
+  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
+    const int curr_stage = tile_idx & 1;
+    const int next_tile_idx = tile_idx + 1;
+    const int future_tile_idx = tile_idx + 2;
+
+    const __nv_bfloat16* a_tile =
+        a_shared[curr_stage] +
+        warp_tile_m * FixedHotBandTile256x128::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* b_tile =
+        b_shared[curr_stage] +
+        b_shared_col_from_logical<FixedHotBandTile256x128>(
+            warp_tile_n * FixedHotBandTile256x128::kWarpGroupCols);
+
+    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+
+    if (future_tile_idx < FixedKTiles) {
+      const int future_tile_k = future_tile_idx * kWmmaK;
+      stage_a_shared_tile_async<FixedHotBandTile256x128>(
+          a_shared[curr_stage],
+          a_block + future_tile_k,
+          kFixedBenchmarkK);
+      stage_b_shared_tile_async<FixedHotBandTile256x128>(
+          b_shared[curr_stage],
+          b_block + future_tile_k * kFixedBenchmarkN,
+          kFixedBenchmarkN);
+      cp_async_commit_group();
+    }
+
+    if (next_tile_idx < FixedKTiles) {
+      if (future_tile_idx < FixedKTiles) {
+        cp_async_wait_group_1();
+      } else {
+        cp_async_wait_group_0();
+      }
+      __syncthreads();
+    }
+  }
+
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_run_half_panel_control_64x32<0, FixedKTiles>(
-      a_shared,
-      b_shared,
-      c_shared,
-      a_block,
-      b_block,
-      c_tile_base,
-      warp_tile_m,
-      warp_tile_n,
-      warp_id,
-      lane_id);
+  ptx_wmma_store_tile_pairs_64x64(acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
 #else
   (void)a;
   (void)b;

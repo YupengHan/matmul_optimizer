@@ -20,9 +20,6 @@ struct CorrectnessSummary {
   double atol = 0.0;
   double rtol = 0.0;
   bool bf16_exact_match = false;
-  unsigned long long max_abs_index = 0;
-  double max_abs_output = 0.0;
-  double max_abs_ref = 0.0;
 };
 
 }  // namespace matmul_optimizer

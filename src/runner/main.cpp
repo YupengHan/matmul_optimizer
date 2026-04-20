@@ -348,12 +348,7 @@ CorrectnessSummary evaluate_correctness(
     const double rel_err = abs_err / std::max(std::abs(ref), kMinRelDenom);
     const double tolerance = atol + rtol * std::abs(ref);
 
-    if (abs_err > summary.max_abs_err) {
-      summary.max_abs_err = abs_err;
-      summary.max_abs_index = static_cast<unsigned long long>(i);
-      summary.max_abs_output = output;
-      summary.max_abs_ref = ref;
-    }
+    summary.max_abs_err = std::max(summary.max_abs_err, abs_err);
     summary.max_rel_err = std::max(summary.max_rel_err, rel_err);
     abs_sum += abs_err;
 
@@ -400,9 +395,6 @@ std::string make_success_json(
     json << ",\n";
     json << "  \"correctness\": {\n";
     json << "    \"max_abs_err\": " << format_number(correctness->max_abs_err) << ",\n";
-    json << "    \"max_abs_index\": " << correctness->max_abs_index << ",\n";
-    json << "    \"max_abs_output\": " << format_number(correctness->max_abs_output) << ",\n";
-    json << "    \"max_abs_ref\": " << format_number(correctness->max_abs_ref) << ",\n";
     json << "    \"max_rel_err\": " << format_number(correctness->max_rel_err) << ",\n";
     json << "    \"mean_abs_err\": " << format_number(correctness->mean_abs_err) << ",\n";
     json << "    \"bf16_exact_match\": " << (correctness->bf16_exact_match ? "true" : "false") << ",\n";
