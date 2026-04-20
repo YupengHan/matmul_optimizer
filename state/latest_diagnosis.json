@@ -1,72 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_223457",
-  "status": "completed",
-  "created_at": "2026-04-19T22:34:57-07:00",
-  "source_run_id": "20260419_222734_bf16_gemm_v1_0d78758",
-  "source_run_dir": "runs/20260419_222734_bf16_gemm_v1_0d78758",
-  "source_summary_json": "runs/20260419_222734_bf16_gemm_v1_0d78758/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_223649_bf16_gemm_v1_848bad7",
+  "source_run_dir": "runs/20260419_223649_bf16_gemm_v1_848bad7",
+  "source_summary_json": "runs/20260419_223649_bf16_gemm_v1_848bad7/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Trim the hot-band export path by batching 64x64 stores vertically instead of horizontally",
-      "hypothesis": "The dominant hot-band kernel is back on the best known surface and recent copy / consumer experiments have mostly been negative. The current 64x64 export helper still pays one `__syncwarp()` per row and per column pair, which means eight warp synchronizations to export the sixteen 16x16 accumulator tiles. Because each warp only has two `c_shared` scratch stages, a practical next move is to flip the batching dimension: use those two stages to store two rows for the same column tile, then export them together. That preserves shared footprint and accumulator layout while potentially cutting the export-side warp sync count in half.",
-      "expected_bottleneck": "Hot-band epilogue / export synchronization and shared-memory round-trip overhead.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64"
-      ],
-      "risk": "Moderate. The change is local and footprint-neutral, but the export path is correctness-sensitive and the accumulator-to-output mapping must stay exact.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject if correctness breaks, if registers rise materially, or if the hot-band time stays flat."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Re-anchor explicitly at the current best custom commit before more export work",
-      "hypothesis": "The measured best is now `0d78758`, and if the export rewrite becomes noisy or hard to validate, the safer option is to re-anchor the loop at that exact measured commit instead of staying on the latest recovery surface.",
-      "expected_bottleneck": "Workflow / baseline drift rather than a micro-bottleneck.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. This does not advance performance by itself, but it keeps the loop grounded on the strongest measured branch.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime"
-      ],
-      "stop_condition": "Use this if the export experiment fails quickly or if runtime drift becomes confusing."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Revisit stage peeling only after export behavior is simpler",
-      "hypothesis": "The last steady-state peeling attempt failed correctness, but part of that may be because the hot-band loop and export path are both still cluttered. If the export path becomes simpler and more deterministic, a later steady-state rewrite becomes easier to reason about. It should not be the immediate next move, but it remains a follow-up once the epilogue side is trimmed.",
-      "expected_bottleneck": "Fixed-shape control and epilogue interaction after export simplification.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64"
-      ],
-      "risk": "High. The earlier correctness failure is still recent, so this should only come back after a simpler export path is in place.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
-      ],
-      "stop_condition": "Do not spend a round here until the export rewrite has been resolved."
-    }
-  ],
-  "notes": "Round 1/50 starts from the current best custom measurement at 29.325824 ms. The hot-band kernel still dominates and recent copy / consumer changes mostly regressed, so the next defensible move is to attack the export side. Recommended direction dir_01 keeps the same accumulator layout and shared footprint but changes the 64x64 export batching from horizontal pairs to vertical pairs, which should reduce warp-sync count in the hot-band epilogue. Dir_02 is a strict best-commit re-anchor fallback, and dir_03 records that fixed-shape peeling should only be revisited after the export behavior becomes simpler."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

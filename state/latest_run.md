@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_222734_bf16_gemm_v1_0d78758`
-- run dir: `runs/20260419_222734_bf16_gemm_v1_0d78758`
-- kernel tag: `bf16_gemm_v1_0d78758`
-- round label: `round 10/30`
+- run id: `20260419_223649_bf16_gemm_v1_848bad7`
+- run dir: `runs/20260419_223649_bf16_gemm_v1_848bad7`
+- kernel tag: `bf16_gemm_v1_848bad7`
+- round label: `round 1/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `29.325824 ms`
-- p10 runtime: `29.063475 ms`
-- p90 runtime: `30.310375 ms`
-- TFLOP/s: `24.791100 TFLOP/s`
-- previous run id: `20260419_222503_bf16_gemm_v1_edcdbea`
-- runtime delta vs previous measured run: `-1.535953 ms`
-- TFLOP/s delta vs previous measured run: `+1.233822 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.356480 ms`
+- p10 runtime: `29.918720 ms`
+- p90 runtime: `31.454934 ms`
+- TFLOP/s: `23.949398 TFLOP/s`
+- previous run id: `20260419_222734_bf16_gemm_v1_0d78758`
+- runtime delta vs previous measured run: `+1.030656 ms`
+- TFLOP/s delta vs previous measured run: `-0.841701 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the restored best surface and discard the split-ownership staging branch`
+- implemented direction name: `Trim the hot-band export path by batching 64x64 stores vertically instead of horizontally`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_222734_bf16_gemm_v1_0d78758/summary.json`
-- measured commit: `0d787589a75b35984fb169106135c77436806bc6`
-- new best custom: `yes`
-- generated at: `2026-04-19T22:27:40-07:00`
+- raw summary json: `runs/20260419_223649_bf16_gemm_v1_848bad7/summary.json`
+- measured commit: `848bad76a95cfcc18a02981190b09432583d4aa5`
+- new best custom: `no`
+- generated at: `2026-04-19T22:36:57-07:00`
