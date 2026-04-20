@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore accepted grouped_rows=8 hot-band consumer ordering`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_084642`
-- round loop: `round 58/100`
-- hypothesis: `The grouped_rows=16 branch was measured negative; returning to the accepted grouped_rows=8 window should recover the better PTX hot-band consumer behavior from round 56 and leave room for a narrower consumer-side tweak such as row-pair traversal order or another local ordering refinement.`
-- expected bottleneck: `Consumer-side PTX hot-band ordering and export latency in bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel, especially around the grouped-row dispatch and the consumer/export handoff.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:1935-1944, src/kernels/bf16_gemm_v1.cu:1992-2008, src/kernels/bf16_gemm_v1.cu:1916-2015`
-- risk: `Moderate: a local ordering tweak can easily drift back into the grouped_rows=16 slow path or disturb the accepted PTX export-scratch behavior.`
-- metrics to re-check: `kernel runtime vs 24.713584 ms accepted base, dram throughput, long scoreboard stalls, achieved occupancy, sm efficiency`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 59/100`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail

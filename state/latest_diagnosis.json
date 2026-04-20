@@ -1,76 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_084642",
-  "status": "completed",
-  "created_at": "2026-04-20T08:46:42-07:00",
-  "source_run_id": "20260420_084554_bf16_gemm_v1_761d868",
-  "source_run_dir": "runs/20260420_084554_bf16_gemm_v1_761d868",
-  "source_summary_json": "runs/20260420_084554_bf16_gemm_v1_761d868/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_084915_bf16_gemm_v1_4e5579e",
+  "source_run_dir": "runs/20260420_084915_bf16_gemm_v1_4e5579e",
+  "source_summary_json": "runs/20260420_084915_bf16_gemm_v1_4e5579e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
-      "hypothesis": "The grouped_rows=16 branch was measured negative; returning to the accepted grouped_rows=8 window should recover the better PTX hot-band consumer behavior from round 56 and leave room for a narrower consumer-side tweak such as row-pair traversal order or another local ordering refinement.",
-      "expected_bottleneck": "Consumer-side PTX hot-band ordering and export latency in bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel, especially around the grouped-row dispatch and the consumer/export handoff.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1935-1944",
-        "src/kernels/bf16_gemm_v1.cu:1992-2008",
-        "src/kernels/bf16_gemm_v1.cu:1916-2015"
-      ],
-      "risk": "Moderate: a local ordering tweak can easily drift back into the grouped_rows=16 slow path or disturb the accepted PTX export-scratch behavior.",
-      "metrics_to_recheck": [
-        "kernel runtime vs 24.713584 ms accepted base",
-        "dram throughput",
-        "long scoreboard stalls",
-        "achieved occupancy",
-        "sm efficiency"
-      ],
-      "stop_condition": "Stop if grouped_rows=8 restores the accepted runtime window and any local consumer-order tweak does not worsen dram or scoreboard metrics."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Recover overlap behind the accepted wait_group_0 handoff",
-      "hypothesis": "After grouped_rows=8 is restored, the remaining gap may come from refill/consume overlap; a careful tweak around the accepted one-sync wait_group_0 handoff could reduce idle time without widening the stage pipeline.",
-      "expected_bottleneck": "Async refill overlap in the peeled PTX hot-band path, including the one-sync handoff in the PTX microkernel loop and the peeled hot-stage advance helper.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1408-1425",
-        "src/kernels/bf16_gemm_v1.cu:1512-1520",
-        "src/kernels/bf16_gemm_v1.cu:1992-2008"
-      ],
-      "risk": "Medium: pushing overlap too far can revive the measured-negative grouped_rows=16 behavior or create a refill hazard.",
-      "metrics_to_recheck": [
-        "kernel runtime",
-        "cp.async wait coverage",
-        "long scoreboard stalls",
-        "dram throughput"
-      ],
-      "stop_condition": "Stop only if overlap improves after grouped_rows=8 is restored and no extra syncs or hazards appear."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Smaller locality retune as a closure path",
-      "hypothesis": "If the top two paths do not recover the loss, a smaller launch-order locality retune may still reduce hot-band stalls without introducing another broad structural change.",
-      "expected_bottleneck": "Residual launch-order locality and row-pair adjacency effects in the grouped hot-band consumer path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1935-1944",
-        "src/kernels/bf16_gemm_v1.cu:1989-2008",
-        "src/kernels/bf16_gemm_v1.cu:1515-1520"
-      ],
-      "risk": "High: broader grouped-row changes, warmup-order reopen, K32 cadence changes, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites are explicitly rejected this round.",
-      "metrics_to_recheck": [
-        "kernel runtime",
-        "long scoreboard stalls",
-        "instruction issue balance"
-      ],
-      "stop_condition": "Stop after one smaller locality trial; do not broaden into grouped_rows=16 or any rejected structural rewrite."
-    }
-  ],
-  "notes": "Anchored to measured run 20260420_084554_bf16_gemm_v1_761d868 at 25.473536 ms. Round 56 accepted base at 24.713584 ms remains the target comparison; grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites are rejected this round."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `761d868c89340f65e01ba99eb7c5c6492df9c893`
-- plateau counter: `1`
-- round loop: `round 58/100`
-- rounds remaining: `43`
-- notes: `Node C build succeeded for round 58/100. Node A will now measure the new code path.`
+- latest measured commit: `4e5579ec72e9b1f05820c895c0315235d66f30cd`
+- plateau counter: `0`
+- round loop: `round 59/100`
+- rounds remaining: `42`
+- notes: `Node A completed round 58/100. Run node_b to continue round 59/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_084554_bf16_gemm_v1_761d868`
-- run dir: `runs/20260420_084554_bf16_gemm_v1_761d868`
+- run id: `20260420_084915_bf16_gemm_v1_4e5579e`
+- run dir: `runs/20260420_084915_bf16_gemm_v1_4e5579e`
 - correctness: `PASS`
-- median runtime: `25.473536 ms`
-- TFLOP/s: `28.540184 TFLOP/s`
+- median runtime: `24.570881 ms`
+- TFLOP/s: `29.588659 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_084642`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Anchored to measured run 20260420_084554_bf16_gemm_v1_761d868 at 25.473536 ms. Round 56 accepted base at 24.713584 ms remains the target comparison; grouped_rows=16, warmup-order reopen, K32 cadence, extra-live B lookahead, unroll-1 base, CTA-level B repack, and broad shared-memory rewrites are rejected this round.`
-- dir_01: Restore accepted grouped_rows=8 hot-band consumer ordering | bottleneck: Consumer-side PTX hot-band ordering and export latency in bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel, especially around the grouped-row dispatch and the consumer/export handoff.
-- dir_02: Recover overlap behind the accepted wait_group_0 handoff | bottleneck: Async refill overlap in the peeled PTX hot-band path, including the one-sync handoff in the PTX microkernel loop and the peeled hot-stage advance helper.
-- dir_03: Smaller locality retune as a closure path | bottleneck: Residual launch-order locality and row-pair adjacency effects in the grouped hot-band consumer path.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-1.204305 ms`, `0.953534x` slower than CUTLASS
+- current best custom gap: `-1.347008 ms`, `0.948028x` slower than CUTLASS
