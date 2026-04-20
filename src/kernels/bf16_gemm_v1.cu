@@ -153,7 +153,7 @@ constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
-constexpr int kFixedHotBandPtxGroupedRows = 16;
+constexpr int kFixedHotBandPtxGroupedRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -755,6 +755,10 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64_ptx_microker
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
   if constexpr (RowPairBase < FixedHotBandTile128x128::kWarpMmaTilesM) {
+    if constexpr (RowPairBase + 2 < FixedHotBandTile128x128::kWarpMmaTilesM) {
+      ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel<RowPairBase + 2>(
+          acc_tiles, a_tile, b_tile);
+    }
     PtxWmmaBf16Fragment a_frag0;
     PtxWmmaBf16Fragment a_frag1;
     ptx_wmma_load_a_row(
@@ -767,8 +771,6 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64_ptx_microker
         kWmmaK);
     ptx_wmma_accumulate_col_tiles_64x64_ptx_microkernel<RowPairBase>(
         acc_tiles, a_frag0, a_frag1, b_tile);
-    ptx_wmma_accumulate_row_pairs_64x64_ptx_microkernel<RowPairBase + 2>(
-        acc_tiles, a_tile, b_tile);
   }
 }
 

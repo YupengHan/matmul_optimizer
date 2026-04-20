@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T08:47:53-07:00",
   "source_diagnosis_id": "diagnosis_20260420_084642",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -26,5 +26,5 @@
     ],
     "stop_condition": "Stop if grouped_rows=8 restores the accepted runtime window and any local consumer-order tweak does not worsen dram or scoreboard metrics."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
