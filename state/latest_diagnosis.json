@@ -1,15 +1,82 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_224955",
+  "status": "completed",
+  "created_at": "2026-04-19T22:49:55-07:00",
   "source_run_id": "20260419_224922_bf16_gemm_v1_797c137",
   "source_run_dir": "runs/20260419_224922_bf16_gemm_v1_797c137",
   "source_summary_json": "runs/20260419_224922_bf16_gemm_v1_797c137/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "human+auto-analysis",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Peel the 452-tile steady state for the shared 64x64 PTX hot-band family",
+      "hypothesis": "The new residual 64x128 PTX kernel did cut the last-64-row strip from 0.866 ms to 0.702 ms, but the dominant 256x128 hot-band kernel stayed essentially flat at 41.080 ms vs the accepted base's 40.911 ms while tensor activity, barrier stalls, short scoreboard stalls, and registers all stayed nearly unchanged. That points back to the generic tile_idx loop itself: every one of the 452 K-tiles still pays next/future bounds checks, stage-select logic, and cp.async wait branching. Now that both the pivot kernel and the residual kernel share one 64x64 PTX microkernel family, the best next structural move is to split them into fixed-shape prologue / steady-state / epilogue loops and let the compiler see the exact 452-tile schedule.",
+      "expected_bottleneck": "Hot-band control/orchestration overhead inside the fixed-shape PTX main loop, which is still diluting tensor issue after the residual path was specialized.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
+        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
+        "src/kernels/bf16_gemm_v1.cu:launch_fixed_hot_band_ptx_region"
+      ],
+      "risk": "Moderate. A previous steady-state peeling attempt failed on a different path, so the cp.async commit/wait ordering must stay exact, but the scope is now cleaner because both hot-band kernels share the same PTX microkernel family.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if the main 256x128 hot-band kernel time does not move materially, if registers rise above the current 167/thread surface, or if correctness breaks."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Push warp-local Ps2r and register-reuse scheduling inside the 64x64 PTX microkernel",
+      "hypothesis": "The dominant hot-band kernel is no longer obviously blocked on CTA-level staging: barrier is only 6.54%, mio throttle is 0.33%, DRAM is 17.21%, and the residual-path win did not raise tensor activity beyond 38.75%. The remaining headroom is likely inside per-warp operand delivery and instruction ordering. The current 64x64 PTX microkernel already keeps one future B fragment live, but A row pairs still serialize and the column sweep is only a mirrored 0,3,1,2 pattern. A tighter warp-local Ps2r path that explicitly follows the human right-left-right-left reuse idea, or that prefetches the next A row pair before the current MMA pair retires, is the next warp-scale experiment that does not reopen CTA-level repacking.",
+      "expected_bottleneck": "Per-warp operand delivery and short-scoreboard pressure inside the hot-band MMA loop rather than CTA-level shared-memory staging.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64_lookahead",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64"
+      ],
+      "risk": "Moderate to high. This is a pure warp-schedule experiment and can easily increase live fragments enough to hurt the current 167-register surface.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Reject if register pressure climbs materially above the current surface or if hot-band time regresses despite flatter short-scoreboard behavior."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Try a light L2-friendly CTA swizzle over the 60x25 hot-band grid",
+      "hypothesis": "The remaining human-idea branch that has not been revisited in the current PTX family is inter-CTA locality. The hot-band still launches a dense 60x25 grid over the same B hot band, while L2 throughput sits around 19% and the main-kernel runtime barely responds to recent feed-side edits. A light logical CTA swizzle or grouped traversal that preserves the same tile math but changes the order of logical block_row/block_col mapping may give the scheduler a more L2-friendly reuse hint without reopening shared-memory layout.",
+      "expected_bottleneck": "Inter-CTA L2 locality across neighboring hot-band B tiles rather than per-CTA tensor scheduling.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_64x64_kernel",
+        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+      ],
+      "risk": "Moderate. A heavier grouped CTA traversal already regressed earlier, so this should stay light, reversible, and strictly limited to logical block-index remapping.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if L2 throughput does not improve or if runtime regresses like the earlier grouped-traversal experiment."
+    }
+  ],
+  "notes": "Round 4/50 starts from a run where the dedicated residual 64x128 PTX kernel helped the last 64 rows, but the dominant 256x128 hot-band kernel remained effectively unchanged relative to the accepted base. The recommended next move is therefore dir_01: keep the new shared 64x64 PTX family, but peel the fixed 452-tile steady state so the compiler sees an exact prologue / steady-state / epilogue schedule. Dir_02 keeps pressure inside warp-local Ps2r/register reuse, and dir_03 holds the lighter L2-swizzle idea as a lower-ranked cache-locality branch."
 }
