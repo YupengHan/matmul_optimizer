@@ -6,56 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `ed2153e77f04a84625e906e01e2236c279ccb4b7`
-- plateau counter: `7`
-- round loop: `round 46/100`
-- rounds remaining: `55`
-- notes: `Node C build succeeded for round 46/100. Node A will now measure the new code path.`
+- latest measured commit: `22b4466b0ff3ca82c4a03efa03d07462cb5ca69c`
+- plateau counter: `0`
+- round loop: `round 47/100`
+- rounds remaining: `54`
+- notes: `Node A completed round 46/100. Run node_b to continue round 47/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_073148_bf16_gemm_v1_ed2153e`
-- run dir: `runs/20260420_073148_bf16_gemm_v1_ed2153e`
+- run id: `20260420_073721_bf16_gemm_v1_22b4466`
+- run dir: `runs/20260420_073721_bf16_gemm_v1_22b4466`
 - correctness: `PASS`
-- median runtime: `26.892288 ms`
-- TFLOP/s: `27.034495 TFLOP/s`
+- median runtime: `25.677312 ms`
+- TFLOP/s: `28.313689 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_073212`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `- Round 45 moved the needle only slightly, from 26.955776 ms to 26.892288 ms, but it was a real compute-side improvement: tensor active 48.05 -> 48.24, warps active 16.58 -> 16.68, barrier 11.21 -> 8.48, short scoreboard 5.94 -> 2.03.
-- The same run also exposed the new limiting side: mio_throttle 0.34 -> 4.26 and lts throughput 30.30 -> 25.45. That is why the priority call for round 46 is to switch first to grouped-row/L2 traversal, not to keep blindly squeezing live range with more B rereads.
-- The user target remains sub-20 ms, not merely matching CUTLASS, so the ranking favors directions with larger structural upside over another tiny local register win.
-- Coalescing Access: not the primary next family; the B path is already 16-byte aligned, and the sharper regression is in traversal/locality rather than obvious transaction packing.
-- Data Reuse: this becomes the top family because grouped-row traversal can improve reuse of nearby B/L2 footprint across hot-band CTAs without undoing the round-45 compute gains.
-- Async Copy: worth watching but not top-ranked by itself; cp.async is already present, so the next question is cadence and wait placement, not basic adoption.
-- Bank Conflict: not the headline signal right now; barrier and short scoreboard improved, so there is no new evidence that bank conflicts overtook L2/feed locality.
-- L2 Cache: explicitly promoted in priority. The lts throughput drop after the live-range win is the clearest reason to test grouped-row or traversal changes next.
-- Register Reuse: still a valid family with positive signal, but it is now rank 2 because the latest gain already came with a feed-side penalty.
-- Pg2s: global-to-shared movement is no longer missing, but its spatial ordering may still be suboptimal in the active PTX hot-band launch.
-- Ps2r: the active PTX microkernel still pays for B-fragment/shared consumption patterns; any further live-range work must avoid making this path heavier.
-- Stage: kept as rank 3. The stage family is still relevant, but after round 45 the evidence says feed cadence is a follow-up investigation, not the first move.`
-- dir_01: Port Grouped-Row Traversal Into The Active PTX 128x128 Hot Band | bottleneck: L2 traversal and hot-band feed locality are now the limiting factor, expressed as elevated mio_throttle and weaker lts throughput after compute-side pressure was reduced.
-- dir_02: Continue Live-Range Compression Only On The Compute Side | bottleneck: Residual register pressure and accumulator/export live range still cap warp readiness, but the route is only worthwhile if it preserves the current shared/B feed behavior.
-- dir_03: Revisit Hot-Band Stage Cadence And Shared Feed Granularity | bottleneck: Shared-memory feed cadence, cp.async turnover, and Ps2r/ldmatrix-side issue pressure after the compute-side live-range trim.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `0.056383 ms`, `1.002175x` slower than CUTLASS
+- current best custom gap: `-0.240577 ms`, `0.990718x` slower than CUTLASS

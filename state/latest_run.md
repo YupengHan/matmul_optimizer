@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_073148_bf16_gemm_v1_ed2153e`
-- run dir: `runs/20260420_073148_bf16_gemm_v1_ed2153e`
-- kernel tag: `bf16_gemm_v1_ed2153e`
-- round label: `round 45/100`
+- run id: `20260420_073721_bf16_gemm_v1_22b4466`
+- run dir: `runs/20260420_073721_bf16_gemm_v1_22b4466`
+- kernel tag: `bf16_gemm_v1_22b4466`
+- round label: `round 46/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.892288 ms`
-- p10 runtime: `26.444288 ms`
-- p90 runtime: `27.850956 ms`
-- TFLOP/s: `27.034495 TFLOP/s`
-- previous run id: `20260420_022041_bf16_gemm_v1_2c6441d`
-- runtime delta vs previous measured run: `-0.063488 ms`
-- TFLOP/s delta vs previous measured run: `+0.063673 TFLOP/s`
+- median runtime: `25.677312 ms`
+- p10 runtime: `25.255821 ms`
+- p90 runtime: `26.921430 ms`
+- TFLOP/s: `28.313689 TFLOP/s`
+- previous run id: `20260420_073148_bf16_gemm_v1_ed2153e`
+- runtime delta vs previous measured run: `-1.214976 ms`
+- TFLOP/s delta vs previous measured run: `+1.279194 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX Hot-Band Accumulator And Fragment Live Ranges`
+- implemented direction name: `Port Grouped-Row Traversal Into The Active PTX 128x128 Hot Band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_073148_bf16_gemm_v1_ed2153e/summary.json`
-- measured commit: `ed2153e77f04a84625e906e01e2236c279ccb4b7`
-- new best custom: `no`
-- generated at: `2026-04-20T07:31:55-07:00`
+- raw summary json: `runs/20260420_073721_bf16_gemm_v1_22b4466/summary.json`
+- measured commit: `22b4466b0ff3ca82c4a03efa03d07462cb5ca69c`
+- new best custom: `yes`
+- generated at: `2026-04-20T07:37:28-07:00`

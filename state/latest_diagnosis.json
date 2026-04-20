@@ -1,83 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_073212",
-  "status": "completed",
-  "created_at": "2026-04-20T07:32:12-07:00",
-  "source_run_id": "20260420_073148_bf16_gemm_v1_ed2153e",
-  "source_run_dir": "runs/20260420_073148_bf16_gemm_v1_ed2153e",
-  "source_summary_json": "runs/20260420_073148_bf16_gemm_v1_ed2153e/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_073721_bf16_gemm_v1_22b4466",
+  "source_run_dir": "runs/20260420_073721_bf16_gemm_v1_22b4466",
+  "source_summary_json": "runs/20260420_073721_bf16_gemm_v1_22b4466/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Port Grouped-Row Traversal Into The Active PTX 128x128 Hot Band",
-      "hypothesis": "Round 45 confirmed the register/live-range work still has signal: runtime improved from 26.955776 ms to 26.892288 ms while tensor active rose 48.05 -> 48.24, warps active rose 16.58 -> 16.68, barrier stalls fell 11.21 -> 8.48, and short scoreboard fell 5.94 -> 2.03. But the same change also pushed pressure back into the feed path: mio_throttle jumped 0.34 -> 4.26 and L2 throughput fell 30.30 -> 25.45. That makes grouped-row plus L2-friendly CTA traversal the next higher-priority route than another blind live-range squeeze. The active PTX 128x128 path still launches the hot band in simple row-major physical order, while the dormant 128x128x32 kernel already has grouped-row pid remapping; porting that traversal into the active path should improve reuse of neighboring B/L2 footprint without giving back the compute-side gains.",
-      "expected_bottleneck": "L2 traversal and hot-band feed locality are now the limiting factor, expressed as elevated mio_throttle and weaker lts throughput after compute-side pressure was reduced.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1633-1779",
-        "src/kernels/bf16_gemm_v1.cu:1894-1994",
-        "src/kernels/bf16_gemm_v1.cu:2023-2061"
-      ],
-      "risk": "Changing CTA traversal can easily introduce row/column ownership bugs, and the gain may be modest if the current L2 drop is dominated by per-warp shared/B-fragment behavior instead of inter-CTA ordering. It also risks helping locality in the hot band while exposing a mismatch against the residual 64x384 row-band path.",
-      "metrics_to_recheck": [
-        "runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if runtime does not improve by at least ~0.15 ms or if mio_throttle stays around 4%+ without lts throughput recovering materially."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Continue Live-Range Compression Only On The Compute Side",
-      "hypothesis": "The register/live-range family is still valid, but it should now be constrained to compute-side lifetimes only. The current PTX microkernel already shortened the hot-band accumulator/export lifetime by using the single padded scratch tile and by reloading B per row-pair to keep only the active A pair live. A next pass can still trim accumulator or helper recursion lifetime around the PTX MMA and export helpers, but it must not add more B rereads, wider shared staging, or extra feed-side churn. In priority terms, this stays behind grouped-row/L2 traversal because round 45 already showed diminishing returns once the saved registers turned into mio_throttle.",
-      "expected_bottleneck": "Residual register pressure and accumulator/export live range still cap warp readiness, but the route is only worthwhile if it preserves the current shared/B feed behavior.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:720-759",
-        "src/kernels/bf16_gemm_v1.cu:972-1014",
-        "src/kernels/bf16_gemm_v1.cu:1948-1994"
-      ],
-      "risk": "This path is now incremental and easy to overfit. Another live-range tweak can accidentally cause the compiler to rematerialize B fragments, add shared traffic, or erase the barrier/short-scoreboard win that round 45 just bought.",
-      "metrics_to_recheck": [
-        "runtime_ms",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if tensor active and warps active fail to rise again, or if mio_throttle/lts regress further while the runtime gain stays below the noise floor."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Revisit Hot-Band Stage Cadence And Shared Feed Granularity",
-      "hypothesis": "If grouped-row traversal alone is not enough, the remaining bottleneck is likely the stage/shared cadence itself rather than raw math scheduling. The active PTX 128x128 path consumes one K16 tile per loop with commit/wait traffic every iteration, while the alternate 128x128x32 path already batches two K tiles per stage and carries grouped-row traversal logic. A selective merge of the two-K cadence, wait placement, or feed granularity could reduce feed-side issue pressure, but it is lower priority because barrier and short-scoreboard metrics already improved and the main new regression signal is mio_throttle rather than sync cost.",
-      "expected_bottleneck": "Shared-memory feed cadence, cp.async turnover, and Ps2r/ldmatrix-side issue pressure after the compute-side live-range trim.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1633-1779",
-        "src/kernels/bf16_gemm_v1.cu:1894-1994",
-        "src/kernels/bf16_gemm_v1.cu:1017-1044"
-      ],
-      "risk": "This is the highest-risk direction because stage changes can simultaneously alter registers, shared memory footprint, barrier timing, and occupancy. It can easily undo the current barrier win or create a worse trade where feed stalls drop but active warps collapse.",
-      "metrics_to_recheck": [
-        "runtime_ms",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Stop if barrier stalls climb back toward the pre-round-45 level or if any stage experiment reduces active warps/occupancy without a clear runtime win."
-    }
-  ],
-  "notes": "- Round 45 moved the needle only slightly, from 26.955776 ms to 26.892288 ms, but it was a real compute-side improvement: tensor active 48.05 -> 48.24, warps active 16.58 -> 16.68, barrier 11.21 -> 8.48, short scoreboard 5.94 -> 2.03.\n- The same run also exposed the new limiting side: mio_throttle 0.34 -> 4.26 and lts throughput 30.30 -> 25.45. That is why the priority call for round 46 is to switch first to grouped-row/L2 traversal, not to keep blindly squeezing live range with more B rereads.\n- The user target remains sub-20 ms, not merely matching CUTLASS, so the ranking favors directions with larger structural upside over another tiny local register win.\n- Coalescing Access: not the primary next family; the B path is already 16-byte aligned, and the sharper regression is in traversal/locality rather than obvious transaction packing.\n- Data Reuse: this becomes the top family because grouped-row traversal can improve reuse of nearby B/L2 footprint across hot-band CTAs without undoing the round-45 compute gains.\n- Async Copy: worth watching but not top-ranked by itself; cp.async is already present, so the next question is cadence and wait placement, not basic adoption.\n- Bank Conflict: not the headline signal right now; barrier and short scoreboard improved, so there is no new evidence that bank conflicts overtook L2/feed locality.\n- L2 Cache: explicitly promoted in priority. The lts throughput drop after the live-range win is the clearest reason to test grouped-row or traversal changes next.\n- Register Reuse: still a valid family with positive signal, but it is now rank 2 because the latest gain already came with a feed-side penalty.\n- Pg2s: global-to-shared movement is no longer missing, but its spatial ordering may still be suboptimal in the active PTX hot-band launch.\n- Ps2r: the active PTX microkernel still pays for B-fragment/shared consumption patterns; any further live-range work must avoid making this path heavier.\n- Stage: kept as rank 3. The stage family is still relevant, but after round 45 the evidence says feed cadence is a follow-up investigation, not the first move."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
