@@ -1,84 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_194057",
-  "status": "completed",
-  "created_at": "2026-04-19T19:40:57-07:00",
-  "source_run_id": "20260419_194001_bf16_gemm_v1_e51df4e",
-  "source_run_dir": "runs/20260419_194001_bf16_gemm_v1_e51df4e",
-  "source_summary_json": "runs/20260419_194001_bf16_gemm_v1_e51df4e/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_195339_bf16_gemm_v1_778a0b4",
+  "source_run_dir": "runs/20260419_195339_bf16_gemm_v1_778a0b4",
+  "source_summary_json": "runs/20260419_195339_bf16_gemm_v1_778a0b4/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 7 Register reuse: continue the half-panel family, but spend this round on correctness root-cause repair while preserving the 92-reg / 2-block signal",
-      "hypothesis": "With only three rounds left, the half-panel family is still worth continuing because it remains the only branch that has actually punctured the register wall and then recovered runtime toward the accepted base. The current hot kernel is already down to 92 registers per thread, occupancy_limit_registers is 2, active warps stay around 32.70, tensor active is up to 43.55, and the hot-kernel time improved again from round 17. That signal is too strong to abandon. The right next move is not A-side compaction yet; it is a correctness-first repair that freezes the winning occupancy shape and audits the remaining pass-local half-panel plumbing end to end. The most concrete one-round action is to make half-panel identity single-sourced and explicit across the local MMA tiles, compact B shared layout, and export path: thread a compile-time HalfPanelColBase layout helper through ptx_wmma_mma_row_pair_64x32, ptx_wmma_accumulate_tile_set_64x32, stage_b_half_panel_shared_tile_async, and ptx_wmma_store_tile_pairs_64x32 so no address arithmetic is duplicated ad hoc. The current code has already fixed one obvious double-offset bug, but correctness still fails badly, which strongly suggests there is still a remaining panel-identity mismatch somewhere in this pass-local plumbing.",
-      "expected_bottleneck": "Correctness bug in the half-panel pass-local mapping and orchestration, not lack of more occupancy or more feed bandwidth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:647-710",
-        "src/kernels/bf16_gemm_v1.cu:890-955",
-        "src/kernels/bf16_gemm_v1.cu:996-1102",
-        "src/kernels/bf16_gemm_v1.cu:1594-1619"
-      ],
-      "risk": "This is a correctness-first round, so it can easily produce only a small runtime move even if it succeeds. The other risk is that a broad refactor of half-panel layout logic could accidentally lose the current 92-register / 2-block occupancy signal if extra state is introduced.",
-      "metrics_to_recheck": [
-        "correctness cases",
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if correctness is still failing after panel-identity repair, or if correctness is fixed but the occupancy signal collapses back toward the accepted-base neighborhood. Then the branch is no longer offering a compelling upside/risk tradeoff for the final rounds."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 8 Pg2s: after correctness, stop replaying the A producer path twice by reusing A stages across the two half-panel passes",
-      "hypothesis": "The current family has already compacted the B side, but it still restages the full A tile for both half-panel passes in ptx_wmma_run_half_panel_pass_64x32. That means the branch still pays a duplicated producer cost even after the register breakthrough, which is one reason compute-memory throughput stays above 61%. If the team wants the next best family-consistent follow-up after correctness, it is to keep the 64x32 accumulator split but hoist A staging above the two serial half-panel passes so each K slice's A tile is staged once and consumed by both passes before advancing. This is a real producer-path improvement, not just another micro-tune, and it directly targets the remaining feed tax without giving back the occupancy win.",
-      "expected_bottleneck": "Replay of the A-side producer path across the two half-panel passes, inflating compute-memory throughput even after B-side compaction.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:968-979",
-        "src/kernels/bf16_gemm_v1.cu:1024-1102",
-        "src/kernels/bf16_gemm_v1.cu:1594-1619"
-      ],
-      "risk": "This is not the right first move while correctness is still broken. It also requires more control-flow reshaping than dir_01, so it is more likely to destabilize the current occupancy and tensor-active signal if attempted too early.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "correctness cases"
-      ],
-      "stop_condition": "Stop if A-side reuse lowers producer traffic but also lowers tensor active or breaks correctness again. Then the added orchestration is too expensive for the remaining budget."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 5 Bank conflict: abandon the half-panel branch and return to the accepted base for a bounded local shared-load retune",
-      "hypothesis": "The fallback option is to demote the broken half-panel family now, restore the accepted base b13027c, and spend the remaining rounds on narrow 64x64 shared-load and bank-behavior retunes. That path is much safer and already correct, and round 15 showed it can shave some cost out of the accepted-base hot kernel without destabilizing the rest of the pipeline. If the team values execution certainty over ceiling in the final three rounds, this is the correct conservative path.",
-      "expected_bottleneck": "Residual short-scoreboard and shared-load pressure on the accepted-base 256x128/64x64 path after abandoning the broken high-ceiling branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:640-710",
-        "src/kernels/bf16_gemm_v1.cu:820-955",
-        "src/kernels/bf16_gemm_v1.cu:1594-1619"
-      ],
-      "risk": "This path gives up the strongest register/occupancy signal seen in the whole 20-round loop. It is much lower risk, but it is also much lower ceiling, so it may not be enough to matter against the remaining gap to CUTLASS.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "correctness cases",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the restored-base retunes behave like another sub-millisecond local polish. Then the conservative pivot is too low ceiling for the final rounds."
-    }
-  ],
-  "notes": "Round 18 is still a continue-family move on the half-panel branch. The reason is not optimism; it is the measured evidence. Even while still incorrect, the current hot bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel kept the register/occupancy breakthrough from round 17 and improved it slightly: launch__registers_per_thread is 92, launch__occupancy_limit_registers is 2, sm__warps_active is 32.70, sm__pipe_tensor_cycles_active is 43.55, and the hot-kernel time improved again. Runtime also recovered from 32.9149 ms to 30.8762 ms, much closer to the accepted 30.0528 ms, despite correctness still failing. That is exactly the signature of a branch that is incomplete rather than invalid. The remaining problem is that correctness is still broken and feed tax is still high: gpu__compute_memory_throughput stays around 61.40, barrier is back above 21, and short-scoreboard remains elevated. With only three rounds left, that means the priority should be correctness root-cause repair first, not another new optimization family. A-side compact staging is plausible, but only after the branch is correct.\n\nHuman idea audit for round 18:\n1. Tiling: accept-now as the outer family. The 256x128/64x64 mainline is still the only proven structural path.\n2. Coalescing Access: defer. The current limiting issue is not generic load width; it is pass-local half-panel correctness and replayed movement.\n3. Data Reuse: accept-now as a supporting follow-up. Reusing A across the two half-panel passes is the next coherent feed-tax lever after correctness.\n4. Async Copy: accept-now as supporting infrastructure. The recommended direction keeps async copy but makes its panel layout auditable.\n5. Bank Conflict: defer as the conservative fallback only. Shared-load retuning is real, but it is lower ceiling than fixing the live half-panel branch.\n6. L2 Cache: reject-for-this-round. The current branch is not being blocked by an isolated cache-hint issue.\n7. Register Reuse: accept-now and rank first. This family still owns the only real register-wall breakthrough in the loop.\n8. Pg2s: accept-now and rank second. A-side producer replay is now the next obvious feed tax once correctness is fixed.\n9. Ps2r: reject-for-this-round. The data says this branch is no longer waiting on shared-to-register lookahead.\n10. Stage: reject-for-this-round. There is no remaining budget to reopen a weaker family.\n\nPrimary decision: continue Human idea 7, but use this round to fix correctness root cause while preserving the current 92-register / 2-block-per-SM shape. If that succeeds, round 19 can spend its budget on A-side producer reuse instead of first having to re-earn correctness."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

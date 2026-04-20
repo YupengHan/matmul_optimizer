@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_194001_bf16_gemm_v1_e51df4e`
-- run dir: `runs/20260419_194001_bf16_gemm_v1_e51df4e`
-- kernel tag: `bf16_gemm_v1_e51df4e`
-- round label: `round 17/20`
+- run id: `20260419_195339_bf16_gemm_v1_778a0b4`
+- run dir: `runs/20260419_195339_bf16_gemm_v1_778a0b4`
+- kernel tag: `bf16_gemm_v1_778a0b4`
+- round label: `round 18/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.876160 ms`
-- p10 runtime: `30.440336 ms`
-- p90 runtime: `32.021402 ms`
-- TFLOP/s: `23.546303 TFLOP/s`
-- previous run id: `20260419_192825_bf16_gemm_v1_282e50e`
-- runtime delta vs previous measured run: `-2.038784 ms`
-- TFLOP/s delta vs previous measured run: `+1.458481 TFLOP/s`
+- median runtime: `30.236128 ms`
+- p10 runtime: `29.868339 ms`
+- p90 runtime: `30.849876 ms`
+- TFLOP/s: `24.044726 TFLOP/s`
+- previous run id: `20260419_194001_bf16_gemm_v1_e51df4e`
+- runtime delta vs previous measured run: `-0.640032 ms`
+- TFLOP/s delta vs previous measured run: `+0.498423 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7 Register reuse: continue the half-panel family, but make it an end-to-end 64x32 pass with explicit half-panel export mapping and compact B staging`
+- implemented direction name: `Human idea 7 Register reuse: continue the half-panel family, but spend this round on correctness root-cause repair while preserving the 92-reg / 2-block signal`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_194001_bf16_gemm_v1_e51df4e/summary.json`
-- measured commit: `e51df4ec602d1f830f7c7816a81a2d4ea4497ee9`
+- raw summary json: `runs/20260419_195339_bf16_gemm_v1_778a0b4/summary.json`
+- measured commit: `778a0b475a3fbcfd5a0f3fecc8381784fa832256`
 - new best custom: `no`
-- generated at: `2026-04-19T19:40:10-07:00`
+- generated at: `2026-04-19T19:53:48-07:00`
