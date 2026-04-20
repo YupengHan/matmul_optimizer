@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_115942_bf16_gemm_v1_6353423`
-- run dir: `runs/20260420_115942_bf16_gemm_v1_6353423`
-- kernel tag: `bf16_gemm_v1_6353423`
-- round label: `round 81/100`
+- run id: `20260420_120349_bf16_gemm_v1_af42390`
+- run dir: `runs/20260420_120349_bf16_gemm_v1_af42390`
+- kernel tag: `bf16_gemm_v1_af42390`
+- round label: `round 82/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.837568 ms`
-- p10 runtime: `25.417933 ms`
-- p90 runtime: `26.454630 ms`
-- TFLOP/s: `28.138075 TFLOP/s`
-- previous run id: `20260420_115626_bf16_gemm_v1_469a12b`
-- runtime delta vs previous measured run: `+0.194561 ms`
-- TFLOP/s delta vs previous measured run: `-0.213492 TFLOP/s`
+- median runtime: `25.904127 ms`
+- p10 runtime: `25.715302 ms`
+- p90 runtime: `26.590618 ms`
+- TFLOP/s: `28.065776 TFLOP/s`
+- previous run id: `20260420_115942_bf16_gemm_v1_6353423`
+- runtime delta vs previous measured run: `+0.066559 ms`
+- TFLOP/s delta vs previous measured run: `-0.072299 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim The Remaining PTX Export Scoreboard`
+- implemented direction name: `Bound The 128x128 Two-Stage Feed Cadence`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_115942_bf16_gemm_v1_6353423/summary.json`
-- measured commit: `635342383cfd1f857eecd866e4878dfc14f10ac2`
+- raw summary json: `runs/20260420_120349_bf16_gemm_v1_af42390/summary.json`
+- measured commit: `af42390db4796a6bfb2b8e1b21751cf877ed7a86`
 - new best custom: `no`
-- generated at: `2026-04-20T11:59:51-07:00`
+- generated at: `2026-04-20T12:03:56-07:00`
