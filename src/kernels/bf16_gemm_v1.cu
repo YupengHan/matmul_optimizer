@@ -142,7 +142,7 @@ constexpr int kFixedHotBandN = kFixedBenchmarkN - kFixedTailRegionN;
 constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
-constexpr int kFixedHotBandGroupedRows = 4;
+constexpr int kFixedHotBandGroupedRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1625,7 +1625,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
 }
 
 template <int FixedKTiles>
-__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
+__global__ __launch_bounds__(128)
+void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
