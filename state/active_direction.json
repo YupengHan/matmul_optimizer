@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-19T18:07:04-07:00",
   "source_diagnosis_id": "diagnosis_20260419_180512",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -28,5 +28,5 @@
     ],
     "stop_condition": "Stop if correctness is still not restored after an explicit terminal CTA handoff, or if correctness passes but the stage branch still remains materially slower than the accepted base while losing most of its stall advantages."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

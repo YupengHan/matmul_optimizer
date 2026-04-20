@@ -1000,6 +1000,11 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_peeled_kernel(
   accumulate_peeled_shared_stage_ptx<TileConfig>(
       acc_tiles, a_shared[curr_stage], b_shared[curr_stage], warp_tile_m, warp_tile_n);
 
+  // The hot-stage branch overlays export scratch on top of b_shared. Make the
+  // ownership transition explicit so every warp finishes consuming the final B
+  // stage before any warp starts writing epilogue scratch into that storage.
+  __syncthreads();
+
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
   if constexpr (TileConfig::kCSharedStageCount == 2) {
     ptx_wmma_store_tile_pairs_384<TileConfig>(
