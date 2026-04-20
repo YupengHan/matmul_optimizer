@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_074331_bf16_gemm_v1_17a33b2`
-- run dir: `runs/20260420_074331_bf16_gemm_v1_17a33b2`
-- kernel tag: `bf16_gemm_v1_17a33b2`
-- round label: `round 47/100`
+- run id: `20260420_074908_bf16_gemm_v1_b6110a1`
+- run dir: `runs/20260420_074908_bf16_gemm_v1_b6110a1`
+- kernel tag: `bf16_gemm_v1_b6110a1`
+- round label: `round 48/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.529328 ms`
-- p10 runtime: `25.279283 ms`
-- p90 runtime: `26.477443 ms`
-- TFLOP/s: `28.477812 TFLOP/s`
-- previous run id: `20260420_073721_bf16_gemm_v1_22b4466`
-- runtime delta vs previous measured run: `-0.147984 ms`
-- TFLOP/s delta vs previous measured run: `+0.164123 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.759745 ms`
+- p10 runtime: `25.284300 ms`
+- p90 runtime: `26.736019 ms`
+- TFLOP/s: `28.223083 TFLOP/s`
+- previous run id: `20260420_074331_bf16_gemm_v1_17a33b2`
+- runtime delta vs previous measured run: `+0.230416 ms`
+- TFLOP/s delta vs previous measured run: `-0.254729 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Tighten Grouped-Row L2 Feed In The 128x128 PTX Hot Band`
+- implemented direction name: `Rebalance PTX B Fragment Reuse Against Ps2r Feed Pressure`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_074331_bf16_gemm_v1_17a33b2/summary.json`
-- measured commit: `17a33b29fc2405c9fb3c5602d09a1c52bc42b32d`
-- new best custom: `yes`
-- generated at: `2026-04-20T07:43:38-07:00`
+- raw summary json: `runs/20260420_074908_bf16_gemm_v1_b6110a1/summary.json`
+- measured commit: `b6110a1ab489e294af0f78af8bf3fa93ac916903`
+- new best custom: `no`
+- generated at: `2026-04-20T07:49:16-07:00`

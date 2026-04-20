@@ -1,88 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_074354",
-  "status": "completed",
-  "created_at": "2026-04-20T07:43:54-07:00",
-  "source_run_id": "20260420_074331_bf16_gemm_v1_17a33b2",
-  "source_run_dir": "runs/20260420_074331_bf16_gemm_v1_17a33b2",
-  "source_summary_json": "runs/20260420_074331_bf16_gemm_v1_17a33b2/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_074908_bf16_gemm_v1_b6110a1",
+  "source_run_dir": "runs/20260420_074908_bf16_gemm_v1_b6110a1",
+  "source_summary_json": "runs/20260420_074908_bf16_gemm_v1_b6110a1/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Rebalance PTX B Fragment Reuse Against Ps2r Feed Pressure",
-      "hypothesis": "Round 47's grouped-row increase from 4 to 8 already pushed the hot PTX band to a new best custom runtime of 25.529328 ms and cut DRAM throughput from 12.90% to 10.37% while lifting L2 throughput from 29.45% to 30.02%. That confirms block-order locality is still helping, but the remaining bottleneck has not moved to global memory. The active PTX microkernel still reloads the mirrored-column B fragment for every row-pair, which matches the still-elevated mio_throttle at 4.77% and suggests the next material win is to reduce shared-to-register feed pressure instead of chasing another small locality-only gain. Reintroducing a controlled B-fragment lookahead or a two-fragment rolling window in the PTX 128x128 path should cut Ps2r traffic without giving back the locality win from grouped-row=8.",
-      "expected_bottleneck": "Ps2r/shared-feed pressure in the PTX hot-band microkernel, showing up as elevated mio_throttle and underfed tensor issue despite lower DRAM demand.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:641",
-        "src/kernels/bf16_gemm_v1.cu:721",
-        "src/kernels/bf16_gemm_v1.cu:743",
-        "src/kernels/bf16_gemm_v1.cu:1018",
-        "src/kernels/bf16_gemm_v1.cu:1979"
-      ],
-      "risk": "Keeping more B fragments live can raise register pressure above the current 94 registers/thread and erase the gain by reducing latency hiding or perturbing the mirrored-column ownership. A careless rewrite can also reintroduce the longer export/live-range problem that the current PTX path was designed to trim.",
-      "metrics_to_recheck": [
-        "median runtime and TFLOP/s against the 25.529328 ms best custom baseline",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if mio_throttle does not fall meaningfully or if registers/thread rises enough to offset the feed improvement without a clear runtime win."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Continue PTX Grouped-Row And Traversal Locality Tuning, But Treat It As Incremental",
-      "hypothesis": "The grouped-row separation and promotion to 8 clearly worked: runtime improved again, DRAM traffic dropped, L2 stayed slightly hotter, and both barrier and short-scoreboard stalls improved. That means the PTX block-order mapping is still a real lever. The right follow-up is not to abandon locality, but to scope it as a second-priority refinement: test whether the logical_pid remap can preserve the grouped-row=8 L2 benefit while improving CTA traversal inside each group, or whether a nearby grouping factor changes the L2/issue tradeoff. This is worth trying, but the current data says it is less likely than a Ps2r/feed fix to unlock the multi-millisecond gap to the sub-20 ms target.",
-      "expected_bottleneck": "Residual block-order locality inefficiency in the PTX hot-band traversal, now mostly visible as an incremental L2/DRAM opportunity rather than the dominant limiter.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:155",
-        "src/kernels/bf16_gemm_v1.cu:1920",
-        "src/kernels/bf16_gemm_v1.cu:1925",
-        "src/kernels/bf16_gemm_v1.cu:1933",
-        "src/kernels/bf16_gemm_v1.cu:2061"
-      ],
-      "risk": "Further grouping can hit diminishing returns quickly, hurt fairness across columns, or interact badly with the peeled 64x384 follow-on path. A more aggressive traversal may also preserve L2 locality while making shared-feed or synchronization slightly worse, which would look good on DRAM metrics but fail the <20 ms objective.",
-      "metrics_to_recheck": [
-        "median runtime delta versus the grouped-row=8 baseline",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if traversal tweaks only move DRAM/L2 counters while runtime gains stay marginal, because the user target is <20 ms rather than merely staying ahead of CUTLASS."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Revisit PTX Hot-Band Stage Cadence And Sync Granularity",
-      "hypothesis": "Barrier stall improved from 7.63% to 7.18%, so the latest locality change did not worsen synchronization, but the PTX hot-band path still pays a full CTA sync around every K16 handoff. The non-PTX 128x128 branch still shows a two-K-tile cadence, while the active PTX path uses the restored K16 double buffer. If the B-fragment/feed rewrite does not clear the next bottleneck, the remaining opportunity is to retime the cp.async wait/commit cadence or selectively restore a larger stage cadence that lowers synchronization frequency without reviving the old shared/export pressure problem.",
-      "expected_bottleneck": "Synchronization and stage-transition overhead in the PTX hot-band loop, with barrier cost still material even after the grouped-row locality win.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:332",
-        "src/kernels/bf16_gemm_v1.cu:1023",
-        "src/kernels/bf16_gemm_v1.cu:1688",
-        "src/kernels/bf16_gemm_v1.cu:1949",
-        "src/kernels/bf16_gemm_v1.cu:1982"
-      ],
-      "risk": "Stage-cadence experiments can consume extra shared memory, lengthen live ranges, or bring back the very export/feed issues that earlier PTX simplifications removed. This is the highest-variance option and should trail the more directly evidenced Ps2r/feed work.",
-      "metrics_to_recheck": [
-        "median runtime and variance",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__shared_mem_per_block_allocated",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if barrier improves but mio_throttle or runtime regresses, because that means stage work is only moving pressure around instead of raising end-to-end throughput."
-    }
-  ],
-  "notes": "- Round 47 separated the active PTX grouped-row policy from 4 and tuned it to 8, improving runtime from 25.677312 ms to 25.529328 ms and setting another best custom result, so block-order locality is still real.\n- Coalescing Access: grouped-row=8 already reduced DRAM pressure sharply, so pure coalescing is no longer the lead diagnosis.\n- Data Reuse: confirmed positive signal, because L2 throughput rose from 29.45% to 30.02% while DRAM dropped from 12.90% to 10.37%.\n- Async Copy: cp.async is still doing useful work, but the current wait/commit cadence remains tied to full CTA sync points, so async-copy retuning is secondary rather than first priority.\n- Bank Conflict: the current profile does not present a strong bank-conflict spike, so a layout-only rewrite is not the first move this round.\n- L2 Cache: still worth refining via grouped-row/traversal experiments, but likely incremental now that the main locality win is already harvested.\n- Register Reuse: now more important, because the PTX microkernel explicitly shortened A/B live ranges by reloading B per row-pair; that may be too conservative after the locality improvement.\n- Pg2s: global-to-shared feed looks healthier than before, so it is no longer the clearest blocker.\n- Ps2r: remains the best match for the elevated 4.77% mio_throttle, making B fragment reuse and shared-feed reduction the highest-priority direction.\n- Stage: still worth keeping as a third option because barrier fell only to 7.18%, not to a negligible level.\n- Priority comparison for this round: 1) go back to PTX B fragment / Ps2r / shared-feed first, 2) continue grouped-row size or traversal tuning only as a secondary locality refinement, 3) revisit stage cadence or another sync-oriented variant only after the feed path is retested.\n- Ranking is set against the actual user goal of <20 ms, not just the narrower goal of staying ahead of the local CUTLASS baseline."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
