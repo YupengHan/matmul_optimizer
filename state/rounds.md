@@ -1,7 +1,7 @@
 # Round loop
 
 - active: `yes`
-- status: `round_in_progress`
+- status: `awaiting_measurement`
 - total rounds: `17`
 - completed rounds: `16`
 - remaining rounds: `1`
@@ -13,7 +13,7 @@
 - started at: `2026-04-20T15:41:15-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Executing round 17/17.`
+- notes: `Build passed for round 17/17. Node A will measure the result next.`
 
 ## Last completed round
 
