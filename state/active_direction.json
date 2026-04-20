@@ -1,10 +1,33 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore the accepted-correct hot-band surface and apply a warp-local B XOR/interleaved consumer swizzle with zero extra shared footprint",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T23:22:19-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_232121",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Restore the accepted-correct hot-band surface and apply a warp-local B XOR/interleaved consumer swizzle with zero extra shared footprint",
+    "hypothesis": "Round 12 showed that spending extra shared-memory budget on a deeper pipeline did not buy real hot-band speed: the main 256x128 kernel moved only from about 41.11 ms to 41.18 ms while barrier stalls jumped from about 6.59% to 20.24%, and correctness broke on top. That weakens the stage family for now. The user's remaining strongest untried constraint set is consumer-side B feed repair with three hard gates: no extra shared tile, no extra CTA barrier, no reduction in the steady-state pipeline. The current hot-band kernel still uses only a simple warp-group skew on B shared storage. A light XOR or interleaved remap in the logical B shared column mapping is the best next shot because it targets operand delivery directly while honoring those gates.",
+    "expected_bottleneck": "Shared-memory bank behavior and warp-local B operand delivery in the hot-band PTX consumer path.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:b_shared_col_from_logical",
+      "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async",
+      "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_col_fragment_64x64",
+      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+    ],
+    "risk": "High. A broken remap silently corrupts results, and even a correct remap can worsen global-to-shared coalescing or register use enough to erase any bank benefit.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "launch__shared_mem_per_block_allocated"
+    ],
+    "stop_condition": "Reject immediately if correctness fails, shared memory per block increases, or hot-band time does not beat the restored accepted surface."
+  },
+  "notes": "Node C may now implement this one direction."
 }
