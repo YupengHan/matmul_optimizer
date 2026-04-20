@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_001545_bf16_gemm_v1_5ae2249`
-- run dir: `runs/20260420_001545_bf16_gemm_v1_5ae2249`
-- kernel tag: `bf16_gemm_v1_5ae2249`
-- round label: `round 24/50`
+- run id: `20260420_001707_bf16_gemm_v1_8a2834a`
+- run dir: `runs/20260420_001707_bf16_gemm_v1_8a2834a`
+- kernel tag: `bf16_gemm_v1_8a2834a`
+- round label: `round 25/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.691520 ms`
-- p10 runtime: `27.193097 ms`
-- p90 runtime: `28.507546 ms`
-- TFLOP/s: `26.254226 TFLOP/s`
-- previous run id: `20260420_001413_bf16_gemm_v1_0cbbcf7`
-- runtime delta vs previous measured run: `-1.488368 ms`
-- TFLOP/s delta vs previous measured run: `+1.339140 TFLOP/s`
+- median runtime: `27.227264 ms`
+- p10 runtime: `26.692505 ms`
+- p90 runtime: `28.133362 ms`
+- TFLOP/s: `26.701890 TFLOP/s`
+- previous run id: `20260420_001545_bf16_gemm_v1_5ae2249`
+- runtime delta vs previous measured run: `-0.464255 ms`
+- TFLOP/s delta vs previous measured run: `+0.447664 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore grouped_rows=8 and try a single-argument launch-bounds clue on the accepted hot-band kernel`
+- implemented direction name: `Keep grouped_rows=8 and refine the compiler clue to a two-argument launch-bounds target of 2 resident CTAs`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_001545_bf16_gemm_v1_5ae2249/summary.json`
-- measured commit: `5ae2249d5b7a8c9f9686021e82e20d1a24aa3bde`
+- raw summary json: `runs/20260420_001707_bf16_gemm_v1_8a2834a/summary.json`
+- measured commit: `8a2834ad9966fb75ef7c310ad5850de8c925ec5e`
 - new best custom: `yes`
-- generated at: `2026-04-20T00:15:53-07:00`
+- generated at: `2026-04-20T00:17:14-07:00`
