@@ -1,14 +1,14 @@
 {
-  "active": true,
-  "status": "round_in_progress",
+  "active": false,
+  "status": "stopped",
   "total_rounds": 20,
   "completed_rounds": 3,
   "remaining_rounds": 17,
   "next_round_index": 4,
-  "current_round_index": 4,
+  "current_round_index": null,
   "auto_use_recommended": true,
   "started_at": "2026-04-19T14:22:54-07:00",
-  "completed_at": null,
+  "completed_at": "2026-04-19T17:24:38-07:00",
   "last_completed_round": {
     "recorded_at": "2026-04-19T17:18:51-07:00",
     "round_index": 3,
@@ -35,5 +35,5 @@
   "accepted_base_measured_commit": "9bdc160ee2a6ef0f1171c09f4cf72f7dd081cab1",
   "accepted_base_runtime_ms": 33.12844658,
   "history_path": "state/round_history.jsonl",
-  "notes": "Executing round 4/20."
+  "notes": "Stopped by user request."
 }

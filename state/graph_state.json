@@ -10,5 +10,5 @@
   "recommended_direction_id": "dir_01",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "plateau_counter": 5,
-  "notes": "Node C is ready to implement dir_01 via recommended selection for round 4/20."
+  "notes": "Round loop stopped by user request."
 }

@@ -6,8 +6,8 @@
 - latest kernel tag: `bf16_gemm_v1_74f163a`
 - median runtime: `33.592319 ms`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- round loop: `round 4/20`
+- round loop: `single-run`
 - rounds remaining: `17`
 - recommended direction: `dir_01`
 - selected direction: `dir_01`
-- immediate next action: `Node C is ready to implement dir_01 via recommended selection for round 4/20.`
+- immediate next action: `Round loop stopped by user request.`

@@ -7,8 +7,8 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 - dispatch node: `node_c`
 - dispatch mode: `sub_agent`
 - graph status: `ready_for_node_c`
-- round label: `round 4/20`
-- round loop active: `yes`
+- round label: `single-run`
+- round loop active: `no`
 - rounds remaining: `17`
 - latest run id: `20260419_171842_bf16_gemm_v1_74f163a`
 - latest runtime: `33.592319 ms`
@@ -33,9 +33,8 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Multi-round loop
 
-- active loop: `round 4/20` with `17` rounds remaining
-- auto-use recommended: `yes`
-- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop
+- no multi-round loop is active
+- to arm one, run `python scripts/graph.py rounds --count N --auto-use-recommended`
 
 ## Notes
 

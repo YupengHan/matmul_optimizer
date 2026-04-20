@@ -12,9 +12,9 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `74f163a73e572099933f7558d0e3413019613a7b`
 - plateau counter: `5`
-- round loop: `round 4/20`
+- round loop: `single-run`
 - rounds remaining: `17`
-- notes: `Node C is ready to implement dir_01 via recommended selection for round 4/20.`
+- notes: `Round loop stopped by user request.`
 
 ## Latest measured custom run
 
