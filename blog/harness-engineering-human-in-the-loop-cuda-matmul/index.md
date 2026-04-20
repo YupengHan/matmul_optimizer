@@ -10,8 +10,6 @@ So far, the result is already interesting enough to share: the custom kernel mov
 
 That is not a “we beat CUTLASS” story. Not yet. It is a **proof-of-concept about harness engineering**: with a strong evaluation loop, good profiling, short-context iteration, and human steering at the right moments, a single engineer can move surprisingly far, surprisingly fast.
 
-![Optimization tree](./matmul_optimization_tree_pretty.svg)
-
 ## Why I built it
 
 I care a lot about **harness engineering**: once models get strong enough, a big part of the problem becomes **how to use them well**.
@@ -35,6 +33,9 @@ I also think this mirrors a broader engineering trend. Many real workflows are n
 That is exactly where a good harness can make LLMs much more useful.
 
 ## What I learned so far
+
+![Optimization tree](./matmul_optimization_tree_pretty.svg)
+
 
 This project started as a weekend practice, but the part I really care about is not only the final number. It is **what this workflow taught me**.
 
@@ -224,18 +225,18 @@ That is why I wanted the optimization tree in the post. It is not just a decorat
 
 This is the part I am most excited about for the next version.
 
-In human-in-the-loop kernel optimization, the search space is huge. The cost of each path is time.
+In human-in-the-loop kernel optimization, the search space is huge, and the real cost is not only kernel coding speed. It is the time spent deciding which path to explore next.
 
-So if I want to improve the workflow itself, the next step is probably not only “write better kernels faster.” It is to make better choices about **which path to explore next**.
+Looking at the optimization tree, I realized that my current workflow is still basically a single-path search with a rollback mechanism: push one direction forward until it plateaus, step back, then try another branch. That works, but it is not a very efficient way to use the information accumulated across the whole search.
+
+So if I want to improve the workflow itself, the next step is probably not only “write better kernels faster.” It is to make better choices about **which path to explore next**, while keeping multiple candidate states alive instead of collapsing too early onto one branch.
 
 That is why I want to add things like:
-- maintaining multiple kernel versions in a queue
-- using profiler signals and hardware-efficiency clues to estimate upper and lower bounds of each direction
-- heuristic planning
-- A*-like search
-- maybe even an RL-style structure
+- maintaining multiple kernel variants in a queue
+- using profiler signals and hardware-efficiency clues to estimate upper and lower bounds for each direction
+- applying something closer to **heuristic planning**, **A*-like search**, or even an **RL-style structure** to keep multiple states active and allocate search effort more efficiently
 
-So the next layer is not only kernel optimization.
+In other words, the next layer is not only kernel optimization.
 
 It is **optimization of the optimization process itself**.
 
