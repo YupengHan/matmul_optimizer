@@ -1,32 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Asymmetric PTX two-stage handoff retime without new barriers",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T17:10:40-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_170743",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Asymmetric PTX two-stage handoff retime without new barriers",
-    "hypothesis": "Round 2 gave clear negative evidence against treating helper/lifetime compaction as the main lever: shaving registers from 167 to 166 while slightly improving barrier, long scoreboard, and mio still regressed runtime badly to 34.70942307 ms. The next sustainable move should therefore stay on the accepted 64x384 PTX hot-band branch but change the actual overlap schedule rather than compiler-facing helper structure. Keep the current two-stage pipeline and unchanged 64x96 tail, then retime when A and B future-stage copies are launched and when the stage swap becomes visible inside advance_peeled_hot_stage_ptx(), so the one-block/SM kernel gets more useful compute between wait and next consume without adding CTA barriers or reopening producer-specialization.",
-    "expected_bottleneck": "With occupancy still capped at 1 block/SM and barrier plus mio already low, the more actionable residual is long-scoreboard latency that is not being hidden well enough by the current steady-state handoff.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:194-208",
-      "src/kernels/bf16_gemm_v1.cu:503-529",
-      "src/kernels/bf16_gemm_v1.cu:821-854",
-      "src/kernels/bf16_gemm_v1.cu:895-948"
-    ],
-    "risk": "Medium risk. The existing fixed-K retime is part of the winning base, so this must stay bounded: no extra stages, no extra barriers, and no producer/consumer split. If the retime only perturbs a working schedule, runtime can regress even if headline stalls look a bit better.",
-    "metrics_to_recheck": [
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "median runtime"
-    ],
-    "stop_condition": "Stop if long-scoreboard does not come down or if barrier rises, because then the retime is not creating real overlap and is just disturbing the accepted base."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

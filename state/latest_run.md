@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_170714_bf16_gemm_v1_1930e3f`
-- run dir: `runs/20260419_170714_bf16_gemm_v1_1930e3f`
-- kernel tag: `bf16_gemm_v1_1930e3f`
-- round label: `round 2/20`
+- run id: `20260419_171842_bf16_gemm_v1_74f163a`
+- run dir: `runs/20260419_171842_bf16_gemm_v1_74f163a`
+- kernel tag: `bf16_gemm_v1_74f163a`
+- round label: `round 3/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `34.709423 ms`
-- p10 runtime: `34.403532 ms`
-- p90 runtime: `35.531777 ms`
-- TFLOP/s: `20.945880 TFLOP/s`
-- previous run id: `20260419_142929_bf16_gemm_v1_a34f072`
-- runtime delta vs previous measured run: `+1.556910 ms`
-- TFLOP/s delta vs previous measured run: `-0.983661 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `33.592319 ms`
+- p10 runtime: `33.091892 ms`
+- p90 runtime: `34.615910 ms`
+- TFLOP/s: `21.642430 TFLOP/s`
+- previous run id: `20260419_170714_bf16_gemm_v1_1930e3f`
+- runtime delta vs previous measured run: `-1.117104 ms`
+- TFLOP/s delta vs previous measured run: `+0.696550 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `PTX accumulator and export lifetime compaction to attack the 167-register wall`
+- implemented direction name: `Asymmetric PTX two-stage handoff retime without new barriers`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_170714_bf16_gemm_v1_1930e3f/summary.json`
-- measured commit: `1930e3ff6a7fb22016af4b6c81929000cdd784fc`
+- raw summary json: `runs/20260419_171842_bf16_gemm_v1_74f163a/summary.json`
+- measured commit: `74f163a73e572099933f7558d0e3413019613a7b`
 - new best custom: `no`
-- generated at: `2026-04-19T17:07:23-07:00`
+- generated at: `2026-04-19T17:18:51-07:00`
