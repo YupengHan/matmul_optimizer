@@ -1,78 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_091413",
-  "status": "completed",
-  "created_at": "2026-04-20T09:14:13-07:00",
-  "source_run_id": "20260420_091330_bf16_gemm_v1_863f60f",
-  "source_run_dir": "runs/20260420_091330_bf16_gemm_v1_863f60f",
-  "source_summary_json": "runs/20260420_091330_bf16_gemm_v1_863f60f/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_091644_bf16_gemm_v1_96154e3",
+  "source_run_dir": "runs/20260420_091644_bf16_gemm_v1_96154e3",
+  "source_summary_json": "runs/20260420_091644_bf16_gemm_v1_96154e3/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore accepted grouped_rows=8 base, then test 8->6 hot-band narrowing",
-      "hypothesis": "The accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff + unroll 2 base is still the best locality shape, and the remaining question is whether a narrower kFixedHotBandPtxGroupedRows value of 6 preserves enough reuse without reintroducing the DRAM growth seen at grouped_rows=4.",
-      "expected_bottleneck": "Locality loss in the hot-band PTX consumer ordering and row reuse window, not the broader sweep or sync structure.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:kFixedHotBandPtxGroupedRows",
-        "src/kernels/bf16_gemm_v1.cu:kFixedHotBandUnroll",
-        "src/kernels/bf16_gemm_v1.cu:grouped_rows=8 accepted base path",
-        "src/kernels/bf16_gemm_v1.cu:right-left PTX sweep and one-sync handoff"
-      ],
-      "risk": "If 6 is too narrow, it may recover less reuse than 8 while still missing the DRAM amplification seen with grouped_rows=4; however it is the cheapest remaining locality change on the accepted base.",
-      "metrics_to_recheck": [
-        "runtime_ms versus 25.934336 ms",
-        "DRAM throughput / traffic",
-        "L2 hit rate",
-        "achieved occupancy",
-        "warp stall mix around the handoff"
-      ],
-      "stop_condition": "Stop if grouped_rows=6 does not improve over 25.934336 ms or if DRAM traffic rises toward the grouped_rows=4 regression."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore accepted base, then probe a very narrow overlap-recovery tweak",
-      "hypothesis": "The one-sync handoff likely leaves a small overlap-recovery gap that can be tightened without disturbing the accepted grouped_rows=8 locality pattern, so a minimal tweak behind that handoff may recover a small amount of exposed latency.",
-      "expected_bottleneck": "Residual consumer-to-producer overlap loss at the handoff boundary rather than the main sweep or row-group structure.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:one-sync handoff",
-        "src/kernels/bf16_gemm_v1.cu:right-left PTX sweep",
-        "src/kernels/bf16_gemm_v1.cu:accepted grouped_rows=8 base"
-      ],
-      "risk": "This is a low-probability micro-win; if the overlap window is already saturated, the tweak will add complexity without measurable gain.",
-      "metrics_to_recheck": [
-        "runtime_ms versus 25.934336 ms",
-        "sm active cycles",
-        "warp stall: barrier / sync",
-        "issued instructions around the handoff"
-      ],
-      "stop_condition": "Stop if the tweak does not move runtime or if it perturbs the accepted base's measured stability."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore accepted base, then revisit a very local consumer-order closure",
-      "hypothesis": "A final, very local consumer-order closure may still exist inside the right-left sweep family, but only if it preserves the same sweep structure and avoids reopening the rejected broad-order paths.",
-      "expected_bottleneck": "A small ordering inefficiency in the consumer sequence inside the right-left sweep family.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:right-left sweep family",
-        "src/kernels/bf16_gemm_v1.cu:consumer-order closure",
-        "src/kernels/bf16_gemm_v1.cu:accepted grouped_rows=8 base"
-      ],
-      "risk": "This is fragile and easy to overgeneralize into the rejected split/mirrored sweep families, so the search space must stay strictly local.",
-      "metrics_to_recheck": [
-        "runtime_ms versus 25.934336 ms",
-        "L1/L2 locality indicators",
-        "instruction count in the consumer closure",
-        "DRAM traffic"
-      ],
-      "stop_condition": "Stop if the change escapes the right-left sweep family or fails to improve the measured runtime."
-    }
-  ],
-  "notes": "Anchored to run 20260420_091330_bf16_gemm_v1_863f60f at 25.934336 ms. Rejected this round: grouped_rows=16 active path, grouped_rows=4 active path, unroll 1 active path, warmup-order reopen, K32 cadence, extra-live B lookahead, CTA-level B repack, broad shared-memory rewrites, split sweep, and full mirrored sweep."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

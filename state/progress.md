@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `863f60f44803e7321464511c84f57f7dd24133e3`
-- plateau counter: `5`
-- round loop: `round 64/100`
-- rounds remaining: `37`
-- notes: `Node C build succeeded for round 64/100. Node A will now measure the new code path.`
+- latest measured commit: `96154e330bd119b7572aeb4ff4722232a73b2a80`
+- plateau counter: `6`
+- round loop: `round 65/100`
+- rounds remaining: `36`
+- notes: `Node A completed round 64/100. Run node_b to continue round 65/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_091330_bf16_gemm_v1_863f60f`
-- run dir: `runs/20260420_091330_bf16_gemm_v1_863f60f`
+- run id: `20260420_091644_bf16_gemm_v1_96154e3`
+- run dir: `runs/20260420_091644_bf16_gemm_v1_96154e3`
 - correctness: `PASS`
-- median runtime: `25.934336 ms`
-- TFLOP/s: `28.033084 TFLOP/s`
+- median runtime: `25.560576 ms`
+- TFLOP/s: `28.442998 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_091413`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Anchored to run 20260420_091330_bf16_gemm_v1_863f60f at 25.934336 ms. Rejected this round: grouped_rows=16 active path, grouped_rows=4 active path, unroll 1 active path, warmup-order reopen, K32 cadence, extra-live B lookahead, CTA-level B repack, broad shared-memory rewrites, split sweep, and full mirrored sweep.`
-- dir_01: Restore accepted grouped_rows=8 base, then test 8->6 hot-band narrowing | bottleneck: Locality loss in the hot-band PTX consumer ordering and row reuse window, not the broader sweep or sync structure.
-- dir_02: Restore accepted base, then probe a very narrow overlap-recovery tweak | bottleneck: Residual consumer-to-producer overlap loss at the handoff boundary rather than the main sweep or row-group structure.
-- dir_03: Restore accepted base, then revisit a very local consumer-order closure | bottleneck: A small ordering inefficiency in the consumer sequence inside the right-left sweep family.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
