@@ -738,8 +738,8 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64(
   }
 }
 
-template <int TileRow, int TilePairColBase = 0>
-__device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64(
+template <int TilePairRowBase, int TileCol = 0>
+__device__ __forceinline__ void ptx_wmma_store_tile_col_pairs_64x64(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
     __nv_bfloat16* c_tile_base,
@@ -747,7 +747,10 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64(
     int lane_id) {
   static_assert(FixedHotBandTile256x128::kCSharedStageCount == 2,
                 "Paired 64x64 export requires two per-warp c_shared stages.");
-  if constexpr (TilePairColBase < FixedHotBandTile256x128::kWarpMmaTilesN) {
+  static_assert(TilePairRowBase >= 0 &&
+                    TilePairRowBase + 1 < FixedHotBandTile256x128::kWarpMmaTilesM,
+                "64x64 vertical export helper expects a valid 2-row pair.");
+  if constexpr (TileCol < FixedHotBandTile256x128::kWarpMmaTilesN) {
     constexpr int kCSharedStageStride =
         FixedHotBandTile256x128::kWarpsPerBlock *
         FixedHotBandTile256x128::kCSharedTileElemsPerWarp;
@@ -759,35 +762,35 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64(
 
     ptx_wmma_store_d_row_shared(
         warp_c_tile_stage0,
-        ptx_wmma_acc_tile<TileRow, TilePairColBase>(acc_tiles),
+        ptx_wmma_acc_tile<TilePairRowBase, TileCol>(acc_tiles),
         kWmmaN);
     ptx_wmma_store_d_row_shared(
         warp_c_tile_stage1,
-        ptx_wmma_acc_tile<TileRow, TilePairColBase + 1>(acc_tiles),
+        ptx_wmma_acc_tile<TilePairRowBase + 1, TileCol>(acc_tiles),
         kWmmaN);
     __syncwarp();
 
-    ptx_export_shared_tile_quads_64x64<TileRow, TilePairColBase>(
+    ptx_export_shared_tile_quads_64x64<TilePairRowBase, TileCol>(
         warp_c_tile_stage0, c_tile_base, lane_id);
-    ptx_export_shared_tile_quads_64x64<TileRow, TilePairColBase + 1>(
+    ptx_export_shared_tile_quads_64x64<TilePairRowBase + 1, TileCol>(
         warp_c_tile_stage1, c_tile_base, lane_id);
 
-    ptx_wmma_store_tile_row_pairs_64x64<TileRow, TilePairColBase + 2>(
+    ptx_wmma_store_tile_col_pairs_64x64<TilePairRowBase, TileCol + 1>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
   }
 }
 
-template <int TileRow = 0>
+template <int TilePairRowBase = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
     __nv_bfloat16* c_tile_base,
     int warp_id,
     int lane_id) {
-  if constexpr (TileRow < FixedHotBandTile256x128::kWarpMmaTilesM) {
-    ptx_wmma_store_tile_row_pairs_64x64<TileRow>(
+  if constexpr (TilePairRowBase < FixedHotBandTile256x128::kWarpMmaTilesM) {
+    ptx_wmma_store_tile_col_pairs_64x64<TilePairRowBase>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-    ptx_wmma_store_tile_pairs_64x64<TileRow + 1>(
+    ptx_wmma_store_tile_pairs_64x64<TilePairRowBase + 2>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
   }
 }
