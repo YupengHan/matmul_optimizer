@@ -1962,7 +1962,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   cp_async_wait_group_1();
   __syncthreads();
 
-  #pragma unroll 1
+  #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
@@ -1980,7 +1980,9 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
 
     if (future_tile_idx < FixedKTiles) {
-      // Keep the double-buffered stage live until every warp finishes consuming it.
+      // Restore the active PTX hot-band path to the accepted K16 double buffer,
+      // then reuse a single padded export scratch tile per warp to shorten the
+      // store/export live range.
       __syncthreads();
       const int future_tile_k = future_tile_idx * kWmmaK;
       stage_a_shared_tile_async<FixedHotBandTile128x128>(
