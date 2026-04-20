@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_231125_bf16_gemm_v1_0a38a28`
-- run dir: `runs/20260419_231125_bf16_gemm_v1_0a38a28`
-- kernel tag: `bf16_gemm_v1_0a38a28`
-- round label: `round 10/50`
+- run id: `20260419_231544_bf16_gemm_v1_1cc244f`
+- run dir: `runs/20260419_231544_bf16_gemm_v1_1cc244f`
+- kernel tag: `bf16_gemm_v1_1cc244f`
+- round label: `round 11/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.355456 ms`
-- p10 runtime: `29.891994 ms`
-- p90 runtime: `30.944764 ms`
-- TFLOP/s: `23.950206 TFLOP/s`
-- previous run id: `20260419_230856_bf16_gemm_v1_a80b5af`
-- runtime delta vs previous measured run: `-0.075776 ms`
-- TFLOP/s delta vs previous measured run: `+0.059638 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `31.758848 ms`
+- p10 runtime: `31.313084 ms`
+- p90 runtime: `32.289377 ms`
+- TFLOP/s: `22.891870 TFLOP/s`
+- previous run id: `20260419_231125_bf16_gemm_v1_0a38a28`
+- runtime delta vs previous measured run: `+1.403392 ms`
+- TFLOP/s delta vs previous measured run: `-1.058336 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the accepted-correct surface and try a light 4-column serpentine CTA swizzle on the hot-band grid`
+- implemented direction name: `Keep the restored correct surface and let only half the CTA issue hot-band Pg2s async copies`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_231125_bf16_gemm_v1_0a38a28/summary.json`
-- measured commit: `0a38a28b4a1fe020ff734c847e555a8d67bbfa48`
+- raw summary json: `runs/20260419_231544_bf16_gemm_v1_1cc244f/summary.json`
+- measured commit: `1cc244fde41bb83706b3bc4840740c9715b54c41`
 - new best custom: `no`
-- generated at: `2026-04-19T23:11:33-07:00`
+- generated at: `2026-04-19T23:15:51-07:00`
