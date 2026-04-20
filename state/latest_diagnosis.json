@@ -1,15 +1,84 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_215936",
+  "status": "completed",
+  "created_at": "2026-04-19T21:59:36-07:00",
   "source_run_id": "20260419_215841_bf16_gemm_v1_06eedc6",
   "source_run_dir": "runs/20260419_215841_bf16_gemm_v1_06eedc6",
   "source_summary_json": "runs/20260419_215841_bf16_gemm_v1_06eedc6/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "auto-analysis",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea register reuse: phase the 64x64 hot-band warp tile into two 64x32 accumulator panels",
+      "hypothesis": "The one-fragment B-side Ps2r lookahead preserved the recovered streaming-B gain but only moved runtime from 30.618112 ms to 30.592960 ms because the hot-band kernel is still pinned at 167 registers per thread and one CTA per SM. The next higher-ceiling move is to keep the 256x128 CTA and 64x64 warp footprint but serialize the four warp-local output columns as two mirrored 64x32 panels, so each warp carries roughly half the accumulator live set at once instead of all sixteen 16x16 accumulator fragments. If that drops registers materially, the hot-band path has a chance to recover more active warps and improve tensor issue instead of chasing another tiny feed-side win inside the same occupancy wall.",
+      "expected_bottleneck": "Register-limited occupancy and warp-level live-fragment pressure in the hot-band PTX microkernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:PtxWmmaAccTileSet64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
+      ],
+      "risk": "High. This changes the hot-band accumulator residency model and may trade register relief for extra export/control overhead. If the panelization forces too much extra store traffic or synchronization, it can lose despite lower registers.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if registers stay essentially flat, if occupancy remains pinned at one CTA per SM, or if hot-band time regresses because panel export overhead dominates."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Human idea Ps2r: preload the next A row-pair while the current row-pair consumes the mirrored B stream",
+      "hypothesis": "The B-side mirrored streaming path plus one-fragment lookahead has already collapsed `mio_throttle` to about 0.33, but short scoreboard is still about 6.74 and each row-pair still loads its two A fragments just before issuing the four mirrored column MMAs. A smaller and more targeted follow-up than full panelization is to keep the current B-side path intact and add a one-row-pair A lookahead inside `ptx_wmma_accumulate_row_pairs_64x64`, so the next A fragments are already resident when the current row-pair finishes. That continues the Ps2r family on the operand that has not yet been prefetched within the hot-band micro-tile.",
+      "expected_bottleneck": "Residual shared-to-register latency on the A side inside the hot-band row-pair sweep after the B side has already been partially overlapped.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_load_a_row",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64"
+      ],
+      "risk": "Moderate to high. The implementation is local, but the kernel is already near the register wall, so a second lookahead dimension can erase its own benefit if live fragments grow too much.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if registers rise, if short scoreboard does not fall, or if the hot-band time stays flat."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Human idea L2 cache clue: try a grouped CTA traversal for the 256x128 hot band",
+      "hypothesis": "The current profile does not show an obvious L2 bottleneck (`lts__throughput` is only about 19.22%), so this should not outrank the register and Ps2r ideas. Still, the hot band launches a dense 60x25 CTA grid over the same B region, and a grouped traversal that keeps neighboring CTA columns or rows clustered may improve L2 reuse enough to trim some feed latency for free. CUDA cannot force scheduler order, but a swizzled logical block mapping inside the hot-band kernel or its launch helper is a cheap way to test whether the block ordering clue produces measurable benefit on this GPU.",
+      "expected_bottleneck": "Potential L2 locality loss from the default CTA traversal over the fixed hot-band grid.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+        "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1"
+      ],
+      "risk": "Moderate. The code change is smaller than a microkernel rewrite, but the upside is uncertain because block issue order is only a hint and the current L2 utilization is not obviously limiting.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Reject if L2 throughput and hot-band time stay flat or if the remap perturbs correctness / tail coverage."
+    }
+  ],
+  "notes": "Round 3/30 starts from a branch that is directionally healthy but still fundamentally stuck on the register wall. The one-fragment B-side Ps2r lookahead built cleanly, preserved correctness, and improved runtime from 30.618112 ms to 30.592960 ms, but the gain is only about 0.025 ms and the headline profile barely moved: tensor active is still about 38.57%, active warps about 16.76%, `mio_throttle` is already low at about 0.33, short scoreboard remains about 6.74, and the hot-band kernel still uses about 167 registers per thread with `launch__occupancy_limit_registers = 1`. That means the loop has probably extracted most of the cheap B-feed cleanup available without changing the live working set. Recommended direction dir_01 therefore shifts to the user-provided register-reuse / phased-tiling family: keep the accepted 256x128 CTA and 64x64 warp geometry, but split the warp-local output columns into two mirrored 64x32 accumulator panels so the kernel can test whether reduced live accumulator footprint buys back occupancy and tensor activity. Dir_02 keeps the Ps2r family alive on the A side if the panelization looks too invasive, and dir_03 records the user-provided L2 traversal clue as a lower-priority structural experiment once the occupancy-side opportunities are exhausted."
 }

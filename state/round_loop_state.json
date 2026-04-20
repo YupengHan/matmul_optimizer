@@ -1,11 +1,11 @@
 {
   "active": true,
-  "status": "running",
+  "status": "round_in_progress",
   "total_rounds": 30,
   "completed_rounds": 2,
   "remaining_rounds": 28,
   "next_round_index": 3,
-  "current_round_index": null,
+  "current_round_index": 3,
   "auto_use_recommended": true,
   "started_at": "2026-04-19T21:51:08-07:00",
   "completed_at": null,
@@ -35,5 +35,5 @@
   "accepted_base_measured_commit": "06eedc6cae82b3b30f2ac78be257751b6684432a",
   "accepted_base_runtime_ms": 30.59296036,
   "history_path": "state/round_history.jsonl",
-  "notes": "Completed round 2/30. Continue with node_b for round 3/30. Accepted base: 20260419_215841_bf16_gemm_v1_06eedc6 at 30.592960 ms."
+  "notes": "Executing round 3/30."
 }
