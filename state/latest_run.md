@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_214535_bf16_gemm_v1_dfd7960`
-- run dir: `runs/20260419_214535_bf16_gemm_v1_dfd7960`
-- kernel tag: `bf16_gemm_v1_dfd7960`
-- round label: `round 10/10`
+- run id: `20260419_215456_bf16_gemm_v1_13caa86`
+- run dir: `runs/20260419_215456_bf16_gemm_v1_13caa86`
+- kernel tag: `bf16_gemm_v1_13caa86`
+- round label: `round 1/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `32.758783 ms`
-- p10 runtime: `32.394853 ms`
-- p90 runtime: `33.596370 ms`
-- TFLOP/s: `22.193114 TFLOP/s`
-- previous run id: `20260419_214140_bf16_gemm_v1_63d2faf`
-- runtime delta vs previous measured run: `+1.902080 ms`
-- TFLOP/s delta vs previous measured run: `-1.368036 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `30.618112 ms`
+- p10 runtime: `30.253040 ms`
+- p90 runtime: `31.550566 ms`
+- TFLOP/s: `23.744751 TFLOP/s`
+- previous run id: `20260419_214535_bf16_gemm_v1_dfd7960`
+- runtime delta vs previous measured run: `-2.140672 ms`
+- TFLOP/s delta vs previous measured run: `+1.551636 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Warp-specialized producer/consumer on top of the restored round-8 streaming B branch`
+- implemented direction name: `Restore the round-8 streaming-B branch before continuing exploration`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_214535_bf16_gemm_v1_dfd7960/summary.json`
-- measured commit: `dfd7960585906ecd34e523003e3631dcd1bfd37b`
+- raw summary json: `runs/20260419_215456_bf16_gemm_v1_13caa86/summary.json`
+- measured commit: `13caa861e2dbca1a073e2998007fb1569bda03c9`
 - new best custom: `no`
-- generated at: `2026-04-19T21:45:44-07:00`
+- generated at: `2026-04-19T21:55:04-07:00`

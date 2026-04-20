@@ -1,29 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore the round-8 streaming-B branch before continuing exploration",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T21:53:41-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_215124",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Restore the round-8 streaming-B branch before continuing exploration",
-    "hypothesis": "The current implementation surface is a dead-end final-round producer-only staging experiment. Restoring the round-8 streaming-B branch puts the code back on the last recent branch that improved runtime and feed-side metrics without increasing registers or shared memory. That branch is the right exploratory anchor if the next 29 rounds are meant to compound one family rather than wander across already-falsified ideas.",
-    "expected_bottleneck": "Not a micro-bottleneck change; this is a branch reset to remove a clearly negative orchestration experiment and recover the last good B-feed baseline.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "risk": "Low. This is a known-correct restore to a recently measured branch. The only risk is spending one round on recovery, but continuing from the current 222-register branch is less credible.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-      "launch__registers_per_thread",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-    ],
-    "stop_condition": "If the restored branch does not recover to roughly the round-8 behavior, stop and investigate restore drift before exploring further."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

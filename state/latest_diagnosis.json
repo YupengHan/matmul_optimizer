@@ -1,77 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_215124",
-  "status": "completed",
-  "created_at": "2026-04-19T21:51:24-07:00",
-  "source_run_id": "20260419_214535_bf16_gemm_v1_dfd7960",
-  "source_run_dir": "runs/20260419_214535_bf16_gemm_v1_dfd7960",
-  "source_summary_json": "runs/20260419_214535_bf16_gemm_v1_dfd7960/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_215456_bf16_gemm_v1_13caa86",
+  "source_run_dir": "runs/20260419_215456_bf16_gemm_v1_13caa86",
+  "source_summary_json": "runs/20260419_215456_bf16_gemm_v1_13caa86/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
-  "recommended_idea_origin": "auto-analysis",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "notes": "Round 1/30 starts from a bad exploratory endpoint rather than a trustworthy optimization anchor. The latest measured branch (`dfd7960`) is correctness-stable but clearly negative: runtime regressed to 32.758783 ms, the hot-band kernel slowed to about 47.99 us, tensor active collapsed to about 33.2%, barrier stall jumped to about 27.97%, and registers exploded to about 222/thread. That means the minimal producer-only staging variant is not a viable baseline for another 29 rounds. The first move should therefore be a reset to a stronger implementation surface before spending more rounds on new ideas. Among recent branches, the restored round-8 streaming-B path is the best exploratory anchor because it was the last family with a clean positive feed-side signal while keeping registers and shared memory flat. Recommended direction dir_01 therefore restores the round-8 streaming-B implementation surface, re-establishes that branch as the working baseline, and only then resumes B-feed exploration. Dir_02 keeps the stronger global objective in view by offering a reset to the best measured custom commit, while dir_03 is the highest-ceiling direct follow-up once the streaming-B branch is restored.",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the round-8 streaming-B branch before continuing exploration",
-      "hypothesis": "The current implementation surface is a dead-end final-round producer-only staging experiment. Restoring the round-8 streaming-B branch puts the code back on the last recent branch that improved runtime and feed-side metrics without increasing registers or shared memory. That branch is the right exploratory anchor if the next 29 rounds are meant to compound one family rather than wander across already-falsified ideas.",
-      "expected_bottleneck": "Not a micro-bottleneck change; this is a branch reset to remove a clearly negative orchestration experiment and recover the last good B-feed baseline.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. This is a known-correct restore to a recently measured branch. The only risk is spending one round on recovery, but continuing from the current 222-register branch is less credible.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "If the restored branch does not recover to roughly the round-8 behavior, stop and investigate restore drift before exploring further."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Reset to the best measured custom commit `b13027c` and re-anchor the loop there",
-      "hypothesis": "If the priority is strict best-known performance rather than continuity of the current exploratory family, the cleanest recovery path is to restore the strongest measured custom branch (`b13027c`, 30.052768 ms) and continue from that better global anchor. This spends the recovery round on maximizing starting quality rather than preserving the round-8 feed-family context.",
-      "expected_bottleneck": "Not a direct bottleneck attack; this is a global baseline reset to the best measured implementation surface.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low to moderate. The restore itself is straightforward, but the branch may be less aligned with the recent B-feed exploration context than round 8, which can slow immediate follow-up reasoning.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "If the restored result does not come back near the recorded `b13027c` runtime, stop and investigate whether the implementation surface no longer matches the measured commit."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "After restoring round 8, add one-fragment Ps2r lookahead on the streaming-B path",
-      "hypothesis": "Once the code is back on the round-8 branch, the highest-ceiling direct continuation is a one-fragment shared-to-register lookahead on top of the existing single-fragment mirrored B-consumer path. This is more aggressive than a pure reset and can be the immediate next move if the loop wants to skip the recovery-only round.",
-      "expected_bottleneck": "Residual shared-to-register feed latency inside the hot-band 64x64 micro-tile after the round-8 consumer cleanup.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_tiles_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "High. The current branch has already shown how easy it is to hit the register wall. Skipping the reset and piling another aggressive change on top of a known-bad surface is risky.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if registers rise further or if the implementation cannot first prove that it is effectively back on the round-8 branch."
-    }
-  ]
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
