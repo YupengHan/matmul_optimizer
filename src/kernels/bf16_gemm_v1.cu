@@ -949,6 +949,21 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64_ptx_microkern
   }
 }
 
+template <int TileRow, int TileCol>
+__device__ __forceinline__ void ptx_store_and_export_tile_64x64_ptx_microkernel(
+    const PtxWmmaAccTileSet64x64& acc_tiles,
+    float* warp_c_tile,
+    __nv_bfloat16* c_tile_base,
+    int lane_id) {
+  ptx_wmma_store_d_row_shared(
+      warp_c_tile,
+      ptx_wmma_acc_tile<TileRow, TileCol>(acc_tiles),
+      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+  __syncwarp();
+  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, TileCol>(
+      warp_c_tile, c_tile_base, lane_id);
+}
+
 template <typename HotBandTileConfig, int TileRow, int TilePairColBase = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64(
     const PtxWmmaAccTileSet64x64& acc_tiles,
@@ -1020,37 +1035,14 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pair_64x64_ptx_microkern
   float* warp_c_tile =
       c_shared + warp_id * FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
 
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 0>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 0>(
-      warp_c_tile, c_tile_base, lane_id);
-
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 1>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 1>(
-      warp_c_tile, c_tile_base, lane_id);
-
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 2>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 2>(
-      warp_c_tile, c_tile_base, lane_id);
-
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 3>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 3>(
-      warp_c_tile, c_tile_base, lane_id);
+  ptx_store_and_export_tile_64x64_ptx_microkernel<TileRow, 0>(
+      acc_tiles, warp_c_tile, c_tile_base, lane_id);
+  ptx_store_and_export_tile_64x64_ptx_microkernel<TileRow, 1>(
+      acc_tiles, warp_c_tile, c_tile_base, lane_id);
+  ptx_store_and_export_tile_64x64_ptx_microkernel<TileRow, 2>(
+      acc_tiles, warp_c_tile, c_tile_base, lane_id);
+  ptx_store_and_export_tile_64x64_ptx_microkernel<TileRow, 3>(
+      acc_tiles, warp_c_tile, c_tile_base, lane_id);
 }
 
 template <int TileRow = 0>
