@@ -153,7 +153,7 @@ constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
-constexpr int kFixedHotBandPtxGroupedRows = 8;
+constexpr int kFixedHotBandPtxGroupedRows = 6;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1850,7 +1850,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
   cp_async_wait_group_1();
   __syncthreads();
 
-  #pragma unroll 1
+  #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
@@ -1971,7 +1971,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   cp_async_wait_group_1();
   __syncthreads();
 
-  #pragma unroll 1
+  #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
