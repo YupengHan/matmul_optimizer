@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_162632_bf16_gemm_v1_948fc5c`
-- run dir: `runs/20260420_162632_bf16_gemm_v1_948fc5c`
-- kernel tag: `bf16_gemm_v1_948fc5c`
-- round label: `round 10/17`
+- run id: `20260420_163016_bf16_gemm_v1_48ee4f9`
+- run dir: `runs/20260420_163016_bf16_gemm_v1_48ee4f9`
+- kernel tag: `bf16_gemm_v1_48ee4f9`
+- round label: `round 11/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.704384 ms`
-- p10 runtime: `25.916212 ms`
-- p90 runtime: `27.863859 ms`
-- TFLOP/s: `27.224722 TFLOP/s`
-- previous run id: `20260420_162425_bf16_gemm_v1_bbcc928`
-- runtime delta vs previous measured run: `+1.027599 ms`
-- TFLOP/s delta vs previous measured run: `-1.089549 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.406448 ms`
+- p10 runtime: `24.919244 ms`
+- p90 runtime: `26.285252 ms`
+- TFLOP/s: `28.615547 TFLOP/s`
+- previous run id: `20260420_162632_bf16_gemm_v1_948fc5c`
+- runtime delta vs previous measured run: `-1.297935 ms`
+- TFLOP/s delta vs previous measured run: `+1.390825 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Use The Non-PTX 128x128 Sibling As The Next Control Path`
+- implemented direction name: `Retry PTX Hot-Band Grouping With A 4-Row Window`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_162632_bf16_gemm_v1_948fc5c/summary.json`
-- measured commit: `948fc5c0301c8859a9885095e934be38c5a23240`
+- raw summary json: `runs/20260420_163016_bf16_gemm_v1_48ee4f9/summary.json`
+- measured commit: `48ee4f9bb82099f9dee321757edcdb92828cd707`
 - new best custom: `no`
-- generated at: `2026-04-20T16:26:41-07:00`
+- generated at: `2026-04-20T16:30:25-07:00`
