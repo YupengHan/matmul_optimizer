@@ -5,15 +5,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 ## Selected direction
 
 - direction id: `dir_01`
-- direction name: `Human idea 7 Register reuse: keep the half-panel family and close the remaining correctness gap by single-sourcing warp ownership end to end`
+- direction name: `Half-Panel Correctness Repair With Single-Sourced Panel Identity`
 - selection mode: `recommended`
 - source diagnosis id: `diagnosis_20260419_195407`
 - round loop: `round 19/20`
-- hypothesis: `The latest run keeps the only real register-wall breakthrough in the repo: 30.236 ms despite correctness failure, 43.66% tensor active, 32.90% active warps, and launch__occupancy_limit_registers still at 2. That signal is too strong to abandon with two rounds left. The measured error remains large across all three correctness cases, so the next move should still be correctness-first, but more structural than round 18's local cleanup: make the half-panel path use one compile-time ownership contract for local tile columns from B staging through MMA and shared-export, and remove the remaining duplicated pass-local address arithmetic so warp_tile_n, HalfPanelColBase, accumulator slot, and global C store target cannot drift. If needed, collapse the two launch-site pass calls into one templated local-half loop so the left and right 32-column panels are produced by the same control skeleton instead of two partially duplicated call sites.`
-- expected bottleneck: `Residual half-panel address-contract mismatch in the shared-to-fragment or fragment-to-export path, not DRAM bandwidth. The runtime and occupancy signal say the family is viable; correctness is the blocking bottleneck.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:HalfPanelIdentity64x32, src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x32, src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x32, src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x32, src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_pass_64x32, src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel`
-- risk: `Another narrow fix could still miss the true mismatch and spend the penultimate round without producing a correct kernel. The guardrail is to keep the 92-100 reg regime and reject any repair that silently re-expands the live set.`
-- metrics to re-check: `correctness_case_* max_abs_err / mean_abs_err, median runtime, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers, smsp__warp_issue_stalled_barrier_per_warp_active.pct`
+- hypothesis: `Idea 7 / Register Reuse remains the primary family for round 19. Run 778a0b4 is still wrong, but it preserved the core half-panel breakthrough: 92 registers per thread, occupancy_limit_registers = 2, active warps about 32.9, tensor active about 43.7, and runtime already back to 30.236 ms. That is too much real signal to abandon with two rounds left. The next move is to make HalfPanelIdentity64x32 the only source of compact/shared/global column identity across staging, MMA tile selection, and export so the two 64x32 passes stop disagreeing about where a panel lives.`
+- expected bottleneck: `Correctness is the immediate blocker; the likely failing surface is pass-local panel identity and output-column mapping inside the half-panel path, not raw throughput.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:270-321, src/kernels/bf16_gemm_v1.cu:700-771, src/kernels/bf16_gemm_v1.cu:946-1008, src/kernels/bf16_gemm_v1.cu:1045-1143, src/kernels/bf16_gemm_v1.cu:1635-1660`
+- risk: `Medium. If the wrong-result source is a deeper cross-pass hazard instead of duplicated panel arithmetic, one more repair round may be needed. Any fix that regrows the live state above roughly 96 registers per thread risks collapsing occupancy back to 1 block per SM.`
+- metrics to re-check: `correctness, median runtime, max_abs_err, launch__registers_per_thread, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 

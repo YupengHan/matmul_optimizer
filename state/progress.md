@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `778a0b475a3fbcfd5a0f3fecc8381784fa832256`
 - plateau counter: `3`
 - round loop: `round 19/20`
 - rounds remaining: `2`
-- notes: `Node C is ready to implement dir_01 via recommended selection for round 19/20.`
+- notes: `Node C build succeeded for round 19/20. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -28,21 +28,33 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
+- diagnosis status: `ready_for_finalize`
 - diagnosis id: `diagnosis_20260419_195407`
 - recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Round 19 human-idea audit against measured evidence: Tiling is accepted and already embodied by the active 256x128 CTA / 64x64 warp branch; Coalescing Access is accepted as baseline because the kernel is already on 16-byte cp.async loads and the latest run is not transaction-bound; Data Reuse is accepted as baseline because the branch already depends on shared-memory reuse for both operands; Async Copy is accepted as baseline because cp.async is already central to the pipeline; Bank Conflict is deferred this round except as the fallback family because the current blocker is correctness rather than shared-feed throughput; L2 Cache swizzle is deferred because lts throughput is only 36.08% and DRAM is 21.33%, so cache is not the dominant limiter; Register Reuse is accepted as the primary family because the half-panel branch is still the only path that broke below 100 regs and lifted active warps into the low-30s; Pg2s is accepted as baseline because double-buffer global-to-shared prefetch is already present; Ps2r is accepted as the next family after correctness because replaying A across two serial half panels is now the clearest avoidable tax; Stage is accepted as baseline because the two-stage pipeline is already doing its job and the current evidence does not justify stage-count churn. Recommended direction is dir_01 because with only two rounds left, the penultimate round should either make the high-ceiling half-panel family correct or decisively prove it is not salvageable.`
-- dir_01: Human idea 7 Register reuse: keep the half-panel family and close the remaining correctness gap by single-sourcing warp ownership end to end | bottleneck: Residual half-panel address-contract mismatch in the shared-to-fragment or fragment-to-export path, not DRAM bandwidth. The runtime and occupancy signal say the family is viable; correctness is the blocking bottleneck.
-- dir_02: Human idea 9 Ps2r: fuse the two 32-column passes inside one K-loop so each staged A tile is consumed twice before advancing | bottleneck: Barrier and shared/A-feed replay overhead caused by running the left and right half panels as two full passes. Successful fusion should cut barrier pressure and short-scoreboard pressure without giving back the occupancy gain.
-- dir_03: Human idea 5 Bank conflict fallback: return to the accepted 64x384 path and try a warp-local B-consumer transform with no extra CTA repack | bottleneck: Shared/L1/bank behavior on the stable 64x384 hot path rather than occupancy. This is a lower-ceiling but lower-correctness-risk fallback.
+- diagnosis notes: `Round 19 decision: continue-family on the half-panel 64x32+64x32 branch, with Idea 7 / Register Reuse as the primary family. Run 778a0b4 is FAIL, but it still holds 92 regs/thread, occupancy_limit_registers = 2, active warps about 32.9, tensor active about 43.7, and 30.236 ms runtime, so the branch looks incomplete rather than invalid. With only rounds 19 and 20 left, the honest path is to repair correctness first while preserving that machine state, then convert the surviving signal into lower feed tax.
+Human idea audit for this round:
+1. Tiling - accept-now as the outer 256x128 CTA and 64x64 warp shell; round 18 main-tile sweep and rounds 13-15 already proved this structural shell, so do not reopen macro tiling now.
+2. Coalescing Access - defer; DRAM throughput is only about 21 percent and cp.async already uses 16-byte accesses, so coalescing is not the current main wall.
+3. Data Reuse - accept-now as dir_02; both half-panel passes still replay the same A sweep, so reuse across the two passes is the cleanest next feed-side ceiling after correctness.
+4. Async Copy - defer; async copy is already present and the current issue is duplicated use of it, not absence of it.
+5. Bank Conflict - accept-now only as the bounded dir_03 backup; compact panel bank/layout cleanup is plausible, but it should not outrank correctness repair or shared-A reuse.
+6. L2 Cache - reject-for-this-round; nothing in the latest profile says L2 is the limiting factor.
+7. Register Reuse - accept-now and primary; the half-panel split is exactly what opened the 92-register, 2-block-per-SM, 32.9-active-warp regime.
+8. Pg2s - accept-now as part of dir_02; the next producer-side improvement should be one staged A tile feeding both half-panels instead of two independent passes.
+9. Ps2r - reject-for-this-round; the old ps2r family gave mixed signal and the current branch is not dominated by the same long-scoreboard signature anymore.
+10. Stage - reject-for-this-round; the stage family changed the machine state before, but its corrected versions stayed around 35.7 ms and no longer justify primary ranking.
+Ranking rationale: dir_01 preserves the strongest surviving path toward the 20 ms goal while fixing the only blocker that still invalidates the result. dir_02 is the highest-ceiling next step once correctness is restored because it removes the duplicated A producer tax beneath the new occupancy regime. dir_03 stays inside the same family as a lower-risk cleanup if the branch becomes correct but still carries shared-bank and short-scoreboard residue.`
+- dir_01: Half-Panel Correctness Repair With Single-Sourced Panel Identity | bottleneck: Correctness is the immediate blocker; the likely failing surface is pass-local panel identity and output-column mapping inside the half-panel path, not raw throughput.
+- dir_02: Twin-Panel Shared-A Reuse Inside One K Sweep | bottleneck: Duplicated A-side staging and shared/LSU traffic from running two full half-panel passes over K, rather than reusing one staged A tile across both panels.
+- dir_03: Compact Panel Shared and Export Bank Cleanup | bottleneck: Residual short scoreboard and shared-bank pressure inside the compact 64x32 B-load and export path, which is now more visible because long scoreboard and mio are already low.
 
 ## Active implementation direction
 
 - direction id: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 
