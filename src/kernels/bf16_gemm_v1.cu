@@ -933,6 +933,8 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64_ptx_microkern
                 "PTX 64x64 export tile col index out of range.");
   constexpr int kQuadsPerRow = kWmmaN / kEpilogueQuadElems;
   constexpr int kQuadsPerTile = kWmmaM * kQuadsPerRow;
+  __nv_bfloat16* c_tile_row_base =
+      c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN + TileCol * kWmmaN;
 
   #pragma unroll
   for (int quad_idx = lane_id; quad_idx < kQuadsPerTile; quad_idx += kWarpSize) {
@@ -941,8 +943,7 @@ __device__ __forceinline__ void ptx_export_shared_tile_quads_64x64_ptx_microkern
     const float4* warp_c_tile_row_quads = reinterpret_cast<const float4*>(
         warp_c_tile + local_row * FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
     store_bfloat164_quad(
-        c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN + TileCol * kWmmaN +
-            local_row * kFixedBenchmarkN + local_quad * kEpilogueQuadElems,
+        c_tile_row_base + local_row * kFixedBenchmarkN + local_quad * kEpilogueQuadElems,
         warp_c_tile_row_quads[local_quad]);
   }
 }
@@ -1004,8 +1005,8 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
   }
 }
 
-template <int TileRow, int TileCol = 0>
-__device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel(
+template <int TileRow>
+__device__ __forceinline__ void ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
     __nv_bfloat16* c_tile_base,
@@ -1013,24 +1014,42 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pairs_64x64_ptx_microker
     int lane_id) {
   static_assert(FixedHotBandTile128x128PtxExportScratch::kStageCount == 1,
                 "PTX 64x64 export lifetime trimming expects a single per-warp scratch stage.");
-  if constexpr (TileCol < FixedHotBandTile128x128::kWarpMmaTilesN) {
-    float* warp_c_tile =
-        c_shared + warp_id * FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
+  static_assert(FixedHotBandTile128x128::kWarpMmaTilesN == 4,
+                "The PTX 64x64 export helper assumes the hot-band row emits four 16x16 columns.");
+  float* warp_c_tile =
+      c_shared + warp_id * FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
 
-    ptx_wmma_store_d_row_shared(
-        warp_c_tile,
-        ptx_wmma_acc_tile<TileRow, TileCol>(acc_tiles),
-        FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-    __syncwarp();
+  ptx_wmma_store_d_row_shared(
+      warp_c_tile,
+      ptx_wmma_acc_tile<TileRow, 0>(acc_tiles),
+      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+  __syncwarp();
+  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 0>(
+      warp_c_tile, c_tile_base, lane_id);
 
-    ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, TileCol>(
-        warp_c_tile, c_tile_base, lane_id);
+  ptx_wmma_store_d_row_shared(
+      warp_c_tile,
+      ptx_wmma_acc_tile<TileRow, 1>(acc_tiles),
+      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+  __syncwarp();
+  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 1>(
+      warp_c_tile, c_tile_base, lane_id);
 
-    ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel<
-        TileRow,
-        TileCol + 1>(
-        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  }
+  ptx_wmma_store_d_row_shared(
+      warp_c_tile,
+      ptx_wmma_acc_tile<TileRow, 2>(acc_tiles),
+      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+  __syncwarp();
+  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 2>(
+      warp_c_tile, c_tile_base, lane_id);
+
+  ptx_wmma_store_d_row_shared(
+      warp_c_tile,
+      ptx_wmma_acc_tile<TileRow, 3>(acc_tiles),
+      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+  __syncwarp();
+  ptx_export_shared_tile_quads_64x64_ptx_microkernel<TileRow, 3>(
+      warp_c_tile, c_tile_base, lane_id);
 }
 
 template <int TileRow = 0>
@@ -1041,7 +1060,7 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64_ptx_microkernel(
     int warp_id,
     int lane_id) {
   if constexpr (TileRow < FixedHotBandTile128x128::kWarpMmaTilesM) {
-    ptx_wmma_store_tile_row_pairs_64x64_ptx_microkernel<TileRow>(
+    ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<TileRow>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
     ptx_wmma_store_tile_pairs_64x64_ptx_microkernel<TileRow + 1>(
         acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
