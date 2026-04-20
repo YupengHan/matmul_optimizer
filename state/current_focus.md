@@ -1,7 +1,7 @@
 # Current focus
 
-- next node: `node_c`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - latest run id: `20260420_001930_bf16_gemm_v1_b4f4a28`
 - latest kernel tag: `bf16_gemm_v1_b4f4a28`
 - median runtime: `31.002625 ms`
@@ -10,4 +10,4 @@
 - rounds remaining: `24`
 - recommended direction: `dir_01`
 - selected direction: `dir_01`
-- immediate next action: `Node C is ready to implement dir_01 via recommended selection for round 27/50.`
+- immediate next action: `Node C build succeeded for round 27/50. Node A will now measure the new code path.`
