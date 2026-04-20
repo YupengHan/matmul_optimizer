@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_113413",
-  "status": "completed",
-  "created_at": "2026-04-20T11:34:13-07:00",
-  "source_run_id": "20260420_113238_bf16_gemm_v1_ef8cb27",
-  "source_run_dir": "runs/20260420_113238_bf16_gemm_v1_ef8cb27",
-  "source_summary_json": "runs/20260420_113238_bf16_gemm_v1_ef8cb27/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_113704_bf16_gemm_v1_a4dc5e8",
+  "source_run_dir": "runs/20260420_113704_bf16_gemm_v1_a4dc5e8",
+  "source_summary_json": "runs/20260420_113704_bf16_gemm_v1_a4dc5e8/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore The Fast Auxiliary 256x128 Default Hot-Band Path",
-      "hypothesis": "The round-75 64x384 default promotion family is now closed-negative for this round: runtime regressed to 33.59487915 ms, tensor activity fell to 36.06, barrier stalled to 16.62, DRAM throughput jumped to 54.20, and register occupancy fell to 1. The strongest next move is to undo that wide-tile default and restore the fast auxiliary 256x128 hot-band path as the default route, because that family already proved materially better than the 64x384 promotion while staying distinct from the PTX microkernel path. This should bring the benchmark back toward the prior fast regime while keeping the hot band on the more reuse-friendly 256x128 schedule instead of the memory-heavy 384-wide path.",
-      "expected_bottleneck": "The 64x384 promotion is exposing DRAM overfetch and barrier amplification rather than compute throughput, so the fix is to return to the lower-overhead 256x128 schedule and recover tensor utilization.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:152-159",
-        "src/kernels/bf16_gemm_v1.cu:1181-1227",
-        "src/kernels/bf16_gemm_v1.cu:1561-1606",
-        "src/kernels/bf16_gemm_v1.cu:2064-2105"
-      ],
-      "risk": "Medium. This is the most grounded recovery path because it directly reverses the failed 64x384 default and returns to a previously faster distinct family, but it still has to preserve correctness and avoid reintroducing the wide-tile default through the launch gate.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if restoring the 256x128 default does not recover the prior fast regime or if the implementation still depends on the closed 64x384 promotion to perform well."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Reinstate The Exact PTX Default Path As The Baseline Fallback",
-      "hypothesis": "If the auxiliary 256x128 default cannot be made stable enough, the next distinct family is the exact PTX default path with the 128x128 microkernel. This is not the same as the failed 64x384 promotion family, and it is not the same as the helper-flattening family that already behaved like a no-op. Reinstating the PTX default path gives a clean fallback baseline with lower tile width and without the DRAM-heavy 384-wide dispatch, which is the safest way to recover a fast default if the auxiliary 256x128 route proves too risky.",
-      "expected_bottleneck": "Residual register pressure and scheduler friction in the PTX default hot-band path, but without the wide-tile DRAM blowup seen in the 64x384 promotion.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:152-159",
-        "src/kernels/bf16_gemm_v1.cu:1908-2012",
-        "src/kernels/bf16_gemm_v1.cu:2064-2105"
-      ],
-      "risk": "Low-medium. This is a conservative fallback because it restores the known PTX default semantics, but it may leave performance on the table compared with the auxiliary 256x128 family.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if the PTX fallback does not beat the failed 64x384 promotion by a clear margin or if it becomes dependent on wide-tile dispatch again."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Try The Staged 128x128x32 Hot-Band Family",
-      "hypothesis": "The new profile is barrier-heavy and still under-occupied, so a distinct staged family is still worth one low-rank look. The 128x128x32 kernel changes staging granularity and K-loop structure rather than tile width alone, which makes it materially different from both the 64x384 promotion and the auxiliary 256x128 schedule. If staging pressure can be reduced without reopening the wide-tile family, this path could cut live ranges and ease synchronization enough to matter.",
-      "expected_bottleneck": "Stage synchronization and live-range pressure in a smaller-granularity hot-band kernel, especially under the new barrier-heavy profile.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1667-1815",
-        "src/kernels/bf16_gemm_v1.cu:2070-2093"
-      ],
-      "risk": "High. This is the most invasive of the three directions and it is less directly supported by the current profile than the auxiliary 256x128 recovery path.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if the staged kernel does not reduce barrier or occupancy pressure, or if it forces a return to the closed 64x384 promotion family."
-    }
-  ],
-  "notes": "Latest measured run 20260420_113238_bf16_gemm_v1_ef8cb27 is a strong negative for the round-75 64x384 default promotion: runtime regressed to 33.59487915 ms from 24.6968317 ms, tensor active fell to 36.06, barrier jumped to 16.62, DRAM throughput rose to 54.20, and launch__occupancy_limit_registers dropped to 1. That closes the 64x384 promotion family for this round. The prior PTX-helper flattening family remains effectively closed-negative as well. Ranking therefore shifts back to restoring a fast default path through the distinct auxiliary 256x128 family first, with the exact PTX default fallback and staged 128x128x32 as lower-rank alternatives."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

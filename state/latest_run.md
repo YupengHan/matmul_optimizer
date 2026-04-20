@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_113238_bf16_gemm_v1_ef8cb27`
-- run dir: `runs/20260420_113238_bf16_gemm_v1_ef8cb27`
-- kernel tag: `bf16_gemm_v1_ef8cb27`
-- round label: `round 75/100`
+- run id: `20260420_113704_bf16_gemm_v1_a4dc5e8`
+- run dir: `runs/20260420_113704_bf16_gemm_v1_a4dc5e8`
+- kernel tag: `bf16_gemm_v1_a4dc5e8`
+- round label: `round 76/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `33.594879 ms`
-- p10 runtime: `33.316970 ms`
-- p90 runtime: `35.156787 ms`
-- TFLOP/s: `21.640781 TFLOP/s`
-- previous run id: `20260420_112828_bf16_gemm_v1_f1ae7fa`
-- runtime delta vs previous measured run: `+8.898047 ms`
-- TFLOP/s delta vs previous measured run: `-7.796980 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `31.867904 ms`
+- p10 runtime: `31.545959 ms`
+- p90 runtime: `32.386765 ms`
+- TFLOP/s: `22.813531 TFLOP/s`
+- previous run id: `20260420_113238_bf16_gemm_v1_ef8cb27`
+- runtime delta vs previous measured run: `-1.726975 ms`
+- TFLOP/s delta vs previous measured run: `+1.172750 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Promote The 64x384 Hot-Band Dispatch And Retune Around The Wide-Tile Path`
+- implemented direction name: `Restore The Fast Auxiliary 256x128 Default Hot-Band Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_113238_bf16_gemm_v1_ef8cb27/summary.json`
-- measured commit: `ef8cb27f3c48e6dc473559e4a6c3fb3da8b055b8`
+- raw summary json: `runs/20260420_113704_bf16_gemm_v1_a4dc5e8/summary.json`
+- measured commit: `a4dc5e8104404eb15624be12dac380ba80e64ec6`
 - new best custom: `no`
-- generated at: `2026-04-20T11:32:45-07:00`
+- generated at: `2026-04-20T11:37:13-07:00`
