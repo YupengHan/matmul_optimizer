@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_105642_bf16_gemm_v1_5a21584`
-- run dir: `runs/20260420_105642_bf16_gemm_v1_5a21584`
-- kernel tag: `bf16_gemm_v1_5a21584`
-- round label: `round 70/100`
+- run id: `20260420_110307_bf16_gemm_v1_11e5dae`
+- run dir: `runs/20260420_110307_bf16_gemm_v1_11e5dae`
+- kernel tag: `bf16_gemm_v1_11e5dae`
+- round label: `round 71/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.907200 ms`
-- p10 runtime: `25.429504 ms`
-- p90 runtime: `27.042918 ms`
-- TFLOP/s: `28.062447 TFLOP/s`
-- previous run id: `20260420_105019_bf16_gemm_v1_3a888bc`
-- runtime delta vs previous measured run: `+0.408064 ms`
-- TFLOP/s delta vs previous measured run: `-0.449085 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.746432 ms`
+- p10 runtime: `25.406345 ms`
+- p90 runtime: `26.496003 ms`
+- TFLOP/s: `28.237676 TFLOP/s`
+- previous run id: `20260420_105642_bf16_gemm_v1_5a21584`
+- runtime delta vs previous measured run: `-0.160768 ms`
+- TFLOP/s delta vs previous measured run: `+0.175229 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep The Exact Current Base And Tighten The One-Sync Handoff`
+- implemented direction name: `Restore the exact round-69 base, then change PTX issue grouping inside the 64x64 compute helpers without changing accepted traversal semantics`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_105642_bf16_gemm_v1_5a21584/summary.json`
-- measured commit: `5a21584ac3d044480ca444ddf33079841742f21d`
+- raw summary json: `runs/20260420_110307_bf16_gemm_v1_11e5dae/summary.json`
+- measured commit: `11e5daeb5a66a62b66c1d61a4bf59d47622a76ec`
 - new best custom: `no`
-- generated at: `2026-04-20T10:56:50-07:00`
+- generated at: `2026-04-20T11:03:15-07:00`

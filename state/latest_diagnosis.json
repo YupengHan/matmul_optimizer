@@ -1,79 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_105723",
-  "status": "completed",
-  "created_at": "2026-04-20T10:57:23-07:00",
-  "source_run_id": "20260420_105642_bf16_gemm_v1_5a21584",
-  "source_run_dir": "runs/20260420_105642_bf16_gemm_v1_5a21584",
-  "source_summary_json": "runs/20260420_105642_bf16_gemm_v1_5a21584/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_110307_bf16_gemm_v1_11e5dae",
+  "source_run_dir": "runs/20260420_110307_bf16_gemm_v1_11e5dae",
+  "source_summary_json": "runs/20260420_110307_bf16_gemm_v1_11e5dae/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
+  "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the exact round-69 base, then change PTX issue grouping inside the 64x64 compute helpers without changing accepted traversal semantics",
-      "hypothesis": "The current reproducible exact base is the round-69 restore at 25.49913597 ms, not the old historical 24.57088089 ms snapshot. Round 70 tested a very narrow one-sync handoff closure by splitting only the final tile out of the hot loop, and it regressed badly to 25.90719986 ms while barrier fell from 6.41 to 4.49 but long_scoreboard jumped from 3.98 to 12.11. That is strong evidence that the handoff-closure family is closed-negative in this exact-base regime: it mainly trades barrier for scoreboard and loses runtime. With grouped_rows sweeps, snake locality, fixed-K peeling, export traversal changes, A-first refill, consumer-order sweeps, and broad stage overexpansions all already closed, the best remaining bounded family is a PTX issue-order move that preserves the accepted semantics: grouped_rows=8, right-left 64x64 PTX consume order, reversed PTX compute row-pair traversal, linear export traversal, one-sync steady-state handoff, B-first refill, active-loop unroll 2, accepted 256x128 unroll 1, and accepted helper shapes. Concretely, restore the exact round-69 base first, then change only how the PTX 64x64 compute helpers group and issue the already-accepted work, for example by batching the accepted right-left column issues or otherwise reshaping helper structure inside the current row-pair recursion without changing the logical consume order or the higher-row-first compute traversal.",
-      "expected_bottleneck": "PTX compute-helper issue grouping and scheduler behavior inside the accepted 64x64 hot-band microkernel, now exposed as long scoreboard after the handoff family was falsified.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:730-781",
-        "src/kernels/bf16_gemm_v1.cu:1934-2025"
-      ],
-      "risk": "Moderate. This is a bounded one-node_c change in the active PTX hot-band compute helpers, but it is easy to accidentally drift into a disguised reopen of consumer-order sweeps or handoff timing if the semantics are not held fixed.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the exact round-69 base at 25.49913597 ms",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "correctness on all three fixed BF16 cases"
-      ],
-      "stop_condition": "Reject if the edit alters the accepted consume order or reversed row-pair traversal semantics, or if long_scoreboard stays elevated relative to the exact round-69 base without a runtime gain."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore the exact round-69 base, then do only a low-priority export-scratch lifetime cleanup while keeping linear export order",
-      "hypothesis": "Export-side second-sync removal is not a primary runtime lever. Round 67 already showed runtime stayed flat even though long_scoreboard improved sharply, so export work should not be treated as the main thesis for this loop. Still, once the exact round-69 base is restored, there is room for one low-priority export-lifetime cleanup that keeps linear export order and does not reopen export traversal changes. This remains materially different from dir_01 because it targets export scratch lifetime and writeback sequencing rather than compute-side issue grouping, but it ranks lower because the evidence already says the upside is capped.",
-      "expected_bottleneck": "Residual export scratch lifetime and writeback overhead on the exact accepted base, after accepting that second-sync removal alone does not buy real runtime.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:138-142",
-        "src/kernels/bf16_gemm_v1.cu:985-1025"
-      ],
-      "risk": "Moderate. The export path is correctness-sensitive, and recent evidence already says it is not a primary lever, so this should stay tightly bounded and secondary.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the exact round-69 base at 25.49913597 ms",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "l1tex__lsu_writeback_active.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "correctness on all three fixed BF16 cases"
-      ],
-      "stop_condition": "Reject immediately if the change drifts into export traversal changes or remains runtime-flat once the exact round-69 base is restored."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore the exact round-69 base, then simplify PTX helper control structure without changing accepted loop or launch semantics",
-      "hypothesis": "A third bounded family is a helper-structure cleanup that preserves the exact base semantics but simplifies how the current PTX helpers express them. The active hot-band path still uses recursive template helpers for reversed row-pair traversal and per-column issue, while round 70 also added a closed-negative final-tile split. After restoring the exact round-69 base, a bounded cleanup can stay away from handoff, launch order, grouped_rows, and consumer-order changes and instead reduce helper-control clutter or recursion shape while preserving grouped_rows=8, right-left consume order, reversed row-pair traversal, linear export order, B-first refill, and the original one-sync loop. This is weaker than dir_01 because it targets control-expression overhead rather than the actual issue grouping directly, but it is still a distinct family from export work and from handoff closure.",
-      "expected_bottleneck": "Helper-control and codegen overhead around the accepted PTX compute path rather than launch locality, handoff timing, or export order.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:730-781",
-        "src/kernels/bf16_gemm_v1.cu:1977-2023"
-      ],
-      "risk": "Moderate to high. The gain ceiling is smaller, and this family can accidentally collapse back into the already-closed final-tile split or handoff-closure space if it broadens beyond helper-structure cleanup.",
-      "metrics_to_recheck": [
-        "median_runtime_ms against the exact round-69 base at 25.49913597 ms",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-        "correctness on all three fixed BF16 cases"
-      ],
-      "stop_condition": "Reject if the change reintroduces any final-tile split, grouped_rows / launch-order change, or handoff modification instead of staying a semantics-preserving helper cleanup."
-    }
-  ],
-  "notes": "Round 71 diagnosis is anchored to run 20260420_105642_bf16_gemm_v1_5a21584 at 25.90719986 ms. The target remains below 20 ms. The current reproducible exact base is the round-69 restore of the accepted surface at 25.49913597 ms, not the older historical 24.57088089 ms snapshot. Round 70 then tested a very narrow one-sync handoff closure by splitting only the final tile out of the hot loop, and it regressed badly while barrier dropped from 6.41 to 4.49 but long_scoreboard jumped from 3.98 to 12.11. That is treated as direct evidence that the handoff-closure family is closed-negative in this current exact-base regime: it mainly trades barrier for scoreboard and loses runtime. Closed-negative families for this round therefore include grouped_rows sweeps, snake locality, fixed-K peeling, export traversal changes, A-first refill, consumer-order sweeps, broad stage overexpansions, and the narrow handoff-closure family itself. Human-idea audit: tiling is already accepted only as the current fixed CTA / warp / 64x64 PTX microtile hierarchy, so retiling is deferred; coalescing and wide global access are already accepted through the current async-copy path; shared-memory reuse is already accepted in the staged A/B tiles; async copy is already accepted; bank-conflict work is accepted only insofar as it preserves the current right-left consume order and exact base semantics, so broad bank-conflict remaps are rejected; L2 locality is closed-negative for grouped_rows and snake-style launch-order variants; register reuse remains open only in a semantics-preserving compute-helper issue-grouping form, which is why dir_01 ranks first; Pg2s remains accepted in the current base; Ps2r remains closed if it implies extra-live staging or broader helper semantics changes; stage work is accepted only as the exact current one-sync base, and the handoff-closure family is now closed-negative in this regime. Ranking rationale: dir_01 is the best next move because it preserves the exact base and attacks the newly exposed long-scoreboard problem at the compute-helper issue-grouping level instead of reopening any closed family. Dir_02 keeps a low-priority export-lifetime check available but explicitly treats export-side second-sync removal as non-primary. Dir_03 keeps one more bounded helper-structure idea on the table without touching launch order, grouped_rows, handoff timing, or export traversal."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
