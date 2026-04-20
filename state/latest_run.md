@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_113704_bf16_gemm_v1_a4dc5e8`
-- run dir: `runs/20260420_113704_bf16_gemm_v1_a4dc5e8`
-- kernel tag: `bf16_gemm_v1_a4dc5e8`
-- round label: `round 76/100`
+- run id: `20260420_114003_bf16_gemm_v1_9f8afe4`
+- run dir: `runs/20260420_114003_bf16_gemm_v1_9f8afe4`
+- kernel tag: `bf16_gemm_v1_9f8afe4`
+- round label: `round 77/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.867904 ms`
-- p10 runtime: `31.545959 ms`
-- p90 runtime: `32.386765 ms`
-- TFLOP/s: `22.813531 TFLOP/s`
-- previous run id: `20260420_113238_bf16_gemm_v1_ef8cb27`
-- runtime delta vs previous measured run: `-1.726975 ms`
-- TFLOP/s delta vs previous measured run: `+1.172750 TFLOP/s`
+- median runtime: `25.973760 ms`
+- p10 runtime: `25.406665 ms`
+- p90 runtime: `27.520307 ms`
+- TFLOP/s: `27.990535 TFLOP/s`
+- previous run id: `20260420_113704_bf16_gemm_v1_a4dc5e8`
+- runtime delta vs previous measured run: `-5.894144 ms`
+- TFLOP/s delta vs previous measured run: `+5.177003 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Fast Auxiliary 256x128 Default Hot-Band Path`
+- implemented direction name: `Restore The Exact Fast PTX Default Hot-Band Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_113704_bf16_gemm_v1_a4dc5e8/summary.json`
-- measured commit: `a4dc5e8104404eb15624be12dac380ba80e64ec6`
+- raw summary json: `runs/20260420_114003_bf16_gemm_v1_9f8afe4/summary.json`
+- measured commit: `9f8afe4d5bc56643bbd110d2285046ea298e310b`
 - new best custom: `no`
-- generated at: `2026-04-20T11:37:13-07:00`
+- generated at: `2026-04-20T11:40:11-07:00`

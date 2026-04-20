@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore The Exact Fast PTX Default Hot-Band Path",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T11:38:56-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_113820",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Restore The Exact Fast PTX Default Hot-Band Path",
-    "hypothesis": "The non-PTX default hot-band dispatch promotion family is closed-negative for now. The round-76 auxiliary-256x128 default improved over the failed 64x384 path, but it is still far from the prior fast PTX regime: 31.86790371 ms vs about 24.696 ms. The cleanest recovery is to restore the exact fast PTX default hot-band path from the restored baseline, rather than keep iterating on promoted default dispatches. That means returning to the 128x128 PTX microkernel hot band with the peeled 384-row band and 96-column tail, which previously tracked the fast regime without the DRAM-heavy promotion behavior.",
-    "expected_bottleneck": "The failed non-PTX default promotions are exposing barrier and memory inflation rather than a compute win, so the baseline PTX path should re-center the profile on the proven lower-overhead hot-band schedule.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:152-159",
-      "src/kernels/bf16_gemm_v1.cu:1908-2012",
-      "src/kernels/bf16_gemm_v1.cu:2064-2105"
-    ],
-    "risk": "Medium. This is the most direct rollback to the prior fast regime, but it still has to be implemented cleanly so the wide-tile promotions do not stay latent in the default launch path.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "launch__occupancy_limit_registers"
-    ],
-    "stop_condition": "Stop if restoring the exact PTX default path does not return the kernel to the prior fast regime or if the implementation still depends on a non-PTX default promotion to stay competitive."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
