@@ -385,20 +385,37 @@ __device__ __forceinline__ void ptx_wmma_fill_zero_tile_set(PtxWmmaAccTileSet384
   }
 }
 
-template <int TileIdx = 0>
+template <int TileIdx>
+__device__ __forceinline__ void ptx_wmma_accumulate_tile_set_lookahead_384(
+    PtxWmmaAccTileSet384& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag,
+    const __nv_bfloat16* b_tile,
+    const PtxWmmaBf16Fragment& curr_b_frag) {
+  if constexpr ((TileIdx + 1) < TensorCoreTile384::kWarpMmaTilesN) {
+    PtxWmmaBf16Fragment next_b_frag;
+    ptx_wmma_load_b_row(
+        next_b_frag,
+        b_tile + (TileIdx + 1) * kWmmaN,
+        TensorCoreTile384::kBSharedStride);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, curr_b_frag);
+    ptx_wmma_accumulate_tile_set_lookahead_384<TileIdx + 1>(
+        acc_tiles, a_frag, b_tile, next_b_frag);
+  } else {
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, curr_b_frag);
+  }
+}
+
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_384(
     PtxWmmaAccTileSet384& acc_tiles,
     const PtxWmmaBf16Fragment& a_frag,
     const __nv_bfloat16* b_tile) {
-  if constexpr (TileIdx < TensorCoreTile384::kWarpMmaTilesN) {
-    PtxWmmaBf16Fragment b_frag;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + TileIdx * kWmmaN,
-        TensorCoreTile384::kBSharedStride);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<TileIdx>(acc_tiles), a_frag, b_frag);
-    ptx_wmma_accumulate_tile_set_384<TileIdx + 1>(acc_tiles, a_frag, b_tile);
-  }
+  PtxWmmaBf16Fragment first_b_frag;
+  ptx_wmma_load_b_row(
+      first_b_frag,
+      b_tile,
+      TensorCoreTile384::kBSharedStride);
+  ptx_wmma_accumulate_tile_set_lookahead_384<0>(
+      acc_tiles, a_frag, b_tile, first_b_frag);
 }
 
 template <typename TileConfig, int TileIdx = 0>
