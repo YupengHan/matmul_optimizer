@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `84de30b73776656fed997f60535082ce957bc002`
 - plateau counter: `25`
 - round loop: `round 84/100`
 - rounds remaining: `17`
-- notes: `Node A completed round 83/100. Run node_b to continue round 84/100.`
+- notes: `Node C is ready to implement dir_01 via recommended selection for round 84/100.`
 
 ## Latest measured custom run
 
@@ -28,44 +28,23 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_152858`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 84/100 diagnosis for run 20260420_120552_bf16_gemm_v1_84de30b. Human-review mapping: accept narrow PTX-adjacent ideas and very small export/feed/orchestration experiments on top of the zero-padding PTX baseline; defer pure baseline-restore work unless it isolates the current regression; reject reopening the broad default-promotion family, the staged K32 family, the paired PTX export-lifetime helper, helper flattening without a new codegen thesis, and the already-flat grouped_rows=4 replay as a standalone answer. The latest regression is confounded: the measured run tightened kFixedHotBandPtxGroupedRows from 8 to 4, but it also left the PTX hot-band microkernel family entirely and launched the regular 128x128 hot-band kernel. That only trimmed hot-band long-scoreboard slightly (7.61 -> 7.25) while blowing up hot-band DRAM throughput (10.29% -> 30.29%), so the next step should re-isolate long-scoreboard work inside the PTX path instead of ranking the current non-PTX result as the true grouped-row answer.`
+- dir_01: Re-enter The PTX Hot-Band Path With A Mid-Width Grouping Control | bottleneck: Long-scoreboard in the PTX hot-band kernel, with DRAM and L2 locality acting as guardrails while the grouped-row mapping is re-isolated.
+- dir_02: Retune PTX Microkernel Feed Cadence Around The Row-Pair Loop | bottleneck: Feed latency and stage handoff inside the PTX hot-band steady-state loop, showing up as long-scoreboard and barrier tradeoffs around the row-pair MMA traversal.
+- dir_03: Rework PTX Group Traversal To Preserve B Locality Without Broad Groups | bottleneck: Hot-band orchestration and CTA traversal locality, especially the balance between B reuse, L2 behavior, and scoreboard cost across grouped-row boundaries.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
 - current best custom gap: `-1.347008 ms`, `0.948028x` slower than CUTLASS
-
-## Persisted handoff for the next terminal
-
-- treat `20260420_115626_bf16_gemm_v1_469a12b` at `25.643007 ms` as the best active baseline in the current environment
-- that baseline corresponds to the PTX microkernel default hot-band with `FixedHotBandTile128x128PtxExportScratch::kPadFloatsPerRow = 0`
-- do not re-open pure baseline-restore work as a primary direction; the same source surface has already measured differently across sessions, so future rounds should target new bottlenecks rather than spend budget proving that again
-- the current residual bottleneck shape after the export-padding win is:
-- tensor active near `48%`
-- barrier near `5.5%`
-- DRAM near `10%`
-- long scoreboard still elevated
-- broad default hot-band promotions are closed-negative for now
-- evidence: `64x384` default promotion -> `33.594879 ms`
-- evidence: `256x128` default promotion -> `31.867904 ms`
-- staged `128x128x32` K32 family is closed-negative for now
-- evidence: `31.552928 ms`
-- paired PTX export-lifetime helper is closed-negative for now
-- evidence: `25.837568 ms` vs the `25.643007 ms` active baseline
-- PTX grouped-row narrowing from `8` to `4` is closed or near-closed
-- evidence: `25.944464 ms`
-- bounded `128x128` two-stage feed-cadence retime is weak / flat, not a primary continuation line
-- evidence: `25.904127 ms`
-- the next useful diagnosis should prioritize narrow PTX-adjacent ideas that target `long_scoreboard` without reintroducing DRAM / barrier inflation
