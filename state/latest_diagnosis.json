@@ -1,86 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_203505",
-  "status": "completed",
-  "created_at": "2026-04-19T20:35:05-07:00",
-  "source_run_id": "20260419_203259_bf16_gemm_v1_786b3e4",
-  "source_run_dir": "runs/20260419_203259_bf16_gemm_v1_786b3e4",
-  "source_summary_json": "runs/20260419_203259_bf16_gemm_v1_786b3e4/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_204427_bf16_gemm_v1_d777e9e",
+  "source_run_dir": "runs/20260419_204427_bf16_gemm_v1_d777e9e",
+  "source_summary_json": "runs/20260419_204427_bf16_gemm_v1_d777e9e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 7/9 Register reuse + Ps2r: move the 64x32 local-half live-set cut onto the true 256x128 hot-band kernel",
-      "hypothesis": "Round 1 proved that lowering register pressure on the residual 64x384 peeled kernel is not enough, because the real hotspot is still `bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<(int)452>` at about 41.03 us with 167 registers/thread and occupancy still capped by registers. The next best move is therefore to port the previously promising 64x32 local-half schedule back onto this actual hot kernel: keep the outer CTA shape and full 256x128 coverage, but serialize each warp's 64x64 output tile into two 64x32 passes so the live B-fragment and accumulator set is cut roughly in half. This is the strongest mapping from the user's `Register Reuse`, `Ps2r`, and `Stage` ideas to the measured bottleneck, because the current failure mode is clearly latency-hiding collapse from a too-large live set rather than DRAM saturation.",
-      "expected_bottleneck": "Register-limited occupancy and underfed tensor issue inside the 256x128 hot-band kernel. Success should lower `launch__registers_per_thread`, move `launch__occupancy_limit_registers` away from the current one-block limit, and raise `sm__warps_active` / tensor active on the dominant kernel instead of only on the peeled remainder path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile256x128",
-        "src/kernels/bf16_gemm_v1.cu:HalfPanelIdentity64x32",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_half_panel_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x32",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_run_half_panel_control_64x32",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "This is a correctness-sensitive rewrite because the old half-panel branch previously showed the right occupancy signal but failed ownership and export mapping. The main risk is recovering the register win while still writing each 64x64 warp tile to the correct global columns with no duplicated or dropped lanes.",
-      "metrics_to_recheck": [
-        "correctness_case_* max_abs_err / mean_abs_err",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if correctness still fails after the hot-band half-panel ownership/export path is made internally consistent, or if the hot-band kernel does not meaningfully reduce registers from the current 167/thread."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 5 Bank conflict: keep the 64x64 hot-band math shape but retune the B-consumer load order at warp scope only",
-      "hypothesis": "If the 64x32 half-panel rewrite is too risky for this round, the next clean direction is to stay on the current hot-band kernel and change only how the warp consumes B from shared memory. This accepts the user's `Bank Conflict` and `Data Reuse` ideas while explicitly rejecting any extra CTA-level repack or additional shared staging: keep global-to-shared cp.async unchanged, but adjust the `ptx_wmma_accumulate_tile_set_64x64` / B-fragment load order so the operand feed is better matched to the warp's issue sequence. That targets the same feed/orchestration class without reopening the macro-tile search or replaying the failed CTA repack family.",
-      "expected_bottleneck": "Warp-local shared-memory operand delivery on the true hot-band kernel rather than occupancy. A positive result would show up as higher tensor active and lower consumer-side delivery stalls without increasing shared memory footprint or reducing stage depth.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_col_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_accumulate_tile_set_64x64",
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel"
-      ],
-      "risk": "The ceiling is lower than the half-panel path because registers may stay close to 167/thread. Nsight's flattened summary also does not expose the exact consumer stall split cleanly, so this can end up as a low-signal retiming if the real wall is still live-set size.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__shared_mem_per_block_allocated",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Reject this direction if it increases shared memory footprint, inserts new CTA barriers, or leaves the hot-band runtime and tensor-active metrics essentially unchanged."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 10 Stage: specialize the 256x128 hot-band loop into fixed steady-state control with less per-iteration orchestration",
-      "hypothesis": "The user-provided `Async Copy`, `Pg2s`, and `Stage` ideas still matter here, but the measured evidence says they are secondary to the register wall for this round. The conservative fallback is therefore to keep the current 64x64 hot-band microkernel intact and shave the fixed-shape control overhead around it: split the 452 K tiles into prologue / steady-state / epilogue structure, simplify the cp.async wait/commit pattern for the known fixed trip count, and remove generic per-iteration control that is currently paid on every hot-band CTA. This has less upside than live-set reduction, but it is materially different and lower risk.",
-      "expected_bottleneck": "Steady-state orchestration overhead in the hot-band loop rather than raw operand layout. Success would mostly appear as lower hot-band runtime at similar register/shared counts, with modest tensor-active improvement from cleaner issue scheduling.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
-        "src/kernels/bf16_gemm_v1.cu:stage_a_shared_tile_async",
-        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
-      ],
-      "risk": "This is unlikely to recover the full 20 ms target by itself because it does not attack the dominant 167-register live set. It is best used only if the hot-band half-panel port proves too brittle in the current round budget.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated"
-      ],
-      "stop_condition": "Reject if the control simplification preserves essentially the same hot-band runtime while leaving registers and tensor-active flat."
-    }
-  ],
-  "notes": "Round 2/10 diagnosis pivots on one hard correction: round 1 optimized the residual `bf16_gemm_v1_tensor_core_fixed_peeled_kernel`, but the dominant runtime is still the separate `bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<(int)452>` at about 41.03 us, 167 registers/thread, shared 42.496 KiB, and occupancy limited by registers. That means the round-1 regression was mostly a target-selection miss, not evidence against live-set reduction itself. Human-idea audit for this round: `Tiling` is deferred because the current bottleneck is not a lack of CTA coverage but a live-set wall inside the chosen hot tile; `Coalescing Access`, `Data Reuse`, and `Async Copy` are accepted as background constraints but not as the primary change, since the current kernel already uses wide 16-byte cp.async staging and DRAM throughput remains modest; `Bank Conflict` is accepted only in the warp-local consumer-scope form and explicitly rejected in CTA repack form; `L2 Cache` is deferred because the profile is not L2-saturated; `Register Reuse` is the primary accepted family because the hot kernel is still at 167 regs/thread and one-block occupancy; `Pg2s` and `Stage` are accepted as secondary structure choices that must support, not replace, the live-set cut; `Ps2r` is accepted in the sense that the chosen direction serializes the consumer working set so shared-to-register feed can stay ahead of mma. Recommended direction `dir_01` is therefore the highest-upside, highest-relevance move for round 2: port the 64x32 local-half branch onto the true 256x128 hot kernel and only then judge whether the family is valid."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

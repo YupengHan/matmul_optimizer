@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_203259_bf16_gemm_v1_786b3e4`
-- run dir: `runs/20260419_203259_bf16_gemm_v1_786b3e4`
-- kernel tag: `bf16_gemm_v1_786b3e4`
-- round label: `round 1/10`
+- run id: `20260419_204427_bf16_gemm_v1_d777e9e`
+- run dir: `runs/20260419_204427_bf16_gemm_v1_d777e9e`
+- kernel tag: `bf16_gemm_v1_d777e9e`
+- round label: `round 2/10`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.415296 ms`
-- p10 runtime: `29.627325 ms`
-- p90 runtime: `31.099713 ms`
-- TFLOP/s: `23.903086 TFLOP/s`
-- previous run id: `20260419_202711_bf16_gemm_v1_5135c1d`
-- runtime delta vs previous measured run: `+0.104976 ms`
-- TFLOP/s delta vs previous measured run: `-0.082785 TFLOP/s`
+- median runtime: `30.644224 ms`
+- p10 runtime: `30.317596 ms`
+- p90 runtime: `31.536579 ms`
+- TFLOP/s: `23.724517 TFLOP/s`
+- previous run id: `20260419_203259_bf16_gemm_v1_786b3e4`
+- runtime delta vs previous measured run: `+0.228929 ms`
+- TFLOP/s delta vs previous measured run: `-0.178569 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 7 Register reuse: keep the outer 64x384 hot path, but serialise the inner live set into 2x192 micro-panels`
+- implemented direction name: `Human idea 7/9 Register reuse + Ps2r: move the 64x32 local-half live-set cut onto the true 256x128 hot-band kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_203259_bf16_gemm_v1_786b3e4/summary.json`
-- measured commit: `786b3e4e1c7f3af5172b6e3b88e32251bd72c972`
+- raw summary json: `runs/20260419_204427_bf16_gemm_v1_d777e9e/summary.json`
+- measured commit: `d777e9e7089a038cf09cb966e7ee5ea458717dd4`
 - new best custom: `no`
-- generated at: `2026-04-19T20:33:06-07:00`
+- generated at: `2026-04-19T20:44:35-07:00`
