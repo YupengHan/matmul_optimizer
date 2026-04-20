@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_011851_bf16_gemm_v1_f8e7058`
-- run dir: `runs/20260420_011851_bf16_gemm_v1_f8e7058`
-- kernel tag: `bf16_gemm_v1_f8e7058`
-- round label: `round 37/100`
+- run id: `20260420_012953_bf16_gemm_v1_e26d834`
+- run dir: `runs/20260420_012953_bf16_gemm_v1_e26d834`
+- kernel tag: `bf16_gemm_v1_e26d834`
+- round label: `round 38/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.150880 ms`
-- p10 runtime: `25.896847 ms`
-- p90 runtime: `27.822592 ms`
-- TFLOP/s: `27.800955 TFLOP/s`
-- previous run id: `20260420_011121_bf16_gemm_v1_e0ebab7`
-- runtime delta vs previous measured run: `+0.022576 ms`
-- TFLOP/s delta vs previous measured run: `-0.024022 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.974272 ms`
+- p10 runtime: `25.840742 ms`
+- p90 runtime: `27.509037 ms`
+- TFLOP/s: `27.989983 TFLOP/s`
+- previous run id: `20260420_011851_bf16_gemm_v1_f8e7058`
+- runtime delta vs previous measured run: `-0.176608 ms`
+- TFLOP/s delta vs previous measured run: `+0.189028 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the active PTX B-fragment reuse, but rewrite warp-local sequencing to shrink the new short-scoreboard and barrier cost`
+- implemented direction name: `Trim the active PTX export path and c_shared round-trip before touching feed again`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_011851_bf16_gemm_v1_f8e7058/summary.json`
-- measured commit: `f8e7058c29b7f3cee19fb36701f9b82e048961e5`
-- new best custom: `no`
-- generated at: `2026-04-20T01:18:58-07:00`
+- raw summary json: `runs/20260420_012953_bf16_gemm_v1_e26d834/summary.json`
+- measured commit: `e26d834e2583eaa041749b99e07234b9454d49e5`
+- new best custom: `yes`
+- generated at: `2026-04-20T01:29:59-07:00`

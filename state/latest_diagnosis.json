@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_011928",
-  "status": "completed",
-  "created_at": "2026-04-20T01:19:28-07:00",
-  "source_run_id": "20260420_011851_bf16_gemm_v1_f8e7058",
-  "source_run_dir": "runs/20260420_011851_bf16_gemm_v1_f8e7058",
-  "source_summary_json": "runs/20260420_011851_bf16_gemm_v1_f8e7058/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_012953_bf16_gemm_v1_e26d834",
+  "source_run_dir": "runs/20260420_012953_bf16_gemm_v1_e26d834",
+  "source_summary_json": "runs/20260420_012953_bf16_gemm_v1_e26d834/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Trim the active PTX export path and c_shared round-trip before touching feed again",
-      "hypothesis": "Primary family for round 38/100: export-path and shared-bank-overhead work on the active 128x128 K16 PTX hot-band branch. The branch had already recovered to 26.093568 ms, then two bounded consumer-side B-reuse iterations failed to convert their feed win into end-to-end speed: round 36 moved runtime to 26.128304 ms while collapsing mio_throttle from 4.45% to 0.48%, but short-scoreboard jumped from 1.67% to 5.89% and barrier from 8.05% to 10.95%; round 37 removed the next_b_frag lookahead and still regressed slightly again to 26.150880 ms with short-scoreboard 5.88%, barrier 10.90%, and mio_throttle still 0.48%. That is the stop condition for consumer-side B reuse as the current primary path. The next best move is to keep the active PTX hot loop stable and attack the untouched c_shared export chain directly: reduce paired-tile scratch traffic, trim shared-bank writes and LSU wavefronts in the BF16 export helpers, or narrow the per-warp round-trip so less synchronization sits after the MMA loop. This keeps the ranking centered on the active PTX branch and tests whether the feed-side improvement already exposed an epilogue-side shared bottleneck that now has more leverage toward the 20 ms goal.",
-      "expected_bottleneck": "Shared-memory export overhead on the active PTX hot-band branch, especially c_shared bank writes, LSU wavefront pressure, and synchronization after the MMA loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:804-923",
-        "src/kernels/bf16_gemm_v1.cu:1811-1894",
-        "src/kernels/bf16_gemm_v1.cu:1944-1951"
-      ],
-      "risk": "Medium. Export-only work is narrower than another feed rewrite, but it can shift cost into registers or awkward BF16 packing/stores and accidentally lower tensor issue if the scratch reduction is not disciplined.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed",
-        "launch__shared_mem_per_block_allocated",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if one bounded export-path pass cannot materially lower bank-write or LSU/barrier pressure on the active PTX branch, or if runtime stays flat while register/shared cost rises."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Back off to a narrower consumer-side B-reuse variant instead of the current two-row-pair fusion",
-      "hypothesis": "Secondary family for round 38/100: keep the active PTX branch, but demote consumer-side B reuse to a narrower fallback rather than abandoning it or keeping the current fully fused form. The measured signal is still real because mio_throttle stayed collapsed at 0.48%, but two iterations in a row failed to recover short-scoreboard and barrier, so the current width is too aggressive for the primary path. The bounded fallback is to shorten fragment lifetime without changing the producer cp.async path, macro tile, or c_shared export: late-load the second A row pair, reuse B within one row pair at a time, or keep the mirrored order with a lighter Right-Left-Right-Left consume pattern that does not hold the same B fragment across both 32-row pairs. This preserves the one good signal from rounds 36-37 while acknowledging that the present form is not the next best mainline move.",
-      "expected_bottleneck": "Over-extended warp-local fragment lifetime in the active PTX consumer path, where the current B reuse removes MIO pressure but turns it into short-scoreboard dependency chains and exposed synchronization.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:687-738",
-        "src/kernels/bf16_gemm_v1.cu:725-738",
-        "src/kernels/bf16_gemm_v1.cu:1860-1866"
-      ],
-      "risk": "Medium-high. A narrower fallback can easily give back the only clear win, the mio_throttle collapse, without recovering enough tensor issue or runtime to matter.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "Stop if the narrower reuse variant gives back most of the mio-throttle win or still cannot beat the recovered 26.093568 ms branch."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Do one explicit fixed-shape PTX sequencing cleanup pass without adding deeper stages",
-      "hypothesis": "Tertiary family for round 38/100: fixed-shape PTX sequencing cleanup on the active hot-band branch. Keep the current two-stage K16 cp.async baseline and do not reopen deeper Stage or broader Async Copy work, but simplify the steady-state control that still surrounds every tile: prologue versus steady-state versus final-iteration wait choice, the placement of __syncthreads around future-tile staging, and any remaining per-iteration sequencing that is generic rather than fixed-shape. This is materially different from dir_01 because it leaves the export helpers unchanged, and different from dir_02 because it does not change B-fragment reuse width. The ceiling is lower than export-path work, but if barrier exposure is partly orchestration rather than pure c_shared cost, one explicit PTX scheduling cleanup pass could still recover issue efficiency on the active branch.",
-      "expected_bottleneck": "Fixed-shape orchestration overhead in the active PTX K16 loop, where wait-group choice and block-wide synchronization may still be too generic for a 452-tile steady state.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:329-335",
-        "src/kernels/bf16_gemm_v1.cu:924-951",
-        "src/kernels/bf16_gemm_v1.cu:1835-1888"
-      ],
-      "risk": "Medium. The cleanup is conceptually bounded, but it is easy to perturb correctness or overlap when touching the active PTX loop sequencing, and the upside may be smaller than export-path trimming.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if one fixed-shape sequencing pass cannot reduce barrier exposure or improve tensor-active without reopening the deeper-stage failure mode."
-    }
-  ],
-  "notes": "Round 38/100 diagnoses run 20260420_011851_bf16_gemm_v1_f8e7058 at 26.150880 ms on the active 128x128 K16 PTX hot-band branch. The branch had previously recovered to 26.093568 ms. Then two bounded consumer-side B-reuse iterations failed to produce an end-to-end win: round 36 moved to 26.128304 ms while collapsing mio_throttle from 4.45% to 0.48%, but short-scoreboard rose from 1.67% to 5.89% and barrier from 8.05% to 10.95%; round 37 removed the next_b_frag lookahead and still landed at 26.150880 ms with short-scoreboard 5.88%, barrier 10.90%, long-scoreboard 1.15%, tensor-active 48.05%, DRAM 36.56%, L2 31.14%, and mio_throttle still 0.48%. Treat that as the stop condition for consumer-side B reuse as the current primary path: the feed-side signal is real, but the current form is not paying off end to end. Human-idea audit for this round, family by family: Tiling is rejected as the primary family because the real 256x128 promotion already regressed badly and the active 128x128 PTX path remains the best live branch. Coalescing Access is deferred because the active path already uses 16-byte cp.async global movement and the latest regressions are not explained by under-packed global transactions. Data Reuse is accepted only in the existing shared-memory baseline plus a bounded narrower consumer-side fallback; CTA-level repack remains rejected. Async Copy is accepted only as the current two-stage non-blocking baseline; no deeper rewrite is recommended this round. Bank Conflict is accepted and now promoted through the export-path lens because once mio_throttle collapsed, c_shared bank writes and export-side shared behavior became a more plausible next limiter. L2 Cache is deferred; grouped launch-order work was useful earlier, but the current evidence still points inside the active PTX branch before another L2-oriented pass. Register Reuse is accepted in two bounded forms: lighter export live-set and a narrower consumer-side fallback, not another broader fusion. Pg2s is accepted only as the existing baseline. Ps2r is accepted only for narrower warp-local consume cleanup, not as the mainline direction after two failed B-reuse rounds. Stage is deferred beyond the current two-stage baseline because deeper stage experiments already lost badly. The target remains 20 ms, not merely the 25.917889 ms CUTLASS baseline, so the ranking stays centered on the active PTX hot-band branch and now prefers export-path / c_shared / shared-bank-overhead work as the next primary family."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
