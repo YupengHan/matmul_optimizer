@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_075705_bf16_gemm_v1_47484fa`
-- run dir: `runs/20260420_075705_bf16_gemm_v1_47484fa`
-- kernel tag: `bf16_gemm_v1_47484fa`
-- round label: `round 49/100`
+- run id: `20260420_080414_bf16_gemm_v1_92cecc3`
+- run dir: `runs/20260420_080414_bf16_gemm_v1_92cecc3`
+- kernel tag: `bf16_gemm_v1_92cecc3`
+- round label: `round 50/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.728224 ms`
-- p10 runtime: `30.555239 ms`
-- p90 runtime: `33.370417 ms`
-- TFLOP/s: `22.913965 TFLOP/s`
-- previous run id: `20260420_074908_bf16_gemm_v1_b6110a1`
-- runtime delta vs previous measured run: `+5.968479 ms`
-- TFLOP/s delta vs previous measured run: `-5.309118 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `26.128896 ms`
+- p10 runtime: `25.700045 ms`
+- p90 runtime: `26.885530 ms`
+- TFLOP/s: `27.824345 TFLOP/s`
+- previous run id: `20260420_075705_bf16_gemm_v1_47484fa`
+- runtime delta vs previous measured run: `-5.599328 ms`
+- TFLOP/s delta vs previous measured run: `+4.910380 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune The Accepted Grouped-Row=8 PTX Hot Band Around Stage Cadence`
+- implemented direction name: `Hold Grouped-Row=8 K16 Fixed And Trim PTX Export Or Operand Live Range`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_075705_bf16_gemm_v1_47484fa/summary.json`
-- measured commit: `47484fae7cf2c42fa7acda5e5ce2f2beafc4e1c8`
+- raw summary json: `runs/20260420_080414_bf16_gemm_v1_92cecc3/summary.json`
+- measured commit: `92cecc34d4a3c3f2e9e71d077cd466f6effba291`
 - new best custom: `no`
-- generated at: `2026-04-20T07:57:13-07:00`
+- generated at: `2026-04-20T08:04:22-07:00`
