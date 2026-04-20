@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="10418" viewBox="0 0 1800 10418">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="12548" viewBox="0 0 1800 12548">
 
 <defs>
   <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -18,7 +18,7 @@
   </marker>
 </defs>
 
-<rect width="1800" height="10418" fill="#FBFCFE"/>
+<rect width="1800" height="12548" fill="#FBFCFE"/>
 <text x="64" y="52" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="800" fill="#0F172A" text-anchor="start">matmul_optimizer optimization tree</text>
 <text x="64" y="82" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" font-weight="600" fill="#334155" text-anchor="start">Current best custom kernel: 24.57 ms | CUTLASS: 25.92 ms | start: 802.84 ms</text>
 <text x="64" y="104" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" font-weight="500" fill="#334155" text-anchor="start">Main vertical spine = new best correct-so-far milestones. Side branches = other attempts grouped under the nearest accepted base.</text>
@@ -206,9 +206,34 @@
 <path d="M 690.0,9493.0 C 601.8,9493.0 568.2,9557.0 480.0,9557.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
 <path d="M 295.0,9596.0 C 295.0,9632.0 295.0,9576.0 295.0,9612.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
 <path d="M 690.0,9801.0 C 601.8,9801.0 568.2,9829.0 480.0,9829.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
-<path d="M 900.0,9948.0 C 900.0,9984.0 900.0,10234.0 900.0,10270.0" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-dasharray="7 6" marker-end="url(#arrow-goal)"/>
-<rect x="858.0" y="10087.0" width="84" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.92"/>
-<text x="900.0" y="10101.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#16A34A" text-anchor="middle">gap -1.35 ms</text>
+<path d="M 1110.0,9905.0 C 1198.2,9905.0 1231.8,9965.0 1320.0,9965.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,10004.0 C 1505.0,10040.0 1505.0,9984.0 1505.0,10020.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,10098.0 C 1505.0,10134.0 1505.0,10078.0 1505.0,10114.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,10192.0 C 1505.0,10228.0 1505.0,10172.0 1505.0,10208.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,10286.0 C 1505.0,10322.0 1505.0,10266.0 1505.0,10302.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,10380.0 C 1505.0,10416.0 1505.0,10360.0 1505.0,10396.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,10474.0 C 1505.0,10510.0 1505.0,10454.0 1505.0,10490.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,10568.0 C 1505.0,10604.0 1505.0,10548.0 1505.0,10584.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,10662.0 C 1505.0,10698.0 1505.0,10642.0 1505.0,10678.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,10756.0 C 1505.0,10792.0 1505.0,10736.0 1505.0,10772.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,10850.0 C 1505.0,10886.0 1505.0,10830.0 1505.0,10866.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,10944.0 C 1505.0,10980.0 1505.0,10924.0 1505.0,10960.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,11038.0 C 1505.0,11074.0 1505.0,11018.0 1505.0,11054.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11132.0 C 1505.0,11168.0 1505.0,11112.0 1505.0,11148.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11226.0 C 1505.0,11262.0 1505.0,11206.0 1505.0,11242.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11320.0 C 1505.0,11356.0 1505.0,11300.0 1505.0,11336.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,11414.0 C 1505.0,11450.0 1505.0,11394.0 1505.0,11430.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,11508.0 C 1505.0,11544.0 1505.0,11488.0 1505.0,11524.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11602.0 C 1505.0,11638.0 1505.0,11582.0 1505.0,11618.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11696.0 C 1505.0,11732.0 1505.0,11676.0 1505.0,11712.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,11790.0 C 1505.0,11826.0 1505.0,11770.0 1505.0,11806.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11884.0 C 1505.0,11920.0 1505.0,11864.0 1505.0,11900.0" fill="none" stroke="#10B981" stroke-width="2.4" marker-end="url(#arrow-improved)"/>
+<path d="M 1505.0,11978.0 C 1505.0,12014.0 1505.0,11958.0 1505.0,11994.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,12072.0 C 1505.0,12108.0 1505.0,12052.0 1505.0,12088.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 1505.0,12166.0 C 1505.0,12202.0 1505.0,12146.0 1505.0,12182.0" fill="none" stroke="#F97316" stroke-width="2.4" marker-end="url(#arrow-regressed)"/>
+<path d="M 900.0,9948.0 C 900.0,9984.0 900.0,12364.0 900.0,12400.0" fill="none" stroke="#16A34A" stroke-width="2.4" stroke-dasharray="7 6" marker-end="url(#arrow-goal)"/>
+<rect x="858.0" y="11152.0" width="84" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.92"/>
+<text x="900.0" y="11166.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#16A34A" text-anchor="middle">gap -1.35 ms</text>
 <rect x="690.0" y="118" width="420" height="84" rx="18" fill="#FFF1E6" stroke="#F97316" stroke-width="2.1" filter="url(#shadow)"/>
 <text x="708.0" y="138" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#8A2C0D" text-anchor="start">Starting point</text>
 <text x="708.0" y="160" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#8A2C0D" text-anchor="start">start | 802.84 ms</text>
@@ -1104,10 +1129,135 @@
 <text x="708.0" y="9904" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#123A67" text-anchor="start">R58 | 4e5579e | 24.57 ms</text>
 <text x="708.0" y="9924" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#123A67" text-anchor="start">Restore accepted grouped_rows=8 hot-band</text>
 <text x="708.0" y="9939" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#123A67" text-anchor="start">consumer ordering</text>
-<rect x="710" y="10270" width="380" height="78" rx="18" fill="#ECFDF5" stroke="#16A34A" stroke-width="2.1" filter="url(#shadow)"/>
-<text x="728" y="10290" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#14532D" text-anchor="start">Reference target</text>
-<text x="728" y="10312" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#14532D" text-anchor="start">CUTLASS | 25.92 ms</text>
-<text x="728" y="10332" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#14532D" text-anchor="start">Local baseline to beat on the same</text>
-<text x="728" y="10347" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#14532D" text-anchor="start">fixed BF16 GEMM benchmark.</text>
-<text x="1736" y="10396" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#64748B" text-anchor="end">Auto-generated from state/round_history.jsonl + state/benchmark_baselines.md</text>
+<rect x="1320" y="9926" width="370" height="78" rx="18" fill="#E8F2FF" stroke="#2B6CB0" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="9946" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#123A67" text-anchor="start">Async pipeline &amp; staging</text>
+<text x="1338" y="9968" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#123A67" text-anchor="start">R59 | f71a41f | 26.00 ms</text>
+<text x="1338" y="9988" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#123A67" text-anchor="start">PTX hot-band consumer-order</text>
+<text x="1338" y="10003" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#123A67" text-anchor="start">refinement</text>
+<rect x="1320" y="10020" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10040" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10062" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R60 | 9ee9b48 | 25.82 ms</text>
+<text x="1338" y="10082" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Restore accepted base, then test</text>
+<text x="1338" y="10097" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">mirrored hot-band column sweep</text>
+<rect x="1320" y="10114" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10134" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10156" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R61 | 06ebe93 | 25.63 ms</text>
+<text x="1338" y="10176" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Restore accepted base, then retime</text>
+<text x="1338" y="10191" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">refill issue order</text>
+<rect x="1320" y="10208" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10228" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10250" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R62 | 1d9b03e | 25.28 ms</text>
+<text x="1338" y="10270" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">restore accepted base, then narrow</text>
+<text x="1338" y="10285" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">locality window</text>
+<rect x="1320" y="10302" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10322" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10344" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R63 | 863f60f | 25.93 ms</text>
+<text x="1338" y="10364" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Restore accepted base, then retest</text>
+<text x="1338" y="10379" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">finer issue granularity on the hot</text>
+<rect x="1320" y="10396" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10416" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10438" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R64 | 96154e3 | 25.56 ms</text>
+<text x="1338" y="10458" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Restore accepted grouped_rows=8</text>
+<text x="1338" y="10473" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">base, then test 8-&gt;6 hot-band</text>
+<rect x="1320" y="10490" width="370" height="78" rx="18" fill="#FFE9EE" stroke="#E11D48" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10510" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7A1130" text-anchor="start">Epilogue &amp; data movement</text>
+<text x="1338" y="10532" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7A1130" text-anchor="start">R65 | 8c2a778 | 25.69 ms</text>
+<text x="1338" y="10552" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Restore grouped_rows=8, then align</text>
+<text x="1338" y="10567" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">PTX export order with the reversed</text>
+<rect x="1320" y="10584" width="370" height="78" rx="18" fill="#FFE9EE" stroke="#E11D48" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10604" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7A1130" text-anchor="start">Epilogue &amp; data movement</text>
+<text x="1338" y="10626" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7A1130" text-anchor="start">R66 | 1bd482e | 25.67 ms</text>
+<text x="1338" y="10646" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Restore Linear PTX Export Order,</text>
+<text x="1338" y="10661" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Then Peel The Fixed-K Steady State</text>
+<rect x="1320" y="10678" width="370" height="78" rx="18" fill="#FFE9EE" stroke="#E11D48" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10698" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7A1130" text-anchor="start">Epilogue &amp; data movement</text>
+<text x="1338" y="10720" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7A1130" text-anchor="start">R67 | 2fc3582 | 25.68 ms</text>
+<text x="1338" y="10740" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Restore the accepted unpeeled base,</text>
+<text x="1338" y="10755" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">then tighten PTX export-</text>
+<rect x="1320" y="10772" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10792" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10814" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R68 | 885b82b | 25.86 ms</text>
+<text x="1338" y="10834" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Keep The Accepted PTX Base And Close</text>
+<text x="1338" y="10849" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Within-Group Launch-Order</text>
+<rect x="1320" y="10866" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10886" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="10908" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R69 | 3a888bc | 25.50 ms</text>
+<text x="1338" y="10928" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Restore the exact accepted round-58</text>
+<text x="1338" y="10943" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">implementation surface</text>
+<rect x="1320" y="10960" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="10980" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="11002" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R70 | 5a21584 | 25.91 ms</text>
+<text x="1338" y="11022" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Keep The Exact Current Base And</text>
+<text x="1338" y="11037" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Tighten The One-Sync Handoff</text>
+<rect x="1320" y="11054" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11074" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="11096" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R71 | 11e5dae | 25.75 ms</text>
+<text x="1338" y="11116" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Restore the exact round-69 base,</text>
+<text x="1338" y="11131" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">then change PTX issue grouping</text>
+<rect x="1320" y="11148" width="370" height="78" rx="18" fill="#FFE9EE" stroke="#E11D48" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11168" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7A1130" text-anchor="start">Epilogue &amp; data movement</text>
+<text x="1338" y="11190" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7A1130" text-anchor="start">R72 | 29b11d5 | 25.60 ms</text>
+<text x="1338" y="11210" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Restore Exact Round-69 Base And</text>
+<text x="1338" y="11225" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Recheck Export Lifetime From There</text>
+<rect x="1320" y="11242" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11262" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="11284" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R73 | 9a4bb85 | 24.70 ms</text>
+<text x="1338" y="11304" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Retune The Auxiliary 256x128 Hot-</text>
+<text x="1338" y="11319" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Band K-Loop Schedule</text>
+<rect x="1320" y="11336" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11356" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="11378" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R74 | f1ae7fa | 24.70 ms</text>
+<text x="1338" y="11398" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Flatten PTX Hot-Band Compute Helpers</text>
+<text x="1338" y="11413" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">To Reduce Register</text>
+<rect x="1320" y="11430" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11450" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="11472" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R75 | ef8cb27 | 33.59 ms</text>
+<text x="1338" y="11492" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Promote The 64x384 Hot-Band Dispatch</text>
+<text x="1338" y="11507" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">And Retune Around The</text>
+<rect x="1320" y="11524" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11544" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="11566" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R76 | a4dc5e8 | 31.87 ms</text>
+<text x="1338" y="11586" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Restore The Fast Auxiliary 256x128</text>
+<text x="1338" y="11601" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Default Hot-Band Path</text>
+<rect x="1320" y="11618" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11638" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="11660" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R77 | 9f8afe4 | 25.97 ms</text>
+<text x="1338" y="11680" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Restore The Exact Fast PTX Default</text>
+<text x="1338" y="11695" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Hot-Band Path</text>
+<rect x="1320" y="11712" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11732" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="11754" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R78 | a7d3817 | 31.55 ms</text>
+<text x="1338" y="11774" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Try The 128x128x32 Staged Hot-Band</text>
+<text x="1338" y="11789" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Family</text>
+<rect x="1320" y="11806" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11826" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="11848" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R79 | 1b91857 | 27.08 ms</text>
+<text x="1338" y="11868" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Activate The Existing 128x128 Two-</text>
+<text x="1338" y="11883" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Stage Hot-Band Kernel</text>
+<rect x="1320" y="11900" width="370" height="78" rx="18" fill="#FFE9EE" stroke="#E11D48" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="11920" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7A1130" text-anchor="start">Epilogue &amp; data movement</text>
+<text x="1338" y="11942" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7A1130" text-anchor="start">R80 | 469a12b | 25.64 ms</text>
+<text x="1338" y="11962" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Trim PTX Export Scratch On The</text>
+<text x="1338" y="11977" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Restored Baseline</text>
+<rect x="1320" y="11994" width="370" height="78" rx="18" fill="#FFE9EE" stroke="#E11D48" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="12014" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7A1130" text-anchor="start">Epilogue &amp; data movement</text>
+<text x="1338" y="12036" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7A1130" text-anchor="start">R81 | 6353423 | 25.84 ms</text>
+<text x="1338" y="12056" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Trim The Remaining PTX Export</text>
+<text x="1338" y="12071" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7A1130" text-anchor="start">Scoreboard</text>
+<rect x="1320" y="12088" width="370" height="78" rx="18" fill="#FFF2DE" stroke="#D97706" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="12108" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#7C3E00" text-anchor="start">Tiling &amp; decomposition</text>
+<text x="1338" y="12130" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#7C3E00" text-anchor="start">R82 | af42390 | 25.90 ms</text>
+<text x="1338" y="12150" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Bound The 128x128 Two-Stage Feed</text>
+<text x="1338" y="12165" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#7C3E00" text-anchor="start">Cadence</text>
+<rect x="1320" y="12182" width="370" height="78" rx="18" fill="#F1F5F9" stroke="#64748B" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="1338" y="12202" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#334155" text-anchor="start">Other</text>
+<text x="1338" y="12224" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#334155" text-anchor="start">R83 | 84de30b | 25.94 ms</text>
+<text x="1338" y="12244" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Tighten PTX Hot-Band Grouping For</text>
+<text x="1338" y="12259" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#334155" text-anchor="start">Long-Scoreboard</text>
+<rect x="710" y="12400" width="380" height="78" rx="18" fill="#ECFDF5" stroke="#16A34A" stroke-width="2.1" filter="url(#shadow)"/>
+<text x="728" y="12420" font-family="DejaVu Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#14532D" text-anchor="start">Reference target</text>
+<text x="728" y="12442" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="800" fill="#14532D" text-anchor="start">CUTLASS | 25.92 ms</text>
+<text x="728" y="12462" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#14532D" text-anchor="start">Local baseline to beat on the same</text>
+<text x="728" y="12477" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#14532D" text-anchor="start">fixed BF16 GEMM benchmark.</text>
+<text x="1736" y="12526" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" font-weight="500" fill="#64748B" text-anchor="end">Auto-generated from state/round_history.jsonl + state/benchmark_baselines.md</text>
 </svg>
