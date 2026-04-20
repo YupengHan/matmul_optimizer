@@ -1,15 +1,80 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_120042",
+  "status": "completed",
+  "created_at": "2026-04-20T12:00:42-0700",
   "source_run_id": "20260420_115942_bf16_gemm_v1_6353423",
   "source_run_dir": "runs/20260420_115942_bf16_gemm_v1_6353423",
   "source_summary_json": "runs/20260420_115942_bf16_gemm_v1_6353423/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Bound The 128x128 Two-Stage Feed Cadence",
+      "hypothesis": "The paired PTX export helper is now closed-negative, but the 128x128 two-stage sibling is still the best distinct family from the improved baseline. A bounded adjustment to its cp.async cadence, wait-group timing, or shared-memory handoff may trim the new long-scoreboard cost without bringing back the DRAM or barrier inflation that hurt the closed variants.",
+      "expected_bottleneck": "Feed latency and stage handoff inside the 128x128 two-stage kernel, with the long-scoreboard rise indicating that the current baseline is still waiting too long on data readiness.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1822-1920",
+        "src/kernels/bf16_gemm_v1.cu:2044-2111"
+      ],
+      "risk": "Medium. This family already proved it can move the profile in the right direction, but the remaining gap may be a hard local limit rather than a scheduling issue.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Keep this direction only if the next run beats 25.64300728 ms or at minimum pulls long-scoreboard stalls down without reintroducing memory or barrier pressure."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Tighten PTX Hot-Band Grouping And Peel Handoff",
+      "hypothesis": "The current baseline already restored the zero-padding PTX export path, so the remaining gap may come from how the PTX hot band is grouped and handed off to the peeled tail. Narrowing the grouping window or simplifying the peel boundary could reduce coordination overhead while staying inside the low-risk PTX-adjacent surface.",
+      "expected_bottleneck": "Hot-band orchestration overhead and peel coordination, especially around grouped-row mapping and the fixed tail handoff.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1181-1227",
+        "src/kernels/bf16_gemm_v1.cu:1953-1967",
+        "src/kernels/bf16_gemm_v1.cu:2093-2111"
+      ],
+      "risk": "Medium to high. It is bounded, but if the long-scoreboard rise is tied to feed cadence rather than grouping, this may not move the needle.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Abandon this family if the profile stays effectively unchanged or if the tweak drifts back toward the closed default-promotion behavior."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Use The Non-PTX 128x128 Sibling As A Control",
+      "hypothesis": "If the PTX microkernel\u2019s remaining long-scoreboard cost is mostly coming from its export / store indirection, the non-PTX 128x128 sibling is the lowest-risk alternate path that can test that hypothesis without reopening any closed broad-promotion family.",
+      "expected_bottleneck": "PTX export-side indirection versus a simpler two-stage feed path in the non-PTX 128x128 sibling.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1822-1920",
+        "src/kernels/bf16_gemm_v1.cu:2044-2092"
+      ],
+      "risk": "Low to medium. It is a known family with a smaller surface area than the PTX microkernel, but the previous result suggests it may still lag the best baseline unless the scoreboard cost is coming from the export bridge.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if this sibling does not beat the improved PTX export-trim baseline or if it simply trades scoreboard for worse tensor activity."
+    }
+  ],
+  "notes": "Round 82/100 diagnosis for run 20260420_115942_bf16_gemm_v1_6353423. The paired PTX export-helper experiment is now explicitly closed-negative: runtime regressed from 25.64300728 ms to 25.83756828 ms and long-scoreboard worsened to 8.09 even though DRAM and barrier stayed low. Keep the broad default-promotion family, the K32 staged family, and the paired-export-lifetime variant closed. The best current baseline remains the PTX microkernel default with zero export padding, so the next work should stay in bounded PTX-adjacent feed / grouping / control paths rather than re-opening any closed broad family."
 }
