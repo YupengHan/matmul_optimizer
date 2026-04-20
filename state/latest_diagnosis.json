@@ -1,15 +1,72 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260419_223724",
+  "status": "completed",
+  "created_at": "2026-04-19T22:37:24-07:00",
   "source_run_id": "20260419_223649_bf16_gemm_v1_848bad7",
   "source_run_dir": "runs/20260419_223649_bf16_gemm_v1_848bad7",
   "source_summary_json": "runs/20260419_223649_bf16_gemm_v1_848bad7/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "recommended_idea_origin": "human-idea",
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Human idea bank conflict: increase the hot-band B shared-memory padding from +8 to +16 elements",
+      "hypothesis": "The vertical export rewrite was effectively neutral on the dominant kernel, which means the next clean experiment should stay on the operand-delivery side. The hot-band path still uses WMMA-style shared loads for B and currently inserts only one 16-byte skew between the two 64-column warp groups. A slightly larger padding offset can change how the second half of the 128-column shared tile maps into banks without changing tile shape, consumer order, or stage count. Because the hot-band shared footprint still has headroom under the 48 KiB budget, this is a controlled bank-conflict test.",
+      "expected_bottleneck": "Residual B-side shared-memory bank behavior in the hot-band WMMA/PTX consumer path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:FixedHotBandTile256x128::kBSharedStride",
+        "src/kernels/bf16_gemm_v1.cu:b_shared_col_from_logical",
+        "src/kernels/bf16_gemm_v1.cu:stage_b_shared_tile_async"
+      ],
+      "risk": "Low to moderate. The change is very small and local, but it does increase shared-memory footprint slightly and may do nothing if the existing skew is already sufficient.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
+        "launch__shared_mem_per_block_allocated",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      ],
+      "stop_condition": "Reject if shared memory rises without an accompanying hot-band/runtime gain, or if scoreboard / mio behavior gets worse."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore-only fallback if the larger B padding regresses",
+      "hypothesis": "If the extra hot-band padding hurts shared footprint or simply does not help, the right fallback is to restore the current best surface immediately rather than compound multiple layout changes.",
+      "expected_bottleneck": "Not a direct bottleneck attack; this is the restore path after a footprint-only experiment.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "risk": "Low. This keeps the loop anchored on the best measured branch.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime"
+      ],
+      "stop_condition": "Use this immediately if the padding change is neutral or negative."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Later: revisit export path only if bank padding gives a measurable signal",
+      "hypothesis": "The export rewrite by itself did not help, but if a bank/layout change alters how quickly fragments arrive and leave the warp, the export helper may deserve a second look later. It should not be the immediate next move after a neutral export test.",
+      "expected_bottleneck": "Secondary export-side overhead after the operand-delivery path is re-tuned.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64"
+      ],
+      "risk": "Moderate. This is deferred on purpose because the previous export-only change was not convincing.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum"
+      ],
+      "stop_condition": "Do not spend a round here until the bank-padding experiment has been resolved."
+    }
+  ],
+  "notes": "Round 2/50 starts from a neutral export rewrite. The hot-band kernel remained essentially unchanged at about 41.10 ms while end-to-end runtime regressed, so the best next move is not more export work. Recommended direction dir_01 returns to the user-provided bank-conflict family with the smallest viable layout change: increase the hot-band B shared-memory skew from +8 elements to +16 elements while leaving tile shape, stage depth, and consumer order untouched. Dir_02 is the restore fallback if that padding is neutral or negative, and dir_03 explicitly defers more export work until the bank-layout side has been re-tested."
 }
