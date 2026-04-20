@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `10`
-- remaining rounds: `10`
-- current round label: `round 11/20`
+- completed rounds: `11`
+- remaining rounds: `9`
+- current round label: `round 12/20`
 - auto use recommended: `yes`
 - accepted base run id: `20260419_142213_bf16_gemm_v1_9bdc160`
 - accepted base measured commit: `9bdc160ee2a6ef0f1171c09f4cf72f7dd081cab1`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T14:22:54-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 11/20. Node A will measure the result next.`
+- notes: `Completed round 11/20. Continue with node_b for round 12/20. Accepted base: 20260419_142213_bf16_gemm_v1_9bdc160 at 33.128447 ms.`
 
 ## Last completed round
 
-- round: `10/20`
+- round: `11/20`
 - direction: `dir_01`
-- direction name: `Human idea 10 Stage: revert the catastrophic __noinline__ reg-squeeze split and continue from the round-8 checkpoint`
+- direction name: `Human idea 7 Register reuse: demote Stage, restore the accepted hot-band control surface, then reorder the 12-fragment PTX sweep`
 - verdict: `improved`
-- runtime delta: `-452.743269 ms`
-- TFLOP/s delta: `+18.817935 TFLOP/s`
-- run dir: `runs/20260419_182615_bf16_gemm_v1_b11ebbb`
-- ncu rep path: `runs/20260419_182615_bf16_gemm_v1_b11ebbb/ncu_profile.ncu-rep`
+- runtime delta: `-2.250175 ms`
+- TFLOP/s delta: `+1.361796 TFLOP/s`
+- run dir: `runs/20260419_183401_bf16_gemm_v1_c3b9942`
+- ncu rep path: `runs/20260419_183401_bf16_gemm_v1_c3b9942/ncu_profile.ncu-rep`

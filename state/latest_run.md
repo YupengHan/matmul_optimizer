@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_182615_bf16_gemm_v1_b11ebbb`
-- run dir: `runs/20260419_182615_bf16_gemm_v1_b11ebbb`
-- kernel tag: `bf16_gemm_v1_b11ebbb`
-- round label: `round 10/20`
+- run id: `20260419_183401_bf16_gemm_v1_c3b9942`
+- run dir: `runs/20260419_183401_bf16_gemm_v1_c3b9942`
+- kernel tag: `bf16_gemm_v1_c3b9942`
+- round label: `round 11/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `35.803072 ms`
-- p10 runtime: `35.203271 ms`
-- p90 runtime: `36.563252 ms`
-- TFLOP/s: `20.306063 TFLOP/s`
-- previous run id: `20260419_181807_bf16_gemm_v1_3dd4394`
-- runtime delta vs previous measured run: `-452.743269 ms`
-- TFLOP/s delta vs previous measured run: `+18.817935 TFLOP/s`
+- median runtime: `33.552897 ms`
+- p10 runtime: `33.217843 ms`
+- p90 runtime: `34.747920 ms`
+- TFLOP/s: `21.667859 TFLOP/s`
+- previous run id: `20260419_182615_bf16_gemm_v1_b11ebbb`
+- runtime delta vs previous measured run: `-2.250175 ms`
+- TFLOP/s delta vs previous measured run: `+1.361796 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 10 Stage: revert the catastrophic __noinline__ reg-squeeze split and continue from the round-8 checkpoint`
+- implemented direction name: `Human idea 7 Register reuse: demote Stage, restore the accepted hot-band control surface, then reorder the 12-fragment PTX sweep`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_182615_bf16_gemm_v1_b11ebbb/summary.json`
-- measured commit: `b11ebbb1a81c2e9c203677f3a475e95dc0a05bfb`
+- raw summary json: `runs/20260419_183401_bf16_gemm_v1_c3b9942/summary.json`
+- measured commit: `c3b9942c74427ff2dde2ee3290a87ac86cbea970`
 - new best custom: `no`
-- generated at: `2026-04-19T18:26:23-07:00`
+- generated at: `2026-04-19T18:34:08-07:00`
