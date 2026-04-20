@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_091028_bf16_gemm_v1_1d9b03e`
-- run dir: `runs/20260420_091028_bf16_gemm_v1_1d9b03e`
-- kernel tag: `bf16_gemm_v1_1d9b03e`
-- round label: `round 62/100`
+- run id: `20260420_091330_bf16_gemm_v1_863f60f`
+- run dir: `runs/20260420_091330_bf16_gemm_v1_863f60f`
+- kernel tag: `bf16_gemm_v1_863f60f`
+- round label: `round 63/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.281983 ms`
-- p10 runtime: `24.845107 ms`
-- p90 runtime: `25.991068 ms`
-- TFLOP/s: `28.756424 TFLOP/s`
-- previous run id: `20260420_090210_bf16_gemm_v1_06ebe93`
-- runtime delta vs previous measured run: `-0.352224 ms`
-- TFLOP/s delta vs previous measured run: `+0.395125 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.934336 ms`
+- p10 runtime: `25.545299 ms`
+- p90 runtime: `26.895975 ms`
+- TFLOP/s: `28.033084 TFLOP/s`
+- previous run id: `20260420_091028_bf16_gemm_v1_1d9b03e`
+- runtime delta vs previous measured run: `+0.652352 ms`
+- TFLOP/s delta vs previous measured run: `-0.723339 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `restore accepted base, then narrow locality window`
+- implemented direction name: `Restore accepted base, then retest finer issue granularity on the hot band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_091028_bf16_gemm_v1_1d9b03e/summary.json`
-- measured commit: `1d9b03ebc40198067f1bec2628b1bc01be67b4e8`
+- raw summary json: `runs/20260420_091330_bf16_gemm_v1_863f60f/summary.json`
+- measured commit: `863f60f44803e7321464511c84f57f7dd24133e3`
 - new best custom: `no`
-- generated at: `2026-04-20T09:10:35-07:00`
+- generated at: `2026-04-20T09:13:37-07:00`

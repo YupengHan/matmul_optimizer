@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `1d9b03ebc40198067f1bec2628b1bc01be67b4e8`
-- plateau counter: `4`
-- round loop: `round 63/100`
-- rounds remaining: `38`
-- notes: `Node C build succeeded for round 63/100. Node A will now measure the new code path.`
+- latest measured commit: `863f60f44803e7321464511c84f57f7dd24133e3`
+- plateau counter: `5`
+- round loop: `round 64/100`
+- rounds remaining: `37`
+- notes: `Node A completed round 63/100. Run node_b to continue round 64/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_091028_bf16_gemm_v1_1d9b03e`
-- run dir: `runs/20260420_091028_bf16_gemm_v1_1d9b03e`
+- run id: `20260420_091330_bf16_gemm_v1_863f60f`
+- run dir: `runs/20260420_091330_bf16_gemm_v1_863f60f`
 - correctness: `PASS`
-- median runtime: `25.281983 ms`
-- TFLOP/s: `28.756424 TFLOP/s`
+- median runtime: `25.934336 ms`
+- TFLOP/s: `28.033084 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_091130`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Diagnosis anchored to run 20260420_091028_bf16_gemm_v1_1d9b03e at 25.281983 ms; exactly three ranked directions recorded for round 63/100.`
-- dir_01: Restore accepted base, then retest finer issue granularity on the hot band | bottleneck: Issue granularity and instruction pressure inside the hot-band loop, not higher-level locality. The evidence suggests grouped_rows=4 is still slower than the accepted base and also raises DRAM to 13.05, while nearby consumer/refill variants remain negative.
-- dir_02: Accepted base plus narrow overlap recovery behind the one-sync handoff | bottleneck: A short post-handoff gap rather than the broader locality structure. This is the smallest safe tweak after the accepted base is restored.
-- dir_03: Small locality closure on the restored grouped_rows=8 base | bottleneck: Residual locality and reuse loss, but only as a secondary issue after the accepted base is back in place.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

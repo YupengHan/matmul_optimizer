@@ -1,28 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore accepted base, then retest finer issue granularity on the hot band",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T09:12:22-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_091130",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Restore accepted base, then retest finer issue granularity on the hot band",
-    "hypothesis": "The fastest path is to return to the accepted grouped_rows=8 + reversed row-pair + right-left PTX sweep + one-sync handoff base, then reduce issue granularity in the active 128x128 PTX hot-band loop. The newer accepted base likely changed the interaction enough that #pragma unroll 1 can recover scheduling slack without reintroducing the slower grouped_rows=4 locality pattern.",
-    "expected_bottleneck": "Issue granularity and instruction pressure inside the hot-band loop, not higher-level locality. The evidence suggests grouped_rows=4 is still slower than the accepted base and also raises DRAM to 13.05, while nearby consumer/refill variants remain negative.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu: the accepted grouped_rows=8 / reversed row-pair / right-left PTX sweep / one-sync handoff path",
-      "src/kernels/bf16_gemm_v1.cu: the active 128x128 PTX hot-band loop where the current unroll factor is set"
-    ],
-    "risk": "Lowering unroll may expose latency if the accepted base no longer has enough ILP, but this is a bounded retest on the newest accepted base rather than a generic old-branch unroll-1 attempt.",
-    "metrics_to_recheck": [
-      "runtime versus 25.281983 ms source run",
-      "DRAM throughput, especially whether it stays below the grouped_rows=4 level",
-      "sm issue rate and any increase in scoreboard or dependency stalls",
-      "shared-memory and register pressure in the hot-band loop"
-    ],
-    "stop_condition": "Keep the accepted base only if the finer-granularity retest improves over 25.281983 ms without re-raising DRAM or stall metrics."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
