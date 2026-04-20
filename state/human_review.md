@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 7/50` with `44` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 8/50` with `43` rounds remaining
 
 ## Direction approval policy
 
@@ -14,18 +14,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260419_230227`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 7/50 pivots away from peeled control-flow experiments because the main hot-band speedup is real but correctness has not recovered after multiple repair attempts. The recommended next move is therefore dir_01: restore the accepted-correct hot-band loop and test the user's warp-local right-left-right-left register-reuse idea as an isolated experiment.`
-- dir_01: Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order | bottleneck: Per-warp operand delivery and register reuse inside the 64x64 PTX hot-band microkernel rather than CTA-level pipeline control.
-- dir_02: Keep the accepted-correct loop and deepen warp-local Ps2r with next-A-row-pair lookahead | bottleneck: Warp-local shared-to-register latency on the A-side of the 64x64 PTX microkernel.
-- dir_03: Return to a light L2-friendly logical CTA swizzle once correctness is back on the accepted surface | bottleneck: Inter-CTA L2 reuse across neighboring hot-band B tiles.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`

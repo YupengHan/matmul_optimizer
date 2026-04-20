@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_230146_bf16_gemm_v1_b368da0`
-- run dir: `runs/20260419_230146_bf16_gemm_v1_b368da0`
-- kernel tag: `bf16_gemm_v1_b368da0`
-- round label: `round 6/50`
+- run id: `20260419_230410_bf16_gemm_v1_abefa1e`
+- run dir: `runs/20260419_230410_bf16_gemm_v1_abefa1e`
+- kernel tag: `bf16_gemm_v1_abefa1e`
+- round label: `round 7/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.106624 ms`
-- p10 runtime: `29.721537 ms`
-- p90 runtime: `30.882099 ms`
-- TFLOP/s: `24.148155 TFLOP/s`
-- previous run id: `20260419_225909_bf16_gemm_v1_b50742e`
-- runtime delta vs previous measured run: `+0.094096 ms`
-- TFLOP/s delta vs previous measured run: `-0.075710 TFLOP/s`
+- median runtime: `30.550528 ms`
+- p10 runtime: `29.890646 ms`
+- p90 runtime: `31.042561 ms`
+- TFLOP/s: `23.797279 TFLOP/s`
+- previous run id: `20260419_230146_bf16_gemm_v1_b368da0`
+- runtime delta vs previous measured run: `+0.443904 ms`
+- TFLOP/s delta vs previous measured run: `-0.350876 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Apply peeled steady-state only to the 8-warp 256x128 hot band and leave the residual 64x128 path on the proven generic loop`
+- implemented direction name: `Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_230146_bf16_gemm_v1_b368da0/summary.json`
-- measured commit: `b368da06a9ba04f8051906d194e80b09bdad9760`
+- raw summary json: `runs/20260419_230410_bf16_gemm_v1_abefa1e/summary.json`
+- measured commit: `abefa1e9a75ebf02bf1674afd4045d40e3195784`
 - new best custom: `no`
-- generated at: `2026-04-19T23:01:54-07:00`
+- generated at: `2026-04-19T23:04:18-07:00`

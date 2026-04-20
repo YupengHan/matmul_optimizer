@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `b368da06a9ba04f8051906d194e80b09bdad9760`
-- plateau counter: `6`
-- round loop: `round 7/50`
-- rounds remaining: `44`
-- notes: `Node C build succeeded for round 7/50. Node A will now measure the new code path.`
+- latest measured commit: `abefa1e9a75ebf02bf1674afd4045d40e3195784`
+- plateau counter: `7`
+- round loop: `round 8/50`
+- rounds remaining: `43`
+- notes: `Node A completed round 7/50. Run node_b to continue round 8/50.`
 
 ## Latest measured custom run
 
-- run id: `20260419_230146_bf16_gemm_v1_b368da0`
-- run dir: `runs/20260419_230146_bf16_gemm_v1_b368da0`
-- correctness: `FAIL`
-- median runtime: `30.106624 ms`
-- TFLOP/s: `24.148155 TFLOP/s`
+- run id: `20260419_230410_bf16_gemm_v1_abefa1e`
+- run dir: `runs/20260419_230410_bf16_gemm_v1_abefa1e`
+- correctness: `PASS`
+- median runtime: `30.550528 ms`
+- TFLOP/s: `23.797279 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_230227`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 7/50 pivots away from peeled control-flow experiments because the main hot-band speedup is real but correctness has not recovered after multiple repair attempts. The recommended next move is therefore dir_01: restore the accepted-correct hot-band loop and test the user's warp-local right-left-right-left register-reuse idea as an isolated experiment.`
-- dir_01: Restore the accepted-correct control flow and switch the 64x64 column sweep to explicit right-left-right-left order | bottleneck: Per-warp operand delivery and register reuse inside the 64x64 PTX hot-band microkernel rather than CTA-level pipeline control.
-- dir_02: Keep the accepted-correct loop and deepen warp-local Ps2r with next-A-row-pair lookahead | bottleneck: Warp-local shared-to-register latency on the A-side of the 64x64 PTX microkernel.
-- dir_03: Return to a light L2-friendly logical CTA swizzle once correctness is back on the accepted surface | bottleneck: Inter-CTA L2 reuse across neighboring hot-band B tiles.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
