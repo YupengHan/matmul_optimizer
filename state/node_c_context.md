@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Trim The Remaining PTX Export Scoreboard`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_115714`
-- round loop: `round 81/100`
-- hypothesis: `The zero-padding export trim already recovered runtime, so the remaining gap is likely in the PTX export lifetime itself: the scratch row-pair path still carries enough address indirection and shared-memory residence to raise long-scoreboard stalls. Narrowing that export path further should lower scoreboard cost without reintroducing the DRAM or barrier inflation seen in the failed families.`
-- expected bottleneck: `PTX export-lifetime latency, shared scratch residency, and address-generation overhead in the hot-band store path.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:134-143, src/kernels/bf16_gemm_v1.cu:926-1044, src/kernels/bf16_gemm_v1.cu:1930-2034`
-- risk: `Low to medium. The change surface is narrow and still inside the improved restored PTX baseline, but the long-scoreboard bump may already be the cheapest remaining part of the design.`
-- metrics to re-check: `median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, lts__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 82/100`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
