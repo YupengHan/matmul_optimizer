@@ -1610,8 +1610,7 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
 }
 
 template <int FixedKTiles>
-__global__ __launch_bounds__(128, 4)
-void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
+__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
@@ -1679,10 +1678,10 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
             warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
-    // Keep the double-buffered stage live until every warp finishes consuming it.
-    __syncthreads();
 
     if (future_tile_idx < FixedKTiles) {
+      // Keep the double-buffered stage live until every warp finishes consuming it.
+      __syncthreads();
       const int future_tile_k = future_tile_idx * kWmmaK;
       stage_a_shared_tile_async<FixedHotBandTile128x128>(
           a_shared[curr_stage],
