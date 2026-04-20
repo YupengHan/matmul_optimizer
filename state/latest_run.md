@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_004325_bf16_gemm_v1_bbb7383`
-- run dir: `runs/20260420_004325_bf16_gemm_v1_bbb7383`
-- kernel tag: `bf16_gemm_v1_bbb7383`
-- round label: `round 33/50`
+- run id: `20260420_005216_bf16_gemm_v1_8bbe001`
+- run dir: `runs/20260420_005216_bf16_gemm_v1_8bbe001`
+- kernel tag: `bf16_gemm_v1_8bbe001`
+- round label: `round 34/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.684608 ms`
-- p10 runtime: `31.010612 ms`
-- p90 runtime: `32.529204 ms`
-- TFLOP/s: `22.945508 TFLOP/s`
-- previous run id: `20260420_003403_bf16_gemm_v1_26d9819`
-- runtime delta vs previous measured run: `+4.553823 ms`
-- TFLOP/s delta vs previous measured run: `-3.851337 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `31.608721 ms`
+- p10 runtime: `31.021703 ms`
+- p90 runtime: `31.959245 ms`
+- TFLOP/s: `23.000596 TFLOP/s`
+- previous run id: `20260420_004325_bf16_gemm_v1_bbb7383`
+- runtime delta vs previous measured run: `-0.075887 ms`
+- TFLOP/s delta vs previous measured run: `+0.055088 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Rewrite the active 128x128 K16 hot-band steady-state around Pg2s/Stage orchestration instead of dead grouped_rows tuning`
+- implemented direction name: `Restore the 26.924 ms K16 base and promote the real 256x128 CTA / 64x64 warp hot-band branch onto the default path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_004325_bf16_gemm_v1_bbb7383/summary.json`
-- measured commit: `bbb7383e3a7b6aa8b2136fb74fa11fdb1e15942c`
+- raw summary json: `runs/20260420_005216_bf16_gemm_v1_8bbe001/summary.json`
+- measured commit: `8bbe00147480e0c3391ae212384db1411cc96d80`
 - new best custom: `no`
-- generated at: `2026-04-20T00:43:33-07:00`
+- generated at: `2026-04-20T00:52:24-07:00`

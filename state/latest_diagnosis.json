@@ -1,89 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_004413",
-  "status": "completed",
-  "created_at": "2026-04-20T00:44:13-07:00",
-  "source_run_id": "20260420_004325_bf16_gemm_v1_bbb7383",
-  "source_run_dir": "runs/20260420_004325_bf16_gemm_v1_bbb7383",
-  "source_summary_json": "runs/20260420_004325_bf16_gemm_v1_bbb7383/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_005216_bf16_gemm_v1_8bbe001",
+  "source_run_dir": "runs/20260420_005216_bf16_gemm_v1_8bbe001",
+  "source_summary_json": "runs/20260420_005216_bf16_gemm_v1_8bbe001/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the 26.924 ms K16 base and promote the real 256x128 CTA / 64x64 warp hot-band branch onto the default path",
-      "hypothesis": "Round 33 showed that promoting the active hot-band path to bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel was the wrong use of the human idea families: runtime regressed from the accepted 26.924031 ms base to 31.684608 ms while tensor-active fell from 48.56 to 40.12 and long-scoreboard rose from 1.31 to 6.02. That rejects a deeper Async Copy + Pg2s + Stage rewrite on the active 128x128 path for now. The next real-path move should restore the accepted 128x128 K16 branch around commit 1b9dbe3, then activate the already-written bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel on the default fixed-shape hot band. This is the clearest acceptance of the human Tiling family for this round: 256x128 block tiling with 64x64 warp tiling, while keeping the proven 16-byte cp.async, shared-memory reuse, and two-stage pipeline instead of adding more orchestration.",
-      "expected_bottleneck": "Tensor Core under-utilization caused by the current active hot-band geometry and control path, not by raw DRAM bandwidth. The target is to raise tensor-active and useful work per CTA without reintroducing the K32 feed/orchestration penalties.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-107 (FixedHotBandTile256x128 and FixedHotBandTile128x128 shape definitions)",
-        "src/kernels/bf16_gemm_v1.cu:1367-1463 (bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel)",
-        "src/kernels/bf16_gemm_v1.cu:1620-1712 (accepted 128x128 K16 hot-band kernel to restore as the comparison base)",
-        "src/kernels/bf16_gemm_v1.cu:1739-1786 (launch_bf16_gemm_v1 default fixed-shape dispatch and hot-band split)"
-      ],
-      "risk": "Medium. This is a real active-path change with meaningful upside, but the launch split has to preserve the accepted base behavior outside the promoted pivot hot band. If tensor-active does not recover over the K32 regression, the branch could simply trade one scheduling mismatch for another.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if the restored-plus-256x128 default path does not beat the restored 1b9dbe3-class K16 baseline, or if tensor-active stays below roughly the accepted-base band while long-scoreboard remains materially above the accepted-base level."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore the accepted base and open a dedicated active hot-band PTX microkernel branch",
-      "hypothesis": "The current gap to 20 ms is too large to close with more dead-path cleanup or more stage depth in the existing control structure. A dedicated hot-band PTX branch would accept the higher-ceiling human idea families directly on the real path: explicit consumer-side load order, Bank Conflict control, Register Reuse, and Ps2r-style shared-to-register delivery, while keeping the tail and row-band remainder paths unchanged. The point is to take fragment residency, B delivery, mma issue order, and export behavior away from the current generic helper flow so the hot kernel can target operand feed instead of generic orchestration.",
-      "expected_bottleneck": "Feed/orchestration overhead at the active hot-band consumer boundary, especially shared-to-fragment delivery and export traffic that currently dilutes tensor issue even on the better K16 branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:384-649 (PTX WMMA fragment, lane-order, and RLRL-style accumulate helpers)",
-        "src/kernels/bf16_gemm_v1.cu:690-859 (current PTX export helpers and c_shared scratch usage)",
-        "src/kernels/bf16_gemm_v1.cu:1620-1712 (current active 128x128 K16 hot-band kernel to branch from)",
-        "src/kernels/bf16_gemm_v1.cu:1739-1786 (launch_bf16_gemm_v1 dispatch point for a hot-band-only PTX branch)"
-      ],
-      "risk": "High. This is the highest-ceiling direction toward 20 ms, but it has the highest correctness and implementation risk and may need several rounds before the active path is competitive.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if the first PTX hot-band branch cannot preserve correctness with bounded glue changes, or if it increases register pressure / shared traffic without a visible tensor-active gain over the restored accepted base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore the accepted base and attack c_shared export plus shared-bank overhead inside the existing K16 hot-band path",
-      "hypothesis": "If the real win is not a new macro tile but less export and shared scratch traffic around the already-better K16 branch, then the next bounded move is to keep the accepted active 128x128 K16 kernel and trim the ptx_wmma_store_tile_pairs_64x64 path: reduce c_shared round-trips, narrow scratch usage, or rearrange export ordering so the bank-write / helper overhead shrinks without adding new CTA barriers. This is the focused acceptance of the Bank Conflict family for this round, while still rejecting a broader Async Copy / Stage expansion.",
-      "expected_bottleneck": "Shared-memory and epilogue/export overhead that keeps tensor issue below its ceiling even when the hot-band steady-state itself is closer to correct than the failed K32 branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:690-859 (ptx_wmma_store_tile_pairs_384 / ptx_wmma_store_tile_pairs_64x64 export helpers)",
-        "src/kernels/bf16_gemm_v1.cu:1620-1712 (accepted 128x128 K16 hot-band kernel call site for export)",
-        "src/kernels/bf16_gemm_v1.cu:80-107 (FixedHotBandTile128x128 shared-budget constants and c_shared stage count)"
-      ],
-      "risk": "Medium-high. The implementation surface is smaller than a full PTX microkernel branch, but the upside may be smaller too; if the branch does not reduce shared-bank pressure, it may only move noise.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed",
-        "l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed",
-        "shared mem / block allocated"
-      ],
-      "stop_condition": "Stop if bank-read / bank-write pressure and runtime stay flat after the export-path simplification, or if the change needs extra CTA barriers or a deeper stage budget to remain correct."
-    }
-  ],
-  "notes": "Round 34 is ranked against a clear failure on the real hot path. Round 33 promoted bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel onto the default fixed-shape branch and regressed the benchmark from the accepted 26.924031 ms base (run 20260420_002759_bf16_gemm_v1_1b9dbe3, tensor-active 48.56, barrier 8.13, long-scoreboard 1.31, mio 4.44) to 31.684608 ms (run 20260420_004325_bf16_gemm_v1_bbb7383, tensor-active 40.12, barrier 9.55, long-scoreboard 6.02, mio 5.29). That means the previous round's active-path Async Copy + Pg2s + Stage expansion should be rejected for now: the extra two-K-tile staging increased orchestration cost instead of hiding latency. Human-idea audit for this round: Tiling is ACCEPTED, but only on real active-path experiments, so dir_01 restores the accepted K16 base and promotes the existing 256x128 CTA / 64x64 warp branch instead of dead-path grouped_rows or more K32 staging. Coalescing Access is ACCEPTED because the viable directions keep the existing 16-byte cp.async / wide global movement rather than scalarizing loads. Data Reuse is ACCEPTED only through the current shared-memory reuse model; no CTA-level repack is recommended. Async Copy is DEFERRED to the accepted double-buffer form and REJECTED as a deeper active-path rewrite this round. Bank Conflict is ACCEPTED as a secondary family in dir_02 and dir_03 through consumer-side delivery and export/shared cleanup. L2 Cache is DEFERRED: grouped ordering helped earlier, but the latest regression was not an L2-hit-ratio story. Register Reuse is ACCEPTED, especially in the PTX branch and existing RLRL-style 64x64 accumulation helpers. Pg2s is DEFERRED to the proven two-stage K16 path; Ps2r is ACCEPTED only for a dedicated PTX microkernel branch; Stage is REJECTED beyond the proven K16 depth on the active path until a restored base is back in place. The optimization target remains 20 ms, not merely the 25.92 ms CUTLASS baseline, so the ranking favors real-path changes with larger ceiling over minor parameter churn."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
