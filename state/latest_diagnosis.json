@@ -1,81 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_184408",
-  "status": "completed",
-  "created_at": "2026-04-19T18:44:08-07:00",
-  "source_run_id": "20260419_184138_bf16_gemm_v1_18511c3",
-  "source_run_dir": "runs/20260419_184138_bf16_gemm_v1_18511c3",
-  "source_summary_json": "runs/20260419_184138_bf16_gemm_v1_18511c3/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_185736_bf16_gemm_v1_85bb65b",
+  "source_run_dir": "runs/20260419_185736_bf16_gemm_v1_85bb65b",
+  "source_summary_json": "runs/20260419_185736_bf16_gemm_v1_85bb65b/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Human idea 1 Tiling: pivot to a new 256x128 CTA / 64x64 warp hot-band branch",
-      "hypothesis": "Idea 7 delivered two real wins, but round 12 strongly suggests that family is now near its local limit. The second follow-up improved runtime by only 0.1254406 ms, leaving the kernel still 0.2990093 ms slower than the accepted base, while tensor, barrier, long-scoreboard, mio, and active-warps were essentially unchanged. That is exactly the signature of a family approaching stop_condition: small runtime nibble, no new machine-state shift. Because the user target remains 20 ms, the next best move is a higher-ceiling pivot, not another narrow traversal tweak. Human idea 1 is the cleanest such pivot: open a genuinely different hot-band hierarchy at 256x128 CTA and 64x64 warp tiling, keeping the fixed shape and 64x96 tail specialization but moving out of the 64-row CTA family whose measured local sweet spot is already well explored.",
-      "expected_bottleneck": "Current 64x384 hot-band hierarchy is near a family-level ceiling; the remaining gap is dominated by tile hierarchy rather than another small warp-local scheduling tweak.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:26-77",
-        "src/kernels/bf16_gemm_v1.cu:561-643",
-        "src/kernels/bf16_gemm_v1.cu:875-980"
-      ],
-      "risk": "High implementation risk and likely multi-round exploration cost. This is a structural branch, so the first round may only establish correctness and feasibility rather than immediate performance. It can easily regress if the new hierarchy explodes register pressure or fragments the fixed-shape hot path.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "correctness",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop if the first real implementation does not show a materially new tensor/occupancy signature or if correctness and build complexity dominate without any runtime upside over the current 64x384 branch. Otherwise keep this as the new multi-round high-ceiling family."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Human idea 7 Register reuse: one final closure pass that targets the barrier and register tax directly",
-      "hypothesis": "Idea 7 should not be called dead, because it produced the two best non-accepted results in this loop. But round 12 says the current mirrored traversal expression is no longer moving the machine: registers stay at 172, barrier stays around 16.94, mio stays around 3.15, and long-scoreboard stays around 5.7. If the team wants one last lower-risk attempt before fully moving on, it should not be another generic permutation. It should directly target the known tax of the family by recoding the mirrored sweep into explicit paired issue blocks or another compiler-friendlier form whose only goal is to preserve the reuse signal while shrinking register and barrier pressure.",
-      "expected_bottleneck": "Codegen overhead from the current mirrored traversal expression, not the reuse concept itself.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:388-419",
-        "src/kernels/bf16_gemm_v1.cu:823-824",
-        "src/kernels/bf16_gemm_v1.cu:928-965"
-      ],
-      "risk": "This family is already close to its stop_condition. Another follow-up can easily burn a round for a sub-0.1 ms move or even regress while still failing to beat the accepted base.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "launch__registers_per_thread",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if this closure pass still leaves the kernel slower than the accepted base with no clear register/barrier/mio recovery. At that point Idea 7 has hit its stop_condition and should be closed as the mainline."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Human idea 9 Ps2r: bounded shared-to-register lookahead on the stable two-stage PTX hot loop",
-      "hypothesis": "If the team does not want to spend the next round on a structural tiling pivot, the best bounded alternative is Idea 9 rather than reopening Stage or B-feed rewrites. The current stable two-stage PTX hot loop still shows nontrivial long-scoreboard at 5.73 and now sits on a proven-correct control surface. A small Ps2r lookahead is materially different from idea-7 traversal order and does not require reopening the demoted Stage family.",
-      "expected_bottleneck": "Residual shared-to-register latency in the stable PTX hot loop, with long-scoreboard as the main symptom.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:267-289",
-        "src/kernels/bf16_gemm_v1.cu:388-419",
-        "src/kernels/bf16_gemm_v1.cu:912-965"
-      ],
-      "risk": "Earlier Ps2r experiments were positive-but-insufficient. This direction may improve a stall metric without having enough ceiling to matter against the 20 ms target, and it can also inflate registers if the lookahead is too aggressive.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if long-scoreboard does not improve materially or if runtime remains effectively flat while registers grow. Then Idea 9 stays a side path, not the next main branch."
-    }
-  ],
-  "notes": "Round 13 is a pivot-family move. Idea 7 has not fully failed, but it has now reached the practical edge of what justifies another primary round. The evidence is concrete: round 11 improved runtime to 33.5528965 ms, round 12 improved again to 33.4274559 ms, but the second step was only 0.1254406 ms and the NCU signature was effectively unchanged: tensor 36.19, active warps 16.64, barrier 16.94, long scoreboard 5.73, mio 3.15, occupancy_limit_registers 1. That means the mirrored traversal family still has signal, but only marginal signal, and it is no longer changing the machine behavior in a way that suggests a bigger win is nearby. Given the explicit 20 ms target and the policy that a high-ceiling family may run for multiple rounds, the best round-13 decision is to pivot to Human idea 1 / Tiling and treat it as a deliberate multi-round branch.\n\nHuman idea audit for this round:\n1. Tiling (256x128 block, 64x64 warp): accept-now and rank first. This is the best available high-ceiling family now that Idea 7 appears near its local limit, and it is worth multi-round exploration because the older tile sweep only searched within the current 64-row CTA family.\n2. Coalescing Access: defer. Wide 16-byte access is already present, and current evidence does not point to global coalescing as the next primary limiter.\n3. Data Reuse: accept-now only as baseline behavior. Shared-memory reuse of A and B remains foundational, but it is not the deciding family choice this round.\n4. Async Copy: accept-now only as baseline behavior. Async copy remains in the stable hot path, but not as the next primary family.\n5. Bank Conflict: reject-for-this-round. Prior B-feed and bank-layout explorations were negative and the current near-hit does not present a bank-conflict-led signature.\n6. L2 Cache: reject-for-this-round. Neither the accepted base nor the idea-7 branch points to L2-hit-rate as the gating issue.\n7. Register Reuse: defer. This family has genuine positive evidence, but round 12 put it near stop_condition as the mainline because the second follow-up only gave marginal runtime gain with almost no NCU movement.\n8. Pg2s: accept-now only as already-adopted baseline behavior. Global-to-shared prefetch exists and is not the active family decision.\n9. Ps2r: accept-now as a secondary bounded alternative. It remains more credible than reopening demoted families, but its ceiling is lower than the tiling pivot.\n10. Stage: reject-for-this-round as a primary family. Four rounds were enough to show that it changes machine behavior but plateaus well above the accepted base."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

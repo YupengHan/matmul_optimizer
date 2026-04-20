@@ -1,31 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Human idea 1 Tiling: pivot to a new 256x128 CTA / 64x64 warp hot-band branch",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T18:45:23-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_184408",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Human idea 1 Tiling: pivot to a new 256x128 CTA / 64x64 warp hot-band branch",
-    "hypothesis": "Idea 7 delivered two real wins, but round 12 strongly suggests that family is now near its local limit. The second follow-up improved runtime by only 0.1254406 ms, leaving the kernel still 0.2990093 ms slower than the accepted base, while tensor, barrier, long-scoreboard, mio, and active-warps were essentially unchanged. That is exactly the signature of a family approaching stop_condition: small runtime nibble, no new machine-state shift. Because the user target remains 20 ms, the next best move is a higher-ceiling pivot, not another narrow traversal tweak. Human idea 1 is the cleanest such pivot: open a genuinely different hot-band hierarchy at 256x128 CTA and 64x64 warp tiling, keeping the fixed shape and 64x96 tail specialization but moving out of the 64-row CTA family whose measured local sweet spot is already well explored.",
-    "expected_bottleneck": "Current 64x384 hot-band hierarchy is near a family-level ceiling; the remaining gap is dominated by tile hierarchy rather than another small warp-local scheduling tweak.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:26-77",
-      "src/kernels/bf16_gemm_v1.cu:561-643",
-      "src/kernels/bf16_gemm_v1.cu:875-980"
-    ],
-    "risk": "High implementation risk and likely multi-round exploration cost. This is a structural branch, so the first round may only establish correctness and feasibility rather than immediate performance. It can easily regress if the new hierarchy explodes register pressure or fragments the fixed-shape hot path.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "correctness",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "launch__registers_per_thread",
-      "launch__occupancy_limit_registers"
-    ],
-    "stop_condition": "Stop if the first real implementation does not show a materially new tensor/occupancy signature or if correctness and build complexity dominate without any runtime upside over the current 64x384 branch. Otherwise keep this as the new multi-round high-ceiling family."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
