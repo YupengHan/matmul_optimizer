@@ -1,6 +1,6 @@
 # matmul_optimizer
 
-## Harness Engineering + Human-in-the-Loop: a weekend CUDA matmul project from 800 ms to <30 ms
+## Harness Engineering + Human-in-the-Loop: a weekend CUDA matmul project that beat CUTLASS
 
 This repo is the working harness behind a narrow CUDA optimization experiment:
 
