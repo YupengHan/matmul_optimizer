@@ -1,15 +1,70 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_001453",
+  "status": "completed",
+  "created_at": "2026-04-20T00:14:53-07:00",
   "source_run_id": "20260420_001413_bf16_gemm_v1_0cbbcf7",
   "source_run_dir": "runs/20260420_001413_bf16_gemm_v1_0cbbcf7",
   "source_summary_json": "runs/20260420_001413_bf16_gemm_v1_0cbbcf7/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore grouped_rows=8 and try a single-argument launch-bounds clue on the accepted hot-band kernel",
+      "hypothesis": "The grouped-order search now has enough shape to lock in `grouped_rows=8` as the current best L2 setting: both 16 and 4 were worse. That lets us keep the accepted L2 base and revisit the Register-Reuse / compiler-guidance axis in a much safer form than round 19. A single-argument `__launch_bounds__(128)` tells ptxas the real launch width of the hot-band kernel without demanding extra resident blocks, so it is the narrowest reusable compiler clue worth testing next.",
+      "expected_bottleneck": "Compiler allocation / scheduling quality on top of the accepted grouped-order 128x128 K16 kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:141",
+        "src/kernels/bf16_gemm_v1.cu:1611"
+      ],
+      "risk": "The hint may do nothing at all, or it may still perturb codegen negatively. The risk is lower than round 19 because it does not encode a minimum resident-block target.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "correctness pass rate"
+      ],
+      "stop_condition": "Stop if runtime regresses back toward the pre-grouped baseline or if the single-argument hint leaves codegen effectively unchanged."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Accept grouped_rows=8 as fixed and return to conservative K16 barrier cleanup",
+      "hypothesis": "If the milder compiler clue is neutral, the next bounded move is still tiny Stage-side cleanup on the grouped_rows=8 base. That keeps the current L2 win and looks for small orchestration gains without reopening larger design changes.",
+      "expected_bottleneck": "Residual barrier overhead in the accepted grouped-order K16 kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1689",
+        "src/kernels/bf16_gemm_v1.cu:1694"
+      ],
+      "risk": "Very limited headroom and high correctness sensitivity.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "correctness pass rate"
+      ],
+      "stop_condition": "Stop if the cleanup does not beat the grouped_rows=8 best."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep the grouped_rows=8 base and test one intermediate grouped-order value only if compiler and stage tweaks stall",
+      "hypothesis": "The grouped-order curve is bracketed but not perfectly sampled. If both compiler guidance and barrier cleanup stall, one intermediate grouped-row value could still be worth one later verification round.",
+      "expected_bottleneck": "Fine-grained cache-locality tuning around the accepted grouped-order base.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:141"
+      ],
+      "risk": "Likely diminishing returns after already testing 4, 8, and 16.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if grouped_rows=8 remains clearly ahead of the neighboring settings."
+    }
+  ],
+  "notes": "Human-idea reflection for round 24: L2 Cache has now produced the best measured branch and `grouped_rows=8` appears to be the best tested setting, so the next step is to keep that gain and combine it with the mildest plausible compiler clue from the Register Reuse family. Stage, Async Copy, Data Reuse, Pg2s, and Ps2r remain accepted background infrastructure. Tiling 256x128 stays rejected. Aggressive launch-bounds remains rejected, but a single-argument launch-bounds hint is materially different and lower risk. Coalescing Access and Bank Conflict remain deferred."
 }
