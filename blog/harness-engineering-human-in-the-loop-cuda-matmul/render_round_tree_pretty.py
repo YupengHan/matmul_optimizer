@@ -253,6 +253,16 @@ def pick_side_map(mainline: list[dict]) -> dict[str, str]:
     return side_map
 
 
+def resolve_lane_overlaps(nodes: dict[str, dict], node_ids: list[str], min_gap: float) -> None:
+    """Shift nodes downward within a visual lane until boxes no longer overlap."""
+    last_bottom: float | None = None
+    for node_id in sorted(node_ids, key=lambda current_id: nodes[current_id]["y"]):
+        node = nodes[node_id]
+        if last_bottom is not None:
+            node["y"] = max(node["y"], last_bottom + min_gap)
+        last_bottom = node["y"] + node["h"]
+
+
 def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> tuple[dict, list[tuple[str, str, str, str]]]:
     for index, record in enumerate(records):
         record["_order_index"] = index
@@ -295,7 +305,7 @@ def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> t
     step = 68
     side_left_x = 110
     side_right_x = width - side_w - 110
-    height = top + max(8, len(records) + 4) * step + 190
+    provisional_height = top + max(8, len(records) + 4) * step + 190
 
     def slot_y(order_index: int) -> float:
         return top + order_index * step
@@ -404,7 +414,7 @@ def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> t
         if node_id in nodes:
             continue
         side = group_side[node_id]
-        desired_y = slot_y(base["first_child_index"]) - 52
+        desired_y = slot_y(base["first_child_index"]) - root_h - 26
         y = max(desired_y, used_side_bottom[side] + 18)
         used_side_bottom[side] = y + root_h
         x = side_left_x if side == "left" else side_right_x
@@ -424,9 +434,25 @@ def build_graph(records: list[dict], baseline_ms: float, cutlass_ms: float) -> t
             "special": False,
         }
 
+    center_lane_ids = [
+        node_id
+        for node_id, node in nodes.items()
+        if abs(node["x"] - (center_x - trunk_w / 2)) < 1e-6
+    ]
+    left_lane_ids = [node_id for node_id, node in nodes.items() if abs(node["x"] - side_left_x) < 1e-6]
+    right_lane_ids = [node_id for node_id, node in nodes.items() if abs(node["x"] - side_right_x) < 1e-6]
+
+    resolve_lane_overlaps(nodes, center_lane_ids, min_gap=18)
+    resolve_lane_overlaps(nodes, left_lane_ids, min_gap=16)
+    resolve_lane_overlaps(nodes, right_lane_ids, min_gap=16)
+
+    content_bottom = max(node["y"] + node["h"] for node in nodes.values())
+    cutlass_y = max(content_bottom + 140, provisional_height - 118)
+    height = cutlass_y + 78 + 70
+
     nodes["cutlass"] = {
         "x": center_x - 190,
-        "y": height - 118,
+        "y": cutlass_y,
         "w": 380,
         "h": 78,
         "fill": "#ECFDF5",
