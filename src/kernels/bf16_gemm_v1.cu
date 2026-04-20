@@ -153,9 +153,7 @@ constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
-// Keep the PTX grouped-row window small enough to tighten orchestration while
-// also dividing the 50 hot-band CTA rows evenly.
-constexpr int kFixedHotBandPtxGroupedRows = 5;
+constexpr int kFixedHotBandPtxGroupedRows = 6;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
