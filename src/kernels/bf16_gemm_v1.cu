@@ -120,7 +120,12 @@ struct FixedHotBandTile128x128 {
   static constexpr int kASharedBytes = 4 * kASharedTileElems * sizeof(__nv_bfloat16);
   static constexpr int kCSharedTileBytesPerWarp = kCSharedTileElemsPerWarp * sizeof(float);
   static constexpr int kWarpGroupCols = kWarpTileN;
-  static constexpr int kBSharedStride = kTensorBlockN + kAsyncCopyElems;
+  // Split the PTX 128x128 hot-band B tile into 32-column slabs so each half
+  // warp-group fragment gets its own 16-byte gap instead of one large gap only
+  // between the two 64-column warp groups.
+  static constexpr int kBSharedSkewGroups = 4;
+  static constexpr int kBSharedStride =
+      kTensorBlockN + (kBSharedSkewGroups - 1) * kAsyncCopyElems;
   static constexpr int kBSharedTileElems = kWmmaK * kBSharedStride;
   static constexpr int kBSharedBytes = 4 * kBSharedTileElems * sizeof(__nv_bfloat16);
   static constexpr int kCSharedStageCount = 2;
@@ -1070,6 +1075,13 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64_ptx_microkernel(
 template <typename TileConfig>
 __host__ __device__ __forceinline__ int b_shared_col_from_logical(int logical_col) {
   return logical_col + (logical_col / TileConfig::kWarpGroupCols) * kAsyncCopyElems;
+}
+
+template <>
+__host__ __device__ __forceinline__ int
+b_shared_col_from_logical<FixedHotBandTile128x128>(int logical_col) {
+  constexpr int kColsPerSkewGroup = FixedHotBandTile128x128::kWarpGroupCols / 2;
+  return logical_col + (logical_col / kColsPerSkewGroup) * kAsyncCopyElems;
 }
 
 template <typename TileConfig>
