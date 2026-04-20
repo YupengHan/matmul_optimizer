@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_160231_bf16_gemm_v1_8ed8cf3`
-- run dir: `runs/20260420_160231_bf16_gemm_v1_8ed8cf3`
-- kernel tag: `bf16_gemm_v1_8ed8cf3`
-- round label: `round 6/17`
+- run id: `20260420_160517_bf16_gemm_v1_c3f11c3`
+- run dir: `runs/20260420_160517_bf16_gemm_v1_c3f11c3`
+- kernel tag: `bf16_gemm_v1_c3f11c3`
+- round label: `round 7/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.771520 ms`
-- p10 runtime: `25.259623 ms`
-- p90 runtime: `26.722096 ms`
-- TFLOP/s: `28.210188 TFLOP/s`
-- previous run id: `20260420_155914_bf16_gemm_v1_8297078`
-- runtime delta vs previous measured run: `+0.015360 ms`
-- TFLOP/s delta vs previous measured run: `-0.016823 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.845824 ms`
+- p10 runtime: `24.799920 ms`
+- p90 runtime: `26.259149 ms`
+- TFLOP/s: `29.261232 TFLOP/s`
+- previous run id: `20260420_160231_bf16_gemm_v1_8ed8cf3`
+- runtime delta vs previous measured run: `-0.925695 ms`
+- TFLOP/s delta vs previous measured run: `+1.051043 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retighten PTX Hot-Band Grouping / Orchestration Window`
+- implemented direction name: `Apply Only A Minimal PTX Export Address Cleanup`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_160231_bf16_gemm_v1_8ed8cf3/summary.json`
-- measured commit: `8ed8cf3986c9133763b44419329dced785f78152`
+- raw summary json: `runs/20260420_160517_bf16_gemm_v1_c3f11c3/summary.json`
+- measured commit: `c3f11c31cb51d8199d308580575f3aff7ac381c1`
 - new best custom: `no`
-- generated at: `2026-04-20T16:02:41-07:00`
+- generated at: `2026-04-20T16:05:25-07:00`
