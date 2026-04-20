@@ -1,27 +1,10 @@
 {
-  "direction_id": "dir_02",
-  "name": "Restore the last correct round-2 branch `06eedc6` and continue from the validated streaming-B + B-lookahead surface",
-  "selection_mode": "approved",
-  "selected_at": "2026-04-19T22:08:46-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_220618",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_02",
-    "rank": 2,
-    "name": "Restore the last correct round-2 branch `06eedc6` and continue from the validated streaming-B + B-lookahead surface",
-    "hypothesis": "If the A-side lookahead cannot be repaired quickly, the right fallback is to stop paying correctness risk and restore the last correct branch. Round 2 already recovered the streaming-B branch and added the one-fragment B-side Ps2r lookahead while keeping correctness. Resetting there preserves the strongest valid exploratory surface for the remaining rounds instead of continuing from a broken commit.",
-    "expected_bottleneck": "Not a direct micro-bottleneck attack; this is a branch repair to recover a correctness-valid baseline before the next experiment.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "risk": "Low. This is a known-good restore, but it spends a round on recovery rather than on a new ceiling-raising idea.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-      "launch__registers_per_thread"
-    ],
-    "stop_condition": "Use this immediately if the repaired A-lookahead branch still does not pass correctness."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

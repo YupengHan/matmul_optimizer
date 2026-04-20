@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_220419_bf16_gemm_v1_1cfe453`
-- run dir: `runs/20260419_220419_bf16_gemm_v1_1cfe453`
-- kernel tag: `bf16_gemm_v1_1cfe453`
-- round label: `round 3/30`
+- run id: `20260419_221014_bf16_gemm_v1_5dd9f0d`
+- run dir: `runs/20260419_221014_bf16_gemm_v1_5dd9f0d`
+- kernel tag: `bf16_gemm_v1_5dd9f0d`
+- round label: `round 4/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.270464 ms`
-- p10 runtime: `29.673049 ms`
-- p90 runtime: `31.425620 ms`
-- TFLOP/s: `24.017452 TFLOP/s`
-- previous run id: `20260419_215841_bf16_gemm_v1_06eedc6`
-- runtime delta vs previous measured run: `-0.322496 ms`
-- TFLOP/s delta vs previous measured run: `+0.253181 TFLOP/s`
+- median runtime: `29.432832 ms`
+- p10 runtime: `29.238068 ms`
+- p90 runtime: `30.647194 ms`
+- TFLOP/s: `24.700968 TFLOP/s`
+- previous run id: `20260419_220419_bf16_gemm_v1_1cfe453`
+- runtime delta vs previous measured run: `-0.837632 ms`
+- TFLOP/s delta vs previous measured run: `+0.683515 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_02`
-- implemented direction name: `Human idea Ps2r: preload the next A row-pair while the current row-pair consumes the mirrored B stream`
+- implemented direction name: `Restore the last correct round-2 branch `06eedc6` and continue from the validated streaming-B + B-lookahead surface`
 - implemented selection mode: `approved`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_220419_bf16_gemm_v1_1cfe453/summary.json`
-- measured commit: `1cfe45357c836d8da9abf495ede7a932733ec8a9`
-- new best custom: `no`
-- generated at: `2026-04-19T22:04:27-07:00`
+- raw summary json: `runs/20260419_221014_bf16_gemm_v1_5dd9f0d/summary.json`
+- measured commit: `5dd9f0d02883a3b1debb9d3933a489c44bc0330d`
+- new best custom: `yes`
+- generated at: `2026-04-19T22:10:21-07:00`

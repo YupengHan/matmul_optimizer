@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_02`
-- direction name: `Restore the last correct round-2 branch `06eedc6` and continue from the validated streaming-B + B-lookahead surface`
-- selection mode: `approved`
-- source diagnosis id: `diagnosis_20260419_220618`
-- round loop: `round 4/30`
-- hypothesis: `If the A-side lookahead cannot be repaired quickly, the right fallback is to stop paying correctness risk and restore the last correct branch. Round 2 already recovered the streaming-B branch and added the one-fragment B-side Ps2r lookahead while keeping correctness. Resetting there preserves the strongest valid exploratory surface for the remaining rounds instead of continuing from a broken commit.`
-- expected bottleneck: `Not a direct micro-bottleneck attack; this is a branch repair to recover a correctness-valid baseline before the next experiment.`
-- code locations: `src/kernels/bf16_gemm_v1.cu`
-- risk: `Low. This is a known-good restore, but it spends a round on recovery rather than on a new ceiling-raising idea.`
-- metrics to re-check: `correctness, median runtime, runs/*/ncu_details.csv hot-band gpu__time_duration.sum, launch__registers_per_thread`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 5/30`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
