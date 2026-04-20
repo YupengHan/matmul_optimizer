@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `67`
-- remaining rounds: `33`
-- current round label: `round 68/100`
+- completed rounds: `68`
+- remaining rounds: `32`
+- current round label: `round 69/100`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_084915_bf16_gemm_v1_4e5579e`
 - accepted base measured commit: `4e5579ec72e9b1f05820c895c0315235d66f30cd`
@@ -13,15 +13,15 @@
 - started at: `2026-04-19T22:34:28-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 68/100. Node A will measure the result next.`
+- notes: `Completed round 68/100. Continue with node_b for round 69/100. Accepted base: 20260420_084915_bf16_gemm_v1_4e5579e at 24.570881 ms.`
 
 ## Last completed round
 
-- round: `67/100`
+- round: `68/100`
 - direction: `dir_01`
-- direction name: `Restore the accepted unpeeled base, then tighten PTX export-scratch sync and lifetime while keeping linear export order`
+- direction name: `Keep The Accepted PTX Base And Close Within-Group Launch-Order Locality`
 - verdict: `regressed`
-- runtime delta: `+0.003073 ms`
-- TFLOP/s delta: `-0.003389 TFLOP/s`
-- run dir: `runs/20260420_094558_bf16_gemm_v1_2fc3582`
-- ncu rep path: `runs/20260420_094558_bf16_gemm_v1_2fc3582/ncu_profile.ncu-rep`
+- runtime delta: `+0.181151 ms`
+- TFLOP/s delta: `-0.198359 TFLOP/s`
+- run dir: `runs/20260420_095109_bf16_gemm_v1_885b82b`
+- ncu rep path: `runs/20260420_095109_bf16_gemm_v1_885b82b/ncu_profile.ncu-rep`
