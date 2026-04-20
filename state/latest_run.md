@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_185736_bf16_gemm_v1_85bb65b`
-- run dir: `runs/20260419_185736_bf16_gemm_v1_85bb65b`
-- kernel tag: `bf16_gemm_v1_85bb65b`
-- round label: `round 13/20`
+- run id: `20260419_190546_bf16_gemm_v1_3d01edf`
+- run dir: `runs/20260419_190546_bf16_gemm_v1_3d01edf`
+- kernel tag: `bf16_gemm_v1_3d01edf`
+- round label: `round 14/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.974368 ms`
-- p10 runtime: `30.613812 ms`
-- p90 runtime: `31.737536 ms`
-- TFLOP/s: `23.471647 TFLOP/s`
-- previous run id: `20260419_184138_bf16_gemm_v1_18511c3`
-- runtime delta vs previous measured run: `-2.453088 ms`
-- TFLOP/s delta vs previous measured run: `+1.722477 TFLOP/s`
+- median runtime: `30.062544 ms`
+- p10 runtime: `29.949638 ms`
+- p90 runtime: `31.457663 ms`
+- TFLOP/s: `24.183563 TFLOP/s`
+- previous run id: `20260419_185736_bf16_gemm_v1_85bb65b`
+- runtime delta vs previous measured run: `-0.911824 ms`
+- TFLOP/s delta vs previous measured run: `+0.711916 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 1 Tiling: pivot to a new 256x128 CTA / 64x64 warp hot-band branch`
+- implemented direction name: `Human idea 1 Tiling: keep the 256x128/64x64 family, but add paired 64x64 export scratch to cut warp barrier tax`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_185736_bf16_gemm_v1_85bb65b/summary.json`
-- measured commit: `85bb65b526d3810345e8a9d233a2679a9d41150e`
+- raw summary json: `runs/20260419_190546_bf16_gemm_v1_3d01edf/summary.json`
+- measured commit: `3d01edf5053f250aa4096cda3efec53e1e8b894b`
 - new best custom: `yes`
-- generated at: `2026-04-19T18:57:45-07:00`
+- generated at: `2026-04-19T19:05:54-07:00`
