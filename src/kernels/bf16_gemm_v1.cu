@@ -1563,6 +1563,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile_0, b_tile_0);
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile_1, b_tile_1);
+    // Keep the two-K-tile stage live until every warp finishes consuming both halves.
+    __syncthreads();
 
     if (future_stage_idx < FixedKStages) {
       const int future_tile_k = future_stage_idx * kHotBandStageKTiles * kWmmaK;
@@ -1752,8 +1754,8 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel<
-          kFixedBenchmarkKTiles><<<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel<
+          kFixedBenchmarkKStages32><<<
               dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
                    kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
                    1),
