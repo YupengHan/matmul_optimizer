@@ -113,7 +113,6 @@ constexpr int kFixedHotBandN = kFixedBenchmarkN - kFixedTailRegionN;
 constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
-constexpr int kFixedHotBandGroupRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1310,24 +1309,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
     return;
   }
 
-  const int hot_band_grid_cols = gridDim.x;
-  const int hot_band_grid_rows = gridDim.y;
-  const int pid = blockIdx.y * hot_band_grid_cols + blockIdx.x;
-  const int blocks_per_group = kFixedHotBandGroupRows * hot_band_grid_cols;
-  const int group_id = pid / blocks_per_group;
-  const int first_group_row = group_id * kFixedHotBandGroupRows;
-  const int group_rows_remaining = hot_band_grid_rows - first_group_row;
-  const int group_rows =
-      group_rows_remaining < kFixedHotBandGroupRows ? group_rows_remaining
-                                                    : kFixedHotBandGroupRows;
-  const int pid_in_group = pid - group_id * blocks_per_group;
-  const int logical_block_col = pid_in_group / group_rows;
-  const int logical_block_row = first_group_row + (pid_in_group % group_rows);
-
-  const int block_row =
-      logical_block_row * FixedHotBandTile256x128::kTensorBlockM;
-  const int block_col =
-      logical_block_col * FixedHotBandTile256x128::kTensorBlockN;
+  const int block_row = blockIdx.y * FixedHotBandTile256x128::kTensorBlockM;
+  const int block_col = blockIdx.x * FixedHotBandTile256x128::kTensorBlockN;
   const int warp_tile_m = warp_id / FixedHotBandTile256x128::kWarpTilesN;
   const int warp_tile_n = warp_id % FixedHotBandTile256x128::kWarpTilesN;
   const int row = block_row + warp_tile_m * FixedHotBandTile256x128::kWarpTileM;
