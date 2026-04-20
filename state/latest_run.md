@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_114650_bf16_gemm_v1_1b91857`
-- run dir: `runs/20260420_114650_bf16_gemm_v1_1b91857`
-- kernel tag: `bf16_gemm_v1_1b91857`
-- round label: `round 79/100`
+- run id: `20260420_115626_bf16_gemm_v1_469a12b`
+- run dir: `runs/20260420_115626_bf16_gemm_v1_469a12b`
+- kernel tag: `bf16_gemm_v1_469a12b`
+- round label: `round 80/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `27.076655 ms`
-- p10 runtime: `26.596865 ms`
-- p90 runtime: `28.365309 ms`
-- TFLOP/s: `26.850415 TFLOP/s`
-- previous run id: `20260420_114346_bf16_gemm_v1_a7d3817`
-- runtime delta vs previous measured run: `-4.476273 ms`
-- TFLOP/s delta vs previous measured run: `+3.809148 TFLOP/s`
+- median runtime: `25.643007 ms`
+- p10 runtime: `25.203713 ms`
+- p90 runtime: `26.582016 ms`
+- TFLOP/s: `28.351566 TFLOP/s`
+- previous run id: `20260420_114650_bf16_gemm_v1_1b91857`
+- runtime delta vs previous measured run: `-1.433648 ms`
+- TFLOP/s delta vs previous measured run: `+1.501152 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Activate The Existing 128x128 Two-Stage Hot-Band Kernel`
+- implemented direction name: `Trim PTX Export Scratch On The Restored Baseline`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_114650_bf16_gemm_v1_1b91857/summary.json`
-- measured commit: `1b918573ad23909f16117d559ff52de3af7f1f05`
+- raw summary json: `runs/20260420_115626_bf16_gemm_v1_469a12b/summary.json`
+- measured commit: `469a12bfb9bb7579ea3238342f598a34e84a5e1a`
 - new best custom: `no`
-- generated at: `2026-04-20T11:46:57-07:00`
+- generated at: `2026-04-20T11:56:34-07:00`

@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Trim PTX Export Scratch On The Restored Baseline`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_114802`
-- round loop: `round 80/100`
-- hypothesis: `The 128x128 two-stage sibling recovered tensor activity, but the remaining gap now looks like export-path overhead: the PTX hot-band export scratch and row/quad store helpers still carry avoidable shared-memory and address-calculation cost. Reducing that footprint should cut DRAM/L2 traffic without reopening the closed promotion families.`
-- expected bottleneck: `PTX epilogue export bandwidth, shared scratch lifetime, and L2 traffic in the hot-band store path.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:134-143, src/kernels/bf16_gemm_v1.cu:926-1044`
-- risk: `Low to medium. The change surface is narrow and still inside the restored PTX baseline family, but the upside is capped if the current slowdown is mostly environmental.`
-- metrics to re-check: `median runtime, dram__throughput.avg.pct_of_peak_sustained_elapsed, lts__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, launch__occupancy_limit_registers`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 81/100`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
