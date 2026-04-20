@@ -6,7 +6,7 @@ This was a weekend project, but it was really a question I wanted to test for my
 
 I am a GPU performance engineer, not part of NVIDIA, and I did **not** start by reading CUTLASS internals. I wanted to try something narrower and more practical: pick **one fixed BF16 GEMM**, on **one RTX 3070 Laptop GPU**, build a reproducible human-in-the-loop optimization loop, and see how close I could get to a strong reference implementation with limited weekend time.
 
-So far, the result is already interesting enough to share: the custom kernel moved from roughly **800 ms** at the beginning to **under 30 ms** on the official benchmark snapshot, with the current best custom run at **29.43 ms**, while the local CUTLASS baseline on the same benchmark is **25.92 ms**.
+So far, the result is already interesting enough to share: the custom kernel moved from roughly **800 ms** at the beginning to **under 30 ms** on the official benchmark snapshot, with the current best custom run at **26.92 ms**, while the local CUTLASS baseline on the same benchmark is **25.92 ms**. That leaves a gap of about **1.01 ms**, or **3.88%** in runtime.
 
 That is not a “we beat CUTLASS” story. Not yet. It is a **proof-of-concept about harness engineering**: with a strong evaluation loop, good profiling, short-context iteration, and human steering at the right moments, a single engineer can move surprisingly far, surprisingly fast.
 
@@ -254,9 +254,9 @@ That narrowness is the point.
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
 At the moment, the official benchmark snapshot in the repo is:
-- custom kernel: **29.43 ms**
+- custom kernel: **26.92 ms**
 - local CUTLASS baseline: **25.92 ms**
-- result: a **3.51 ms** gap, already close enough to be interesting, still far enough to leave real room for better ideas
+- result: a **1.01 ms** gap, or about **3.88%** slower than the local CUTLASS baseline, already close enough to be interesting, still far enough to leave real room for better ideas
 
 ## What I want to add next
 
