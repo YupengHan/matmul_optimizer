@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_022041_bf16_gemm_v1_2c6441d`
-- run dir: `runs/20260420_022041_bf16_gemm_v1_2c6441d`
-- kernel tag: `bf16_gemm_v1_2c6441d`
-- round label: `round 44/100`
+- run id: `20260420_073148_bf16_gemm_v1_ed2153e`
+- run dir: `runs/20260420_073148_bf16_gemm_v1_ed2153e`
+- kernel tag: `bf16_gemm_v1_ed2153e`
+- round label: `round 45/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.955776 ms`
-- p10 runtime: `26.503885 ms`
-- p90 runtime: `28.117913 ms`
-- TFLOP/s: `26.970821 TFLOP/s`
-- previous run id: `20260420_021058_bf16_gemm_v1_046f075`
-- runtime delta vs previous measured run: `-3.170303 ms`
-- TFLOP/s delta vs previous measured run: `+2.838261 TFLOP/s`
+- median runtime: `26.892288 ms`
+- p10 runtime: `26.444288 ms`
+- p90 runtime: `27.850956 ms`
+- TFLOP/s: `27.034495 TFLOP/s`
+- previous run id: `20260420_022041_bf16_gemm_v1_2c6441d`
+- runtime delta vs previous measured run: `-0.063488 ms`
+- TFLOP/s delta vs previous measured run: `+0.063673 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX Hot-Band Register And Export Lifetime`
+- implemented direction name: `Trim PTX Hot-Band Accumulator And Fragment Live Ranges`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_022041_bf16_gemm_v1_2c6441d/summary.json`
-- measured commit: `2c6441d8d428ccc1a769600d6c12add7a5c35d61`
+- raw summary json: `runs/20260420_073148_bf16_gemm_v1_ed2153e/summary.json`
+- measured commit: `ed2153e77f04a84625e906e01e2236c279ccb4b7`
 - new best custom: `no`
-- generated at: `2026-04-20T02:20:48-07:00`
+- generated at: `2026-04-20T07:31:55-07:00`
