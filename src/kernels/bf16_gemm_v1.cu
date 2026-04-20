@@ -132,7 +132,7 @@ struct FixedHotBandTile128x128 {
 };
 
 struct FixedHotBandTile128x128PtxExportScratch {
-  static constexpr int kPadFloatsPerRow = kEpilogueQuadElems;
+  static constexpr int kPadFloatsPerRow = 0;
   static constexpr int kLeadingDim = kWmmaN + kPadFloatsPerRow;
   static constexpr int kTileElemsPerWarp = kWmmaM * kLeadingDim;
   static constexpr int kStageCount = 1;
@@ -2081,7 +2081,7 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
           kFixedBenchmarkKTiles><<<
               dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
                    kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
