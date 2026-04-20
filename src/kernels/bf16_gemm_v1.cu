@@ -152,7 +152,8 @@ constexpr int kFixedHotBandN = kFixedBenchmarkN - kFixedTailRegionN;
 constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
-constexpr int kFixedHotBandGroupedRows = 4;
+[[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
+constexpr int kFixedHotBandPtxGroupedRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
@@ -1921,12 +1922,12 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   const int hot_band_tiles_n =
       kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN;
   const int physical_pid = blockIdx.y * hot_band_tiles_n + blockIdx.x;
-  const int pids_per_group = kFixedHotBandGroupedRows * hot_band_tiles_n;
+  const int pids_per_group = kFixedHotBandPtxGroupedRows * hot_band_tiles_n;
   const int group_id = physical_pid / pids_per_group;
-  const int first_block_y = group_id * kFixedHotBandGroupedRows;
+  const int first_block_y = group_id * kFixedHotBandPtxGroupedRows;
   const int group_size_y =
-      (first_block_y + kFixedHotBandGroupedRows <= hot_band_tiles_m)
-          ? kFixedHotBandGroupedRows
+      (first_block_y + kFixedHotBandPtxGroupedRows <= hot_band_tiles_m)
+          ? kFixedHotBandPtxGroupedRows
           : (hot_band_tiles_m - first_block_y);
   const int pid_in_group = physical_pid % pids_per_group;
   const int logical_block_y = first_block_y + (pid_in_group % group_size_y);
