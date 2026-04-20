@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_162425_bf16_gemm_v1_bbcc928`
-- run dir: `runs/20260420_162425_bf16_gemm_v1_bbcc928`
-- kernel tag: `bf16_gemm_v1_bbcc928`
-- round label: `round 9/17`
+- run id: `20260420_162632_bf16_gemm_v1_948fc5c`
+- run dir: `runs/20260420_162632_bf16_gemm_v1_948fc5c`
+- kernel tag: `bf16_gemm_v1_948fc5c`
+- round label: `round 10/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.676785 ms`
-- p10 runtime: `25.056563 ms`
-- p90 runtime: `27.049063 ms`
-- TFLOP/s: `28.314270 TFLOP/s`
-- previous run id: `20260420_160736_bf16_gemm_v1_d8e9048`
-- runtime delta vs previous measured run: `-0.283119 ms`
-- TFLOP/s delta vs previous measured run: `+0.308796 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.704384 ms`
+- p10 runtime: `25.916212 ms`
+- p90 runtime: `27.863859 ms`
+- TFLOP/s: `27.224722 TFLOP/s`
+- previous run id: `20260420_162425_bf16_gemm_v1_bbcc928`
+- runtime delta vs previous measured run: `+1.027599 ms`
+- TFLOP/s delta vs previous measured run: `-1.089549 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reopen PTX Prefetch Handoff On Top Of The New Export Base`
+- implemented direction name: `Use The Non-PTX 128x128 Sibling As The Next Control Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_162425_bf16_gemm_v1_bbcc928/summary.json`
-- measured commit: `bbcc928d6298d5a0483248e079094b06db6afc4c`
+- raw summary json: `runs/20260420_162632_bf16_gemm_v1_948fc5c/summary.json`
+- measured commit: `948fc5c0301c8859a9885095e934be38c5a23240`
 - new best custom: `no`
-- generated at: `2026-04-20T16:24:34-07:00`
+- generated at: `2026-04-20T16:26:41-07:00`
