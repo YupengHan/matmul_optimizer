@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `d8e9048d7887e2c2e735dde93e5e75165800b3cd`
-- plateau counter: `34`
-- round loop: `round 9/17`
-- rounds remaining: `9`
-- notes: `Node C build succeeded for round 9/17. Node A will now measure the new code path.`
+- latest measured commit: `bbcc928d6298d5a0483248e079094b06db6afc4c`
+- plateau counter: `35`
+- round loop: `round 10/17`
+- rounds remaining: `8`
+- notes: `Node A completed round 9/17. Run node_b to continue round 10/17.`
 
 ## Latest measured custom run
 
-- run id: `20260420_160736_bf16_gemm_v1_d8e9048`
-- run dir: `runs/20260420_160736_bf16_gemm_v1_d8e9048`
+- run id: `20260420_162425_bf16_gemm_v1_bbcc928`
+- run dir: `runs/20260420_162425_bf16_gemm_v1_bbcc928`
 - correctness: `PASS`
-- median runtime: `25.959904 ms`
-- TFLOP/s: `28.005474 TFLOP/s`
+- median runtime: `25.676785 ms`
+- TFLOP/s: `28.314270 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_160829`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 9/17 diagnosis for run 20260420_160736_bf16_gemm_v1_d8e9048. Human-review mapping for this round: keep the deeper export cleanup from round 8 closed, and continue to keep the expanded B-shared-skew and grouped-row-window families closed after their measured losses. The key new evidence is that round 7 established a new accepted base at 24.84582424 ms with the minimal export-address cleanup, while round 8 showed that pushing the row-pair export cleanup further regressed sharply to 25.95990372. That means the export family is no longer the best immediate lever beyond the accepted base. No new explicit human idea family is queued in state/human_review.md, so the ranking now shifts to: accept a narrower PTX prefetch-handoff retime on top of the new accepted export base, defer the older-but-measured 64x384 control as the main broader fallback, and keep the non-PTX 128x128 sibling as a tertiary control path.`
-- dir_01: Reopen PTX Prefetch Handoff On Top Of The New Export Base | bottleneck: Copy-pipeline handoff timing and future-tile refill cadence in the PTX hot-band steady-state loop.
-- dir_02: Reopen The Measured 64x384 Fixed-Main-Tile Control Path | bottleneck: Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX helper overhead.
-- dir_03: Use The Non-PTX 128x128 Sibling As A Control | bottleneck: PTX-specific export/store and prefetch orchestration versus the simpler non-PTX 128x128 sibling.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 

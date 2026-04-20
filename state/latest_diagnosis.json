@@ -1,80 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_160829",
-  "status": "completed",
-  "created_at": "2026-04-20T16:08:29-07:00",
-  "source_run_id": "20260420_160736_bf16_gemm_v1_d8e9048",
-  "source_run_dir": "runs/20260420_160736_bf16_gemm_v1_d8e9048",
-  "source_summary_json": "runs/20260420_160736_bf16_gemm_v1_d8e9048/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_162425_bf16_gemm_v1_bbcc928",
+  "source_run_dir": "runs/20260420_162425_bf16_gemm_v1_bbcc928",
+  "source_summary_json": "runs/20260420_162425_bf16_gemm_v1_bbcc928/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Reopen PTX Prefetch Handoff On Top Of The New Export Base",
-      "hypothesis": "Round 8/17 closed the deeper row-pair export cleanup, but round 7/17 established a much better accepted base at 24.84582424 ms by simplifying the PTX export helper. That materially changes the ranking of the remaining families. The earlier prefetch-handoff experiment was negative on the older base, but it also drove long-scoreboard down much harder than the grouping-window attempt. Now that export overhead has been reduced, the next best move is to re-open the PTX prefetch family with a narrower retime on top of the new accepted export base instead of digging deeper into export cleanup again.",
-      "expected_bottleneck": "Copy-pipeline handoff timing and future-tile refill cadence in the PTX hot-band steady-state loop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1994-2006",
-        "src/kernels/bf16_gemm_v1.cu:2027-2039"
-      ],
-      "risk": "Medium. The family already had one losing attempt, so this should be a narrower retime than round 4/17, but it now sits on a cleaner export baseline that may change the tradeoff.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop this reopened family if one bounded retime still fails to beat 24.84582424 ms or merely trades scoreboard for barrier again."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Reopen The Measured 64x384 Fixed-Main-Tile Control Path",
-      "hypothesis": "With deeper export cleanup now closed, the most concrete non-PTX alternate family in repo history is still the measured `64x384` fixed-main-tile control. Its evidence is older and much broader than the current accepted PTX path, so it does not outrank a narrow prefetch retime, but it remains the best control path if the PTX microkernel family has plateaued after the export win.",
-      "expected_bottleneck": "Broader hot-band path selection and arithmetic-intensity tradeoff rather than PTX helper overhead.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1180-1246",
-        "src/kernels/bf16_gemm_v1.cu:2076-2113",
-        "src/kernels/bf16_gemm_v1.cu:151-159"
-      ],
-      "risk": "Medium. The family has direct sweep evidence, but it is also a much broader branch change than the accepted PTX baseline and can easily give back recent wins.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Stop immediately if the 64x384 control path is materially slower than the accepted PTX base or clearly reopens a broad-family regression."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Use The Non-PTX 128x128 Sibling As A Control",
-      "hypothesis": "If the remaining cost is still tied to PTX-specific store / prefetch interplay, the non-PTX 128x128 sibling is the narrowest control that changes that interaction without reopening the closed shared-layout or grouped-window families. It stays third because the current accepted improvement came from the PTX export path, not from abandoning it.",
-      "expected_bottleneck": "PTX-specific export/store and prefetch orchestration versus the simpler non-PTX 128x128 sibling.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1848-1932",
-        "src/kernels/bf16_gemm_v1.cu:2096-2102"
-      ],
-      "risk": "Low to medium. The path is bounded and should remain correct more easily than the closed shared-layout experiments, but it may simply underperform the accepted PTX baseline.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Use this only if the higher-ranked directions stall; close it quickly if it is slower and no cleaner in the profiler."
-    }
-  ],
-  "notes": "Round 9/17 diagnosis for run 20260420_160736_bf16_gemm_v1_d8e9048. Human-review mapping for this round: keep the deeper export cleanup from round 8 closed, and continue to keep the expanded B-shared-skew and grouped-row-window families closed after their measured losses. The key new evidence is that round 7 established a new accepted base at 24.84582424 ms with the minimal export-address cleanup, while round 8 showed that pushing the row-pair export cleanup further regressed sharply to 25.95990372. That means the export family is no longer the best immediate lever beyond the accepted base. No new explicit human idea family is queued in state/human_review.md, so the ranking now shifts to: accept a narrower PTX prefetch-handoff retime on top of the new accepted export base, defer the older-but-measured 64x384 control as the main broader fallback, and keep the non-PTX 128x128 sibling as a tertiary control path."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
