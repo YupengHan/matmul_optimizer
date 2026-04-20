@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_112828_bf16_gemm_v1_f1ae7fa`
-- run dir: `runs/20260420_112828_bf16_gemm_v1_f1ae7fa`
-- kernel tag: `bf16_gemm_v1_f1ae7fa`
-- round label: `round 74/100`
+- run id: `20260420_113238_bf16_gemm_v1_ef8cb27`
+- run dir: `runs/20260420_113238_bf16_gemm_v1_ef8cb27`
+- kernel tag: `bf16_gemm_v1_ef8cb27`
+- round label: `round 75/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.696832 ms`
-- p10 runtime: `24.465818 ms`
-- p90 runtime: `25.364993 ms`
-- TFLOP/s: `29.437761 TFLOP/s`
-- previous run id: `20260420_112149_bf16_gemm_v1_9a4bb85`
-- runtime delta vs previous measured run: `+0.000640 ms`
-- TFLOP/s delta vs previous measured run: `-0.000763 TFLOP/s`
+- median runtime: `33.594879 ms`
+- p10 runtime: `33.316970 ms`
+- p90 runtime: `35.156787 ms`
+- TFLOP/s: `21.640781 TFLOP/s`
+- previous run id: `20260420_112828_bf16_gemm_v1_f1ae7fa`
+- runtime delta vs previous measured run: `+8.898047 ms`
+- TFLOP/s delta vs previous measured run: `-7.796980 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure`
+- implemented direction name: `Promote The 64x384 Hot-Band Dispatch And Retune Around The Wide-Tile Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_112828_bf16_gemm_v1_f1ae7fa/summary.json`
-- measured commit: `f1ae7fa8d6947dd844a551459d71b7938db5dd09`
+- raw summary json: `runs/20260420_113238_bf16_gemm_v1_ef8cb27/summary.json`
+- measured commit: `ef8cb27f3c48e6dc473559e4a6c3fb3da8b055b8`
 - new best custom: `no`
-- generated at: `2026-04-20T11:28:34-07:00`
+- generated at: `2026-04-20T11:32:45-07:00`
