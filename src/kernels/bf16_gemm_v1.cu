@@ -1047,56 +1047,6 @@ __device__ __forceinline__ void stage_b_shared_tile_async(
   }
 }
 
-__device__ __forceinline__ void stage_a_shared_tile_async_ptx_microkernel(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  static_assert(FixedHotBandTile128x128::kWarpsPerBlock == 4,
-                "The PTX hot-band staging split expects a 4-warp CTA.");
-  constexpr int kProducerThreads = 2 * kWarpSize;
-  if (threadIdx.x >= kProducerThreads) {
-    return;
-  }
-
-  // Keep the PTX branch's producer partitioning fixed: two warps feed A only.
-  for (int copy_idx = threadIdx.x;
-       copy_idx < FixedHotBandTile128x128::kAAsyncCopiesPerTile;
-       copy_idx += kProducerThreads) {
-    const int row = copy_idx / FixedHotBandTile128x128::kAAsyncCopiesPerRow;
-    const int col =
-        (copy_idx % FixedHotBandTile128x128::kAAsyncCopiesPerRow) * kAsyncCopyElems;
-    cp_async_copy_16_bytes(
-        shared_tile + row * kWmmaK + col,
-        global_tile + row * global_stride + col);
-  }
-}
-
-__device__ __forceinline__ void stage_b_shared_tile_async_ptx_microkernel(
-    __nv_bfloat16* shared_tile,
-    const __nv_bfloat16* global_tile,
-    int global_stride) {
-  static_assert(FixedHotBandTile128x128::kWarpsPerBlock == 4,
-                "The PTX hot-band staging split expects a 4-warp CTA.");
-  constexpr int kProducerThreads = 2 * kWarpSize;
-  if (threadIdx.x < kProducerThreads) {
-    return;
-  }
-
-  const int producer_thread_idx = threadIdx.x - kProducerThreads;
-  for (int copy_idx = producer_thread_idx;
-       copy_idx < FixedHotBandTile128x128::kBAsyncCopiesPerTile;
-       copy_idx += kProducerThreads) {
-    const int row = copy_idx / FixedHotBandTile128x128::kBAsyncCopiesPerRow;
-    const int logical_col =
-        (copy_idx % FixedHotBandTile128x128::kBAsyncCopiesPerRow) * kAsyncCopyElems;
-    const int shared_col =
-        b_shared_col_from_logical<FixedHotBandTile128x128>(logical_col);
-    cp_async_copy_16_bytes(
-        shared_tile + row * FixedHotBandTile128x128::kBSharedStride + shared_col,
-        global_tile + row * global_stride + logical_col);
-  }
-}
-
 __host__ __device__ __forceinline__ int ceil_div(int value, int divisor) {
   return (value + divisor - 1) / divisor;
 }
@@ -1978,14 +1928,14 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async_ptx_microkernel(
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
       a_shared[0], a_block, kFixedBenchmarkK);
-  stage_b_shared_tile_async_ptx_microkernel(
+  stage_b_shared_tile_async<FixedHotBandTile128x128>(
       b_shared[0], b_block, kFixedBenchmarkN);
   cp_async_commit_group();
-  stage_a_shared_tile_async_ptx_microkernel(
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
       a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
-  stage_b_shared_tile_async_ptx_microkernel(
+  stage_b_shared_tile_async<FixedHotBandTile128x128>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
@@ -2015,11 +1965,11 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
       // to this active hot-band branch symbol.
       __syncthreads();
       const int future_tile_k = future_tile_idx * kWmmaK;
-      stage_a_shared_tile_async_ptx_microkernel(
+      stage_a_shared_tile_async<FixedHotBandTile128x128>(
           a_shared[curr_stage],
           a_block + future_tile_k,
           kFixedBenchmarkK);
-      stage_b_shared_tile_async_ptx_microkernel(
+      stage_b_shared_tile_async<FixedHotBandTile128x128>(
           b_shared[curr_stage],
           b_block + future_tile_k * kFixedBenchmarkN,
           kFixedBenchmarkN);

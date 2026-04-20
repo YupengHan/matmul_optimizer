@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T01:59:39-07:00",
   "source_diagnosis_id": "diagnosis_20260420_015436",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -28,5 +28,5 @@
     ],
     "stop_condition": "Stop if the restored accepted branch plus export refinement does not beat the restored baseline, or if short_scoreboard and barrier fail to move down together without increasing shared-memory footprint or register pressure."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
