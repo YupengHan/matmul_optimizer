@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_163357_bf16_gemm_v1_a64854a`
-- run dir: `runs/20260420_163357_bf16_gemm_v1_a64854a`
-- kernel tag: `bf16_gemm_v1_a64854a`
-- round label: `round 13/17`
+- run id: `20260420_163637_bf16_gemm_v1_81bde72`
+- run dir: `runs/20260420_163637_bf16_gemm_v1_81bde72`
+- kernel tag: `bf16_gemm_v1_81bde72`
+- round label: `round 14/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `33.964544 ms`
-- p10 runtime: `33.493709 ms`
-- p90 runtime: `35.051041 ms`
-- TFLOP/s: `21.405246 TFLOP/s`
-- previous run id: `20260420_163143_bf16_gemm_v1_6821ef5`
-- runtime delta vs previous measured run: `+7.897600 ms`
-- TFLOP/s delta vs previous measured run: `-6.485228 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.654704 ms`
+- p10 runtime: `25.219890 ms`
+- p90 runtime: `26.457292 ms`
+- TFLOP/s: `28.338640 TFLOP/s`
+- previous run id: `20260420_163357_bf16_gemm_v1_a64854a`
+- runtime delta vs previous measured run: `-8.309840 ms`
+- TFLOP/s delta vs previous measured run: `+6.933394 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reopen The Measured 64x384 Fixed-Main-Tile Control Path`
+- implemented direction name: `Shift The Hot-Band / Peeled Seam Down By One PTX Block`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_163357_bf16_gemm_v1_a64854a/summary.json`
-- measured commit: `a64854a656796209b16d18c89ea94794379b4ed6`
+- raw summary json: `runs/20260420_163637_bf16_gemm_v1_81bde72/summary.json`
+- measured commit: `81bde72e538f33c457ea3cac1335513761c90fd6`
 - new best custom: `no`
-- generated at: `2026-04-20T16:34:06-07:00`
+- generated at: `2026-04-20T16:36:46-07:00`
