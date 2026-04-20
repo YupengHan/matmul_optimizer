@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_154403_bf16_gemm_v1_153bda2`
-- run dir: `runs/20260420_154403_bf16_gemm_v1_153bda2`
-- kernel tag: `bf16_gemm_v1_153bda2`
-- round label: `round 1/17`
+- run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
+- run dir: `runs/20260420_154827_bf16_gemm_v1_7adfc4e`
+- kernel tag: `bf16_gemm_v1_7adfc4e`
+- round label: `round 2/17`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.978816 ms`
-- p10 runtime: `26.526925 ms`
-- p90 runtime: `27.650343 ms`
-- TFLOP/s: `26.947788 TFLOP/s`
-- previous run id: `20260420_153144_bf16_gemm_v1_c550d79`
-- runtime delta vs previous measured run: `+1.215487 ms`
-- TFLOP/s delta vs previous measured run: `-1.271369 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.505328 ms`
+- p10 runtime: `25.176064 ms`
+- p90 runtime: `26.814150 ms`
+- TFLOP/s: `28.504610 TFLOP/s`
+- previous run id: `20260420_154403_bf16_gemm_v1_153bda2`
+- runtime delta vs previous measured run: `-1.473488 ms`
+- TFLOP/s delta vs previous measured run: `+1.556821 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune PTX Hot-Band Group Traversal Around The 6-Row Window`
+- implemented direction name: `Trim PTX Export Syncs Inside The Single-Stage Scratch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_154403_bf16_gemm_v1_153bda2/summary.json`
-- measured commit: `153bda22f3d30b70b379e1ed0362d78c9f57f3f3`
+- raw summary json: `runs/20260420_154827_bf16_gemm_v1_7adfc4e/summary.json`
+- measured commit: `7adfc4eaef68ec1c5b773b611c0d7a91b594c7b8`
 - new best custom: `no`
-- generated at: `2026-04-20T15:44:12-07:00`
+- generated at: `2026-04-20T15:48:35-07:00`

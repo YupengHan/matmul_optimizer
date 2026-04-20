@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `153bda22f3d30b70b379e1ed0362d78c9f57f3f3`
-- plateau counter: `27`
-- round loop: `round 2/17`
-- rounds remaining: `16`
-- notes: `Node C build succeeded for round 2/17. Node A will now measure the new code path.`
+- latest measured commit: `7adfc4eaef68ec1c5b773b611c0d7a91b594c7b8`
+- plateau counter: `28`
+- round loop: `round 3/17`
+- rounds remaining: `15`
+- notes: `Node A completed round 2/17. Run node_b to continue round 3/17.`
 
 ## Latest measured custom run
 
-- run id: `20260420_154403_bf16_gemm_v1_153bda2`
-- run dir: `runs/20260420_154403_bf16_gemm_v1_153bda2`
+- run id: `20260420_154827_bf16_gemm_v1_7adfc4e`
+- run dir: `runs/20260420_154827_bf16_gemm_v1_7adfc4e`
 - correctness: `PASS`
-- median runtime: `26.978816 ms`
-- TFLOP/s: `26.947788 TFLOP/s`
+- median runtime: `25.505328 ms`
+- TFLOP/s: `28.504610 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_154514`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 2/17 diagnosis for run 20260420_154403_bf16_gemm_v1_153bda2. Human-review mapping: accept only narrow PTX-adjacent follow-ups on top of the accepted PTX baseline; defer pure baseline-restore work because the supervisor already restored the implementation surface to c550d7959d2a7f80c98ebb0a632629ff9d196656 after this regressed round; reject reopening broad default-promotion, staged K32, paired export-lifetime, helper-flattening, and now also the x-major traversal variant from round 1/17. The round-1 experiment proved traversal was the wrong next lever: it lowered long-scoreboard from 7.79 to 4.62, but runtime regressed by 1.215487 ms because DRAM ballooned from 11.52 to 34.29. That makes export-helper cleanup the best next move, with PTX prefetch retiming and B-shared skew as the two secondary families.`
-- dir_01: Trim PTX Export Syncs Inside The Single-Stage Scratch | bottleneck: PTX export-side synchronization and shared-to-global store orchestration in the hot-band epilogue.
-- dir_02: Retune PTX Prefetch Handoff In The K Loop | bottleneck: Copy-pipeline handoff timing inside the PTX hot-band steady-state loop.
-- dir_03: Tune PTX Hot-Band B-Shared Skew Without Touching Traversal | bottleneck: Shared-memory layout and fragment address generation for PTX hot-band B loads.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
