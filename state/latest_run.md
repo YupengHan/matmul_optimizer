@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_233546_bf16_gemm_v1_b42811c`
-- run dir: `runs/20260419_233546_bf16_gemm_v1_b42811c`
-- kernel tag: `bf16_gemm_v1_b42811c`
-- round label: `round 15/50`
+- run id: `20260419_235558_bf16_gemm_v1_be44358`
+- run dir: `runs/20260419_235558_bf16_gemm_v1_be44358`
+- kernel tag: `bf16_gemm_v1_be44358`
+- round label: `round 16/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `28.363264 ms`
-- p10 runtime: `27.710771 ms`
-- p90 runtime: `29.536854 ms`
-- TFLOP/s: `25.632431 TFLOP/s`
-- previous run id: `20260419_233123_bf16_gemm_v1_466263f`
-- runtime delta vs previous measured run: `-1.130496 ms`
-- TFLOP/s delta vs previous measured run: `+0.982491 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `29.204992 ms`
+- p10 runtime: `28.606669 ms`
+- p90 runtime: `30.135808 ms`
+- TFLOP/s: `24.893669 TFLOP/s`
+- previous run id: `20260419_233546_bf16_gemm_v1_b42811c`
+- runtime delta vs previous measured run: `+0.841728 ms`
+- TFLOP/s delta vs previous measured run: `-0.738762 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep the 128x128/128-thread hot-band branch but revert only the K32 mainloop back to proven K16 staging to localize correctness`
+- implemented direction name: `Make the 128x128 hot-band stage reuse safe before the next cp.async overwrite`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_233546_bf16_gemm_v1_b42811c/summary.json`
-- measured commit: `b42811cb8dad2d5f208f388d8aea982b97a2c62e`
-- new best custom: `no`
-- generated at: `2026-04-19T23:35:53-07:00`
+- raw summary json: `runs/20260419_235558_bf16_gemm_v1_be44358/summary.json`
+- measured commit: `be44358062dd87db8692cf1a8ce8017bab55a65d`
+- new best custom: `yes`
+- generated at: `2026-04-19T23:56:06-07:00`
