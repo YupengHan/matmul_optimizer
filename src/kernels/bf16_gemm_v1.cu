@@ -1610,7 +1610,8 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
 }
 
 template <int FixedKTiles>
-__global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
+__global__ __launch_bounds__(128, 4)
+void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
     __nv_bfloat16* c) {
@@ -1756,12 +1757,12 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel<
           kFixedBenchmarkKTiles><<<
-              dim3(kFixedHotBandN / FixedHotBandTile256x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
+              dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
+                   kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
                    1),
-              dim3(FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize, 1, 1),
+              dim3(FixedHotBandTile128x128::kWarpsPerBlock * kWarpSize, 1, 1),
               0,
               stream>>>(a, b, c);
 
