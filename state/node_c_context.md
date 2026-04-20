@@ -4,16 +4,11 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Retighten PTX Hot-Band Grouping / Orchestration Window`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_160050`
-- round loop: `round 6/17`
-- hypothesis: `Round 5/17 closed the expanded B-shared-skew implementation: it still lost to the accepted base and, more importantly, all three correctness runs failed with runner exit code 1. That means the next move should stay on the restored accepted PTX/export base and target the remaining scoreboard cost from the hot-band orchestration boundary instead of reopening shared-layout risk. A bounded retune around `kFixedHotBandPtxGroupedRows` and the grouped-row logical mapping is the best next family because it preserves the known-correct export and copy layout while testing whether the CTA grouping itself is the leftover latency source.`
-- expected bottleneck: `Long-scoreboard and barrier cost caused by PTX hot-band grouping and grouped-row orchestration.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:155-156, src/kernels/bf16_gemm_v1.cu:1969-1979, src/kernels/bf16_gemm_v1.cu:2096-2102`
-- risk: `Medium. This remains inside the accepted PTX microkernel family and avoids the shared-layout correctness risk, but changing the grouping window can still perturb memory traffic or scheduler balance.`
-- metrics to re-check: `correctness, median runtime, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, dram__throughput.avg.pct_of_peak_sustained_elapsed, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 7/17`
 
 ## Allowed edit surface
 
@@ -31,4 +26,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; select one before using the dirty-path guardrail
