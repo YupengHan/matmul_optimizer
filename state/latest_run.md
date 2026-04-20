@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_002759_bf16_gemm_v1_1b9dbe3`
-- run dir: `runs/20260420_002759_bf16_gemm_v1_1b9dbe3`
-- kernel tag: `bf16_gemm_v1_1b9dbe3`
-- round label: `round 31/50`
+- run id: `20260420_003403_bf16_gemm_v1_26d9819`
+- run dir: `runs/20260420_003403_bf16_gemm_v1_26d9819`
+- kernel tag: `bf16_gemm_v1_26d9819`
+- round label: `round 32/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.924031 ms`
-- p10 runtime: `26.706329 ms`
-- p90 runtime: `28.232499 ms`
-- TFLOP/s: `27.002621 TFLOP/s`
-- previous run id: `20260420_002629_bf16_gemm_v1_1e8ffdd`
-- runtime delta vs previous measured run: `-0.677377 ms`
-- TFLOP/s delta vs previous measured run: `+0.662682 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `27.130784 ms`
+- p10 runtime: `26.510951 ms`
+- p90 runtime: `28.638618 ms`
+- TFLOP/s: `26.796845 TFLOP/s`
+- previous run id: `20260420_002759_bf16_gemm_v1_1b9dbe3`
+- runtime delta vs previous measured run: `+0.206753 ms`
+- TFLOP/s delta vs previous measured run: `-0.205776 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the current best branch and re-test grouped_rows=4 under the newer launch-bounds plus unroll-2 codegen`
+- implemented direction name: `Keep the current best branch and reduce grouped_rows one more step to 2`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_002759_bf16_gemm_v1_1b9dbe3/summary.json`
-- measured commit: `1b9dbe3d306090b4f1762f1e1a504c13d2ab5d92`
-- new best custom: `yes`
-- generated at: `2026-04-20T00:28:07-07:00`
+- raw summary json: `runs/20260420_003403_bf16_gemm_v1_26d9819/summary.json`
+- measured commit: `26d98195f580e02656bb7b75067c13cb4383f797`
+- new best custom: `no`
+- generated at: `2026-04-20T00:34:10-07:00`
