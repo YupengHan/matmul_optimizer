@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_000122_bf16_gemm_v1_a4646fc`
-- run dir: `runs/20260420_000122_bf16_gemm_v1_a4646fc`
-- kernel tag: `bf16_gemm_v1_a4646fc`
-- round label: `round 18/50`
+- run id: `20260420_000504_bf16_gemm_v1_f35aea8`
+- run dir: `runs/20260420_000504_bf16_gemm_v1_f35aea8`
+- kernel tag: `bf16_gemm_v1_f35aea8`
+- round label: `round 19/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.673856 ms`
-- p10 runtime: `31.109632 ms`
-- p90 runtime: `32.547083 ms`
-- TFLOP/s: `22.953297 TFLOP/s`
-- previous run id: `20260419_235839_bf16_gemm_v1_f97d68d`
-- runtime delta vs previous measured run: `+0.785407 ms`
-- TFLOP/s delta vs previous measured run: `-0.583638 TFLOP/s`
+- median runtime: `60.609537 ms`
+- p10 runtime: `59.976192 ms`
+- p90 runtime: `61.918516 ms`
+- TFLOP/s: `11.995132 TFLOP/s`
+- previous run id: `20260420_000122_bf16_gemm_v1_a4646fc`
+- runtime delta vs previous measured run: `+28.935681 ms`
+- TFLOP/s delta vs previous measured run: `-10.958165 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Try the 256x128 hot-band CTA with 64x64 warp tiles on top of the proven K16 stage contract`
+- implemented direction name: `Restore the 128x128 K16 winner and add a register-pressure / launch-bounds hint to chase higher occupancy`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_000122_bf16_gemm_v1_a4646fc/summary.json`
-- measured commit: `a4646fcde92b3595f4801eb30c4e0026914da3a1`
+- raw summary json: `runs/20260420_000504_bf16_gemm_v1_f35aea8/summary.json`
+- measured commit: `f35aea8b55dcd6d7d085a93469f414d6471ccd07`
 - new best custom: `no`
-- generated at: `2026-04-20T00:01:30-07:00`
+- generated at: `2026-04-20T00:05:13-07:00`

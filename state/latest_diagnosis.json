@@ -1,75 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_000335",
-  "status": "completed",
-  "created_at": "2026-04-20T00:03:35-07:00",
-  "source_run_id": "20260420_000122_bf16_gemm_v1_a4646fc",
-  "source_run_dir": "runs/20260420_000122_bf16_gemm_v1_a4646fc",
-  "source_summary_json": "runs/20260420_000122_bf16_gemm_v1_a4646fc/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_000504_bf16_gemm_v1_f35aea8",
+  "source_run_dir": "runs/20260420_000504_bf16_gemm_v1_f35aea8",
+  "source_summary_json": "runs/20260420_000504_bf16_gemm_v1_f35aea8/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the 128x128 K16 winner and add a register-pressure / launch-bounds hint to chase higher occupancy",
-      "hypothesis": "The last two rounds made the tradeoff clear: once hot-band shared memory grows from 26 KB to roughly 42-43 KB per block, active warps collapse and runtime regresses. That means the 29.20 ms 128x128 K16 kernel is still the right base, and the next plausible gain comes from register-side pressure rather than more shared staging. The recommended move is to restore the corrected 128x128 K16 default launch and add an explicit launch-bounds style occupancy hint on that kernel so ptxas has a reason to trim per-thread register usage if possible. This directly reflects the human Register Reuse idea while preserving the async-copy / shared-reuse / stage contract that already won.",
-      "expected_bottleneck": "Register-limited occupancy in the accepted 128x128 K16 hot-band kernel. The target is to increase resident blocks or at least reduce register pressure enough to lift warps active and tensor active.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1609",
-        "src/kernels/bf16_gemm_v1.cu:1754"
-      ],
-      "risk": "If the compiler satisfies the launch-bounds hint with spills instead of real register trimming, the kernel can slow down even while nominal occupancy improves. The direction is still bounded because it keeps the proven 128x128 K16 algorithm and touches only compiler guidance plus the launch choice.",
-      "metrics_to_recheck": [
-        "correctness pass rate on all benchmark cases",
-        "median runtime",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if register count does not move or if the hinted kernel slows down due to spills despite restoring the 128x128 K16 base."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Keep the 128x128 K16 base and tighten the consume fence only where overwrite actually occurs",
-      "hypothesis": "If the register hint path is neutral, the next lowest-risk attempt is still the best current kernel with less barrier work. The explicit consume fence was the correctness fix, but it can be scoped more carefully so it only fires on iterations that really overwrite the current stage.",
-      "expected_bottleneck": "Barrier overhead in the accepted 128x128 K16 mainloop.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1662",
-        "src/kernels/bf16_gemm_v1.cu:1680",
-        "src/kernels/bf16_gemm_v1.cu:1694"
-      ],
-      "risk": "The upside is smaller, and an incorrect narrowing can silently reintroduce the round-15 race.",
-      "metrics_to_recheck": [
-        "correctness pass rate",
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if correctness fails again or if barrier stall does not improve enough to offset the code risk."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Hold the CTA-local kernel fixed and try the deferred L2-friendly block-order clue",
-      "hypothesis": "The user-provided L2 idea becomes more credible once the larger shared-memory shapes are ruled out. If CTA-local changes stop paying, a block-order or swizzle hint may be the next orthogonal lever for B reuse across neighboring CTAs.",
-      "expected_bottleneck": "Inter-CTA cache locality rather than within-CTA tensor feed.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1732",
-        "src/runner/main.cpp:135"
-      ],
-      "risk": "CUDA does not give strong guarantees on block issue order, so this can easily be a no-op.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the runtime remains governed by occupancy / tensor delivery rather than cache behavior."
-    }
-  ],
-  "notes": "Human-idea reflection for round 19: Register Reuse becomes the primary family because the last two rounds showed that increasing shared-memory footprint is what killed active warps, while the 128x128 K16 branch already has the best stage/data-reuse balance. Async Copy, Data Reuse, Pg2s, Ps2r, and Stage remain accepted background choices because the winning kernel depends on them; the point now is to preserve that machinery while giving the compiler a chance to reduce live register pressure. Tiling 256x128 and deeper multi-stage overlap are deferred after two measured regressions. Coalescing Access and Bank Conflict are still deferred because the better and worse runs are not separating primarily on those signals. The L2 clue remains deferred but stays on the board as the next orthogonal axis if CTA-local occupancy tuning stalls."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
