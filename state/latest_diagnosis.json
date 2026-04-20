@@ -1,72 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260419_222558",
-  "status": "completed",
-  "created_at": "2026-04-19T22:25:58-07:00",
-  "source_run_id": "20260419_222503_bf16_gemm_v1_edcdbea",
-  "source_run_dir": "runs/20260419_222503_bf16_gemm_v1_edcdbea",
-  "source_summary_json": "runs/20260419_222503_bf16_gemm_v1_edcdbea/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260419_222734_bf16_gemm_v1_0d78758",
+  "source_run_dir": "runs/20260419_222734_bf16_gemm_v1_0d78758",
+  "source_summary_json": "runs/20260419_222734_bf16_gemm_v1_0d78758/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "recommended_idea_origin": "auto-analysis",
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore the restored best surface and discard the split-ownership staging branch",
-      "hypothesis": "The split-ownership copy schedule is a clear dead end. It preserved correctness, but runtime regressed by about 0.48 ms, hot-band time regressed to about 41.96 us, registers exploded to about 222/thread, barrier stall rose to about 15.50%, and `mio_throttle` jumped to about 8.85%. That is exactly the kind of broad regression signal that should be reset immediately rather than debugged further. The first move is therefore to restore the pre-split surface before exploring another family.",
-      "expected_bottleneck": "Not a new bottleneck attack; this is a branch reset after a strongly negative staging-ownership experiment.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. The restore is local and proven-correct. The only cost is one recovery round.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread"
-      ],
-      "stop_condition": "If the restored surface does not return to the pre-split behavior, stop and investigate drift before trying another idea."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "After the restore, trim the hot-band export path instead of the copy path",
-      "hypothesis": "Recent copy-schedule experiments have mostly moved in the wrong direction, while the branch still spends its output through the per-warp `c_shared` scratch path. The next orthogonal move after a restore is therefore to keep the successful B-consumer path intact and try to simplify the 64x64 export helpers so they use less shared round-trip machinery or less warp-local synchronization on the way out.",
-      "expected_bottleneck": "Hot-band epilogue / export LSU and shared-memory round-trip overhead.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_row_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_wmma_store_tile_pairs_64x64",
-        "src/kernels/bf16_gemm_v1.cu:ptx_export_shared_tile_quads_64x64"
-      ],
-      "risk": "Moderate to high. The export path is correctness-sensitive and tightly coupled to the accumulator layout, but it is one of the few remaining unexplored orthogonal surfaces.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Reject if correctness gets shaky, if registers climb, or if the hot-band time stays flat."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Re-anchor the loop explicitly at the recorded best custom measurement `5dd9f0d`",
-      "hypothesis": "If measurement variance keeps obscuring whether restores are actually recovering, the repo may need an explicit re-anchor at the recorded best custom measurement rather than just the same code surface after several exploratory rounds. This is not the most exciting next move, but it can keep the remaining rounds grounded if runtime noise gets too large.",
-      "expected_bottleneck": "Workflow / baseline drift rather than a specific micro-bottleneck.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "risk": "Low. This is a stable reset, but it does not by itself advance the optimization frontier.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime"
-      ],
-      "stop_condition": "Use this if repeated restores do not produce a stable enough runtime envelope to judge new experiments."
-    }
-  ],
-  "notes": "Round 10/30 starts from the clearest negative branch in several rounds. Splitting copy ownership across half the CTA spiked registers and both major staging stalls while slowing the dominant hot-band kernel, so there is no value in refining it. Recommended direction dir_01 therefore restores the pre-split surface immediately. Dir_02 records the next orthogonal family to try after that restore: trimming the hot-band export path instead of touching the copy path again. Dir_03 is a stricter baseline re-anchor if measurement drift remains confusing."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `edcdbea324dc7306e7a111e771f8d65aaf39eabd`
-- plateau counter: `5`
-- round loop: `round 10/30`
-- rounds remaining: `21`
-- notes: `Node C build succeeded for round 10/30. Node A will now measure the new code path.`
+- latest measured commit: `0d787589a75b35984fb169106135c77436806bc6`
+- plateau counter: `0`
+- round loop: `round 11/30`
+- rounds remaining: `20`
+- notes: `Node A completed round 10/30. Run node_b to continue round 11/30.`
 
 ## Latest measured custom run
 
-- run id: `20260419_222503_bf16_gemm_v1_edcdbea`
-- run dir: `runs/20260419_222503_bf16_gemm_v1_edcdbea`
+- run id: `20260419_222734_bf16_gemm_v1_0d78758`
+- run dir: `runs/20260419_222734_bf16_gemm_v1_0d78758`
 - correctness: `PASS`
-- median runtime: `30.861776 ms`
-- TFLOP/s: `23.557277 TFLOP/s`
+- median runtime: `29.325824 ms`
+- TFLOP/s: `24.791100 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260419_222558`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 10/30 starts from the clearest negative branch in several rounds. Splitting copy ownership across half the CTA spiked registers and both major staging stalls while slowing the dominant hot-band kernel, so there is no value in refining it. Recommended direction dir_01 therefore restores the pre-split surface immediately. Dir_02 records the next orthogonal family to try after that restore: trimming the hot-band export path instead of touching the copy path again. Dir_03 is a stricter baseline re-anchor if measurement drift remains confusing.`
-- dir_01: Restore the restored best surface and discard the split-ownership staging branch | bottleneck: Not a new bottleneck attack; this is a branch reset after a strongly negative staging-ownership experiment.
-- dir_02: After the restore, trim the hot-band export path instead of the copy path | bottleneck: Hot-band epilogue / export LSU and shared-memory round-trip overhead.
-- dir_03: Re-anchor the loop explicitly at the recorded best custom measurement `5dd9f0d` | bottleneck: Workflow / baseline drift rather than a specific micro-bottleneck.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `3.514943 ms`, `1.135618x` slower than CUTLASS
+- current best custom gap: `3.407935 ms`, `1.131490x` slower than CUTLASS

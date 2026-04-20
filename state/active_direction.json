@@ -1,27 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore the restored best surface and discard the split-ownership staging branch",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-19T22:26:39-07:00",
-  "source_diagnosis_id": "diagnosis_20260419_222558",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Restore the restored best surface and discard the split-ownership staging branch",
-    "hypothesis": "The split-ownership copy schedule is a clear dead end. It preserved correctness, but runtime regressed by about 0.48 ms, hot-band time regressed to about 41.96 us, registers exploded to about 222/thread, barrier stall rose to about 15.50%, and `mio_throttle` jumped to about 8.85%. That is exactly the kind of broad regression signal that should be reset immediately rather than debugged further. The first move is therefore to restore the pre-split surface before exploring another family.",
-    "expected_bottleneck": "Not a new bottleneck attack; this is a branch reset after a strongly negative staging-ownership experiment.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "risk": "Low. The restore is local and proven-correct. The only cost is one recovery round.",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "runs/*/ncu_details.csv hot-band gpu__time_duration.sum",
-      "launch__registers_per_thread"
-    ],
-    "stop_condition": "If the restored surface does not return to the pre-split behavior, stop and investigate drift before trying another idea."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }
