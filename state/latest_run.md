@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_215841_bf16_gemm_v1_06eedc6`
-- run dir: `runs/20260419_215841_bf16_gemm_v1_06eedc6`
-- kernel tag: `bf16_gemm_v1_06eedc6`
-- round label: `round 2/30`
+- run id: `20260419_220419_bf16_gemm_v1_1cfe453`
+- run dir: `runs/20260419_220419_bf16_gemm_v1_1cfe453`
+- kernel tag: `bf16_gemm_v1_1cfe453`
+- round label: `round 3/30`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `30.592960 ms`
-- p10 runtime: `30.218548 ms`
-- p90 runtime: `31.288218 ms`
-- TFLOP/s: `23.764272 TFLOP/s`
-- previous run id: `20260419_215456_bf16_gemm_v1_13caa86`
-- runtime delta vs previous measured run: `-0.025151 ms`
-- TFLOP/s delta vs previous measured run: `+0.019521 TFLOP/s`
+- median runtime: `30.270464 ms`
+- p10 runtime: `29.673049 ms`
+- p90 runtime: `31.425620 ms`
+- TFLOP/s: `24.017452 TFLOP/s`
+- previous run id: `20260419_215841_bf16_gemm_v1_06eedc6`
+- runtime delta vs previous measured run: `-0.322496 ms`
+- TFLOP/s delta vs previous measured run: `+0.253181 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `dir_01`
-- implemented direction name: `Human idea Ps2r: one-fragment shared-to-register lookahead on the restored streaming-B branch`
-- implemented selection mode: `recommended`
+- implemented direction id: `dir_02`
+- implemented direction name: `Human idea Ps2r: preload the next A row-pair while the current row-pair consumes the mirrored B stream`
+- implemented selection mode: `approved`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_215841_bf16_gemm_v1_06eedc6/summary.json`
-- measured commit: `06eedc6cae82b3b30f2ac78be257751b6684432a`
+- raw summary json: `runs/20260419_220419_bf16_gemm_v1_1cfe453/summary.json`
+- measured commit: `1cfe45357c836d8da9abf495ede7a932733ec8a9`
 - new best custom: `no`
-- generated at: `2026-04-19T21:58:49-07:00`
+- generated at: `2026-04-19T22:04:27-07:00`
