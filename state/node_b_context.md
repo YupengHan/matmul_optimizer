@@ -38,10 +38,10 @@
 
         ## Current source snapshot
 
-        - round loop: `single-run`
-        - rounds remaining after this one: `0`
+        - round loop: `round 1/10`
+        - rounds remaining after this one: `9`
         - latest run id: `20260419_202711_bf16_gemm_v1_5135c1d`
         - median runtime: `30.310320 ms`
         - TFLOP/s: `23.985871 TFLOP/s`
         - measured commit: `5135c1d6edb580191a96d8c6d9b47cb3ec8b96be`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`
