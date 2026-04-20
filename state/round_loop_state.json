@@ -1,6 +1,6 @@
 {
   "active": true,
-  "status": "round_in_progress",
+  "status": "awaiting_measurement",
   "total_rounds": 20,
   "completed_rounds": 1,
   "remaining_rounds": 19,
@@ -35,5 +35,5 @@
   "accepted_base_measured_commit": "9bdc160ee2a6ef0f1171c09f4cf72f7dd081cab1",
   "accepted_base_runtime_ms": 33.12844658,
   "history_path": "state/round_history.jsonl",
-  "notes": "Executing round 2/20."
+  "notes": "Build passed for round 2/20. Node A will measure the result next."
 }
