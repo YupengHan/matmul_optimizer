@@ -1,10 +1,30 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore the accepted-correct surface and try a light 4-column serpentine CTA swizzle on the hot-band grid",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-19T23:10:25-07:00",
+  "source_diagnosis_id": "diagnosis_20260419_230948",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Restore the accepted-correct surface and try a light 4-column serpentine CTA swizzle on the hot-band grid",
+    "hypothesis": "Warp-local fragment-residency experiments have now failed correctness twice, so the next safe branch should move away from register choreography and toward cache locality. The user's L2 idea is the cleanest option: restore the accepted-correct implementation surface first, then apply a very light logical CTA swizzle that only reorders hot-band block_col mapping inside small groups. That keeps the inner microkernel untouched and tests whether the scheduler can get a little more B-tile locality from a serpentine launch order.",
+    "expected_bottleneck": "Inter-CTA L2 locality across neighboring hot-band B tiles rather than warp-local tensor scheduling.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel",
+      "src/kernels/bf16_gemm_v1.cu:launch_bf16_gemm_v1",
+      "python scripts/graph.py restore-implementation --source-commit 0d78758"
+    ],
+    "risk": "Moderate. The restore is low-risk, and the swizzle is intentionally lightweight, but the earlier heavier grouped traversal was negative.",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band gpu__time_duration.sum",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
+      "runs/*/ncu_metrics.csv main 256x128 hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed"
+    ],
+    "stop_condition": "Reject if the swizzle leaves L2 throughput flat or regresses runtime on the restored surface."
+  },
+  "notes": "Node C may now implement this one direction."
 }
