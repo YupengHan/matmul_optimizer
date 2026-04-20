@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260419_212123_bf16_gemm_v1_b276585`
-- run dir: `runs/20260419_212123_bf16_gemm_v1_b276585`
-- kernel tag: `bf16_gemm_v1_b276585`
-- round label: `round 6/10`
+- run id: `20260419_213009_bf16_gemm_v1_7e51a77`
+- run dir: `runs/20260419_213009_bf16_gemm_v1_7e51a77`
+- kernel tag: `bf16_gemm_v1_7e51a77`
+- round label: `round 7/10`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.765568 ms`
-- p10 runtime: `30.404812 ms`
-- p90 runtime: `31.385191 ms`
-- TFLOP/s: `23.630944 TFLOP/s`
-- previous run id: `20260419_210551_bf16_gemm_v1_61be2e8`
-- runtime delta vs previous measured run: `+0.195072 ms`
-- TFLOP/s delta vs previous measured run: `-0.150790 TFLOP/s`
+- median runtime: `31.310287 ms`
+- p10 runtime: `30.901862 ms`
+- p90 runtime: `32.681912 ms`
+- TFLOP/s: `23.219826 TFLOP/s`
+- previous run id: `20260419_212123_bf16_gemm_v1_b276585`
+- runtime delta vs previous measured run: `+0.544720 ms`
+- TFLOP/s delta vs previous measured run: `-0.411119 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Human idea 10 Stage: keep the correct hot kernel, but specialize the fixed 452-tile loop into explicit prologue / steady-state / epilogue control`
+- implemented direction name: `Human idea L2 cache: grouped CTA swizzle / block-order remap for the 64x384 hot band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260419_212123_bf16_gemm_v1_b276585/summary.json`
-- measured commit: `b276585d1116d0596c9d17f02c48868f0c3edbca`
+- raw summary json: `runs/20260419_213009_bf16_gemm_v1_7e51a77/summary.json`
+- measured commit: `7e51a7782370c2b7fa92b243968378bc0b61deb9`
 - new best custom: `no`
-- generated at: `2026-04-19T21:21:31-07:00`
+- generated at: `2026-04-19T21:30:16-07:00`
