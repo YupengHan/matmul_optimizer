@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Retune The Active One-K 128x128 Hot-Band Copy Cadence",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T20:07:06-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_200135",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Retune The Active One-K 128x128 Hot-Band Copy Cadence",
+    "hypothesis": "Round 16/50 still has no extra user-authored idea family in `state/human_review.md` beyond the approval gate and the exactly-one-direction rule, so the next move should follow the latest measured evidence as narrowly as possible. The current source surface already matches the recorded best-custom kernel source in `src/kernels/bf16_gemm_v1.cu` (no kernel diff between `1181247` and `e6fdb8b`), and the latest NCU capture shows the dominant `128x128` hot-band kernel is the only branch that is even slightly behind that best reference: hot-band time is `32,917,184 ns` now versus `32,868,864 ns` on `1181247`, while the peeled and tail kernels are not slower in the current capture. The remaining gap is narrow and still looks like feed/shared-stage friction inside the active one-K loop (`7.73%` long-scoreboard now versus `7.49%` on `1181247`, `13.02%` DRAM versus `12.84%`, with `196` regs/thread and only `16.64%` active warps), so the best next move is a bounded retune of the current K16 copy/wait cadence and B-stage handoff instead of another family pivot.",
+    "expected_bottleneck": "A narrow hot-band feed-latency and shared-stage handoff gap inside the active one-K `128x128` kernel, not the peeled `64x384` residual rows or the `64x96` tail.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1071-1102",
+      "src/kernels/bf16_gemm_v1.cu:1844-1947",
+      "src/kernels/bf16_gemm_v1.cu:2090-2138"
+    ],
+    "risk": "Low to moderate. This stays on the current best-known source family and only retunes the active hot-band loop, but the measured gap versus `1181247` is already small, so the upside is bounded and an over-aggressive wait/order change can easily erase the recovered win.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime versus the current `25.325055 ms` run and the recorded best `24.422464 ms`",
+      "hot-band `gpu__time_duration.sum` versus the current `32,917,184 ns` and the `1181247` reference `32,868,864 ns`",
+      "hot-band `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`",
+      "hot-band `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
+      "hot-band `dram__throughput.avg.pct_of_peak_sustained_elapsed`",
+      "hot-band `l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed` and `l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed`"
+    ],
+    "stop_condition": "Stop if a first-pass cadence/order retune cannot beat the current `25.325055 ms` control run or if the hot-band kernel stays within noise of the current `32,917,184 ns` capture without improving long-scoreboard or tensor activity."
+  },
+  "notes": "Node C may now implement this one direction."
 }
