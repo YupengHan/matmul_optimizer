@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- candidate id: `diagnosis_20260421_082719:dir_01`
+- base run id: `20260421_075613_bf16_gemm_v1_ba8c2d7`
+- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
+- planned action fingerprint: `restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_082719`
 - round loop: `round 38/100`
+- hypothesis: `Round 37 only clawed back a few microseconds from round 36 and still finished above the accepted `489574e` anchor at 24.18427181 ms versus 24.16427231 ms. The live PTX hot-band kernel remains the runtime owner, but the measured source has drifted off the best-known surface by a pair of small scheduler-path edits that did not convert into a real win. The highest-value move now is to restore the exact accepted PTX surface on the current tree, re-measure it on the current harness state, and re-open the tighter exploit families only from that clean anchor instead of stacking more tweaks on top of a regressed branch.`
+- expected bottleneck: `Source drift away from the accepted PTX hot-band steady state, not DRAM saturation and not another immediate structural pivot.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:153-156, src/kernels/bf16_gemm_v1.cu:2000-2060, src/kernels/bf16_gemm_v1.cu:2107-2128`
+- risk: `Low. The exact restore surface is already buildable and previously measured as the current accepted best, so this is primarily a search reset rather than a novel correctness risk.`
+- metrics to re-check: `end-to-end median runtime versus 24.18427181 ms and the accepted 24.16427231 ms anchor, hot-band gpu__time_duration.sum, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
