@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `f1c576ee202b38cd0287e625e807069c95525f77`
 - plateau counter: `9`
 - round loop: `round 5/10`
 - rounds remaining: `6`
-- notes: `Node A completed round 4/10. Run node_b to continue round 5/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01 via recommended selection for round 5/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_153357_round05_clean_f1c576ee`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 5 human-guidance review: Tiling(accept but reject simple 256x128 promotion), Coalescing Access(guardrail, already present), Data Reuse(accept), Async Copy(guardrail, already present), Bank Conflict(accept), L2 Cache(accept as secondary), Register Reuse(strong accept), Pg2s(accept), Ps2r(accept), Stage(accept but reject shared-memory blowup). The simple 256x128 pivot is now treated as a measured negative; only deeper 256x128 salvage or bounded occupancy probes stay active.`
+- dir_01: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint, stage design, and reuse efficiency inside the 256x128 hot-band path are still the missing pieces preventing the human-guided tiling family from becoming viable.
+- dir_02: Force 3-CTA Residency On The Non-PTX 128x128 Sibling | bottleneck: Register-limited occupancy and latency hiding on the current non-PTX 128x128 accepted surface.
+- dir_03: Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup | bottleneck: Barrier cadence inside the single-K 128x128 PTX microkernel while preserving the lower shared-memory footprint.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

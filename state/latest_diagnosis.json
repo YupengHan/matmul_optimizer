@@ -1,22 +1,280 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_153357_round05_clean_f1c576ee",
+  "status": "completed",
+  "created_at": "2026-04-21T15:36:54-07:00",
   "source_run_id": "20260421_153357_bf16_gemm_v1_f1c576ee",
   "source_run_dir": "runs/20260421_153357_bf16_gemm_v1_f1c576ee",
   "source_summary_json": "runs/20260421_153357_bf16_gemm_v1_f1c576ee/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "The live run context is 20260421_153357_bf16_gemm_v1_f1c576ee at 30.173615 ms after promoting the existing 256x128 pivot hot-band kernel. That experiment is a clean correctness pass but a decisive performance failure: runtime regressed by 5.979 ms, tensor activity collapsed from 48.33% to 36.77%, shared memory jumped from 22,016 B to 42,496 B, and barrier stall rose from 5.49% to 8.32%. At the same time, the run also showed why the 256x128 family is still not dead: registers fell to 167 and long-scoreboard collapsed to 2.19%, which means the geometry does attack part of the machine-state problem, just not in a shippable form yet. From round 5 onward the human guidance has to be reviewed explicitly, and the latest evidence now maps it item by item. Tiling 256x128 / 64x64 is accepted as a promising axis, but simple promotion is now rejected because it explodes shared footprint and barrier cost. Coalescing access and async copy are already present, so they are guardrails rather than the missing idea. Data reuse, Pg2s, Ps2r, stage design, bank-conflict control, and especially register reuse remain accepted because the failed pivot suggests the 256x128 family only works if those details are improved together rather than by geometry alone. L2-cache swizzle stays relevant because the pivot run also dropped L2 throughput materially. That makes the best next move the correctness-safe 256x128 pivot plus half-panel register-budget transplant, because it is the most direct way to salvage the human-guided 256x128 branch without repeating the already-failed simple promotion. The second choice is to stay on the current accepted non-PTX 128x128 sibling and force 3-CTA residency, which is a bounded occupancy experiment on the current best clean base. The third choice keeps the PTX barrier-trim family alive as an orthogonal fallback on the small-shared-footprint surface.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_153357_bf16_gemm_v1_f1c576ee/summary.json",
+    "runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_analysis.md",
+    "runs/20260421_153021_bf16_gemm_v1_24f31aab/ncu_analysis.md",
+    "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+    "master:state/diagnosis_history.jsonl"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01",
+  "notes": "Round 5 human-guidance review: Tiling(accept but reject simple 256x128 promotion), Coalescing Access(guardrail, already present), Data Reuse(accept), Async Copy(guardrail, already present), Bank Conflict(accept), L2 Cache(accept as secondary), Register Reuse(strong accept), Pg2s(accept), Ps2r(accept), Stage(accept but reject shared-memory blowup). The simple 256x128 pivot is now treated as a measured negative; only deeper 256x128 salvage or bounded occupancy probes stay active.",
+  "family_audit": [
+    {
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "decision": "reject_this_round",
+      "rationale": "The simple 256x128 pivot promotion matched the human tiling idea but regressed by nearly 6 ms because shared memory and barrier cost exploded."
+    },
+    {
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "decision": "accept",
+      "rationale": "This is now the best salvage path for the human-guided 256x128 family because it targets the missing pieces the failed pivot lacked: register reuse, better staging, and lower live-state pressure."
+    },
+    {
+      "family_id": "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling",
+      "decision": "keep_hot",
+      "rationale": "The current accepted base is the non-PTX 128x128 sibling at 24.195 ms, so a bounded occupancy push on that exact surface is the cleanest non-256x128 structural probe."
+    },
+    {
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "decision": "keep_hot",
+      "rationale": "The PTX barrier-trim family still matches the human guidance around async-copy / staging discipline on the smaller-shared-footprint surface."
+    },
+    {
+      "family_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops",
+      "decision": "accept_as_base_cleanup",
+      "rationale": "The offset-hoist win is kept as part of the accepted base, but its family is no longer the highest-leverage next step."
+    },
+    {
+      "family_id": "tiling_decomposition::expand_64x384_row_band",
+      "decision": "reject_this_round",
+      "rationale": "The 64x384 row-band family is still inconsistent with both the human guidance and the live bottleneck evidence."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
+      "mode": "explore",
+      "hypothesis": "The failed 256x128 pivot promotion proved that geometry alone is not enough, but it also proved that 256x128 can slash registers and long-scoreboard cost. The coherent follow-on is to keep the correctness-safe 256x128 pivot ownership path and transplant only the low-register staging and reuse ideas that the archived half-panel branch got right, without reviving the writer split that broke correctness.",
+      "expected_bottleneck": "Register footprint, stage design, and reuse efficiency inside the 256x128 hot-band path are still the missing pieces preventing the human-guided tiling family from becoming viable.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:539-693",
+        "src/kernels/bf16_gemm_v1.cu:903-995"
+      ],
+      "risk": "High. This is the highest-ceiling family left in the repo, but it touches the same 256x128 control/export surface that has failed correctness before.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "launch__registers_per_thread",
+        "launch__shared_mem_per_block_allocated",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "median runtime"
+      ],
+      "search_score_v1": 0.86,
+      "score_breakdown": {
+        "policy_id": "manual_round05_human_guidance_salvage_v1",
+        "headroom_score": 0.56,
+        "evidence_score": 0.19,
+        "implementation_bonus": 0.06,
+        "risk_penalty": -0.15,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 1.0,
+      "predicted_fail_risk": 0.72,
+      "ranking_notes": [
+        "This is now the most direct way to honor the human 256x128 guidance without repeating the already-failed simple pivot promotion.",
+        "The latest negative result actually strengthens this family because it isolated which parts of the 256x128 machine-state change were useful and which parts still need repair."
+      ],
+      "stop_condition": "Stop immediately if correctness fails again or if shared memory remains near the failed 42,496 B footprint without clear occupancy improvement.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "master:state/diagnosis_history.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the correctness-safe 256x128 pivot ownership path.",
+        "Transplant only the low-register staging and reuse behavior from the archived half-panel branch without reviving split-writer ownership."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Force 3-CTA Residency On The Non-PTX 128x128 Sibling",
+      "family_id": "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling",
+      "subfamily_id": "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling::restore_910beff_then_raise_launch_bounds_to_3",
+      "action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_910beff68055b974cfdbb268cda1087c8b44d665_then_force_launch_bounds_3",
+      "mode": "explore",
+      "hypothesis": "The current accepted non-PTX 128x128 sibling is still pinned at 196 registers and only about 16.6% active warps. A bounded launch-bounds push toward 3-CTA residency on that exact surface is the cleanest way to test whether the occupancy thesis can pay off on the current best clean base without reintroducing the PTX-specific barrier pathologies.",
+      "expected_bottleneck": "Register-limited occupancy and latency hiding on the current non-PTX 128x128 accepted surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1842-1954",
+        "src/kernels/bf16_gemm_v1.cu:2090-2137"
+      ],
+      "risk": "Moderate. Correctness risk is low because the base sibling surface is already known-good, but performance risk remains because forcing a 3-CTA budget can still trade registers for spills or expose new synchronization costs.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 0.74,
+      "score_breakdown": {
+        "policy_id": "manual_round05_human_guidance_salvage_v1",
+        "headroom_score": 0.41,
+        "evidence_score": 0.18,
+        "implementation_bonus": 0.14,
+        "risk_penalty": -0.08,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.5,
+      "predicted_fail_risk": 0.34,
+      "ranking_notes": [
+        "This is the best bounded structural probe on the current accepted base after the 256x128 pivot failure.",
+        "It also preserves an orthogonal path if the 256x128 salvage branch proves too fragile."
+      ],
+      "stop_condition": "Stop if launch bounds force spills without increasing effective occupancy or if runtime regresses while achieved warps stay flat.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "master:state/diagnosis_history.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the current accepted non-PTX 128x128 sibling surface if needed.",
+        "Tighten the hot-band launch budget toward 3 resident CTAs without changing CTA geometry."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
+      "action_fingerprint": "restore_three_cta_microkernel_surface_then_trim_wait_sync_cadence_without_two_k_stage_buffers",
+      "mode": "explore",
+      "hypothesis": "If both 256x128 salvage and the non-PTX occupancy probe fail, the best small-footprint fallback is still to return to the accepted PTX microkernel surface and trim barrier cadence more surgically without reopening the large shared-memory path.",
+      "expected_bottleneck": "Barrier cadence inside the single-K 128x128 PTX microkernel while preserving the lower shared-memory footprint.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955-2060"
+      ],
+      "risk": "High. This is a more manual PTX-microkernel surgery path than the exact restore.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__shared_mem_per_block_allocated",
+        "launch__registers_per_thread",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 0.63,
+      "score_breakdown": {
+        "policy_id": "manual_round05_human_guidance_salvage_v1",
+        "headroom_score": 0.39,
+        "evidence_score": 0.12,
+        "implementation_bonus": 0.07,
+        "risk_penalty": -0.17,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.9,
+      "predicted_fail_risk": 0.58,
+      "ranking_notes": [
+        "This remains the best PTX fallback because it honors the human staging guidance without accepting the failed shared-memory blowup.",
+        "It ranks third because the latest evidence now puts higher value on either salvaging 256x128 properly or pushing occupancy on the current accepted base."
+      ],
+      "stop_condition": "Stop if shared memory rises above the accepted 22,016 B footprint or if barrier stall does not improve materially when compared to the PTX accepted-base profile.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX microkernel launch surface if needed before editing the wait/sync cadence.",
+        "Retune the single-K consumer-barrier handoff without adding a second full K-tile shared buffer pair."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    }
+  ]
 }
