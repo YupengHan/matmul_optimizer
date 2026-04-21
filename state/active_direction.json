@@ -1,21 +1,57 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Apply Only A Minimal PTX Export Address Cleanup",
+  "candidate_id": "diagnosis_20260420_223553:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+  "subfamily_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+  "action_fingerprint": "0a4f037bb055c349",
+  "selection_priority": 2.5,
+  "base_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T22:38:30-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_223553",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Apply Only A Minimal PTX Export Address Cleanup",
+    "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+    "subfamily_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+    "action_fingerprint": "0a4f037bb055c349",
+    "mode": "exploit",
+    "hypothesis": "Round 6 recovered the accepted PTX grouping surface and produced a clear runtime win, but the restored profile still carries the same occupancy ceiling and modest barrier / scoreboard costs. That points to the remaining overhead sitting close to the PTX export path rather than in another dispatch or locality knob. The best bounded next move is therefore to keep the restored grouping window intact and simplify only the PTX export address/control surface so writeback bookkeeping dies sooner without changing the MMA loop or widening the hot path.",
+    "expected_bottleneck": "PTX export-side address/control overhead and scratch bookkeeping on the restored accepted hot-band surface.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:925-947",
+      "src/kernels/bf16_gemm_v1.cu:1008-1065",
+      "src/kernels/bf16_gemm_v1.cu:2044-2047"
+    ],
+    "risk": "Low to medium. This keeps the freshly restored PTX branch intact and only narrows the export surface, but the upside is bounded and it can still become a no-op if the compiler already simplified the current path.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime versus the 24.180656 ms restored base",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "launch__registers_per_thread",
+      "hot-band gpu__time_duration.sum"
+    ],
+    "search_score_v1": 2.3,
+    "score_breakdown": {
+      "policy_id": "manual_round100_node_b_v7",
+      "rank_score": 3.0,
+      "restored_surface_bonus": 0.2,
+      "bounded_scope_bonus": 0.15,
+      "risk_penalty": 1.05,
+      "formula": "rank_score + restored_surface_bonus + bounded_scope_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.03,
+    "predicted_fail_risk": 0.2,
+    "ranking_notes": [
+      "The restore family already paid off, so the next step should harvest that restored surface rather than immediately twiddle grouping again.",
+      "Export cleanup is the best-ranked still-open family that stays on the new accepted PTX branch and attacks a different surface from round 5 and round 6.",
+      "It is ranked ahead of the control-path exploit because the last direct control-order nudge already came back flat on the adjacent surface."
+    ],
+    "stop_condition": "Stop if export cleanup leaves runtime and the export-adjacent stall counters effectively unchanged after one bounded pass.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
