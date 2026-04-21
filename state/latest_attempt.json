@@ -1,95 +1,77 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260420_233659:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260420_233659:dir_01",
-  "source_diagnosis_id": "diagnosis_20260420_233659",
-  "base_run_id": "20260420_233546_bf16_gemm_v1_4bc0218",
-  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+  "attempt_id": "diagnosis_20260420_235953:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260420_235953:dir_01",
+  "source_diagnosis_id": "diagnosis_20260420_235953",
+  "base_run_id": "20260420_235922_bf16_gemm_v1_489574e",
+  "family_id": "legacy::steady_state_barrier_handoff_retime",
+  "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
   "direction_id": "dir_01",
-  "direction_name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-  "mode": "restore",
-  "commit": "489574ed5013268dbb79c634450d9a60155a294a",
-  "commit_short": "489574e",
-  "subject": "node_c: round 12/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+  "direction_name": "Steady-state Barrier / Handoff Retime",
+  "mode": "exploit",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 13/100 implement dir_01 Steady-state Barrier / Handoff Retime",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-20T23:57:39-07:00",
+  "selected_at": "2026-04-21T00:02:42-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260420_233546_bf16_gemm_v1_4bc0218",
-  "selection_score": 2.655,
-  "planned_action_fingerprint": "26b22d7f05ca7ff6",
-  "implemented_action_fingerprint": "restore_ptx_dispatch_and_df5bac2_staging_surface",
+  "source_run_id": "20260420_235922_bf16_gemm_v1_489574e",
+  "selection_score": 2.525,
+  "planned_action_fingerprint": "8f8b5eca1122e2da",
+  "implemented_action_fingerprint": "retime_future_tile_refill_to_a_then_b",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v12",
+    "policy_id": "manual_round100_node_b_v13",
     "rank_score": 2.0,
-    "surface_coherence_bonus": 0.55,
-    "historical_pass_win_bonus": 0.25,
-    "rehydration_bonus": 0.15,
-    "risk_penalty": 0.5,
-    "formula": "rank_score + surface_coherence_bonus + historical_pass_win_bonus + rehydration_bonus - risk_penalty"
+    "active_surface_bonus": 0.3,
+    "previous_measurement_invalidated_bonus": 0.25,
+    "absorbed_family_filter_bonus": 0.1,
+    "risk_penalty": 0.3,
+    "formula": "rank_score + active_surface_bonus + previous_measurement_invalidated_bonus + absorbed_family_filter_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
-    "restore_ptx_default_dispatch",
-    "restore_ptx_prologue_order",
-    "restore_ptx_future_tile_refill_order",
-    "restore_inline_ptx_row_pair_issue"
+    "ptx_handoff_retime",
+    "future_tile_refill_order",
+    "a_then_b_refill"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:718-765",
-    "src/kernels/bf16_gemm_v1.cu:1982-2027",
-    "src/kernels/bf16_gemm_v1.cu:2084-2091"
+    "src/kernels/bf16_gemm_v1.cu:2041-2053"
   ],
   "implementation": {
-    "commit": "489574ed5013268dbb79c634450d9a60155a294a",
-    "commit_short": "489574e",
-    "subject": "node_c: round 12/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 13/100 implement dir_01 Steady-state Barrier / Handoff Retime",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:718-765",
-      "src/kernels/bf16_gemm_v1.cu:1982-2027",
-      "src/kernels/bf16_gemm_v1.cu:2084-2091"
+      "src/kernels/bf16_gemm_v1.cu:2041-2053"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 65,
-      "deletions": 39
+      "insertions": 4,
+      "deletions": 4
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 65,
-    "deletions": 39
+    "insertions": 4,
+    "deletions": 4
   },
   "measurement": {
-    "run_id": "20260420_235922_bf16_gemm_v1_489574e",
-    "measurement_commit": "489574ed5013268dbb79c634450d9a60155a294a",
-    "runtime_ms": 24.16427231,
-    "runtime_delta_ms": -0.009696009999998978,
-    "tflops": 30.08654316,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.39",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.84",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.13",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.44",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.41",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.63",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.43",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.17",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.16",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.65",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "flat",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260420_235922_bf16_gemm_v1_489574e for candidate diagnosis_20260420_233659:dir_01; transition_label=PASS_FLAT.",
-  "transition_label": "PASS_FLAT"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

@@ -11,7 +11,17 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:02:42-07:00",
   "source_diagnosis_id": "diagnosis_20260420_235953",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "retime_future_tile_refill_to_a_then_b",
+  "semantic_delta_tags": [
+    "ptx_handoff_retime",
+    "future_tile_refill_order",
+    "a_then_b_refill"
+  ],
+  "secondary_family_ids": [],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:2041-2053"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Steady-state Barrier / Handoff Retime",
@@ -55,5 +65,5 @@
     "stop_condition": "Stop if another bounded handoff retime again only trades barrier against scoreboard without improving runtime on the restored PTX surface.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
