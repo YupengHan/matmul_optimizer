@@ -11,7 +11,18 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T07:42:19-07:00",
   "source_diagnosis_id": "diagnosis_20260421_073952",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [
+    "pair_ptx_export_tiles",
+    "add_second_ptx_export_scratch_stage",
+    "trim_syncwarp_count_in_export_path"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:134-143",
+    "src/kernels/bf16_gemm_v1.cu:1004-1052"
+  ],
+  "implemented_action_fingerprint": "pair_adjacent_ptx_export_tiles_with_two_scratch_stages_to_reduce_syncwarp_count",
   "summary": {
     "direction_id": "dir_01",
     "name": "Trim PTX Microkernel Barriers On The Restored 128x128 Anchor",
@@ -52,5 +63,5 @@
     "stop_condition": "Stop if the edit inflates shared memory above the restored 22.016 KB footprint, or if barrier stall does not improve materially while runtime stays flat or regresses.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
