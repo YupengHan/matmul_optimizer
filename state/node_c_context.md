@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Specialize The 452-Tile PTX Hot-Band Loop On The Restored Grouped-Rows-4 Base`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_182334`
 - round loop: `round 5/50`
+- hypothesis: `No explicit user-provided idea-family bullets are currently listed in `state/human_review.md` beyond the workflow gate, so this round's ranking is driven directly by the measured evidence. Run `20260420_182305_bf16_gemm_v1_e003c0e` is the second consecutive negative result after the `2e4dd24` winner: the latest export/live-range trim regressed to 25.52985573 ms, kept the dominant hot-band kernel at 200 registers per thread, and worsened hot-band long-scoreboard from 7.43% on the accepted base to 8.18% while only nudging kernel time from 32.80 ms to 32.90 ms. The previous round already closed the handoff-retime family as primary, so the remaining on-path way to attack the dominant kernel without repeating those two failed micro-families is fixed-shape loop specialization: preserve grouped-rows=4, the current PTX consume order, and the current cp.async semantics, but peel the known 452-tile loop into explicit prologue / steady-state / epilogue structure so the hot path stops paying generic `next_tile_idx` / `future_tile_idx` control overhead every iteration.`
+- expected bottleneck: `Generic loop-control and stage-transition overhead inside the dominant 128x128 PTX hot-band kernel, which is still limiting tensor issue after the recent handoff and export micro-tunes failed.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1076-1103, src/kernels/bf16_gemm_v1.cu:1995-2041, src/kernels/bf16_gemm_v1.cu:2097-2104`
+- risk: `Medium to high. This stays on the winning dispatch surface, but it is more invasive than the last two rounds and prior fixed-shape peeling attempts on older families showed correctness and code-shape risk if the exact staging order is not preserved.`
+- metrics to re-check: `correctness, median runtime, runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, launch__registers_per_thread`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

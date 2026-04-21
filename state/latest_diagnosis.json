@@ -1,15 +1,84 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_182334",
+  "status": "completed",
+  "created_at": "2026-04-20T18:23:34-07:00",
   "source_run_id": "20260420_182305_bf16_gemm_v1_e003c0e",
   "source_run_dir": "runs/20260420_182305_bf16_gemm_v1_e003c0e",
   "source_summary_json": "runs/20260420_182305_bf16_gemm_v1_e003c0e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Specialize The 452-Tile PTX Hot-Band Loop On The Restored Grouped-Rows-4 Base",
+      "hypothesis": "No explicit user-provided idea-family bullets are currently listed in `state/human_review.md` beyond the workflow gate, so this round's ranking is driven directly by the measured evidence. Run `20260420_182305_bf16_gemm_v1_e003c0e` is the second consecutive negative result after the `2e4dd24` winner: the latest export/live-range trim regressed to 25.52985573 ms, kept the dominant hot-band kernel at 200 registers per thread, and worsened hot-band long-scoreboard from 7.43% on the accepted base to 8.18% while only nudging kernel time from 32.80 ms to 32.90 ms. The previous round already closed the handoff-retime family as primary, so the remaining on-path way to attack the dominant kernel without repeating those two failed micro-families is fixed-shape loop specialization: preserve grouped-rows=4, the current PTX consume order, and the current cp.async semantics, but peel the known 452-tile loop into explicit prologue / steady-state / epilogue structure so the hot path stops paying generic `next_tile_idx` / `future_tile_idx` control overhead every iteration.",
+      "expected_bottleneck": "Generic loop-control and stage-transition overhead inside the dominant 128x128 PTX hot-band kernel, which is still limiting tensor issue after the recent handoff and export micro-tunes failed.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1076-1103",
+        "src/kernels/bf16_gemm_v1.cu:1995-2041",
+        "src/kernels/bf16_gemm_v1.cu:2097-2104"
+      ],
+      "risk": "Medium to high. This stays on the winning dispatch surface, but it is more invasive than the last two rounds and prior fixed-shape peeling attempts on older families showed correctness and code-shape risk if the exact staging order is not preserved.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Stop if the specialized loop does not beat the restored 24.44441605 ms base, if hot-band time and tensor activity stay flat, or if correctness breaks while preserving the grouped-rows-4 surface."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The 6144 Hot-Band/Peeled Seam As The Best Launch-Split Fallback",
+      "hypothesis": "No explicit active human idea-family bullets are currently queued in `state/human_review.md`, so the fallback ranking has to come from measured family history. With both recent hot-band-local directions now negative, the strongest materially different measured fallback is still the bounded seam family. The latest run shows the secondary kernels remain small but still barrier-heavy, while the dominant hot-band kernel has stopped responding to narrow inner-loop retunes. That keeps the 6144 pivot as the cleanest launch-boundary test on the restored `2e4dd24` surface: it changes where work is split between the hot-band PTX kernel and the peeled row-band path without repeating the two recently closed inner-kernel ideas.",
+      "expected_bottleneck": "Boundary cost between the 128x128 PTX hot-band kernel and the peeled 64x384 follow-on path, especially whether the fixed 6400-row split leaves avoidable barrier-heavy work in the secondary kernels.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:153-156",
+        "src/kernels/bf16_gemm_v1.cu:1150-1164",
+        "src/kernels/bf16_gemm_v1.cu:2097-2114"
+      ],
+      "risk": "Medium. The family is mechanically narrow and already measured, but its known local best still trails the current winner, so it can easily just redistribute work rather than produce a new best result.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv peeled kernel gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv tail kernel gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if the repivot only shifts time into the peeled or tail kernels, or if it still cannot approach the restored 24.44441605 ms base."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep The Broad Fixed-Main 64x384 Control Only As An Audit Branch",
+      "hypothesis": "No explicit current human idea-family bullets are present in `state/human_review.md`, but the required autotune evidence still leaves one clearly different audit family on the board: the old fixed-main `64x384` control. The round-18 sweep says it was the best broad tile-width in that older regime, so it remains the only dispatch-level alternative with direct autotune ancestry. It stays strictly tertiary because the current dedicated grouped-rows-4 PTX surface already beats CUTLASS and the more recent broad-control evidence is much worse than the accepted base. This branch is therefore only for audit coverage if both the current-kernel specialization and the seam fallback stall.",
+      "expected_bottleneck": "Broader dispatch-path and arithmetic-intensity tradeoff across the fixed-shape hot band, not the inner PTX hot-band microkernel itself.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:152",
+        "src/kernels/bf16_gemm_v1.cu:1201-1248",
+        "src/kernels/bf16_gemm_v1.cu:2082-2095"
+      ],
+      "risk": "High. This family is materially different and autotune-backed, but it lives far from the current winning surface and is likely to reopen a broad regression rather than recover the current 1.09 ms gap back to the best custom run.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Treat this as audit-only control evidence; stop immediately if it opens another broad-family regression or lands far above the restored 24.44441605 ms PTX base."
+    }
+  ],
+  "notes": "Round 5/50 diagnosis anchored to run `20260420_182305_bf16_gemm_v1_e003c0e`, with the implementation surface already restored to the accepted best measured commit `2e4dd246f55b505bd095c42b62c56dc497c8fde1`. Human-review audit for this round: `state/human_review.md` currently lists no explicit user-provided idea-family bullets beyond the workflow gate, so there are no active queued human ideas to accept, defer, or reject one by one; the ranking is therefore driven directly by the latest measured evidence and the required raw-file history. That evidence is now decisive on the two most recent hot-band-local families: round 3/50 handoff retime regressed by 1.070592 ms, and round 4/50 export/live-range trimming regressed again to 25.52985573 ms while keeping the hot-band kernel pinned at 200 registers/thread and worsening long-scoreboard to 8.18%. Those two misses close narrow handoff and export trimming as primary follow-ups on the grouped-rows-4 winner. The next ranked families are therefore: accept fixed-shape 452-tile loop specialization as the primary move because it still attacks the dominant hot-band kernel without repeating the two closed micro-families; defer the 6144 seam as the best bounded measured launch-split fallback; reject broad fixed-main control as anything more than a tertiary audit branch because the old autotune ancestry is outweighed by much slower modern evidence on this PTX regime."
 }
