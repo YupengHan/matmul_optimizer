@@ -30,9 +30,14 @@ Node workflow entrypoints:
 ```bash
 python scripts/graph.py status
 python scripts/graph.py supervisor
+python scripts/graph.py search-status
+python scripts/graph.py frontier --top N
+python scripts/graph.py select-next
+python scripts/graph.py restore-base --run-id <run_id>
 python scripts/graph.py cycle
 python scripts/graph.py rounds --status
 python scripts/graph.py rounds --count N --auto-use-recommended
+python scripts/graph.py rounds --count N --auto-select-frontier
 python scripts/graph.py node_a
 python scripts/graph.py node_b
 python scripts/graph.py node_b --finalize
@@ -109,6 +114,7 @@ When the user says `开始运行 node_c`:
 
 1. ensure a direction is selected in `state/active_direction.json`
 2. if none is selected, use either:
+   - `python scripts/graph.py select-next`
    - `python scripts/graph.py approve --direction dir_0X`
    - `python scripts/graph.py use-recommended-direction`
 3. run `python scripts/graph.py node_c`
@@ -141,6 +147,14 @@ When the user says `开始运行N圈`:
    - profile paths
 9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
 
+If the user explicitly asks to prefer frontier-based selection for the loop, use:
+
+```bash
+python scripts/graph.py rounds --count N --auto-select-frontier
+```
+
+In that mode, when node_c is entered with no selected direction, the main agent should try `python scripts/graph.py select-next` first and only fall back to the current recommended direction if the frontier has no selectable open candidate.
+
 When the user says `连续工作N圈`:
 
 - treat it as the same instruction as `开始运行N圈`
@@ -153,6 +167,13 @@ When the user says `再运行N圈`:
 - arm a fresh `N`-round loop from the current accepted base / current graph state
 - the main agent owns the loop budget and the stop condition
 - the current dispatch step is always visible in `state/supervisor_task.json`
+
+When the user asks to restore an exact measured base by run id:
+
+1. run `python scripts/graph.py restore-base --run-id <run_id>`
+2. let the script resolve the measured/source commit from repo state
+3. treat the action as a first-class search restore with `family_id=restore_base`
+4. do not claim performance; a later `node_a` run is still required for any new measurement
 
 ## Strict node definitions
 

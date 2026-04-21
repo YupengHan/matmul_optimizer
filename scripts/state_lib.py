@@ -24,6 +24,12 @@ ROUND_LOOP_STATE_PATH = STATE_DIR / 'round_loop_state.json'
 ROUND_HISTORY_PATH = STATE_DIR / 'round_history.jsonl'
 DIAGNOSIS_HISTORY_PATH = STATE_DIR / 'diagnosis_history.jsonl'
 SUPERVISOR_TASK_PATH = STATE_DIR / 'supervisor_task.json'
+SEARCH_STATE_PATH = STATE_DIR / 'search_state.json'
+SEARCH_FRONTIER_PATH = STATE_DIR / 'search_frontier.json'
+SEARCH_CLOSED_PATH = STATE_DIR / 'search_closed.jsonl'
+FAMILY_LEDGER_PATH = STATE_DIR / 'family_ledger.json'
+SEARCH_CANDIDATES_PATH = STATE_DIR / 'search_candidates.json'
+LATEST_ATTEMPT_PATH = STATE_DIR / 'latest_attempt.json'
 
 
 def now_local_iso() -> str:
@@ -53,6 +59,18 @@ def load_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
         return json.load(handle)
 
 
+def load_jsonl(path: Path) -> list[Dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows: list[Dict[str, Any]] = []
+    with path.open('r', encoding='utf-8') as handle:
+        for line in handle:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
 def write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=False) + '\n', encoding='utf-8')
@@ -67,6 +85,11 @@ def append_jsonl(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(payload, sort_keys=False) + '\n')
+
+
+def touch_file(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(exist_ok=True)
 
 
 def current_kernel_path() -> str:
@@ -150,6 +173,8 @@ def default_latest_diagnosis() -> Dict[str, Any]:
         'current_kernel_path': current_kernel_path(),
         'recommended_direction_id': None,
         'approved_direction_id': None,
+        'selected_direction_id': None,
+        'family_audit': [],
         'directions': [],
         'notes': 'Run node_b to produce exactly three ranked directions.',
     }
@@ -159,12 +184,23 @@ def default_active_direction() -> Dict[str, Any]:
     return {
         'direction_id': None,
         'name': None,
+        'candidate_id': None,
+        'selected_from_frontier_id': None,
+        'family_id': None,
+        'subfamily_id': None,
+        'action_fingerprint': None,
+        'selection_priority': None,
+        'base_run_id': None,
         'selection_mode': None,
         'selected_at': None,
         'source_diagnosis_id': None,
+        'secondary_family_ids': [],
+        'semantic_delta_tags': [],
+        'actual_code_regions': [],
+        'implemented_action_fingerprint': None,
         'status': 'idle',
         'summary': None,
-        'notes': 'No direction selected yet. Use approve or use-recommended-direction after node_b.',
+        'notes': 'No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.',
     }
 
 
@@ -188,6 +224,7 @@ def default_round_loop_state() -> Dict[str, Any]:
         'next_round_index': 1,
         'current_round_index': None,
         'auto_use_recommended': False,
+        'auto_select_frontier': False,
         'started_at': None,
         'completed_at': None,
         'last_completed_round': None,
@@ -209,6 +246,7 @@ def default_supervisor_task() -> Dict[str, Any]:
         'round_loop_active': False,
         'rounds_remaining': 0,
         'auto_use_recommended': False,
+        'auto_select_frontier': False,
         'requires_gpu_access': True,
         'prepare_command': 'python scripts/graph.py node_a',
         'selection_command': None,
@@ -218,6 +256,164 @@ def default_supervisor_task() -> Dict[str, Any]:
         'active_direction_id': None,
         'recommended_direction_id': None,
         'notes': 'Run node_a directly from the main Codex agent.',
+    }
+
+
+def default_search_state() -> Dict[str, Any]:
+    return {
+        'schema_version': 1,
+        'status': 'idle',
+        'search_mode': 'heuristic_mvp',
+        'search_iteration': 0,
+        'accepted_base_run_id': None,
+        'accepted_base_measured_commit': None,
+        'accepted_base_runtime_ms': None,
+        'best_known_run_id': None,
+        'best_known_measured_commit': None,
+        'best_known_runtime_ms': None,
+        'exact_base_run_id': None,
+        'exact_base_measured_commit': None,
+        'exact_base_runtime_ms': None,
+        'active_frontier_id': None,
+        'active_candidate_set_id': None,
+        'active_candidate_id': None,
+        'last_selected_candidate_id': None,
+        'last_selected_direction_id': None,
+        'last_selected_selection_mode': None,
+        'last_selected_at': None,
+        'latest_attempt_id': None,
+        'last_transition_type': None,
+        'last_result_run_id': None,
+        'last_result_measured_commit': None,
+        'last_result_runtime_ms': None,
+        'last_result_correctness_passed': None,
+        'last_transition_label': None,
+        'last_result_registers_per_thread': None,
+        'last_result_shared_mem_per_block_allocated': None,
+        'last_restore_run_id': None,
+        'last_restore_source_commit': None,
+        'last_restore_at': None,
+        'last_restore_reason': None,
+        'selection_policy': {
+            'policy_id': 'heuristic_v1_fallback',
+            'allow_restore_base': True,
+            'max_open_candidates': 3,
+        },
+        'frontier_json': repo_rel(SEARCH_FRONTIER_PATH),
+        'candidates_json': repo_rel(SEARCH_CANDIDATES_PATH),
+        'closed_jsonl': repo_rel(SEARCH_CLOSED_PATH),
+        'family_ledger_json': repo_rel(FAMILY_LEDGER_PATH),
+        'latest_attempt_json': repo_rel(LATEST_ATTEMPT_PATH),
+        'notes': 'Search scaffolding is idle until a measured base is projected into a frontier.',
+    }
+
+
+def default_search_frontier() -> Dict[str, Any]:
+    return {
+        'schema_version': 1,
+        'frontier_id': None,
+        'status': 'empty',
+        'source_run_id': None,
+        'source_measured_commit': None,
+        'source_diagnosis_id': None,
+        'candidate_set_id': None,
+        'generated_at': None,
+        'selection_policy_id': 'heuristic_v1_fallback',
+        'selected_candidate_id': None,
+        'selection_reason': None,
+        'selection_summary': None,
+        'candidates': [],
+        'notes': 'No open frontier yet. Phase 1 will project finalized node_b directions here.',
+    }
+
+
+def default_family_ledger() -> Dict[str, Any]:
+    return {
+        'schema_version': 1,
+        'updated_at': now_local_iso(),
+        'last_result_run_id': None,
+        'last_transition_label': None,
+        'families': {},
+        'notes': 'Family-level attempt memory is empty until search transitions are recorded.',
+    }
+
+
+def default_search_candidates() -> Dict[str, Any]:
+    return {
+        'schema_version': 1,
+        'candidate_set_id': None,
+        'source_run_id': None,
+        'source_diagnosis_id': None,
+        'generated_at': None,
+        'recommended_direction_id': None,
+        'recommended_candidate_id': None,
+        'candidates': [],
+        'notes': 'No normalized candidates yet. Phase 1 will mirror exactly three node_b directions here.',
+    }
+
+
+def default_latest_attempt() -> Dict[str, Any]:
+    return {
+        'schema_version': 1,
+        'attempt_id': None,
+        'status': 'idle',
+        'candidate_id': None,
+        'source_diagnosis_id': None,
+        'base_run_id': None,
+        'family_id': None,
+        'subfamily_id': None,
+        'direction_id': None,
+        'direction_name': None,
+        'mode': None,
+        'commit': None,
+        'commit_short': None,
+        'subject': None,
+        'selection_mode': None,
+        'selected_at': None,
+        'selected_from_frontier_id': None,
+        'source_run_id': None,
+        'selection_score': None,
+        'planned_action_fingerprint': None,
+        'implemented_action_fingerprint': None,
+        'score_breakdown': {},
+        'semantic_delta_tags': [],
+        'secondary_family_ids': [],
+        'actual_code_regions': [],
+        'implementation': {
+            'commit': None,
+            'commit_short': None,
+            'subject': None,
+            'build_status': None,
+            'failure_mode': None,
+            'build_log_path': None,
+            'touched_files': [],
+            'diff_stats': {
+                'files_changed': 0,
+                'insertions': 0,
+                'deletions': 0,
+            },
+        },
+        'build_status': None,
+        'failure_mode': None,
+        'diff_stats': {
+            'files_changed': 0,
+            'insertions': 0,
+            'deletions': 0,
+        },
+        'measurement': {
+            'run_id': None,
+            'measurement_commit': None,
+            'runtime_ms': None,
+            'runtime_delta_ms': None,
+            'tflops': None,
+            'correctness': None,
+            'headline_metrics': {},
+            'headline_metric_deltas_vs_previous_run': {},
+        },
+        'transition_label': None,
+        'transition_class': None,
+        'close_reason': None,
+        'notes': 'No active implementation edge is recorded yet.',
     }
 
 
@@ -239,6 +435,18 @@ def ensure_machine_state() -> None:
         write_json(ROUND_LOOP_STATE_PATH, default_round_loop_state())
     if not SUPERVISOR_TASK_PATH.exists():
         write_json(SUPERVISOR_TASK_PATH, default_supervisor_task())
+    if not SEARCH_STATE_PATH.exists():
+        write_json(SEARCH_STATE_PATH, default_search_state())
+    if not SEARCH_FRONTIER_PATH.exists():
+        write_json(SEARCH_FRONTIER_PATH, default_search_frontier())
+    if not FAMILY_LEDGER_PATH.exists():
+        write_json(FAMILY_LEDGER_PATH, default_family_ledger())
+    if not SEARCH_CANDIDATES_PATH.exists():
+        write_json(SEARCH_CANDIDATES_PATH, default_search_candidates())
+    if not LATEST_ATTEMPT_PATH.exists():
+        write_json(LATEST_ATTEMPT_PATH, default_latest_attempt())
+    if not SEARCH_CLOSED_PATH.exists():
+        touch_file(SEARCH_CLOSED_PATH)
 
 
 def load_graph_state() -> Dict[str, Any]:
@@ -271,6 +479,34 @@ def load_round_loop_state() -> Dict[str, Any]:
 
 def load_supervisor_task() -> Dict[str, Any]:
     return load_json(SUPERVISOR_TASK_PATH, default_supervisor_task())
+
+
+def load_search_state() -> Dict[str, Any]:
+    return load_json(SEARCH_STATE_PATH, default_search_state())
+
+
+def load_search_frontier() -> Dict[str, Any]:
+    return load_json(SEARCH_FRONTIER_PATH, default_search_frontier())
+
+
+def load_search_closed() -> list[Dict[str, Any]]:
+    return load_jsonl(SEARCH_CLOSED_PATH)
+
+
+def load_family_ledger() -> Dict[str, Any]:
+    return load_json(FAMILY_LEDGER_PATH, default_family_ledger())
+
+
+def load_search_candidates() -> Dict[str, Any]:
+    return load_json(SEARCH_CANDIDATES_PATH, default_search_candidates())
+
+
+def load_latest_attempt() -> Dict[str, Any]:
+    return load_json(LATEST_ATTEMPT_PATH, default_latest_attempt())
+
+
+def load_run_registry() -> list[Dict[str, Any]]:
+    return load_jsonl(RUN_REGISTRY_PATH)
 
 
 def direction_lookup(diagnosis: Dict[str, Any], direction_id: str) -> Optional[Dict[str, Any]]:

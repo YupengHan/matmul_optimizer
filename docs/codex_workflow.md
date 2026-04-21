@@ -125,4 +125,5 @@ The most important files during active operation are:
 - [docs/benchmark_spec.md](benchmark_spec.md): fixed benchmark definition
 - [docs/commit_convention.md](commit_convention.md): commit structure for `node_a`, `node_b`, and `node_c`
 - [docs/heuristics.md](heuristics.md): diagnosis heuristics for node_b
+- [docs/search_refactor_plan.md](search_refactor_plan.md): phased plan for evolving the current loop into a structured heuristic-search workflow
 - [state/README.md](../state/README.md): update rules for the state layer

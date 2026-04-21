@@ -53,6 +53,8 @@ It must contain:
 - `source_ncu_summary_json`
 - `current_kernel_path`
 - `recommended_direction_id`
+- `family_audit`
+- `selected_direction_id`
 - `directions`
 
 `directions` must contain exactly 3 items. Each item must contain:
@@ -60,20 +62,42 @@ It must contain:
 - `direction_id`
 - `rank`
 - `name`
+- `family_id`
+- `subfamily_id`
+- `action_fingerprint`
+- `mode`
 - `hypothesis`
 - `expected_bottleneck`
 - `code_locations`
 - `risk`
 - `metrics_to_recheck`
+- `search_score_v1`
+- `score_breakdown`
+- `predicted_gain_ms`
+- `predicted_fail_risk`
+- `ranking_notes`
 - `stop_condition`
 
 The top-level `notes` field should be used when useful to record human-guided ranking rationale.
+The top-level `family_audit` field should remain a list and can summarize which idea families were accepted, deferred, or rejected this round.
+`selected_direction_id` may remain `null` at diagnosis time because finalize now emits candidates into the frontier without automatically selecting one.
 
 ## Direction quality bar
 
 The three directions should be materially different. Do not submit three small variants of the same idea.
 
 The recommended direction should be the best expected upside / implementation-risk tradeoff for the next loop.
+
+Each direction is also a search candidate.
+
+That means each direction should carry:
+
+- stable family labels
+- a deterministic or auditable action fingerprint
+- a coarse numeric score
+- prose notes that explain why the score is what it is
+
+Do not fake precision. Keep the numeric score coarse and use `ranking_notes` to preserve the reasoning that a later fuzzy reranker may need.
 
 From round 5 onward, diagnosis must also explicitly reflect the user-provided human ideas from `state/human_review.md` instead of treating them as soft background context only.
 
@@ -91,6 +115,9 @@ The three directions do not need extra schema fields for this, but their `hypoth
 `python scripts/graph.py node_b --finalize` will:
 
 - validate that there are exactly 3 directions
+- backfill deterministic `action_fingerprint` and `search_score_v1` fields when they are omitted
+- project all 3 directions into `state/search_candidates.json`
+- enqueue all 3 directions as open frontier items in `state/search_frontier.json`
 - set `state/graph_state.json` to point at `node_c`
 - refresh `state/current_focus.md`, `state/progress.md`, `state/human_review.md`
 - prepare `state/node_c_context.md`

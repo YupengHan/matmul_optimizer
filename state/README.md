@@ -7,21 +7,6 @@ The state layer now has two tiers:
 
 The two tiers should describe the same workflow state.
 
-## Start Here
-
-If you are reopening this repo for operator work, read these files first:
-
-1. `migration_handoff.md`
-2. `current_focus.md`
-3. `progress.md`
-4. `supervisor_task.json`
-
-Current operator note:
-
-- the previous round loop was intentionally stopped by user request
-- the repo is paused before `node_c` of round `16/50`
-- the next intended task is migration work on `heuristic-search-migration`, not continuing the old round loop
-
 ## Machine-readable files
 
 ## `graph_state.json`
@@ -78,6 +63,10 @@ Contains:
 - source run references
 - exactly 3 ranked directions
 - one recommended direction
+- optional `selected_direction_id` for later explicit selection
+- `family_audit` notes about accepted, deferred, or rejected idea families
+- candidate-style direction metadata such as family labels, fingerprints,
+  numeric scores, and ranking notes
 
 ## `active_direction.json`
 
@@ -86,9 +75,102 @@ Node_c input.
 Contains:
 
 - selected direction id
+- optional frontier candidate metadata such as `candidate_id`,
+  `selected_from_frontier_id`, `family_id`, `subfamily_id`,
+  `action_fingerprint`, `selection_priority`, and `base_run_id`
 - selection mode
 - direction summary
+- implementation-edge annotations such as `implemented_action_fingerprint`,
+  `semantic_delta_tags`, `secondary_family_ids`, and `actual_code_regions`
 - implementation status
+
+## `search_state.json`
+
+Top-level heuristic-search scaffolding.
+
+Contains:
+
+- accepted measured base metadata
+- best-known measured run metadata such as `best_known_run_id` and `best_known_runtime_ms`
+- exact comparison-anchor metadata such as `exact_base_run_id` and `exact_base_runtime_ms`
+- active frontier and candidate-set pointers
+- last selected frontier candidate metadata
+- last measured result metadata such as `last_result_run_id`, `last_result_runtime_ms`,
+  `last_transition_label`, `last_result_registers_per_thread`, and
+  `last_result_shared_mem_per_block_allocated`
+- last restore metadata such as `last_restore_run_id`, `last_restore_source_commit`,
+  `last_restore_at`, and `last_restore_reason`
+- selection policy metadata
+- latest-attempt pointer
+
+## `search_frontier.json`
+
+Current open frontier for structured candidate selection.
+
+Contains:
+
+- source run and diagnosis references
+- selected candidate metadata
+- candidate ranking notes and score breakdowns
+- open candidate records
+- frontier items with `candidate_id`, `source_diagnosis_id`, `base_run_id`,
+  `family_id`, `subfamily_id`, `action_fingerprint`, `priority`, and `status`
+
+## `search_closed.jsonl`
+
+Append-only closed-set log for heuristic-search outcomes.
+
+Entries are intended to record:
+
+- which candidate was closed
+- why it was closed
+- which attempt or measured transition closed it
+- score context at selection time
+- measured runtime / correctness outcome and lightweight resource snapshot when node_a closes an attempt
+
+## `family_ledger.json`
+
+Coarse memory for direction families across rounds.
+
+Contains:
+
+- per-family aggregate counts such as `wins`, `flats`, `losses`, and `fails`
+- last outcome label
+- lightweight `freeze_status` such as `open`, `frozen`, or `closed_negative`
+- best observed runtime within the family
+- last measured resource snapshot for that family
+- coarse prior notes for later scoring
+
+## `search_candidates.json`
+
+Normalized candidate projection of the latest finalized diagnosis.
+
+Contains:
+
+- candidate-set metadata
+- recommended direction linkage
+- exactly three candidate records projected from node_b directions
+- fallback score fields plus explanatory notes
+- family, subfamily, fingerprint, mode, gain prediction, and fail-risk fields
+
+## `latest_attempt.json`
+
+Current search-attempt bridge across selection, build, and later measurement.
+
+Contains:
+
+- selected candidate and direction metadata such as `candidate_id`,
+  `source_diagnosis_id`, `base_run_id`, `family_id`, and `subfamily_id`
+- planned-vs-implemented edge metadata such as `planned_action_fingerprint`,
+  `implemented_action_fingerprint`, `semantic_delta_tags`,
+  `secondary_family_ids`, and `actual_code_regions`
+- implementation result metadata such as `build_status`, `failure_mode`,
+  `diff_stats`, and nested build-log / touched-file fields
+- commit metadata such as `commit`, `commit_short`, and `subject`
+- later measurement-transition fields such as `transition_label` and measured
+  headline metrics that node_a can fill only after a real run
+- restore-base actions may also use this file, with `family_id=restore_base`,
+  `mode=restore`, and `selection_mode=restore`
 
 ## `benchmark_state.json`
 
@@ -103,6 +185,9 @@ Append-only lightweight log of node_a measurements.
 
 Entries also record the implemented direction provenance for each measured run, including selection mode and idea origin.
 
+`restore-base --run-id <run_id>` resolves its source commit from this log first
+when possible, then falls back to the current latest/search-state pointers.
+
 ## `round_loop_state.json`
 
 Current multi-round loop budget and progress.
@@ -113,6 +198,7 @@ Contains:
 - total / completed / remaining rounds
 - current or next round index
 - whether recommended directions auto-select
+- whether frontier top candidates auto-select
 - last completed round summary
 
 ## `round_history.jsonl`

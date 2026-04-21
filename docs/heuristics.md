@@ -300,13 +300,30 @@ The diagnosis node should always output exactly **three** directions and use thi
 ### Direction template
 
 - **Name**
+- **Family ID**
+- **Subfamily ID**
+- **Mode**: `exploit`, `explore`, or `restore`
 - **Hypothesis**
 - **Why now**
 - **Expected upside**
 - **Implementation surface**
 - **Main risk**
+- **Action fingerprint**
+- **Search score v1**
+- **Score breakdown**
+- **Predicted gain (ms)**
+- **Predicted fail risk**
+- **Ranking notes**
 - **Metrics to re-check**
 - **Stop condition**
+
+Each direction is also a structured search candidate.
+
+That means:
+
+- keep a numeric score for deterministic fallback ordering
+- keep `score_breakdown` and `ranking_notes` so later LLM or fuzzy rerank logic can reinterpret close decisions without relying on fake precision
+- prefer coarse, auditable numbers over overfit decimal detail
 
 ## What the implementation loop must record
 

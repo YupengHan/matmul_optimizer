@@ -9,6 +9,12 @@ In the intended workflow, Node C is executed by one implementation `sub-agent` u
 Select a direction first:
 
 ```bash
+python scripts/graph.py select-next
+```
+
+or:
+
+```bash
 python scripts/graph.py approve --direction dir_02
 ```
 
@@ -63,12 +69,20 @@ Do not widen scope unless the selected direction truly requires minimal runner o
 
 Implement exactly one direction. Do not combine extra optimizations in the same node_c loop.
 
+Treat the selected direction as the primary family for this loop. If the implementation
+has to cross into another idea family, record that explicitly in
+`state/active_direction.json` via `secondary_family_ids` instead of silently widening scope.
+
 ## Sub-agent boundary
 
 The implementation `sub-agent` should:
 
 - read the selected direction and its code locations
 - edit only the files required for that one direction
+- keep the implementation aligned with the planned action fingerprint when possible
+- if the implementation drifts semantically, update `implemented_action_fingerprint`,
+  `semantic_delta_tags`, and `actual_code_regions` in `state/active_direction.json`
+- if the edit crosses families, write `secondary_family_ids` before finalize
 - leave build validation and finalize orchestration to the main agent
 
 After the `sub-agent` returns, the main Codex supervisor must run:
@@ -86,6 +100,8 @@ It must:
 - configure the repo for the main loop without requiring CUTLASS
 - build `custom_runner`
 - stop immediately if the build fails
+- write `state/latest_attempt.json` even when the build fails, with `build_status=FAIL`
+  and a structured `failure_mode`
 - update failure state if the build fails
 - avoid writing a success commit on build failure
 
@@ -94,6 +110,8 @@ It must:
 On success, finalize will:
 
 - mark the selected direction as implemented
+- write `state/latest_attempt.json` with the explicit implementation edge from selected
+  candidate to built code change
 - commit code plus lightweight state
 - auto-run node_a by default
 - if a round loop is active, keep the round open until node_a measures the result

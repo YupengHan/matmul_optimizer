@@ -85,6 +85,9 @@ The supervisor may stop only when:
 - no `sub-agent`
 - main agent runs `python scripts/graph.py node_a`
 - must run outside the Codex sandbox with direct CUDA and Nsight Compute access
+- after a real measurement finishes, node_a is also responsible for feeding the
+  measured transition back into search memory (`search_state`, `family_ledger`,
+  and `search_closed.jsonl` when a pending implementation attempt was actually measured)
 
 ### `node_b`
 
@@ -96,6 +99,8 @@ The supervisor may stop only when:
 ### `node_c`
 
 - if no direction is selected, the main agent selects one first
+- the preferred search-aware path is `python scripts/graph.py select-next`
+- the legacy fallback path remains `python scripts/graph.py use-recommended-direction`
 - main agent runs `python scripts/graph.py node_c`
 - main agent spawns one implementation `sub-agent`
 - the `sub-agent` follows `docs/node_c_protocol.md`
@@ -107,9 +112,16 @@ To arm a planned loop:
 
 ```bash
 python scripts/graph.py rounds --count N --auto-use-recommended
+python scripts/graph.py rounds --count N --auto-select-frontier
 ```
 
 Here `N` is the user-requested positive integer round budget.
+
+Selection preference during an active loop:
+
+- if `--auto-select-frontier` is active and node_c is entered with no selected direction, the supervisor should try `python scripts/graph.py select-next` first
+- if the frontier has no selectable open candidate, the supervisor may fall back to `python scripts/graph.py use-recommended-direction`
+- if `--auto-select-frontier` is not active but `--auto-use-recommended` is active, the supervisor uses the legacy recommended-direction auto-select path
 
 Then the supervisor repeats this control flow:
 
@@ -130,6 +142,10 @@ node_b -> node_c -> node_a
 
 The round-level measurement record is the `node_a:` commit after the real re-measurement step.
 
+That same `node_a` step is also the only place allowed to convert a build-passed
+implementation attempt into a real search transition label such as `PASS_WIN`,
+`PASS_FLAT`, or `PASS_LOSS`.
+
 ## Exploration branch rule
 
 Default safety policy:
@@ -139,10 +155,18 @@ Default safety policy:
 Use:
 
 ```bash
+python scripts/graph.py restore-base --run-id <measured_run_id>
 python scripts/graph.py restore-implementation --source-commit <measured_commit_sha>
 ```
 
-This command restores only the implementation surface (`src/kernels/*`, `src/runner/main.cpp`, `include/*`, `CMakeLists.txt`) and leaves the recorded lightweight state and run history intact.
+`restore-base` is the first-class search-aware action. It resolves the run id to a
+measured/source commit, restores only the implementation surface
+(`src/kernels/*`, `src/runner/main.cpp`, `include/*`, `CMakeLists.txt`), and
+records the restore in `search_state` / `latest_attempt` as a `family_id=restore_base`
+action with `selection_mode=restore`.
+
+`restore-implementation` remains the lower-level commit-addressed fallback when the
+supervisor already knows the exact source commit to restore.
 
 High-ceiling exploration policy:
 
