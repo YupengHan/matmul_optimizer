@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Re-Lock The Accepted 128x128 Default Dispatch`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_193146`
 - round loop: `round 13/50`
+- hypothesis: `Round 13 has no extra human idea family in `state/human_review.md` beyond the approval gate, so the first audit step is to accept or reject the latest measured family directly. The latest run rejected the full-hot-band `64x384` family as the next default move: it regressed to `34.016768 ms`, and its main kernel became DRAM-heavy (`55.57%` DRAM throughput, `36.11%` tensor activity, `16.81%` barrier stalls, `172` regs/thread, register cap `1`). The restored accepted base `1181247` measured `24.422464 ms` on the `128x128` hot-band kernel with much lower DRAM pressure (`12.84%`) and barrier stalls (`5.58%`). The current source snapshot is already back on that accepted-base branch, so the best next move is to make that `128x128 + residual 64x384 + 64x96 tail` dispatch reproducible in code instead of letting the negative `64x384` full-band route stay reachable as the effective benchmark default.`
+- expected bottleneck: `Dispatch/configuration drift into the negative full-band `64x384` path, which turns the hot kernel from a compute-balanced `128x128` branch into a DRAM- and barrier-heavy main kernel.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1181-1243, src/kernels/bf16_gemm_v1.cu:1842-1950, src/kernels/bf16_gemm_v1.cu:2091-2137`
+- risk: `Low to moderate. This is the safest high-upside move, but if the bad launch came from an intentional benchmark override rather than accidental drift, locking dispatch more tightly can hide a side-path the supervisor still wants to test explicitly.`
+- metrics to re-check: `end-to-end median runtime versus the `24.422464 ms` accepted base, which kernels appear in `runs/.../ncu_metrics.csv` for the fixed-shape run, hot-band `dram__throughput.avg.pct_of_peak_sustained_elapsed`, hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`, hot-band `launch__registers_per_thread` and `launch__occupancy_limit_registers``
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
