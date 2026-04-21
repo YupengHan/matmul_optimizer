@@ -1,65 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Steady-state Barrier / Handoff Retime",
-  "candidate_id": "diagnosis_20260421_075421:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::steady_state_barrier_handoff_retime",
-  "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
-  "action_fingerprint": "retime_ptx_wait_group_and_future_refill_order_on_restored_anchor",
-  "selection_priority": 2.2725,
-  "base_run_id": "20260421_075335_bf16_gemm_v1_894a38d",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T07:55:45-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_075421",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Steady-state Barrier / Handoff Retime",
-    "family_id": "legacy::steady_state_barrier_handoff_retime",
-    "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
-    "action_fingerprint": "retime_ptx_wait_group_and_future_refill_order_on_restored_anchor",
-    "mode": "exploit",
-    "hypothesis": "Round 36 showed the kind of near-flat but structurally useful signal that is worth following once more on the live PTX anchor: the new control-path cleanup missed the accepted base by only 0.016528 ms, but both barrier and long-scoreboard moved in the right direction. That means the family is probably not exhausted yet; it likely needs one more scheduler-seam nudge that acts more directly on the handoff between `cp_async_wait_group_0`, `__syncthreads()`, and the future-tile refill order. The cleanest next sub-variant is to retime that steady-state seam without changing launch bounds, tile shape, grouped traversal, or export scratch shape.",
-    "expected_bottleneck": "Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the seam between finishing the current MMA stage and refilling the reused stage buffer for the future tile.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:2042-2053",
-      "src/kernels/bf16_gemm_v1.cu:2024-2043",
-      "src/kernels/bf16_gemm_v1.cu:2110-2117"
-    ],
-    "risk": "Moderate. This is still a bounded scheduler retime on the live hot path, but it can easily trade barrier against scoreboard without producing an end-to-end gain.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime versus 24.164272 ms and 24.175471 ms",
-      "hot-band gpu__time_duration.sum",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "sm__warps_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 2.18,
-    "score_breakdown": {
-      "policy_id": "manual_round37_follow_partial_signal_v1",
-      "rank_score": 1.86,
-      "partial_signal_bonus": 0.28,
-      "active_surface_bonus": 0.14,
-      "risk_penalty": -0.1,
-      "formula": "rank_score + partial_signal_bonus + active_surface_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.03,
-    "predicted_fail_risk": 0.31,
-    "ranking_notes": [
-      "This is the narrowest next move that directly follows the positive barrier-and-scoreboard movement from round 36.",
-      "It ranks above restore because the latest result stayed close enough to the base that one more seam-level probe is justified."
-    ],
-    "stop_condition": "Stop if the next retime materially regresses runtime or merely trades barrier for another stall class without preserving the round-36 counter gains.",
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "retime_ptx_wait_group_and_future_refill_order_on_restored_anchor"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

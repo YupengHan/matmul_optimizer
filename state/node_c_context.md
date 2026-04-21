@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Steady-state Barrier / Handoff Retime`
-- candidate id: `diagnosis_20260421_075421:dir_01`
-- base run id: `20260421_075335_bf16_gemm_v1_894a38d`
-- primary family id: `legacy::steady_state_barrier_handoff_retime`
-- planned action fingerprint: `retime_ptx_wait_group_and_future_refill_order_on_restored_anchor`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_075421`
-- round loop: `round 37/100`
-- hypothesis: `Round 36 showed the kind of near-flat but structurally useful signal that is worth following once more on the live PTX anchor: the new control-path cleanup missed the accepted base by only 0.016528 ms, but both barrier and long-scoreboard moved in the right direction. That means the family is probably not exhausted yet; it likely needs one more scheduler-seam nudge that acts more directly on the handoff between `cp_async_wait_group_0`, `__syncthreads()`, and the future-tile refill order. The cleanest next sub-variant is to retime that steady-state seam without changing launch bounds, tile shape, grouped traversal, or export scratch shape.`
-- expected bottleneck: `Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the seam between finishing the current MMA stage and refilling the reused stage buffer for the future tile.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:2042-2053, src/kernels/bf16_gemm_v1.cu:2024-2043, src/kernels/bf16_gemm_v1.cu:2110-2117`
-- risk: `Moderate. This is still a bounded scheduler retime on the live hot path, but it can easily trade barrier against scoreboard without producing an end-to-end gain.`
-- metrics to re-check: `end-to-end median runtime versus 24.164272 ms and 24.175471 ms, hot-band gpu__time_duration.sum, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 38/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
