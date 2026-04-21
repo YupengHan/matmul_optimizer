@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `50`
-- completed rounds: `11`
-- remaining rounds: `39`
-- current round label: `round 12/50`
+- completed rounds: `12`
+- remaining rounds: `38`
+- current round label: `round 13/50`
 - auto use recommended: `yes`
 - accepted base run id: `20260420_185423_bf16_gemm_v1_1181247`
 - accepted base measured commit: `1181247a12bfd0978dd155838558142b6386710e`
@@ -13,15 +13,15 @@
 - started at: `2026-04-20T17:42:35-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 12/50. Node A will measure the result next.`
+- notes: `Completed round 12/50. Continue with node_b for round 13/50. Accepted base: 20260420_185423_bf16_gemm_v1_1181247 at 24.422464 ms.`
 
 ## Last completed round
 
-- round: `11/50`
+- round: `12/50`
 - direction: `dir_01`
-- direction name: `Reopen The PTX 128x128 Hot-Band Control Branch On The Restored 1181247 Base`
+- direction name: `Restore Sweep-Backed 64x384 Full Hot Band`
 - verdict: `regressed`
-- runtime delta: `+0.214911 ms`
-- TFLOP/s delta: `-0.244647 TFLOP/s`
-- run dir: `runs/20260420_191909_bf16_gemm_v1_00b6a0a`
-- ncu rep path: `runs/20260420_191909_bf16_gemm_v1_00b6a0a/ncu_profile.ncu-rep`
+- runtime delta: `+8.637456 ms`
+- TFLOP/s delta: `-7.273760 TFLOP/s`
+- run dir: `runs/20260420_193054_bf16_gemm_v1_acb0976`
+- ncu rep path: `runs/20260420_193054_bf16_gemm_v1_acb0976/ncu_profile.ncu-rep`

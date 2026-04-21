@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_191909_bf16_gemm_v1_00b6a0a`
-- run dir: `runs/20260420_191909_bf16_gemm_v1_00b6a0a`
-- kernel tag: `bf16_gemm_v1_00b6a0a`
-- round label: `round 11/50`
+- run id: `20260420_193054_bf16_gemm_v1_acb0976`
+- run dir: `runs/20260420_193054_bf16_gemm_v1_acb0976`
+- kernel tag: `bf16_gemm_v1_acb0976`
+- round label: `round 12/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.379312 ms`
-- p10 runtime: `24.980479 ms`
-- p90 runtime: `26.202317 ms`
-- TFLOP/s: `28.646144 TFLOP/s`
-- previous run id: `20260420_191351_bf16_gemm_v1_69f60e6`
-- runtime delta vs previous measured run: `+0.214911 ms`
-- TFLOP/s delta vs previous measured run: `-0.244647 TFLOP/s`
+- median runtime: `34.016768 ms`
+- p10 runtime: `33.748993 ms`
+- p90 runtime: `35.685459 ms`
+- TFLOP/s: `21.372384 TFLOP/s`
+- previous run id: `20260420_191909_bf16_gemm_v1_00b6a0a`
+- runtime delta vs previous measured run: `+8.637456 ms`
+- TFLOP/s delta vs previous measured run: `-7.273760 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reopen The PTX 128x128 Hot-Band Control Branch On The Restored 1181247 Base`
+- implemented direction name: `Restore Sweep-Backed 64x384 Full Hot Band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_191909_bf16_gemm_v1_00b6a0a/summary.json`
-- measured commit: `00b6a0a4ce0ebbeb1b31342c943a6930b2f8af6e`
+- raw summary json: `runs/20260420_193054_bf16_gemm_v1_acb0976/summary.json`
+- measured commit: `acb0976073afb9169746f4b08de037a4b77d386c`
 - new best custom: `no`
-- generated at: `2026-04-20T19:19:16-07:00`
+- generated at: `2026-04-20T19:31:02-07:00`

@@ -1,78 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_192106",
-  "status": "completed",
-  "created_at": "2026-04-20T19:21:06-07:00",
-  "source_run_id": "20260420_191909_bf16_gemm_v1_00b6a0a",
-  "source_run_dir": "runs/20260420_191909_bf16_gemm_v1_00b6a0a",
-  "source_summary_json": "runs/20260420_191909_bf16_gemm_v1_00b6a0a/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_193054_bf16_gemm_v1_acb0976",
+  "source_run_dir": "runs/20260420_193054_bf16_gemm_v1_acb0976",
+  "source_summary_json": "runs/20260420_193054_bf16_gemm_v1_acb0976/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore Sweep-Backed 64x384 Full Hot Band",
-      "hypothesis": "Because `state/human_review.md` offers no competing round-12 idea family beyond the approval gate, accept the measured fixed-shape routing family for this loop: restore the sweep-backed `64x384` kernel over the full `7680`-column hot band and keep the `64x96` tail. The current default instead launches the reopened `128x128` PTX hot-band microkernel over the first `6400 x 7680`, and that branch is register-limited (`200` regs/thread, `16.64%` active warps, `48.09%` tensor activity), which lines up with the `+0.214911 ms` regression after reopening it.",
-      "expected_bottleneck": "Main hot-band occupancy and tensor-core under-utilization caused by the default dispatch choosing the PTX `128x128` branch instead of the measured `64x384` full-band tile path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1181-1233",
-        "src/kernels/bf16_gemm_v1.cu:1473-1567",
-        "src/kernels/bf16_gemm_v1.cu:2091-2137"
-      ],
-      "risk": "The round-18 tile sweep was measured on an earlier accepted base, so removing the PTX branch could give back a real first-6400-row win if the restored `1181247` surface changed the tile-width ranking.",
-      "metrics_to_recheck": [
-        "median runtime / TFLOP/s",
-        "whether NCU still shows `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel` in the default path",
-        "main-kernel `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
-        "main-kernel `sm__warps_active.avg.pct_of_peak_sustained_active`",
-        "main-kernel `launch__registers_per_thread`"
-      ],
-      "stop_condition": "Stop if the full-hot-band `64x384` route still fails to beat `25.379312 ms` or if its main kernel does not improve end-to-end time even after removing the PTX hot-band launch."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Trim 128x128 PTX Hot-Band Register Pressure",
-      "hypothesis": "Because `state/human_review.md` does not explicitly reject PTX hot-band work, keep that family alive as the secondary path: trim the `128x128` PTX microkernel's live state so it is not stuck at `200` regs/thread and `2` register-limited resident blocks. The active hot-band branch spends `22.85%` of peak on LSU issue pressure and `45.80%` on LSU wavefronts while tensor cycles reach only `47.50%`, so accumulator/export lifetime and per-warp scratch usage are likely keeping too much state live and starving the tensor pipe.",
-      "expected_bottleneck": "Register-limited occupancy inside the PTX hot-band microkernel, amplified by heavy LSU/shared export work in the current accumulate/store path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:107-141",
-        "src/kernels/bf16_gemm_v1.cu:980-1125",
-        "src/kernels/bf16_gemm_v1.cu:1956-2061"
-      ],
-      "risk": "The PTX WMMA helpers are correctness-sensitive; changing fragment lifetime or export ordering can introduce silent numerical drift or break the scratch-layout assumptions.",
-      "metrics_to_recheck": [
-        "hot-band `launch__registers_per_thread`",
-        "hot-band `launch__occupancy_limit_registers`",
-        "hot-band `sm__warps_active.avg.pct_of_peak_sustained_active`",
-        "hot-band `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
-        "hot-band `l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed`"
-      ],
-      "stop_condition": "Stop if the PTX hot-band kernel stays near `200` regs/thread or active warps stay near the current `16-18%` band after the first trimming pass."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Specialize The 64x96 Tail Memory Path",
-      "hypothesis": "Because `state/human_review.md` provides no tail-specific push, keep this family tertiary and only take it if the hot-band paths stall out. The `64x96` tail kernel is the only clearly memory-heavy branch in the captured run (`63.73%` compute-memory throughput, `63.73%` LSU issue pressure, `12.66%` long scoreboard, `15.05%` short scoreboard, `16.18%` MIO throttle), so a fixed-tail rewrite can trim the cleanup tax that remains on every launch.",
-      "expected_bottleneck": "Memory and LSU pressure in the fixed `64x96` tail region, not the primary hot-band compute path.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1288-1406",
-        "src/kernels/bf16_gemm_v1.cu:2097-2140"
-      ],
-      "risk": "The tail covers only `96` of `7776` columns, so even a clean local win may move the full benchmark by only a few tenths of a millisecond.",
-      "metrics_to_recheck": [
-        "tail-kernel `sm__throughput.avg.pct_of_peak_sustained_elapsed`",
-        "tail-kernel `gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed`",
-        "tail-kernel `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`",
-        "tail-kernel `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct`",
-        "tail-kernel `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct`"
-      ],
-      "stop_condition": "Stop if tail-only work cannot plausibly recover more than about `0.1-0.2 ms` or if the hot-band kernels still dominate the end-to-end delta after measurement."
-    }
-  ],
-  "notes": "Round 12/50: `state/human_review.md` currently contributes only the approval/selection gate and no extra user-authored idea families, so the ranking is tied directly to measured evidence. Accepted for this round: the fixed-shape tile-routing family backed by `state/autotune_round18_main_tiles.md`, where `64x384` was the best measured hot-band width. Deferred: deeper PTX hot-band tuning until the active `128x128` branch is no longer stuck at `200` regs/thread and `16.64%` active warps. Rejected as the primary explanation: a DRAM-bound diagnosis for the main path, because the active hot-band kernel reaches only `13.05%` DRAM throughput while tensor cycles are `48.09%`. Tail-memory cleanup remains tertiary because the `64x96` branch covers only the last `96` columns."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
