@@ -6,7 +6,7 @@ This was a weekend project, but it was really a question I wanted to test for my
 
 I am a GPU performance engineer, not part of NVIDIA, and I did **not** start by reading CUTLASS internals. I wanted to try something narrower and more practical: pick **one fixed BF16 GEMM**, on **one RTX 3070 Laptop GPU**, build a reproducible human-in-the-loop optimization loop, and see how close I could get to a strong reference implementation with limited weekend time.
 
-So far, the result is already interesting enough to share: the custom kernel moved from roughly **800 ms** at the beginning to **under 25 ms** on the official benchmark snapshot, with the current best custom run at **24.18 ms**, while the local CUTLASS baseline on the same benchmark is **25.92 ms**. That now puts the official snapshot ahead by about **1.74 ms**, or about **6.71%** in runtime.
+So far, the result is already interesting enough to share: the custom kernel moved from roughly **800 ms** at the beginning to **under 25 ms** on the official benchmark snapshot, with the current best custom run at **24.16 ms**, while the local CUTLASS baseline on the same benchmark is **25.92 ms**. That now puts the official snapshot ahead by about **1.75 ms**, or about **6.77%** in runtime.
 
 That is still not a broad “we beat CUTLASS” story. It is a **fixed-shape local result** and a **proof-of-concept about harness engineering**: with a strong evaluation loop, good profiling, short-context iteration, and human steering at the right moments, a single engineer can move surprisingly far, surprisingly fast.
 
@@ -253,14 +253,14 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the repo, which now spans **205 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`68c21ac`**.
+The tree below is regenerated from the latest tracked round history in the repo, which now spans **208 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`df5bac2`**.
 
 Because the search has already moved below the local CUTLASS baseline, the chart now places the CUTLASS marker at the point where that threshold was first crossed instead of pinning it to the bottom as a future target. In the current history, that first sub-CUTLASS run is round **46**, version **`22b4466`**, at **25.68 ms**.
 
 At the moment, the official benchmark snapshot in the repo is:
-- custom kernel: **24.18 ms**
+- custom kernel: **24.16 ms**
 - local CUTLASS baseline: **25.92 ms**
-- result: about **1.74 ms** faster than the local CUTLASS baseline, or about **6.71%** lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
+- result: about **1.75 ms** faster than the local CUTLASS baseline, or about **6.77%** lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
 
 ## What I want to add next
 
