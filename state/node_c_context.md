@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Specialize The Peeled 64x384 Residual Band On The New Best Sibling Base`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_185444`
 - round loop: `round 9/50`
+- hypothesis: `The human-review queue does not add any new manual idea bullets for round 9, so the primary accepted family is the smallest evidence-backed cleanup on top of the new best sibling base rather than a fresh kernel-family pivot. In the latest run, the main 128x128 sibling hot-band path is already the accepted best at 24.422464 ms, while the residual 64-row peeled 64x384 kernel still costs about 0.907 ms, allocates 46592 B of shared memory, uses 172 registers per thread, and spends 18.62% of warp cycles in barrier stalls. Giving that residual path a tighter epilogue and export scratch, instead of leaving it on the older two-stage 64x384 cleanup path, is the best next move because it targets the clearest remaining bounded outlier without perturbing the dominant hot-band kernel that just became the new best run.`
+- expected bottleneck: `Peeled 64x384 residual-kernel epilogue shared-export traffic and barrier serialization after the hot-band handoff.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:24-63, src/kernels/bf16_gemm_v1.cu:1150-1164, src/kernels/bf16_gemm_v1.cu:1472-1571, src/kernels/bf16_gemm_v1.cu:2120-2126`
+- risk: `Moderate. This path only covers the last 64 hot rows, so the upside is bounded, and a custom 64x384 epilogue specialization can easily trade barrier savings for extra register pressure or store-order bugs.`
+- metrics to re-check: `end-to-end median runtime for 20260420_185423_bf16_gemm_v1_1181247 descendants, peeled 64x384 kernel gpu__time_duration.sum, smsp__warp_issue_stalled_barrier_per_warp_active.pct for the peeled kernel, launch__registers_per_thread for the peeled kernel, launch__shared_mem_per_block_allocated.sum for the peeled kernel, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the peeled kernel`
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

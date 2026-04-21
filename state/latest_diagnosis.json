@@ -1,15 +1,85 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_185444",
+  "status": "completed",
+  "created_at": "2026-04-20T18:54:44-07:00",
   "source_run_id": "20260420_185423_bf16_gemm_v1_1181247",
   "source_run_dir": "runs/20260420_185423_bf16_gemm_v1_1181247",
   "source_summary_json": "runs/20260420_185423_bf16_gemm_v1_1181247/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Specialize The Peeled 64x384 Residual Band On The New Best Sibling Base",
+      "hypothesis": "The human-review queue does not add any new manual idea bullets for round 9, so the primary accepted family is the smallest evidence-backed cleanup on top of the new best sibling base rather than a fresh kernel-family pivot. In the latest run, the main 128x128 sibling hot-band path is already the accepted best at 24.422464 ms, while the residual 64-row peeled 64x384 kernel still costs about 0.907 ms, allocates 46592 B of shared memory, uses 172 registers per thread, and spends 18.62% of warp cycles in barrier stalls. Giving that residual path a tighter epilogue and export scratch, instead of leaving it on the older two-stage 64x384 cleanup path, is the best next move because it targets the clearest remaining bounded outlier without perturbing the dominant hot-band kernel that just became the new best run.",
+      "expected_bottleneck": "Peeled 64x384 residual-kernel epilogue shared-export traffic and barrier serialization after the hot-band handoff.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:24-63",
+        "src/kernels/bf16_gemm_v1.cu:1150-1164",
+        "src/kernels/bf16_gemm_v1.cu:1472-1571",
+        "src/kernels/bf16_gemm_v1.cu:2120-2126"
+      ],
+      "risk": "Moderate. This path only covers the last 64 hot rows, so the upside is bounded, and a custom 64x384 epilogue specialization can easily trade barrier savings for extra register pressure or store-order bugs.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime for 20260420_185423_bf16_gemm_v1_1181247 descendants",
+        "peeled 64x384 kernel gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the peeled kernel",
+        "launch__registers_per_thread for the peeled kernel",
+        "launch__shared_mem_per_block_allocated.sum for the peeled kernel",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the peeled kernel"
+      ],
+      "stop_condition": "Stop if the peeled-kernel runtime does not improve materially or the end-to-end median gain stays inside noise after one bounded specialization pass."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Trim The Fixed 64x96 Tail Kernel Without Touching The Hot-Band Path",
+      "hypothesis": "The secondary accepted family is a tail-only cleanup. The fixed 64x96 tail still costs about 0.969 ms across the full M dimension, with 20.38% barrier stalls and roughly 15% long- and short-scoreboard stalls, so it remains the largest non-hot-band component after the peeled residual. A tail-specific export-scratch or staging simplification could produce a small but real gain while leaving both the new best 128x128 sibling hot-band path and the peeled 64x384 handoff untouched.",
+      "expected_bottleneck": "Generic 64x96 tail-kernel staging and epilogue overhead, especially barrier and scoreboard pressure in the tail-only path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:24-63",
+        "src/kernels/bf16_gemm_v1.cu:1167-1178",
+        "src/kernels/bf16_gemm_v1.cu:1298-1438",
+        "src/kernels/bf16_gemm_v1.cu:2127-2129"
+      ],
+      "risk": "Low to moderate. The tail is isolated and easy to benchmark, but its total share of runtime is small enough that even a clean kernel-level win may translate into only a few microseconds end to end.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime for 20260420_185423_bf16_gemm_v1_1181247 descendants",
+        "64x96 tail kernel gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the tail kernel",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the tail kernel",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct for the tail kernel",
+        "launch__registers_per_thread for the tail kernel"
+      ],
+      "stop_condition": "Stop if tail-kernel tuning cannot move the end-to-end median by more than noise or if the changes start broadening into generic non-fixed-shape code paths."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Reopen The PTX 128x128 Hot-Band Control Branch As The Alternate Family",
+      "hypothesis": "The explicitly deferred but still valid alternate family is to reopen the PTX 128x128 hot-band control branch on top of the restored grouped-rows-4 schedule. That family remains auditable because the older accepted PTX result 2e4dd24 is still within about 22 microseconds of the new best run, but the latest evidence says it should not be the recommended move: the new sibling-base run already matches its shared-memory footprint at 22016 B, lowers registers from 200 to 196 on the dominant kernel, and edges it out end to end. PTX should therefore stay as the fallback control family only if the smaller residual-kernel cleanups stall.",
+      "expected_bottleneck": "Dominant 128x128 hot-band kernel control flow, especially PTX-specific export and staging behavior rather than the current residual kernels.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:133-150",
+        "src/kernels/bf16_gemm_v1.cu:1008-1068",
+        "src/kernels/bf16_gemm_v1.cu:1957-2060",
+        "src/kernels/bf16_gemm_v1.cu:2091-2129"
+      ],
+      "risk": "Moderate to high. This reopens the dominant hot-band family that the new best sibling path just beat, so it is easier to destabilize the accepted surface than to gain a clear net win.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.422464 ms 1181247 baseline",
+        "128x128 hot-band kernel gpu__time_duration.sum",
+        "sm__pipe_tensor_op_hmma_cycles_active.avg.pct_of_peak_sustained_active for the hot-band kernel",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the hot-band kernel",
+        "launch__registers_per_thread for the hot-band kernel",
+        "launch__shared_mem_per_block_allocated.sum for the hot-band kernel"
+      ],
+      "stop_condition": "Stop if the reopened PTX branch cannot beat the 1181247 baseline in a like-for-like measurement or if it reintroduces a regression on the dominant hot-band kernel."
+    }
+  ],
+  "notes": "Round 9/50 diagnosis for new best run 20260420_185423_bf16_gemm_v1_1181247. Human-review reflection is explicit here: state/human_review.md currently contains queue state only and no new user-supplied idea bullets, so this round does not invent a new human family and instead maps the latest measured evidence into auditable accept/defer/reject calls. Accepted primary family: stay on the new best grouped-rows-4 128x128 sibling base and clean up the remaining residual outlier first, which is why dir_01 targets the 64-row peeled 64x384 handoff. Accepted but lower-ranked family: tail-only cleanup on the isolated 64x96 path, reflected in dir_02. Deferred alternate family: reopen the PTX 128x128 control branch only if the bounded sibling-base cleanups stall, reflected in dir_03. Rejected for this round: broad fixed-main tile retuning from autotune_round18_main_tiles, because that sweep predates the current hot-band plus grouped-row sibling surface and does not outrank the bounded residual-kernel work now that 1181247 is the accepted best run. Also rejected this round: reopening the 256x128 auxiliary branch, because newer measurements already replaced that family with the stronger 128x128 sibling path."
 }
