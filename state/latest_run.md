@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_175429_bf16_gemm_v1_134ec64`
-- run dir: `runs/20260420_175429_bf16_gemm_v1_134ec64`
-- kernel tag: `bf16_gemm_v1_134ec64`
-- round label: `round 1/50`
+- run id: `20260420_180146_bf16_gemm_v1_2e4dd24`
+- run dir: `runs/20260420_180146_bf16_gemm_v1_2e4dd24`
+- kernel tag: `bf16_gemm_v1_2e4dd24`
+- round label: `round 2/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.297600 ms`
-- p10 runtime: `29.905815 ms`
-- p90 runtime: `31.094663 ms`
-- TFLOP/s: `23.995941 TFLOP/s`
-- previous run id: `20260420_164612_bf16_gemm_v1_da1a5bb`
-- runtime delta vs previous measured run: `+4.820992 ms`
-- TFLOP/s delta vs previous measured run: `-4.540802 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.444416 ms`
+- p10 runtime: `24.225792 ms`
+- p90 runtime: `24.888217 ms`
+- TFLOP/s: `29.741738 TFLOP/s`
+- previous run id: `20260420_175429_bf16_gemm_v1_134ec64`
+- runtime delta vs previous measured run: `-5.853184 ms`
+- TFLOP/s delta vs previous measured run: `+5.745797 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Activate The Dormant 128x128x32 Hot-Band Branch`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_175429_bf16_gemm_v1_134ec64/summary.json`
-- measured commit: `134ec64690b95b0a420b5463414213e1ecff17f7`
-- new best custom: `no`
-- generated at: `2026-04-20T17:54:37-07:00`
+- raw summary json: `runs/20260420_180146_bf16_gemm_v1_2e4dd24/summary.json`
+- measured commit: `2e4dd246f55b505bd095c42b62c56dc497c8fde1`
+- new best custom: `yes`
+- generated at: `2026-04-20T18:01:54-07:00`
