@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_013125:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_013125:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_013125",
   "base_run_id": "20260421_013042_bf16_gemm_v1_bb69e9b",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Keep 3-CTA Residency And Amortize Barriers With Two-K Stages",
   "mode": "explore",
-  "commit": null,
-  "commit_short": null,
+  "commit": "17032e6cabd475782c1528c2900f3c4239f3b45d",
+  "commit_short": "17032e6",
   "subject": "node_c: round 30/100 implement dir_01 Keep 3-CTA Residency And Amortize Barriers With Two-K Stages",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:33:35-07:00",
@@ -37,8 +37,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "17032e6cabd475782c1528c2900f3c4239f3b45d",
+    "commit_short": "17032e6",
     "subject": "node_c: round 30/100 implement dir_01 Keep 3-CTA Residency And Amortize Barriers With Two-K Stages",
     "build_status": "PASS",
     "failure_mode": null,
@@ -60,16 +60,29 @@
     "deletions": 3
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260421_013416_bf16_gemm_v1_17032e6",
+    "measurement_commit": "17032e6cabd475782c1528c2900f3c4239f3b45d",
+    "runtime_ms": 28.20044804,
+    "runtime_delta_ms": 2.2892646800000023,
+    "tflops": 25.78042096,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "41.07",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "41.05",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "42.15",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.42",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "27.76",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.58",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "7.01",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "5.11",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "6.05",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "1.88",
+      "launch__occupancy_limit_registers": "3"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "regressed",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_013416_bf16_gemm_v1_17032e6 for candidate diagnosis_20260421_013125:dir_01; transition_label=PASS_LOSS.",
+  "transition_label": "PASS_LOSS"
 }

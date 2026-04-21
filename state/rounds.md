@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `29`
-- remaining rounds: `71`
-- current round label: `round 30/100`
+- completed rounds: `30`
+- remaining rounds: `70`
+- current round label: `round 31/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 30/100. Node A will measure the result next.`
+- notes: `Completed round 30/100. Continue with node_b for round 31/100. Accepted base: 20260420_235922_bf16_gemm_v1_489574e at 24.164272 ms.`
 
 ## Last completed round
 
-- round: `29/100`
+- round: `30/100`
 - direction: `dir_01`
-- direction name: `Force 3-CTA Residency On The PTX 128x128 Hot Band`
+- direction name: `Keep 3-CTA Residency And Amortize Barriers With Two-K Stages`
 - verdict: `regressed`
-- runtime delta: `+1.394064 ms`
-- TFLOP/s delta: `-1.595409 TFLOP/s`
-- run dir: `runs/20260421_013042_bf16_gemm_v1_bb69e9b`
-- ncu rep path: `runs/20260421_013042_bf16_gemm_v1_bb69e9b/ncu_profile.ncu-rep`
+- runtime delta: `+2.289265 ms`
+- TFLOP/s delta: `-2.277712 TFLOP/s`
+- run dir: `runs/20260421_013416_bf16_gemm_v1_17032e6`
+- ncu rep path: `runs/20260421_013416_bf16_gemm_v1_17032e6/ncu_profile.ncu-rep`
