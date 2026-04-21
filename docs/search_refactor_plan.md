@@ -171,6 +171,8 @@ Expected behavior boundary:
 - the search remains heuristic-driven, not a full online planner
 - missing history must still degrade gracefully to a simple fallback score
 
+Current operational policy notes now live in `docs/search_policy.md`.
+
 ## New State Files
 
 ### `state/search_state.json`

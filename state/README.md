@@ -105,16 +105,23 @@ Contains:
 
 ## `search_frontier.json`
 
-Current open frontier for structured candidate selection.
+Persistent candidate frontier for structured candidate selection.
 
 Contains:
 
-- source run and diagnosis references
+- source run and latest diagnosis references
 - selected candidate metadata
 - candidate ranking notes and score breakdowns
-- open candidate records
+- persistent historical candidate records
+- family-representative metadata for the currently active search pool
 - frontier items with `candidate_id`, `source_diagnosis_id`, `base_run_id`,
   `family_id`, `subfamily_id`, `action_fingerprint`, `priority`, and `status`
+- one active representative candidate per family at a time
+- optional reopen metadata such as `reopen_count`,
+  `last_transition_label`, and `family_representative_score`
+
+See also: `docs/search_policy.md` for the current reopen and family-reorder
+policy.
 
 ## `search_closed.jsonl`
 

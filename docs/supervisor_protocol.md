@@ -120,6 +120,7 @@ Here `N` is the user-requested positive integer round budget.
 Selection preference during an active loop:
 
 - if `--auto-select-frontier` is active and node_c is entered with no selected direction, the supervisor should try `python scripts/graph.py select-next` first
+  - `select-next` now chooses the best active family representative from the persistent frontier, which may be a reopened historical candidate rather than one of the latest 3 diagnosis directions
 - if the frontier has no selectable open candidate, the supervisor may fall back to `python scripts/graph.py use-recommended-direction`
 - if `--auto-select-frontier` is not active but `--auto-use-recommended` is active, the supervisor uses the legacy recommended-direction auto-select path
 

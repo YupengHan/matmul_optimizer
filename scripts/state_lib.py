@@ -174,6 +174,7 @@ def default_latest_diagnosis() -> Dict[str, Any]:
         'recommended_direction_id': None,
         'approved_direction_id': None,
         'selected_direction_id': None,
+        'selected_candidate_id': None,
         'family_audit': [],
         'directions': [],
         'notes': 'Run node_b to produce exactly three ranked directions.',
@@ -263,7 +264,7 @@ def default_search_state() -> Dict[str, Any]:
     return {
         'schema_version': 1,
         'status': 'idle',
-        'search_mode': 'heuristic_mvp',
+        'search_mode': 'family_representative_reopen_v1',
         'search_iteration': 0,
         'accepted_base_run_id': None,
         'accepted_base_measured_commit': None,
@@ -295,35 +296,42 @@ def default_search_state() -> Dict[str, Any]:
         'last_restore_at': None,
         'last_restore_reason': None,
         'selection_policy': {
-            'policy_id': 'heuristic_v1_fallback',
+            'policy_id': 'family_representative_v2',
             'allow_restore_base': True,
             'max_open_candidates': 3,
+            'max_reopens_per_candidate': 1,
+            'reopen_loss_tolerance_ms': 0.15,
+            'reopen_fail_risk_ceiling': 0.6,
+            'family_representatives_only': True,
         },
         'frontier_json': repo_rel(SEARCH_FRONTIER_PATH),
         'candidates_json': repo_rel(SEARCH_CANDIDATES_PATH),
         'closed_jsonl': repo_rel(SEARCH_CLOSED_PATH),
         'family_ledger_json': repo_rel(FAMILY_LEDGER_PATH),
         'latest_attempt_json': repo_rel(LATEST_ATTEMPT_PATH),
-        'notes': 'Search scaffolding is idle until a measured base is projected into a frontier.',
+        'notes': 'Search scaffolding is idle until a measured base is projected into the persistent family-representative frontier.',
     }
 
 
 def default_search_frontier() -> Dict[str, Any]:
     return {
-        'schema_version': 1,
-        'frontier_id': None,
+        'schema_version': 2,
+        'frontier_id': 'frontier:global',
         'status': 'empty',
         'source_run_id': None,
         'source_measured_commit': None,
         'source_diagnosis_id': None,
         'candidate_set_id': None,
         'generated_at': None,
-        'selection_policy_id': 'heuristic_v1_fallback',
+        'updated_at': None,
+        'selection_policy_id': 'family_representative_v2',
         'selected_candidate_id': None,
         'selection_reason': None,
         'selection_summary': None,
+        'family_representative_count': 0,
+        'reopened_candidate_ids': [],
         'candidates': [],
-        'notes': 'No open frontier yet. Phase 1 will project finalized node_b directions here.',
+        'notes': 'No persistent frontier history yet. Node B finalize will merge directions into the global family-representative frontier.',
     }
 
 

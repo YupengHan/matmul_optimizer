@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import shlex
 import subprocess
@@ -56,6 +57,7 @@ from state_lib import (
     load_latest_run,
     load_round_loop_state,
     load_run_registry,
+    load_search_candidates,
     load_search_frontier,
     load_search_state,
     load_supervisor_task,
@@ -493,8 +495,583 @@ def parse_priority(value: Any) -> Optional[float]:
         return None
 
 
-def frontier_sort_key(candidate: Dict[str, Any]) -> tuple[float, int, str, str]:
+def has_meaningful_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict, tuple, set)):
+        return bool(value)
+    return True
+
+
+def frontier_policy(search_state: Dict[str, Any]) -> Dict[str, Any]:
+    policy = dict(search_state.get('selection_policy') or {})
+    policy.setdefault('policy_id', 'family_representative_v2')
+    policy.setdefault('allow_restore_base', True)
+    policy.setdefault('max_open_candidates', 3)
+    policy.setdefault('max_reopens_per_candidate', 1)
+    policy.setdefault('reopen_loss_tolerance_ms', 0.15)
+    policy.setdefault('reopen_fail_risk_ceiling', 0.6)
+    policy.setdefault('family_representatives_only', True)
+    return policy
+
+
+def candidate_family_key(candidate: Dict[str, Any]) -> str:
+    return str(
+        candidate.get('family_id')
+        or candidate.get('subfamily_id')
+        or candidate.get('candidate_id')
+        or 'family::unknown'
+    ).strip()
+
+
+def candidate_status_from_transition_label(transition_label: Optional[str]) -> str:
+    if transition_label == 'PASS_WIN':
+        return 'measured_win'
+    if transition_label == 'PASS_FLAT':
+        return 'measured_flat'
+    if transition_label in ('PASS_LOSS', 'DIAG_POS_RUNTIME_NEG'):
+        return 'measured_loss'
+    if transition_label == 'BUILD_FAIL':
+        return 'build_failed'
+    if transition_label == 'CORRECTNESS_FAIL':
+        return 'correctness_failed'
+    return 'closed'
+
+
+def candidate_summary_from_record(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'direction_id': candidate.get('direction_id'),
+        'name': candidate.get('direction_name') or candidate.get('name'),
+        'family_id': candidate.get('family_id'),
+        'subfamily_id': candidate.get('subfamily_id'),
+        'action_fingerprint': candidate.get('action_fingerprint'),
+        'mode': candidate.get('mode'),
+        'hypothesis': candidate.get('hypothesis'),
+        'expected_bottleneck': candidate.get('expected_bottleneck'),
+        'code_locations': normalize_string_list(candidate.get('code_locations')),
+        'risk': candidate.get('risk'),
+        'metrics_to_recheck': normalize_string_list(candidate.get('metrics_to_recheck')),
+        'search_score_v1': candidate.get('search_score_v1'),
+        'score_breakdown': dict(candidate.get('score_breakdown') or {}),
+        'predicted_gain_ms': candidate.get('predicted_gain_ms'),
+        'predicted_fail_risk': candidate.get('predicted_fail_risk'),
+        'ranking_notes': normalize_string_list(candidate.get('ranking_notes')),
+        'stop_condition': candidate.get('stop_condition'),
+        'idea_origin': candidate.get('idea_origin', 'auto-analysis'),
+    }
+
+
+def frontier_candidate_defaults(candidate_id: Optional[str]) -> Dict[str, Any]:
+    return {
+        'candidate_id': candidate_id,
+        'source_diagnosis_id': None,
+        'base_run_id': None,
+        'base_measured_commit': None,
+        'base_runtime_ms': None,
+        'direction_id': None,
+        'direction_name': None,
+        'family_id': None,
+        'subfamily_id': None,
+        'action_fingerprint': None,
+        'rank_in_diagnosis': None,
+        'recommended': False,
+        'mode': None,
+        'priority': None,
+        'search_score_v1': None,
+        'score_breakdown': {},
+        'predicted_gain_ms': None,
+        'predicted_fail_risk': None,
+        'ranking_notes': [],
+        'hypothesis': None,
+        'expected_bottleneck': None,
+        'code_locations': [],
+        'risk': None,
+        'metrics_to_recheck': [],
+        'stop_condition': None,
+        'status': 'open',
+        'source_search_iteration': None,
+        'selection_count': 0,
+        'reopen_count': 0,
+        'last_selected_at': None,
+        'last_selected_selection_mode': None,
+        'last_transition_label': None,
+        'last_transition_class': None,
+        'last_result_run_id': None,
+        'last_result_runtime_ms': None,
+        'last_runtime_delta_ms': None,
+        'last_result_correctness_passed': None,
+        'last_closed_at': None,
+        'last_closed_search_iteration': None,
+        'last_reopened_search_iteration': None,
+        'reopened_at': None,
+        'is_family_representative': False,
+        'family_representative_score': None,
+        'family_representative_reason': None,
+        'invalid_reason': None,
+        'notes': None,
+    }
+
+
+def merge_missing_candidate_fields(target: Dict[str, Any], source: Dict[str, Any]) -> bool:
+    changed = False
+    for key in (
+        'source_diagnosis_id',
+        'base_run_id',
+        'base_measured_commit',
+        'base_runtime_ms',
+        'direction_id',
+        'direction_name',
+        'family_id',
+        'subfamily_id',
+        'action_fingerprint',
+        'rank_in_diagnosis',
+        'recommended',
+        'mode',
+        'priority',
+        'search_score_v1',
+        'score_breakdown',
+        'predicted_gain_ms',
+        'predicted_fail_risk',
+        'ranking_notes',
+        'hypothesis',
+        'expected_bottleneck',
+        'code_locations',
+        'risk',
+        'metrics_to_recheck',
+        'stop_condition',
+    ):
+        if not has_meaningful_value(target.get(key)) and has_meaningful_value(source.get(key)):
+            target[key] = copy.deepcopy(source.get(key))
+            changed = True
+    return changed
+
+
+def normalize_frontier_candidate(raw_candidate: Dict[str, Any]) -> Dict[str, Any]:
+    candidate = frontier_candidate_defaults(str(raw_candidate.get('candidate_id') or '').strip() or None)
+    candidate.update(copy.deepcopy(raw_candidate))
+
+    candidate['candidate_id'] = str(candidate.get('candidate_id') or '').strip() or None
+    candidate['source_diagnosis_id'] = str(candidate.get('source_diagnosis_id') or '').strip() or None
+    candidate['direction_id'] = str(candidate.get('direction_id') or '').strip() or None
+    candidate['direction_name'] = str(candidate.get('direction_name') or candidate.get('name') or '').strip() or None
+    candidate['family_id'] = str(candidate.get('family_id') or '').strip() or None
+    candidate['subfamily_id'] = str(candidate.get('subfamily_id') or candidate.get('family_id') or '').strip() or candidate['family_id']
+    candidate['action_fingerprint'] = str(candidate.get('action_fingerprint') or '').strip() or None
+    candidate['mode'] = str(candidate.get('mode') or '').strip() or None
+    candidate['hypothesis'] = str(candidate.get('hypothesis') or '').strip() or None
+    candidate['expected_bottleneck'] = str(candidate.get('expected_bottleneck') or '').strip() or None
+    candidate['risk'] = str(candidate.get('risk') or '').strip() or None
+    candidate['stop_condition'] = str(candidate.get('stop_condition') or '').strip() or None
+    candidate['notes'] = str(candidate.get('notes') or '').strip() or None
+    candidate['recommended'] = bool(candidate.get('recommended'))
+    candidate['score_breakdown'] = dict(candidate.get('score_breakdown') or {})
+    candidate['ranking_notes'] = normalize_string_list(candidate.get('ranking_notes'))
+    candidate['code_locations'] = normalize_string_list(candidate.get('code_locations'))
+    candidate['metrics_to_recheck'] = normalize_string_list(candidate.get('metrics_to_recheck'))
+
     priority = parse_priority(candidate.get('priority'))
+    search_score = parse_priority(candidate.get('search_score_v1'))
+    if priority is None and search_score is None:
+        priority = fallback_search_score_v1(
+            candidate.get('rank_in_diagnosis', 99),
+            candidate.get('recommended'),
+            candidate.get('risk'),
+        )
+        search_score = priority
+    elif priority is None:
+        priority = search_score
+    elif search_score is None:
+        search_score = priority
+    candidate['priority'] = priority
+    candidate['search_score_v1'] = search_score
+    candidate['predicted_gain_ms'] = parse_priority(candidate.get('predicted_gain_ms'))
+    candidate['predicted_fail_risk'] = parse_priority(candidate.get('predicted_fail_risk'))
+    candidate['base_runtime_ms'] = parse_priority(candidate.get('base_runtime_ms'))
+    candidate['last_result_runtime_ms'] = parse_priority(candidate.get('last_result_runtime_ms'))
+    candidate['last_runtime_delta_ms'] = parse_priority(candidate.get('last_runtime_delta_ms'))
+    candidate['family_representative_score'] = parse_priority(candidate.get('family_representative_score'))
+
+    status = str(candidate.get('status') or 'open').strip() or 'open'
+    if status not in {
+        'open',
+        'parked',
+        'selected',
+        'reopened',
+        'measured_win',
+        'measured_flat',
+        'measured_loss',
+        'build_failed',
+        'correctness_failed',
+        'invalid',
+        'duplicate',
+        'closed',
+    }:
+        status = 'open'
+    candidate['status'] = status
+    candidate['selection_count'] = int(candidate.get('selection_count') or 0)
+    candidate['reopen_count'] = int(candidate.get('reopen_count') or 0)
+    candidate['source_search_iteration'] = (
+        int(candidate['source_search_iteration'])
+        if candidate.get('source_search_iteration') is not None
+        else None
+    )
+    candidate['last_closed_search_iteration'] = (
+        int(candidate['last_closed_search_iteration'])
+        if candidate.get('last_closed_search_iteration') is not None
+        else None
+    )
+    candidate['last_reopened_search_iteration'] = (
+        int(candidate['last_reopened_search_iteration'])
+        if candidate.get('last_reopened_search_iteration') is not None
+        else None
+    )
+    candidate['is_family_representative'] = bool(candidate.get('is_family_representative'))
+    candidate['invalid_reason'] = str(candidate.get('invalid_reason') or '').strip() or None
+    candidate['family_representative_reason'] = str(candidate.get('family_representative_reason') or '').strip() or None
+    candidate['last_transition_label'] = str(candidate.get('last_transition_label') or '').strip() or None
+    candidate['last_transition_class'] = str(candidate.get('last_transition_class') or '').strip() or None
+    return candidate
+
+
+def normalize_search_frontier(frontier: Dict[str, Any]) -> bool:
+    changed = False
+    if frontier.get('schema_version') != 2:
+        frontier['schema_version'] = 2
+        changed = True
+    if frontier.get('frontier_id') != 'frontier:global':
+        frontier['frontier_id'] = 'frontier:global'
+        changed = True
+    if frontier.get('selection_policy_id') != 'family_representative_v2':
+        frontier['selection_policy_id'] = 'family_representative_v2'
+        changed = True
+    for key, default in (
+        ('updated_at', None),
+        ('family_representative_count', 0),
+        ('reopened_candidate_ids', []),
+        ('selected_candidate_id', None),
+        ('selection_reason', None),
+        ('selection_summary', None),
+    ):
+        if key not in frontier:
+            frontier[key] = copy.deepcopy(default)
+            changed = True
+
+    search_candidates = load_search_candidates()
+    candidate_lookup = {
+        candidate.get('candidate_id'): candidate
+        for candidate in search_candidates.get('candidates', [])
+        if candidate.get('candidate_id')
+    }
+
+    normalized_candidates: List[Dict[str, Any]] = []
+    for raw_candidate in frontier.get('candidates', []):
+        candidate = copy.deepcopy(raw_candidate)
+        candidate_id = candidate.get('candidate_id')
+        if candidate_id in candidate_lookup:
+            changed = merge_missing_candidate_fields(candidate, candidate_lookup[candidate_id]) or changed
+        normalized = normalize_frontier_candidate(candidate)
+        if normalized != raw_candidate:
+            changed = True
+        normalized_candidates.append(normalized)
+    if normalized_candidates != frontier.get('candidates', []):
+        frontier['candidates'] = normalized_candidates
+        changed = True
+    return changed
+
+
+def frontier_candidate_lookup(
+    frontier: Dict[str, Any],
+    candidate_id: Optional[str] = None,
+    *,
+    direction_id: Optional[str] = None,
+    source_diagnosis_id: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    for candidate in frontier.get('candidates', []):
+        if candidate_id and candidate.get('candidate_id') != candidate_id:
+            continue
+        if direction_id and candidate.get('direction_id') != direction_id:
+            continue
+        if source_diagnosis_id and candidate.get('source_diagnosis_id') != source_diagnosis_id:
+            continue
+        return candidate
+    return None
+
+
+def mark_frontier_candidate_closed(
+    frontier: Dict[str, Any],
+    candidate_id: Optional[str],
+    *,
+    transition_label: str,
+    transition_class: Optional[str],
+    result_run_id: Optional[str],
+    result_runtime_ms: Optional[float],
+    runtime_delta_ms: Optional[float],
+    correctness_passed: Optional[bool],
+    close_reason: str,
+    search_iteration: Optional[int],
+) -> bool:
+    if not candidate_id:
+        return False
+    candidate = frontier_candidate_lookup(frontier, candidate_id)
+    if candidate is None:
+        return False
+    changed = False
+    desired_status = candidate_status_from_transition_label(transition_label)
+    for key, value in (
+        ('status', desired_status),
+        ('last_transition_label', transition_label),
+        ('last_transition_class', transition_class),
+        ('last_result_run_id', result_run_id),
+        ('last_result_runtime_ms', result_runtime_ms),
+        ('last_runtime_delta_ms', runtime_delta_ms),
+        ('last_result_correctness_passed', correctness_passed),
+        ('last_closed_at', now_local_iso()),
+        ('last_closed_search_iteration', search_iteration),
+        ('invalid_reason', close_reason),
+    ):
+        if candidate.get(key) != value:
+            candidate[key] = value
+            changed = True
+    if frontier.get('selected_candidate_id') == candidate_id:
+        frontier['selected_candidate_id'] = None
+        frontier['selection_reason'] = None
+        frontier['selection_summary'] = (
+            f"Candidate {candidate_id} closed via {transition_label.lower()} after selection."
+        )
+        changed = True
+    return changed
+
+
+def reconcile_frontier_with_latest_attempt(frontier: Dict[str, Any]) -> bool:
+    latest_attempt = load_latest_attempt()
+    candidate_id = latest_attempt.get('candidate_id')
+    if not candidate_id:
+        return False
+    transition_label = latest_attempt.get('transition_label')
+    if transition_label:
+        return mark_frontier_candidate_closed(
+            frontier,
+            candidate_id,
+            transition_label=transition_label,
+            transition_class=latest_attempt.get('transition_class'),
+            result_run_id=(latest_attempt.get('measurement') or {}).get('run_id'),
+            result_runtime_ms=parse_priority((latest_attempt.get('measurement') or {}).get('runtime_ms')),
+            runtime_delta_ms=parse_priority((latest_attempt.get('measurement') or {}).get('runtime_delta_ms')),
+            correctness_passed=(latest_attempt.get('measurement') or {}).get('correctness'),
+            close_reason=str(latest_attempt.get('close_reason') or 'reconciled_from_latest_attempt'),
+            search_iteration=load_search_state().get('search_iteration'),
+        )
+    if str(latest_attempt.get('build_status') or '').upper() == 'FAIL':
+        return mark_frontier_candidate_closed(
+            frontier,
+            candidate_id,
+            transition_label='BUILD_FAIL',
+            transition_class='fail',
+            result_run_id=None,
+            result_runtime_ms=None,
+            runtime_delta_ms=None,
+            correctness_passed=None,
+            close_reason='build_failed_by_node_c',
+            search_iteration=load_search_state().get('search_iteration'),
+        )
+    return False
+
+
+def candidate_effective_priority(
+    candidate: Dict[str, Any],
+    family_entry: Dict[str, Any],
+    search_state: Dict[str, Any],
+) -> float:
+    score = parse_priority(candidate.get('priority'))
+    if score is None:
+        score = fallback_search_score_v1(
+            candidate.get('rank_in_diagnosis', 99),
+            candidate.get('recommended'),
+            candidate.get('risk'),
+        )
+    current_iteration = int(search_state.get('search_iteration') or 0)
+    source_iteration = candidate.get('source_search_iteration')
+    if source_iteration is not None:
+        freshness = max(0.0, 0.15 - 0.03 * max(current_iteration - int(source_iteration), 0))
+        score += freshness
+    if candidate.get('recommended'):
+        score += 0.1
+    predicted_fail_risk = parse_priority(candidate.get('predicted_fail_risk')) or 0.0
+    score -= min(max(predicted_fail_risk, 0.0), 1.0) * 0.25
+
+    transition_label = candidate.get('last_transition_label')
+    if transition_label == 'PASS_FLAT':
+        score -= 0.25
+    elif transition_label in ('PASS_LOSS', 'DIAG_POS_RUNTIME_NEG'):
+        runtime_delta_ms = abs(parse_priority(candidate.get('last_runtime_delta_ms')) or 0.0)
+        score -= 0.35 + min(runtime_delta_ms, 0.25) * 2.0
+    elif transition_label == 'BUILD_FAIL':
+        score -= 1.0
+    elif transition_label == 'CORRECTNESS_FAIL':
+        score -= 1.25
+
+    score -= min(int(candidate.get('reopen_count') or 0), 3) * 0.15
+    score -= min(int(family_entry.get('losses', 0) or 0), 4) * 0.08
+    score -= min(int(family_entry.get('fails', 0) or 0), 3) * 0.2
+    if candidate.get('status') == 'reopened':
+        score -= 0.05
+    return score
+
+
+def candidate_reopen_eligible(
+    candidate: Dict[str, Any],
+    family_entry: Dict[str, Any],
+    search_state: Dict[str, Any],
+) -> bool:
+    if candidate.get('status') not in {'measured_flat', 'measured_loss', 'closed'}:
+        return False
+    policy = frontier_policy(search_state)
+    if int(candidate.get('reopen_count') or 0) >= int(policy.get('max_reopens_per_candidate', 1)):
+        return False
+    closed_iteration = candidate.get('last_closed_search_iteration')
+    current_iteration = int(search_state.get('search_iteration') or 0)
+    if closed_iteration is not None and current_iteration <= int(closed_iteration):
+        return False
+    if int(family_entry.get('fails', 0) or 0) > 0:
+        return False
+    if int(family_entry.get('losses', 0) or 0) > 2:
+        return False
+
+    transition_label = candidate.get('last_transition_label')
+    if transition_label == 'PASS_FLAT':
+        return True
+    if transition_label not in ('PASS_LOSS', 'DIAG_POS_RUNTIME_NEG'):
+        return False
+
+    runtime_delta_ms = abs(parse_priority(candidate.get('last_runtime_delta_ms')) or 1e9)
+    predicted_gain_ms = abs(parse_priority(candidate.get('predicted_gain_ms')) or 0.0)
+    predicted_fail_risk = parse_priority(candidate.get('predicted_fail_risk')) or 1.0
+    loss_tolerance_ms = max(
+        float(policy.get('reopen_loss_tolerance_ms', 0.15)),
+        predicted_gain_ms,
+    )
+    fail_risk_ceiling = float(policy.get('reopen_fail_risk_ceiling', 0.6))
+    return runtime_delta_ms <= loss_tolerance_ms and predicted_fail_risk <= fail_risk_ceiling
+
+
+def refresh_frontier_family_representatives(
+    frontier: Dict[str, Any],
+    search_state: Dict[str, Any],
+    family_ledger: Dict[str, Any],
+) -> bool:
+    changed = False
+    families = family_ledger.get('families') or {}
+    reopened_candidate_ids: List[str] = []
+    members_by_family: Dict[str, List[Dict[str, Any]]] = {}
+
+    for candidate in frontier.get('candidates', []):
+        if candidate.get('is_family_representative'):
+            candidate['is_family_representative'] = False
+            changed = True
+        if candidate.get('family_representative_score') is not None:
+            candidate['family_representative_score'] = None
+            changed = True
+        if candidate.get('family_representative_reason') is not None:
+            candidate['family_representative_reason'] = None
+            changed = True
+        members_by_family.setdefault(candidate_family_key(candidate), []).append(candidate)
+
+    representative_count = 0
+    current_iteration = int(search_state.get('search_iteration') or 0)
+    for family_id, members in members_by_family.items():
+        family_entry = dict(family_ledger_entry_defaults(family_id))
+        family_entry.update(families.get(family_id, {}))
+        contenders: List[tuple[float, Dict[str, Any], bool]] = []
+        for candidate in members:
+            status = candidate.get('status')
+            reopen_eligible = candidate_reopen_eligible(candidate, family_entry, search_state)
+            if status not in {'open', 'parked', 'reopened', 'selected'} and not reopen_eligible:
+                continue
+            contenders.append(
+                (
+                    candidate_effective_priority(candidate, family_entry, search_state),
+                    candidate,
+                    reopen_eligible,
+                )
+            )
+        if not contenders:
+            continue
+
+        contenders.sort(
+            key=lambda item: (
+                -item[0],
+                frontier_sort_key(item[1]),
+            )
+        )
+        best_score, best_candidate, best_is_reopen = contenders[0]
+        representative_count += 1
+
+        if best_is_reopen and best_candidate.get('status') not in {'open', 'reopened', 'selected'}:
+            if best_candidate.get('last_reopened_search_iteration') != current_iteration:
+                best_candidate['reopen_count'] = int(best_candidate.get('reopen_count') or 0) + 1
+                best_candidate['last_reopened_search_iteration'] = current_iteration
+                best_candidate['reopened_at'] = now_local_iso()
+            if best_candidate.get('status') != 'reopened':
+                best_candidate['status'] = 'reopened'
+            reopened_candidate_ids.append(best_candidate.get('candidate_id'))
+            changed = True
+        elif best_candidate.get('status') == 'parked':
+            best_candidate['status'] = 'open'
+            changed = True
+
+        if not best_candidate.get('is_family_representative'):
+            best_candidate['is_family_representative'] = True
+            changed = True
+        representative_score = round(best_score, 6)
+        if best_candidate.get('family_representative_score') != representative_score:
+            best_candidate['family_representative_score'] = representative_score
+            changed = True
+        representative_reason = (
+            'historical_reopen_representative'
+            if best_is_reopen
+            else 'best_family_candidate_after_reorder'
+        )
+        if best_candidate.get('family_representative_reason') != representative_reason:
+            best_candidate['family_representative_reason'] = representative_reason
+            changed = True
+
+        for candidate in members:
+            if candidate is best_candidate:
+                continue
+            if candidate.get('status') in {'open', 'reopened'}:
+                candidate['status'] = 'parked'
+                changed = True
+
+    if frontier.get('family_representative_count') != representative_count:
+        frontier['family_representative_count'] = representative_count
+        changed = True
+    if frontier.get('reopened_candidate_ids') != reopened_candidate_ids:
+        frontier['reopened_candidate_ids'] = reopened_candidate_ids
+        changed = True
+    status = 'ready' if representative_count else 'empty'
+    if frontier.get('status') != status:
+        frontier['status'] = status
+        changed = True
+    updated_at = now_local_iso()
+    if frontier.get('updated_at') != updated_at:
+        frontier['updated_at'] = updated_at
+        changed = True
+    notes = (
+        f"Persistent frontier tracks {len(frontier.get('candidates', []))} historical candidates; "
+        f"{representative_count} family representatives are currently active for selection."
+    )
+    if frontier.get('notes') != notes:
+        frontier['notes'] = notes
+        changed = True
+    return changed
+
+
+def frontier_sort_key(candidate: Dict[str, Any]) -> tuple[float, int, str, str]:
+    priority = parse_priority(candidate.get('family_representative_score'))
+    if priority is None:
+        priority = parse_priority(candidate.get('priority'))
     rank_bias = 0 if candidate.get('recommended') else 1
     return (
         -(priority if priority is not None else float('-inf')),
@@ -505,37 +1082,45 @@ def frontier_sort_key(candidate: Dict[str, Any]) -> tuple[float, int, str, str]:
 
 
 def candidate_invalid_reason(candidate: Dict[str, Any], diagnosis: Dict[str, Any]) -> Optional[str]:
-    if candidate.get('status') != 'open':
+    if candidate.get('status') not in {'open', 'reopened'}:
         return 'not_open'
     if not str(candidate.get('candidate_id') or '').strip():
         return 'missing_candidate_id'
     if not str(candidate.get('direction_id') or '').strip():
         return 'missing_direction_id'
+    if not str(candidate.get('direction_name') or '').strip():
+        return 'missing_direction_name'
+    if not str(candidate.get('family_id') or '').strip():
+        return 'missing_family_id'
     if not str(candidate.get('action_fingerprint') or '').strip():
         return 'missing_action_fingerprint'
     if parse_priority(candidate.get('priority')) is None:
         return 'non_numeric_priority'
-    if direction_lookup(diagnosis, candidate.get('direction_id') or '') is None:
-        return 'unknown_direction'
+    if not str(candidate.get('hypothesis') or '').strip():
+        return 'missing_hypothesis'
+    if not normalize_string_list(candidate.get('code_locations')):
+        return 'missing_code_locations'
     return None
 
 
 def frontier_open_candidates(frontier: Dict[str, Any]) -> List[Dict[str, Any]]:
-    candidates = [candidate for candidate in frontier.get('candidates', []) if candidate.get('status') == 'open']
+    candidates = [
+        candidate
+        for candidate in frontier.get('candidates', [])
+        if candidate.get('status') in {'open', 'reopened'}
+    ]
     return sorted(candidates, key=frontier_sort_key)
 
 
 def selectable_frontier_candidates(frontier: Dict[str, Any], diagnosis: Dict[str, Any]) -> List[Dict[str, Any]]:
-    seen_fingerprints = {
-        str(candidate.get('action_fingerprint'))
-        for candidate in frontier.get('candidates', [])
-        if candidate.get('status') == 'selected' and str(candidate.get('action_fingerprint') or '').strip()
-    }
     selected: List[Dict[str, Any]] = []
+    seen_fingerprints: set[str] = set()
     for candidate in frontier_open_candidates(frontier):
         reason = candidate_invalid_reason(candidate, diagnosis)
         fingerprint = str(candidate.get('action_fingerprint') or '').strip()
         if reason is not None:
+            continue
+        if not candidate.get('is_family_representative'):
             continue
         if fingerprint in seen_fingerprints:
             continue
@@ -557,6 +1142,20 @@ def direction_summary_line(direction: Dict[str, Any]) -> str:
         f"{name} | "
         f"bottleneck: {bottleneck}"
     )
+
+
+def active_direction_summary(
+    active_direction: Dict[str, Any],
+    diagnosis: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    summary = active_direction.get('summary')
+    if isinstance(summary, dict) and summary:
+        return summary
+    if diagnosis is not None:
+        direction = direction_lookup(diagnosis, active_direction.get('direction_id') or '')
+        if direction is not None:
+            return direction
+    return {}
 
 
 def render_latest_run_md(latest_run: Dict[str, Any]) -> str:
@@ -910,7 +1509,7 @@ def render_node_c_context(
     dirty_paths: List[str],
     round_loop: Dict[str, Any],
 ) -> str:
-    direction = direction_lookup(diagnosis, active_direction.get('direction_id') or '')
+    direction = active_direction_summary(active_direction, diagnosis)
     direction_name = direction.get('name') if direction else None
     lines = ['# Node C context', '']
     lines.append('Node C is the implementation node. Implement exactly one approved or explicitly selected recommended direction.')
@@ -918,7 +1517,7 @@ def render_node_c_context(
     lines.append('## Selected direction')
     lines.append('')
     lines.append(f"- direction id: `{active_direction.get('direction_id', 'N/A')}`")
-    lines.append(f"- direction name: `{direction_name or 'N/A'}`")
+    lines.append(f"- direction name: `{direction_name or active_direction.get('name') or 'N/A'}`")
     lines.append(f"- candidate id: `{active_direction.get('candidate_id', 'N/A')}`")
     lines.append(f"- base run id: `{active_direction.get('base_run_id', 'N/A')}`")
     lines.append(f"- primary family id: `{active_direction.get('family_id', direction.get('family_id') if direction else 'N/A')}`")
@@ -975,6 +1574,9 @@ def compute_supervisor_task(
 ) -> Dict[str, Any]:
     current_node = graph_state.get('current_node', 'node_a')
     search_frontier = load_search_frontier()
+    normalize_search_frontier(search_frontier)
+    reconcile_frontier_with_latest_attempt(search_frontier)
+    refresh_frontier_family_representatives(search_frontier, load_search_state(), load_family_ledger())
     has_frontier_candidate = best_frontier_candidate(search_frontier, diagnosis) is not None
     task = {
         'supervisor_role': 'main_codex_agent',
@@ -1740,6 +2342,46 @@ def freeze_status_from_transition_label(transition_label: Optional[str]) -> str:
     return 'open'
 
 
+def update_family_ledger_for_transition(
+    family_ledger: Dict[str, Any],
+    *,
+    family_id: Optional[str],
+    transition_label: Optional[str],
+    candidate_id: Optional[str],
+    attempt_id: Optional[str],
+    result_run_id: Optional[str],
+    result_runtime_ms: Optional[float],
+    correctness_passed: Optional[bool],
+    resource_snapshot: Dict[str, Any],
+) -> None:
+    if not family_id:
+        return
+    family_ledger['updated_at'] = now_local_iso()
+    family_ledger['last_result_run_id'] = result_run_id
+    family_ledger['last_transition_label'] = transition_label
+    families = family_ledger.setdefault('families', {})
+    family_entry = dict(family_ledger_entry_defaults(family_id))
+    family_entry.update(families.get(family_id, {}))
+    bucket = transition_bucket_from_label(transition_label)
+    if bucket:
+        family_entry[bucket] = int(family_entry.get(bucket, 0)) + 1
+    family_entry['last_transition_label'] = transition_label
+    family_entry['freeze_status'] = freeze_status_from_transition_label(transition_label)
+    family_entry['last_result_run_id'] = result_run_id
+    family_entry['last_result_runtime_ms'] = result_runtime_ms
+    family_entry['last_candidate_id'] = candidate_id
+    family_entry['last_attempt_id'] = attempt_id
+    family_entry['last_registers_per_thread'] = resource_snapshot.get('registers_per_thread')
+    family_entry['last_shared_mem_per_block_allocated'] = resource_snapshot.get('shared_mem_per_block_allocated')
+    best_runtime_ms = family_entry.get('best_runtime_ms')
+    if correctness_passed and result_runtime_ms is not None and (
+        best_runtime_ms is None or float(result_runtime_ms) < float(best_runtime_ms)
+    ):
+        family_entry['best_runtime_ms'] = result_runtime_ms
+        family_entry['best_run_id'] = result_run_id
+    families[family_id] = family_entry
+
+
 def attempt_matches_current_measurement(
     latest_attempt: Dict[str, Any],
     active_direction_before: Dict[str, Any],
@@ -1865,34 +2507,39 @@ def record_measurement_into_search_memory(
     write_json(SEARCH_STATE_PATH, search_state)
 
     family_id = latest_attempt.get('family_id') or active_direction_before.get('family_id')
+    family_ledger = load_family_ledger()
+    update_family_ledger_for_transition(
+        family_ledger,
+        family_id=family_id,
+        transition_label=transition_label,
+        candidate_id=latest_attempt.get('candidate_id'),
+        attempt_id=latest_attempt.get('attempt_id'),
+        result_run_id=latest_run.get('run_id'),
+        result_runtime_ms=latest_run.get('median_runtime_ms'),
+        correctness_passed=latest_run.get('correctness_passed'),
+        resource_snapshot=resource_snapshot,
+    )
     if family_id:
-        family_ledger = load_family_ledger()
-        family_ledger['updated_at'] = now_local_iso()
-        family_ledger['last_result_run_id'] = latest_run.get('run_id')
-        family_ledger['last_transition_label'] = transition_label
-        families = family_ledger.setdefault('families', {})
-        family_entry = dict(family_ledger_entry_defaults(family_id))
-        family_entry.update(families.get(family_id, {}))
-        bucket = transition_bucket_from_label(transition_label)
-        if bucket:
-            family_entry[bucket] = int(family_entry.get(bucket, 0)) + 1
-        family_entry['last_transition_label'] = transition_label
-        family_entry['freeze_status'] = freeze_status_from_transition_label(transition_label)
-        family_entry['last_result_run_id'] = latest_run.get('run_id')
-        family_entry['last_result_runtime_ms'] = latest_run.get('median_runtime_ms')
-        family_entry['last_candidate_id'] = latest_attempt.get('candidate_id')
-        family_entry['last_attempt_id'] = latest_attempt.get('attempt_id')
-        family_entry['last_registers_per_thread'] = resource_snapshot['registers_per_thread']
-        family_entry['last_shared_mem_per_block_allocated'] = resource_snapshot['shared_mem_per_block_allocated']
-        current_runtime_ms = latest_run.get('median_runtime_ms')
-        best_runtime_ms = family_entry.get('best_runtime_ms')
-        if latest_run.get('correctness_passed') and current_runtime_ms is not None and (
-            best_runtime_ms is None or float(current_runtime_ms) < float(best_runtime_ms)
-        ):
-            family_entry['best_runtime_ms'] = current_runtime_ms
-            family_entry['best_run_id'] = latest_run.get('run_id')
-        families[family_id] = family_entry
         write_json(FAMILY_LEDGER_PATH, family_ledger)
+
+    frontier = load_search_frontier()
+    frontier_changed = normalize_search_frontier(frontier)
+    frontier_changed = reconcile_frontier_with_latest_attempt(frontier) or frontier_changed
+    frontier_changed = mark_frontier_candidate_closed(
+        frontier,
+        latest_attempt.get('candidate_id'),
+        transition_label=transition_label,
+        transition_class=transition.get('transition_class'),
+        result_run_id=latest_run.get('run_id'),
+        result_runtime_ms=latest_run.get('median_runtime_ms'),
+        runtime_delta_ms=runtime_delta_ms,
+        correctness_passed=latest_run.get('correctness_passed'),
+        close_reason='measured_by_node_a',
+        search_iteration=search_state.get('search_iteration'),
+    ) or frontier_changed
+    frontier_changed = refresh_frontier_family_representatives(frontier, search_state, family_ledger) or frontier_changed
+    if frontier_changed:
+        write_json(SEARCH_FRONTIER_PATH, frontier)
 
     append_jsonl(
         SEARCH_CLOSED_PATH,
@@ -1916,6 +2563,100 @@ def record_measurement_into_search_memory(
             'registers_per_thread': resource_snapshot['registers_per_thread'],
             'shared_mem_per_block_allocated': resource_snapshot['shared_mem_per_block_allocated'],
             'close_reason': 'measured_by_node_a',
+        },
+    )
+
+
+def record_build_failure_into_search_memory(
+    latest_attempt: Dict[str, Any],
+    active_direction: Dict[str, Any],
+) -> None:
+    if not latest_attempt.get('candidate_id'):
+        return
+    latest_attempt['status'] = 'closed'
+    latest_attempt['transition_label'] = 'BUILD_FAIL'
+    latest_attempt['transition_class'] = 'fail'
+    latest_attempt['close_reason'] = 'build_failed_by_node_c'
+    latest_attempt['notes'] = (
+        f"Node C build failed for candidate {latest_attempt.get('candidate_id') or latest_attempt.get('direction_id')}; "
+        'candidate closed as BUILD_FAIL.'
+    )
+    write_json(LATEST_ATTEMPT_PATH, latest_attempt)
+
+    search_state = load_search_state()
+    search_state['status'] = 'build_failed_recorded'
+    search_state['active_candidate_id'] = None
+    search_state['latest_attempt_id'] = latest_attempt.get('attempt_id')
+    search_state['last_transition_type'] = 'node_c_build_failure'
+    search_state['last_transition_label'] = 'BUILD_FAIL'
+    search_state['notes'] = (
+        f"Node C recorded BUILD_FAIL for candidate {latest_attempt.get('candidate_id') or latest_attempt.get('direction_id')}."
+    )
+    write_json(SEARCH_STATE_PATH, search_state)
+
+    resource_snapshot = {
+        'registers_per_thread': None,
+        'shared_mem_per_block_allocated': None,
+    }
+    family_id = latest_attempt.get('family_id') or active_direction.get('family_id')
+    if family_id:
+        family_ledger = load_family_ledger()
+        update_family_ledger_for_transition(
+            family_ledger,
+            family_id=family_id,
+            transition_label='BUILD_FAIL',
+            candidate_id=latest_attempt.get('candidate_id'),
+            attempt_id=latest_attempt.get('attempt_id'),
+            result_run_id=None,
+            result_runtime_ms=None,
+            correctness_passed=None,
+            resource_snapshot=resource_snapshot,
+        )
+        write_json(FAMILY_LEDGER_PATH, family_ledger)
+    else:
+        family_ledger = load_family_ledger()
+
+    frontier = load_search_frontier()
+    frontier_changed = normalize_search_frontier(frontier)
+    frontier_changed = reconcile_frontier_with_latest_attempt(frontier) or frontier_changed
+    frontier_changed = mark_frontier_candidate_closed(
+        frontier,
+        latest_attempt.get('candidate_id'),
+        transition_label='BUILD_FAIL',
+        transition_class='fail',
+        result_run_id=None,
+        result_runtime_ms=None,
+        runtime_delta_ms=None,
+        correctness_passed=None,
+        close_reason='build_failed_by_node_c',
+        search_iteration=search_state.get('search_iteration'),
+    ) or frontier_changed
+    frontier_changed = refresh_frontier_family_representatives(frontier, search_state, family_ledger) or frontier_changed
+    if frontier_changed:
+        write_json(SEARCH_FRONTIER_PATH, frontier)
+
+    append_jsonl(
+        SEARCH_CLOSED_PATH,
+        {
+            'closed_at': now_local_iso(),
+            'attempt_id': latest_attempt.get('attempt_id'),
+            'candidate_id': latest_attempt.get('candidate_id'),
+            'source_diagnosis_id': latest_attempt.get('source_diagnosis_id'),
+            'base_run_id': latest_attempt.get('base_run_id'),
+            'family_id': latest_attempt.get('family_id'),
+            'subfamily_id': latest_attempt.get('subfamily_id'),
+            'transition_label': 'BUILD_FAIL',
+            'transition_class': 'fail',
+            'result_run_id': None,
+            'result_runtime_ms': None,
+            'runtime_delta_ms': None,
+            'correctness_passed': None,
+            'selection_score': latest_attempt.get('selection_score'),
+            'planned_action_fingerprint': latest_attempt.get('planned_action_fingerprint'),
+            'implemented_action_fingerprint': latest_attempt.get('implemented_action_fingerprint'),
+            'registers_per_thread': None,
+            'shared_mem_per_block_allocated': None,
+            'close_reason': 'build_failed_by_node_c',
         },
     )
 
@@ -2699,6 +3440,7 @@ def candidate_record_from_direction(
         'source_diagnosis_id': diagnosis.get('diagnosis_id'),
         'base_run_id': latest_run.get('run_id'),
         'base_measured_commit': latest_run.get('measured_commit'),
+        'base_runtime_ms': latest_run.get('median_runtime_ms'),
         'direction_id': direction_id,
         'direction_name': direction.get('name'),
         'family_id': direction.get('family_id'),
@@ -2724,21 +3466,61 @@ def candidate_record_from_direction(
 
 
 def frontier_record_from_candidate(candidate: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        'candidate_id': candidate.get('candidate_id'),
-        'source_diagnosis_id': candidate.get('source_diagnosis_id'),
-        'base_run_id': candidate.get('base_run_id'),
-        'family_id': candidate.get('family_id'),
-        'subfamily_id': candidate.get('subfamily_id'),
-        'action_fingerprint': candidate.get('action_fingerprint'),
-        'priority': candidate.get('priority'),
-        'status': 'open',
-        'direction_id': candidate.get('direction_id'),
-        'direction_name': candidate.get('direction_name'),
-        'mode': candidate.get('mode'),
-        'recommended': candidate.get('recommended'),
-        'ranking_notes': candidate.get('ranking_notes'),
-    }
+    record = frontier_candidate_defaults(candidate.get('candidate_id'))
+    record.update(copy.deepcopy(candidate))
+    record['status'] = 'open'
+    return normalize_frontier_candidate(record)
+
+
+def merge_candidate_into_frontier(
+    frontier: Dict[str, Any],
+    candidate: Dict[str, Any],
+    *,
+    source_search_iteration: int,
+) -> bool:
+    existing = frontier_candidate_lookup(frontier, candidate.get('candidate_id'))
+    if existing is None:
+        record = frontier_record_from_candidate(candidate)
+        record['source_search_iteration'] = source_search_iteration
+        frontier.setdefault('candidates', []).append(normalize_frontier_candidate(record))
+        return True
+
+    raw = copy.deepcopy(existing)
+    for key in (
+        'source_diagnosis_id',
+        'base_run_id',
+        'base_measured_commit',
+        'base_runtime_ms',
+        'direction_id',
+        'direction_name',
+        'family_id',
+        'subfamily_id',
+        'action_fingerprint',
+        'rank_in_diagnosis',
+        'recommended',
+        'mode',
+        'priority',
+        'search_score_v1',
+        'score_breakdown',
+        'predicted_gain_ms',
+        'predicted_fail_risk',
+        'ranking_notes',
+        'hypothesis',
+        'expected_bottleneck',
+        'code_locations',
+        'risk',
+        'metrics_to_recheck',
+        'stop_condition',
+    ):
+        raw[key] = copy.deepcopy(candidate.get(key))
+    if raw.get('source_search_iteration') is None:
+        raw['source_search_iteration'] = source_search_iteration
+    normalized = normalize_frontier_candidate(raw)
+    if normalized != existing:
+        existing.clear()
+        existing.update(normalized)
+        return True
+    return False
 
 
 def write_search_candidates_and_frontier(diagnosis: Dict[str, Any], latest_run: Dict[str, Any]) -> None:
@@ -2764,37 +3546,45 @@ def write_search_candidates_and_frontier(diagnosis: Dict[str, Any], latest_run: 
     }
     write_json(SEARCH_CANDIDATES_PATH, search_candidates)
 
-    frontier_id = f"frontier:{diagnosis.get('diagnosis_id')}"
-    search_frontier = {
-        'schema_version': 1,
-        'frontier_id': frontier_id,
-        'status': 'ready',
-        'source_run_id': latest_run.get('run_id'),
-        'source_measured_commit': latest_run.get('measured_commit'),
-        'source_diagnosis_id': diagnosis.get('diagnosis_id'),
-        'candidate_set_id': candidate_set_id,
-        'generated_at': now_local_iso(),
-        'selection_policy_id': 'heuristic_v1_fallback',
-        'selected_candidate_id': None,
-        'selection_reason': None,
-        'selection_summary': None,
-        'candidates': [frontier_record_from_candidate(candidate) for candidate in candidates],
-        'notes': 'All three node_b directions were enqueued as open candidates. No frontier selection is performed here.',
-    }
-    write_json(SEARCH_FRONTIER_PATH, search_frontier)
-
     search_state = load_search_state()
+    search_state['selection_policy'] = frontier_policy(search_state)
+    next_search_iteration = int(search_state.get('search_iteration', 0)) + 1
+    frontier = load_search_frontier()
+    normalize_search_frontier(frontier)
+    reconcile_frontier_with_latest_attempt(frontier)
+    for candidate in candidates:
+        merge_candidate_into_frontier(
+            frontier,
+            candidate,
+            source_search_iteration=next_search_iteration,
+        )
+    frontier['schema_version'] = 2
+    frontier['frontier_id'] = 'frontier:global'
+    frontier['status'] = 'ready'
+    frontier['source_run_id'] = latest_run.get('run_id')
+    frontier['source_measured_commit'] = latest_run.get('measured_commit')
+    frontier['source_diagnosis_id'] = diagnosis.get('diagnosis_id')
+    frontier['candidate_set_id'] = candidate_set_id
+    frontier['generated_at'] = frontier.get('generated_at') or now_local_iso()
+    frontier['selection_policy_id'] = 'family_representative_v2'
+
     accepted_anchor = canonical_accepted_base_anchor(search_state, latest_run)
+    search_state['search_iteration'] = next_search_iteration
+    family_ledger = load_family_ledger()
+    refresh_frontier_family_representatives(frontier, search_state, family_ledger)
+    write_json(SEARCH_FRONTIER_PATH, frontier)
+
     search_state['status'] = 'frontier_ready'
     search_state['accepted_base_run_id'] = accepted_anchor.get('run_id')
     search_state['accepted_base_measured_commit'] = accepted_anchor.get('measured_commit')
     search_state['accepted_base_runtime_ms'] = accepted_anchor.get('runtime_ms')
-    search_state['active_frontier_id'] = frontier_id
+    search_state['active_frontier_id'] = frontier.get('frontier_id')
     search_state['active_candidate_set_id'] = candidate_set_id
     search_state['active_candidate_id'] = None
     search_state['last_transition_type'] = 'candidate_emission'
-    search_state['search_iteration'] = int(search_state.get('search_iteration', 0)) + 1
-    search_state['notes'] = 'Latest node_b finalize projected exactly three open candidates into the frontier.'
+    search_state['notes'] = (
+        'Latest node_b finalize merged exactly three directions into the persistent frontier and refreshed one representative per family.'
+    )
     write_json(SEARCH_STATE_PATH, search_state)
 
 
@@ -2816,6 +3606,7 @@ def run_node_b(args: argparse.Namespace) -> int:
         diagnosis['source_summary_json'] = diagnosis.get('source_summary_json') or latest_run.get('raw_summary_json')
         diagnosis['source_ncu_summary_json'] = diagnosis.get('source_ncu_summary_json') or repo_rel(LATEST_NCU_SUMMARY_PATH)
         diagnosis['current_kernel_path'] = diagnosis.get('current_kernel_path') or graph_state.get('current_kernel_path', current_kernel_path())
+        diagnosis['selected_candidate_id'] = None
         write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
         write_search_candidates_and_frontier(diagnosis, latest_run)
 
@@ -2873,6 +3664,99 @@ def run_node_b(args: argparse.Namespace) -> int:
     return 0
 
 
+def select_candidate(candidate_id: str, selection_mode: str) -> int:
+    ensure_machine_state()
+    if not candidate_id:
+        raise RuntimeError('candidate_id is required')
+    frontier = load_search_frontier()
+    normalize_search_frontier(frontier)
+    reconcile_frontier_with_latest_attempt(frontier)
+    refresh_frontier_family_representatives(frontier, load_search_state(), load_family_ledger())
+    candidate = frontier_candidate_lookup(frontier, candidate_id)
+    if candidate is None:
+        raise RuntimeError(f'unknown candidate id: {candidate_id}')
+    if candidate.get('status') in {'invalid', 'duplicate'}:
+        raise RuntimeError(f'candidate {candidate_id} is not selectable; status={candidate.get("status")}')
+
+    diagnosis = load_latest_diagnosis()
+    summary = candidate_summary_from_record(candidate)
+    active = {
+        'direction_id': candidate.get('direction_id'),
+        'name': candidate.get('direction_name') or summary.get('name'),
+        'candidate_id': candidate.get('candidate_id'),
+        'selected_from_frontier_id': frontier.get('frontier_id'),
+        'family_id': candidate.get('family_id') or summary.get('family_id'),
+        'subfamily_id': candidate.get('subfamily_id') or summary.get('subfamily_id'),
+        'action_fingerprint': candidate.get('action_fingerprint') or summary.get('action_fingerprint'),
+        'selection_priority': candidate.get('family_representative_score') or candidate.get('priority'),
+        'base_run_id': candidate.get('base_run_id'),
+        'selection_mode': selection_mode,
+        'selected_at': now_local_iso(),
+        'source_diagnosis_id': candidate.get('source_diagnosis_id'),
+        'status': 'ready_for_implementation',
+        'summary': summary,
+        'notes': 'Node C may now implement this one candidate.',
+    }
+    write_json(ACTIVE_DIRECTION_PATH, active)
+
+    if diagnosis.get('status') == 'completed':
+        if selection_mode in ('approved', 'human_idea') and candidate.get('source_diagnosis_id') == diagnosis.get('diagnosis_id'):
+            diagnosis['approved_direction_id'] = candidate.get('direction_id')
+        diagnosis['selected_candidate_id'] = candidate.get('candidate_id')
+        diagnosis['selected_direction_id'] = (
+            candidate.get('direction_id')
+            if candidate.get('source_diagnosis_id') == diagnosis.get('diagnosis_id')
+            else None
+        )
+        write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
+
+    for other in frontier.get('candidates', []):
+        if other.get('candidate_id') != candidate.get('candidate_id'):
+            continue
+        other['status'] = 'selected'
+        other['selection_count'] = int(other.get('selection_count') or 0) + 1
+        other['last_selected_at'] = active.get('selected_at')
+        other['last_selected_selection_mode'] = selection_mode
+    frontier['selected_candidate_id'] = candidate.get('candidate_id')
+    frontier['selection_reason'] = (
+        'frontier_top_family_representative'
+        if selection_mode == 'frontier'
+        else f'selected_via_{selection_mode}'
+    )
+    frontier['selection_summary'] = (
+        f"Selected {candidate.get('candidate_id')} -> {candidate.get('direction_id')} via mode={selection_mode}."
+    )
+    write_json(SEARCH_FRONTIER_PATH, frontier)
+
+    search_state = load_search_state()
+    search_state['active_candidate_id'] = candidate.get('candidate_id')
+    search_state['last_selected_candidate_id'] = candidate.get('candidate_id')
+    search_state['last_selected_direction_id'] = candidate.get('direction_id')
+    search_state['last_selected_selection_mode'] = selection_mode
+    search_state['last_selected_at'] = active.get('selected_at')
+    search_state['status'] = 'candidate_selected'
+    search_state['notes'] = f"Selected frontier candidate {candidate.get('candidate_id')} for node_c."
+    write_json(SEARCH_STATE_PATH, search_state)
+
+    round_loop = mark_round_started_if_needed(load_round_loop_state())
+    graph_state = load_graph_state()
+    graph_state['current_node'] = 'node_c'
+    graph_state['previous_node'] = 'node_b'
+    graph_state['status'] = 'ready_for_node_c'
+    graph_state['recommended_direction_id'] = diagnosis.get('recommended_direction_id')
+    graph_state['approved_direction_id'] = diagnosis.get('approved_direction_id')
+    if round_loop.get('active'):
+        graph_state['notes'] = (
+            f"Node C is ready to implement {candidate.get('candidate_id')} via {selection_mode} selection for {round_label(round_loop)}."
+        )
+    else:
+        graph_state['notes'] = f"Node C is ready to implement {candidate.get('candidate_id')} via {selection_mode} selection."
+    write_json(GRAPH_STATE_PATH, graph_state)
+    refresh_all_views()
+    print_step(f'selected {candidate.get("candidate_id")} for node_c using mode={selection_mode}')
+    return 0
+
+
 def select_direction(direction_id: str, selection_mode: str) -> int:
     ensure_machine_state()
     if not direction_id:
@@ -2884,23 +3768,28 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
     if direction is None:
         raise RuntimeError(f'unknown direction id: {direction_id}')
 
-    matching_candidate = None
     search_frontier = load_search_frontier()
-    for candidate in search_frontier.get('candidates', []):
-        if candidate.get('direction_id') == direction_id:
-            matching_candidate = candidate
-            break
+    normalize_search_frontier(search_frontier)
+    reconcile_frontier_with_latest_attempt(search_frontier)
+    refresh_frontier_family_representatives(search_frontier, load_search_state(), load_family_ledger())
+    matching_candidate = frontier_candidate_lookup(
+        search_frontier,
+        direction_id=direction_id,
+        source_diagnosis_id=diagnosis.get('diagnosis_id'),
+    )
+    if matching_candidate is not None:
+        return select_candidate(matching_candidate.get('candidate_id'), selection_mode)
 
     active = {
         'direction_id': direction_id,
         'name': direction.get('name'),
-        'candidate_id': matching_candidate.get('candidate_id') if matching_candidate else None,
-        'selected_from_frontier_id': search_frontier.get('frontier_id') if matching_candidate else None,
-        'family_id': matching_candidate.get('family_id') if matching_candidate else direction.get('family_id'),
-        'subfamily_id': matching_candidate.get('subfamily_id') if matching_candidate else direction.get('subfamily_id'),
-        'action_fingerprint': matching_candidate.get('action_fingerprint') if matching_candidate else direction.get('action_fingerprint'),
-        'selection_priority': matching_candidate.get('priority') if matching_candidate else direction.get('search_score_v1'),
-        'base_run_id': matching_candidate.get('base_run_id') if matching_candidate else None,
+        'candidate_id': None,
+        'selected_from_frontier_id': None,
+        'family_id': direction.get('family_id'),
+        'subfamily_id': direction.get('subfamily_id'),
+        'action_fingerprint': direction.get('action_fingerprint'),
+        'selection_priority': direction.get('search_score_v1'),
+        'base_run_id': None,
         'selection_mode': selection_mode,
         'selected_at': now_local_iso(),
         'source_diagnosis_id': diagnosis.get('diagnosis_id'),
@@ -2909,36 +3798,11 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
         'notes': 'Node C may now implement this one direction.',
     }
     write_json(ACTIVE_DIRECTION_PATH, active)
-
     if selection_mode in ('approved', 'human_idea'):
         diagnosis['approved_direction_id'] = direction_id
     diagnosis['selected_direction_id'] = direction_id
+    diagnosis['selected_candidate_id'] = None
     write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
-
-    if matching_candidate:
-        for candidate in search_frontier.get('candidates', []):
-            if candidate.get('candidate_id') == matching_candidate.get('candidate_id'):
-                candidate['status'] = 'selected'
-        search_frontier['selected_candidate_id'] = matching_candidate.get('candidate_id')
-        search_frontier['selection_reason'] = (
-            'frontier_top_open_candidate'
-            if selection_mode == 'frontier'
-            else f'selected_via_{selection_mode}'
-        )
-        search_frontier['selection_summary'] = (
-            f"Selected {matching_candidate.get('candidate_id')} -> {direction_id} via mode={selection_mode}."
-        )
-        write_json(SEARCH_FRONTIER_PATH, search_frontier)
-
-        search_state = load_search_state()
-        search_state['active_candidate_id'] = matching_candidate.get('candidate_id')
-        search_state['last_selected_candidate_id'] = matching_candidate.get('candidate_id')
-        search_state['last_selected_direction_id'] = direction_id
-        search_state['last_selected_selection_mode'] = selection_mode
-        search_state['last_selected_at'] = active.get('selected_at')
-        search_state['status'] = 'candidate_selected'
-        search_state['notes'] = f"Selected frontier candidate {matching_candidate.get('candidate_id')} for node_c."
-        write_json(SEARCH_STATE_PATH, search_state)
 
     round_loop = mark_round_started_if_needed(load_round_loop_state())
     graph_state = load_graph_state()
@@ -2968,19 +3832,17 @@ def select_next_candidate() -> int:
         raise RuntimeError('node_b must be finalized before selecting from the frontier')
 
     frontier = load_search_frontier()
+    normalize_search_frontier(frontier)
+    reconcile_frontier_with_latest_attempt(frontier)
+    refresh_frontier_family_representatives(frontier, load_search_state(), load_family_ledger())
     candidates = frontier.get('candidates', [])
     if not candidates:
         raise RuntimeError('search frontier is empty; finalize node_b first')
 
     changed = False
-    seen_fingerprints = {
-        str(candidate.get('action_fingerprint'))
-        for candidate in candidates
-        if candidate.get('status') == 'selected' and str(candidate.get('action_fingerprint') or '').strip()
-    }
-
     chosen: Optional[Dict[str, Any]] = None
-    for candidate in frontier_open_candidates(frontier):
+    seen_fingerprints: set[str] = set()
+    for candidate in selectable_frontier_candidates(frontier, diagnosis):
         reason = candidate_invalid_reason(candidate, diagnosis)
         fingerprint = str(candidate.get('action_fingerprint') or '').strip()
         if reason is not None:
@@ -2989,11 +3851,9 @@ def select_next_candidate() -> int:
             changed = True
             continue
         if fingerprint in seen_fingerprints:
-            candidate['status'] = 'duplicate'
-            candidate['invalid_reason'] = 'duplicate_action_fingerprint'
-            changed = True
             continue
         chosen = candidate
+        seen_fingerprints.add(fingerprint)
         break
 
     if chosen is None:
@@ -3003,13 +3863,16 @@ def select_next_candidate() -> int:
 
     if changed:
         write_json(SEARCH_FRONTIER_PATH, frontier)
-    return select_direction(chosen.get('direction_id'), 'frontier')
+    return select_candidate(chosen.get('candidate_id'), 'frontier')
 
 
 def run_search_status(_: argparse.Namespace) -> int:
     ensure_machine_state()
     search_state = load_search_state()
     frontier = load_search_frontier()
+    normalize_search_frontier(frontier)
+    reconcile_frontier_with_latest_attempt(frontier)
+    refresh_frontier_family_representatives(frontier, search_state, load_family_ledger())
     diagnosis = load_latest_diagnosis()
     benchmark_state = load_benchmark_state()
     active_direction = load_active_direction()
@@ -3021,9 +3884,12 @@ def run_search_status(_: argparse.Namespace) -> int:
     print(f"search_status={search_state.get('status')}")
     print(f"frontier_id={frontier.get('frontier_id')}")
     print(f"frontier_open_count={len(open_candidates)}")
+    print(f"family_representative_count={frontier.get('family_representative_count')}")
     print(f"best_candidate_id={best_candidate.get('candidate_id') if best_candidate else None}")
     print(f"best_candidate_direction_id={best_candidate.get('direction_id') if best_candidate else None}")
-    print(f"best_candidate_priority={best_candidate.get('priority') if best_candidate else None}")
+    print(
+        f"best_candidate_priority={best_candidate.get('family_representative_score') if best_candidate else None}"
+    )
     print(
         f"last_selected_candidate_id={search_state.get('last_selected_candidate_id') or active_direction.get('candidate_id')}"
     )
@@ -3042,11 +3908,15 @@ def run_search_status(_: argparse.Namespace) -> int:
 def run_frontier(args: argparse.Namespace) -> int:
     ensure_machine_state()
     frontier = load_search_frontier()
+    normalize_search_frontier(frontier)
+    reconcile_frontier_with_latest_attempt(frontier)
+    refresh_frontier_family_representatives(frontier, load_search_state(), load_family_ledger())
     diagnosis = load_latest_diagnosis()
     candidates = frontier_open_candidates(frontier)
     print(f"frontier_id={frontier.get('frontier_id')}")
     print(f"status={frontier.get('status')}")
     print(f"open_count={len(candidates)}")
+    print(f"family_representative_count={frontier.get('family_representative_count')}")
     print(f"selected_candidate_id={frontier.get('selected_candidate_id')}")
     limit = max(args.top, 0)
     for idx, candidate in enumerate(candidates[:limit], start=1):
@@ -3055,10 +3925,12 @@ def run_frontier(args: argparse.Namespace) -> int:
         print(
             f"{idx:02d} candidate_id={candidate.get('candidate_id')} "
             f"direction_id={candidate.get('direction_id')} "
-            f"priority={candidate.get('priority')} "
+            f"priority={candidate.get('family_representative_score') or candidate.get('priority')} "
             f"family_id={candidate.get('family_id')} "
             f"subfamily_id={candidate.get('subfamily_id')} "
             f"status={candidate.get('status')} "
+            f"reopened={candidate.get('reopen_count')} "
+            f"representative={'yes' if candidate.get('is_family_representative') else 'no'} "
             f"selectable={selectable}"
         )
     return 0
@@ -3077,9 +3949,9 @@ def run_node_c(args: argparse.Namespace) -> int:
     if not active_direction.get('direction_id'):
         raise RuntimeError('node_c requires an active direction; use select-next, approve, or use-recommended-direction first')
 
-    direction = direction_lookup(diagnosis, active_direction.get('direction_id'))
-    if direction is None:
-        raise RuntimeError('active direction is not present in state/latest_diagnosis.json')
+    direction = active_direction_summary(active_direction, diagnosis)
+    if not direction:
+        raise RuntimeError('active direction summary is missing; re-select a candidate before running node_c')
 
     if not args.finalize:
         graph_state['current_node'] = 'node_c'
@@ -3134,6 +4006,7 @@ def run_node_c(args: argparse.Namespace) -> int:
         active_direction['notes'] = f'Build failed; inspect {repo_rel(NODE_C_BUILD_LOG_PATH)}'
         write_json(GRAPH_STATE_PATH, graph_state)
         write_json(ACTIVE_DIRECTION_PATH, active_direction)
+        record_build_failure_into_search_memory(latest_attempt, active_direction)
         if round_loop.get('active'):
             round_loop['status'] = 'paused_on_build_failure'
             round_loop['notes'] = f'Paused {round_label(round_loop)} because node_c failed to build.'

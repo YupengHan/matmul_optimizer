@@ -117,13 +117,16 @@ The three directions do not need extra schema fields for this, but their `hypoth
 - validate that there are exactly 3 directions
 - backfill deterministic `action_fingerprint` and `search_score_v1` fields when they are omitted
 - project all 3 directions into `state/search_candidates.json`
-- enqueue all 3 directions as open frontier items in `state/search_frontier.json`
+- merge all 3 directions into the persistent `state/search_frontier.json`
+- refresh one active representative candidate per family, including bounded reopen of historical candidates when policy allows
 - set `state/graph_state.json` to point at `node_c`
 - refresh `state/current_focus.md`, `state/progress.md`, `state/human_review.md`
 - prepare `state/node_c_context.md`
 - create the node_b git commit unless `--skip-commit` is passed
 
 If a multi-round loop is active with `--auto-use-recommended`, finalize also auto-selects the recommended direction so node_c can start immediately.
+
+Detailed planner policy is maintained in `docs/search_policy.md`.
 
 ## Sub-agent boundary
 

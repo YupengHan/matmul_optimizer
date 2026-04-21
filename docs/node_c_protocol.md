@@ -48,6 +48,11 @@ Read:
 4. `state/current_focus.md`
 5. the code files named in the selected direction's `code_locations`
 
+Note:
+
+- the selected candidate may come from the persistent frontier rather than the latest 3 directions
+- when that happens, `state/active_direction.json` is the authoritative summary for implementation details
+
 The supervisor should also read:
 
 - `docs/supervisor_protocol.md`
