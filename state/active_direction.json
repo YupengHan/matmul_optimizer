@@ -1,70 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
-  "candidate_id": "diagnosis_20260421_010737:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
-  "subfamily_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule::rehydrate_9a4bb85_surface",
-  "action_fingerprint": "rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722",
-  "selection_priority": 2.44,
-  "base_run_id": "20260421_010424_bf16_gemm_v1_f6d1219",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T01:10:53-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_010737",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
-    "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
-    "subfamily_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule::rehydrate_9a4bb85_surface",
-    "action_fingerprint": "rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722",
-    "mode": "explore",
-    "hypothesis": "The restored PTX winner is correct again, but it is still trapped in the same plateau signature that now defines the whole 24.16-24.19 ms cluster: tensor activity is only 48.39%, achieved warps are only 16.62%, DRAM is just 12.48%, and occupancy is still register-limited. That means round 25 should explicitly stop prioritizing another frozen PTX micro-retime and instead spend budget on the cleanest remaining structural family. The half-panel branch already consumed its grace budget and stays closed on correctness. The direct 256x128 pivot family is also closed-negative. The remaining bounded geometry-side branch is the auxiliary 256x128 schedule family: it changes hot-band control amortization and reuse shape without reopening the broken half-panel export path. Node C should therefore treat this as a real family re-entry rather than a timid one-line replay and use the recovered 256x128 surface as the base for an aggressive within-family implementation.",
-    "expected_bottleneck": "Hot-band CTA geometry, control amortization, and latency hiding on the wide 256x128 schedule family, not another PTX-local barrier or scoreboard seam on the already plateaued 128x128 winner surface.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1580-1676",
-      "src/kernels/bf16_gemm_v1.cu:2070-2138",
-      "src/kernels/bf16_gemm_v1.cu:150-156"
-    ],
-    "risk": "Medium to high. Historical support for this family is materially weaker than the PTX winner, and a too-broad dispatch swap can replay the closed 256x128 regression. It remains the best live structural probe only because the higher-ceiling half-panel family is now decisively closed on correctness.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime",
-      "correctness pass rate across all 3 cases",
-      "hot-band gpu__time_duration.sum",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "launch__occupancy_limit_registers",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-    ],
-    "search_score_v1": 2.31,
-    "score_breakdown": {
-      "policy_id": "manual_round100_node_b_v25",
-      "rank_score": 1.56,
-      "structural_probe_bonus": 0.44,
-      "user_guidance_bonus": 0.3,
-      "family_diversity_bonus": 0.26,
-      "plateau_escape_bonus": 0.22,
-      "risk_penalty": 0.47,
-      "formula": "rank_score + structural_probe_bonus + user_guidance_bonus + family_diversity_bonus + plateau_escape_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 0.45,
-    "predicted_fail_risk": 0.48,
-    "ranking_notes": [
-      "This ranks first because round 25 should optimize for machine-state change, not for another sub-0.1 ms PTX-local perturbation.",
-      "Among the families that are still live, this is the strongest remaining branch that materially changes hot-band geometry and scheduling while staying inside a bounded implementation surface.",
-      "The historical 256x128 branch itself was not fast enough, but it is still a better place to spend aggressive budget than a frozen PTX family that already flattened five times."
-    ],
-    "stop_condition": "Stop if the 256x128 family fails to move warps-active or tensor utilization away from the current plateau, or if it reopens another broad regression without any counter improvement that would justify a follow-on repair.",
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

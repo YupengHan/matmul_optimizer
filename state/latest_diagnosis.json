@@ -1,155 +1,18 @@
 {
-  "diagnosis_id": "diagnosis_20260421_010737",
-  "status": "completed",
-  "created_at": "2026-04-21T01:07:37-07:00",
-  "source_run_id": "20260421_010424_bf16_gemm_v1_f6d1219",
-  "source_run_dir": "runs/20260421_010424_bf16_gemm_v1_f6d1219",
-  "source_summary_json": "runs/20260421_010424_bf16_gemm_v1_f6d1219/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260421_011200_bf16_gemm_v1_2d59c53",
+  "source_run_dir": "runs/20260421_011200_bf16_gemm_v1_2d59c53",
+  "source_summary_json": "runs/20260421_011200_bf16_gemm_v1_2d59c53/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260421_010737:dir_01",
-  "family_audit": [
-    "Deprioritized legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path for round 25 because the family is already frozen after 1 win plus 5 flats and now reads as plateau noise chasing on the 24.16-24.19 ms band.",
-    "Kept historical::repair_the_256x128_half_panel_register_reuse_branch closed for this round because two local rehydrates preserved the occupancy signal but still failed correctness and stayed around 30 ms.",
-    "Promoted legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule because it is the cleanest remaining structural family that can still change hot-band geometry and schedule without reopening known-broken half-panel export logic."
-  ],
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
-      "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
-      "subfamily_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule::rehydrate_9a4bb85_surface",
-      "action_fingerprint": "rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722",
-      "mode": "explore",
-      "hypothesis": "The restored PTX winner is correct again, but it is still trapped in the same plateau signature that now defines the whole 24.16-24.19 ms cluster: tensor activity is only 48.39%, achieved warps are only 16.62%, DRAM is just 12.48%, and occupancy is still register-limited. That means round 25 should explicitly stop prioritizing another frozen PTX micro-retime and instead spend budget on the cleanest remaining structural family. The half-panel branch already consumed its grace budget and stays closed on correctness. The direct 256x128 pivot family is also closed-negative. The remaining bounded geometry-side branch is the auxiliary 256x128 schedule family: it changes hot-band control amortization and reuse shape without reopening the broken half-panel export path. Node C should therefore treat this as a real family re-entry rather than a timid one-line replay and use the recovered 256x128 surface as the base for an aggressive within-family implementation.",
-      "expected_bottleneck": "Hot-band CTA geometry, control amortization, and latency hiding on the wide 256x128 schedule family, not another PTX-local barrier or scoreboard seam on the already plateaued 128x128 winner surface.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1580-1676",
-        "src/kernels/bf16_gemm_v1.cu:2070-2138",
-        "src/kernels/bf16_gemm_v1.cu:150-156"
-      ],
-      "risk": "Medium to high. Historical support for this family is materially weaker than the PTX winner, and a too-broad dispatch swap can replay the closed 256x128 regression. It remains the best live structural probe only because the higher-ceiling half-panel family is now decisively closed on correctness.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "correctness pass rate across all 3 cases",
-        "hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "search_score_v1": 2.31,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v25",
-        "rank_score": 1.56,
-        "structural_probe_bonus": 0.44,
-        "user_guidance_bonus": 0.3,
-        "family_diversity_bonus": 0.26,
-        "plateau_escape_bonus": 0.22,
-        "risk_penalty": 0.47,
-        "formula": "rank_score + structural_probe_bonus + user_guidance_bonus + family_diversity_bonus + plateau_escape_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.45,
-      "predicted_fail_risk": 0.48,
-      "ranking_notes": [
-        "This ranks first because round 25 should optimize for machine-state change, not for another sub-0.1 ms PTX-local perturbation.",
-        "Among the families that are still live, this is the strongest remaining branch that materially changes hot-band geometry and scheduling while staying inside a bounded implementation surface.",
-        "The historical 256x128 branch itself was not fast enough, but it is still a better place to spend aggressive budget than a frozen PTX family that already flattened five times."
-      ],
-      "stop_condition": "Stop if the 256x128 family fails to move warps-active or tensor utilization away from the current plateau, or if it reopens another broad regression without any counter improvement that would justify a follow-on repair."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore The Grouped-Row Non-PTX 128x128 Sibling Surface",
-      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
-      "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling::exact_910beff_surface",
-      "action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_910beff68055b974cfdbb268cda1087c8b44d665",
-      "mode": "restore",
-      "hypothesis": "If the loop wants an aggressive move that still stays on a correctness-proven surface, the non-PTX 128x128 sibling remains the cleanest alternate execution surface. It already landed at 24.178688 ms, which is inside the current noise band relative to the PTX winner, while still replacing the PTX microkernel-specific control and export surface. That makes it more valuable than reopening another frozen PTX exploit family even though it does not promise a large immediate gain by itself.",
-      "expected_bottleneck": "PTX-microkernel-specific control and export coupling on the current winner surface, while preserving the same broad 128x128 footprint and grouped-row locality.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1844-1952",
-        "src/kernels/bf16_gemm_v1.cu:2070-2138",
-        "src/kernels/bf16_gemm_v1.cu:1870-1880"
-      ],
-      "risk": "Medium. This is a real surface pivot, but it is a measured-correct one that already stayed inside the 24.16-24.18 ms band instead of opening a multi-millisecond regression.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "correctness pass rate across all 3 cases",
-        "hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "search_score_v1": 1.98,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v25",
-        "rank_score": 1.42,
-        "measured_near_best_bonus": 0.28,
-        "alternate_surface_bonus": 0.24,
-        "correctness_confidence_bonus": 0.18,
-        "risk_penalty": 0.14,
-        "formula": "rank_score + measured_near_best_bonus + alternate_surface_bonus + correctness_confidence_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.05,
-      "predicted_fail_risk": 0.22,
-      "ranking_notes": [
-        "This stays second because it is the strongest correctness-proven alternate surface after the PTX winner.",
-        "It outranks any further PTX-local exploit because the user explicitly wants the search to leave the current micro-retime loop when the measured deltas collapse into noise.",
-        "It remains below dir_01 because its prior machine state was still plateau-like, so the expected headroom is smaller than the 256x128 structural probe."
-      ],
-      "stop_condition": "Stop if the sibling surface still reproduces the same plateau signature without any separation from the PTX winner, or if it drifts out of the 24.16-24.19 ms band while offering no clearer utilization advantage."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-      "mode": "restore",
-      "hypothesis": "Even under the new aggressive rule, the loop still needs an explicit recovery anchor. The exact PTX winner remains the best measured correct surface in the repo at 24.164272 ms. It should not be the first recommendation this round because that would just spend another loop budget slot re-anchoring the same plateau, but it still belongs in the diagnosis so the search can recover immediately if the structural probes lose cleanly.",
-      "expected_bottleneck": "No new bottleneck is being attacked here; this is the exact baseline recovery path back to the best measured correct surface.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1956-2060",
-        "src/kernels/bf16_gemm_v1.cu:2110-2127",
-        "src/kernels/bf16_gemm_v1.cu:156"
-      ],
-      "risk": "Low. This is the exact best measured surface and the safest way to erase a bad aggressive round.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "correctness pass rate across all 3 cases",
-        "hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers"
-      ],
-      "search_score_v1": 1.84,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v25",
-        "rank_score": 1.12,
-        "measured_win_bonus": 0.34,
-        "recovery_bonus": 0.44,
-        "risk_penalty": 0.06,
-        "formula": "rank_score + measured_win_bonus + recovery_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.01,
-      "predicted_fail_risk": 0.06,
-      "ranking_notes": [
-        "This stays in the set as the explicit safety valve after any aggressive branch miss.",
-        "It is intentionally not ranked first because round 25 should spend its budget on one real structural probe rather than another same-surface restore.",
-        "If dir_01 and dir_02 both fail to change the machine state, this becomes the immediate recovery action."
-      ],
-      "stop_condition": "Stop once the exact PTX winner surface is restored or if a remeasurement shows that it no longer reproduces the prior 24.16-24.18 ms band."
-    }
-  ],
-  "notes": "Round 25 intentionally overrides the frontier's current micro-family ordering. The plateaued PTX families are now treated as low-value noise-chasing, while the auxiliary 256x128 family is promoted as the best remaining structural probe after the half-panel closeout."
+  "selected_direction_id": null,
+  "selected_candidate_id": null,
+  "family_audit": [],
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

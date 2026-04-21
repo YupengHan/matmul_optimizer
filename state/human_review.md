@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 25/100` with `76` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 26/100` with `75` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_010737`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 25 intentionally overrides the frontier's current micro-family ordering. The plateaued PTX families are now treated as low-value noise-chasing, while the auxiliary 256x128 family is promoted as the best remaining structural probe after the half-panel closeout.`
-- dir_01: Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe | bottleneck: Hot-band CTA geometry, control amortization, and latency hiding on the wide 256x128 schedule family, not another PTX-local barrier or scoreboard seam on the already plateaued 128x128 winner surface.
-- dir_02: Restore The Grouped-Row Non-PTX 128x128 Sibling Surface | bottleneck: PTX-microkernel-specific control and export coupling on the current winner surface, while preserving the same broad 128x128 footprint and grouped-row locality.
-- dir_03: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: No new bottleneck is being attacked here; this is the exact baseline recovery path back to the best measured correct surface.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

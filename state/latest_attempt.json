@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_010737:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_010737:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_010737",
   "base_run_id": "20260421_010424_bf16_gemm_v1_f6d1219",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
   "mode": "explore",
-  "commit": null,
-  "commit_short": null,
+  "commit": "2d59c53bd4db8d90980c6e5a9a70f09c8dda482b",
+  "commit_short": "2d59c53",
   "subject": "node_c: round 25/100 implement dir_01 Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:10:53-07:00",
@@ -39,8 +39,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "2d59c53bd4db8d90980c6e5a9a70f09c8dda482b",
+    "commit_short": "2d59c53",
     "subject": "node_c: round 25/100 implement dir_01 Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
     "build_status": "PASS",
     "failure_mode": null,
@@ -62,16 +62,29 @@
     "deletions": 165
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260421_011200_bf16_gemm_v1_2d59c53",
+    "measurement_commit": "2d59c53bd4db8d90980c6e5a9a70f09c8dda482b",
+    "runtime_ms": 24.69068718,
+    "runtime_delta_ms": 0.5146713300000023,
+    "tflops": 29.44508658,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.23",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.80",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.21",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "9.74",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "31.44",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.57",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "6.35",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "3.77",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.23",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.33",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "regressed",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_011200_bf16_gemm_v1_2d59c53 for candidate diagnosis_20260421_010737:dir_01; transition_label=PASS_LOSS.",
+  "transition_label": "PASS_LOSS"
 }
