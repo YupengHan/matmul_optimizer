@@ -11,7 +11,16 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T22:57:14-07:00",
   "source_diagnosis_id": "diagnosis_20260420_225317",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "switch_default_hot_band_dispatch_to_non_ptx_128x128_sibling",
+  "semantic_delta_tags": [
+    "dispatch_switch",
+    "hot_band_default_route",
+    "reuse_existing_grouped_row_sibling"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:2084-2091"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
@@ -55,5 +64,5 @@
     "stop_condition": "Stop if the non-PTX sibling still trails the active PTX best by a clearly material margin without improving correctness or the stall mix enough to justify staying off the active PTX branch.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
