@@ -17,7 +17,7 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 - plateau counter: `4`
 - round loop: `round 4/10`
 - rounds remaining: `7`
-- notes: `Node A completed round 3/10. Run node_b to continue round 4/10.`
+- notes: `Restore-base reset the implementation surface to run_id=20260420_235922_bf16_gemm_v1_489574e.`
 
 ## Latest measured custom run
 
@@ -49,5 +49,5 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 - CUTLASS median runtime: `25.917889 ms`
 - current best custom gap: `-1.753616 ms`, `0.932340x` of CUTLASS runtime (faster)
-- cuBLAS median runtime: `22.289920 ms`
-- current best custom gap vs cuBLAS: `1.874352 ms`, `1.084090x` of cuBLAS runtime (slower)
+- cuBLAS median runtime: `22.000000 ms`
+- current best custom gap vs cuBLAS: `2.164272 ms`, `1.098376x` of cuBLAS runtime (slower)

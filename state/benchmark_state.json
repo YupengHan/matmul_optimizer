@@ -24,19 +24,19 @@
     "ncu_summary_json": "state/latest_ncu_summary.json",
     "updated_at": "2026-04-20T23:59:28-07:00"
   },
-  "updated_at": "2026-04-21T13:30:57-07:00",
+  "updated_at": "2026-04-21T15:05:36-07:00",
   "cublas_baseline": {
-    "run_id": "20260421_133046_cublas_ref_v4_lt_best",
-    "run_dir": "runs/20260421_133046_cublas_ref_v4_lt_best",
-    "kernel_tag": "cublas_ref_v4_lt_best",
-    "median_runtime_ms": 22.28991985,
-    "tflops": 32.61651125,
+    "run_id": "20260421_150524_cublas_ref_clean_post_cleanup",
+    "run_dir": "runs/20260421_150524_cublas_ref_clean_post_cleanup",
+    "kernel_tag": "cublas_ref_clean_post_cleanup",
+    "median_runtime_ms": 22,
+    "tflops": 33.04633735,
     "correctness_passed": true,
-    "summary_json": "runs/20260421_133046_cublas_ref_v4_lt_best/summary.json",
-    "ncu_summary_json": "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_summary.json",
-    "ncu_analysis_json": "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.json",
-    "ncu_analysis_md": "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md",
-    "ncu_rep_path": "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_profile.ncu-rep",
-    "updated_at": "2026-04-21T13:30:57-07:00"
+    "summary_json": "runs/20260421_150524_cublas_ref_clean_post_cleanup/summary.json",
+    "ncu_summary_json": "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_summary.json",
+    "ncu_analysis_json": "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.json",
+    "ncu_analysis_md": "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+    "ncu_rep_path": "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_profile.ncu-rep",
+    "updated_at": "2026-04-21T15:05:36-07:00"
   }
 }

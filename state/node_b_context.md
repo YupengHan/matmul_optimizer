@@ -31,10 +31,10 @@
 
         If the latest custom run does not suggest a clear next move, inspect the cuBLAS reference artifacts below to see how much hardware utilization the vendor library reaches on the same data.
 
-- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md`
-- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.json`
-- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_summary.json`
-- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_profile.ncu-rep`
+- `runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md`
+- `runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.json`
+- `runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_summary.json`
+- `runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_profile.ncu-rep`
 
         Use the structured summary first:
         - `bottleneck_classes` tells you which bottleneck family is currently dominant
