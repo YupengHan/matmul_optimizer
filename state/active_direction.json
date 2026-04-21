@@ -1,21 +1,59 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
+  "candidate_id": "diagnosis_20260421_002857:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+  "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+  "action_fingerprint": "restore_grouped_rows_8_ptx_consumer_ordering_surface",
+  "selection_priority": 2.3325,
+  "base_run_id": "20260421_002817_bf16_gemm_v1_a471728",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T00:30:27-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_002857",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
+    "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+    "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+    "action_fingerprint": "restore_grouped_rows_8_ptx_consumer_ordering_surface",
+    "mode": "restore",
+    "hypothesis": "Round 17 restored the PTX winner surface and pulled runtime back from 24.19086361 ms to 24.17296028 ms, with counters returning close to the prior PTX band: active warps rebounded to 16.63%, long-scoreboard tightened to 7.13%, and tensor activity rose to 48.41%. That means the restore family is absorbed again and the loop should stop spending rounds on re-anchoring. The best next move is now the strongest alternate PTX family kept alive from round_history: the grouped_rows=8 consumer-ordering surface. It preserves the PTX hot-band microkernel while materially changing CTA grouping and consumer locality, which makes it the cleanest next attempt to move beyond the current 24.17 plateau without reopening the already mixed control-path family first.",
+    "expected_bottleneck": "Grouped-row traversal and consumer-order locality on the PTX hot-band microkernel, not the already-restored prologue/refill seam on the grouped_rows=4 winner surface.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:153-156",
+      "src/kernels/bf16_gemm_v1.cu:1979-1993",
+      "src/kernels/bf16_gemm_v1.cu:2110-2117"
+    ],
+    "risk": "Moderate. This is an alternate PTX surface rather than the current default, but it is still the highest-confidence live family once restore is absorbed again.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime versus the 24.172960 ms restored run and the 24.164272 ms best-known run",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+      "correctness pass rate across all 3 cases"
+    ],
+    "search_score_v1": 2.18,
+    "score_breakdown": {
+      "policy_id": "manual_round100_node_b_v18",
+      "rank_score": 1.85,
+      "round_history_bonus": 0.25,
+      "alternate_ptx_surface_bonus": 0.25,
+      "queue_preservation_bonus": 0.2,
+      "risk_penalty": 0.37,
+      "formula": "rank_score + round_history_bonus + alternate_ptx_surface_bonus + queue_preservation_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.01,
+    "predicted_fail_risk": 0.39,
+    "ranking_notes": [
+      "This ranks first because restore is absorbed again and grouped_rows=8 is now the highest-value unabsorbed PTX family in the queue.",
+      "It preserves the PTX execution style while changing locality enough to be meaningfully different from the grouped_rows=4 winner branch.",
+      "It also respects the user's request to keep promising round_history states active in the live queue."
+    ],
+    "stop_condition": "Stop if the grouped_rows=8 restore remains materially behind the restored grouped_rows=4 PTX surface without producing a cleaner scheduler signature.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }

@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 18/100` with `83` rounds remaining
 
 ## Direction approval policy
@@ -15,16 +15,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_002857`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 18 treats the restore family as absorbed again: the source matches the PTX winner surface and runtime has returned to the 24.17 band. The next recommendation therefore moves to the strongest alternate live family, grouped_rows=8, while 256x128 pivot and the non-PTX 128x128 sibling remain in the diagnosis to preserve queue breadth after the search-policy reset.`
+- dir_01: Restore accepted grouped_rows=8 hot-band consumer ordering | bottleneck: Grouped-row traversal and consumer-order locality on the PTX hot-band microkernel, not the already-restored prologue/refill seam on the grouped_rows=4 winner surface.
+- dir_02: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: Geometry-level latency hiding and control amortization on the 256x128 hot-band path, not the current PTX control-path seam.
+- dir_03: Port grouped-row traversal into the non-PTX 128x128 sibling | bottleneck: CTA traversal and locality on the non-PTX 128x128 sibling surface rather than PTX microkernel control-path behavior.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
