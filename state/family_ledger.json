@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-21T00:51:05-07:00",
+  "updated_at": "2026-04-21T00:57:00-07:00",
   "families": {
     "legacy::retune_the_active_one_k_128x128_hot_band_copy_cadence": {
       "family_id": "legacy::retune_the_active_one_k_128x128_hot_band_copy_cadence",
@@ -171,9 +171,26 @@
       "last_attempt_id": "diagnosis_20260421_002857:dir_01",
       "last_registers_per_thread": null,
       "last_shared_mem_per_block_allocated": null
+    },
+    "historical::repair_the_256x128_half_panel_register_reuse_branch": {
+      "family_id": "historical::repair_the_256x128_half_panel_register_reuse_branch",
+      "wins": 0,
+      "flats": 0,
+      "losses": 0,
+      "fails": 1,
+      "last_transition_label": "CORRECTNESS_FAIL",
+      "freeze_status": "closed_negative",
+      "best_runtime_ms": null,
+      "best_run_id": null,
+      "last_result_run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
+      "last_result_runtime_ms": 29.81942368,
+      "last_candidate_id": "diagnosis_20260421_005324:dir_01",
+      "last_attempt_id": "diagnosis_20260421_005324:dir_01",
+      "last_registers_per_thread": null,
+      "last_shared_mem_per_block_allocated": null
     }
   },
   "notes": "Family-level attempt memory is empty until search transitions are recorded.",
-  "last_result_run_id": "20260421_005058_bf16_gemm_v1_910beff",
-  "last_transition_label": "PASS_WIN"
+  "last_result_run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
+  "last_transition_label": "CORRECTNESS_FAIL"
 }

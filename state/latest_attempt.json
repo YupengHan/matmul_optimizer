@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_005324:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_005324:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_005324",
   "base_run_id": "20260421_005058_bf16_gemm_v1_910beff",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Repair The 256x128 Half-Panel Register-Reuse Branch",
   "mode": "explore",
-  "commit": null,
-  "commit_short": null,
+  "commit": "0c534cb56c1dcf9b48171528ba70bb2028aef44e",
+  "commit_short": "0c534cb",
   "subject": "node_c: round 22/100 implement dir_01 Repair The 256x128 Half-Panel Register-Reuse Branch",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:55:36-07:00",
@@ -39,8 +39,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "0c534cb56c1dcf9b48171528ba70bb2028aef44e",
+    "commit_short": "0c534cb",
     "subject": "node_c: round 22/100 implement dir_01 Repair The 256x128 Half-Panel Register-Reuse Branch",
     "build_status": "PASS",
     "failure_mode": null,
@@ -62,16 +62,29 @@
     "deletions": 800
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
+    "run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
+    "measurement_commit": "0c534cb56c1dcf9b48171528ba70bb2028aef44e",
+    "runtime_ms": 29.81942368,
     "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "tflops": 24.3807335,
+    "correctness": false,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "43.84",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "43.29",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "61.83",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "19.93",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "36.51",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "32.92",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "21.27",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "0.62",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "8.91",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "0.78",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "correctness_failed",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_005653_bf16_gemm_v1_0c534cb for candidate diagnosis_20260421_005324:dir_01; transition_label=CORRECTNESS_FAIL.",
+  "transition_label": "CORRECTNESS_FAIL"
 }
