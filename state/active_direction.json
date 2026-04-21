@@ -11,7 +11,16 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T22:38:30-07:00",
   "source_diagnosis_id": "diagnosis_20260420_223553",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "hoist_ptx_export_row_base_and_quad_view_on_restored_ptx_surface",
+  "semantic_delta_tags": [
+    "hoist_ptx_export_row_base",
+    "reuse_ptx_export_quad_view_per_tile_row"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:925-945",
+    "src/kernels/bf16_gemm_v1.cu:1005-1054"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Apply Only A Minimal PTX Export Address Cleanup",
@@ -53,5 +62,5 @@
     "stop_condition": "Stop if export cleanup leaves runtime and the export-adjacent stall counters effectively unchanged after one bounded pass.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

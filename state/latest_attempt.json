@@ -1,90 +1,77 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260420_222929:dir_03",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260420_222929:dir_03",
-  "source_diagnosis_id": "diagnosis_20260420_222929",
-  "base_run_id": "20260420_222846_bf16_gemm_v1_8ba4496",
-  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "direction_id": "dir_03",
-  "direction_name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-  "mode": "restore",
-  "commit": "82c8e608fba26a9b0398984dd20ce199bb1d46f6",
-  "commit_short": "82c8e60",
-  "subject": "node_c: round 6/100 implement dir_03 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-  "selection_mode": "approved",
-  "selected_at": "2026-04-20T22:33:57-07:00",
+  "attempt_id": "diagnosis_20260420_223553:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260420_223553:dir_01",
+  "source_diagnosis_id": "diagnosis_20260420_223553",
+  "base_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
+  "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+  "subfamily_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+  "direction_id": "dir_01",
+  "direction_name": "Apply Only A Minimal PTX Export Address Cleanup",
+  "mode": "exploit",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 7/100 implement dir_01 Apply Only A Minimal PTX Export Address Cleanup",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T22:38:30-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260420_222846_bf16_gemm_v1_8ba4496",
-  "selection_score": 1.8,
-  "planned_action_fingerprint": "3587455924361acf",
-  "implemented_action_fingerprint": "restore_ptx_grouping_window_4_on_accepted_surface",
+  "source_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
+  "selection_score": 2.5,
+  "planned_action_fingerprint": "0a4f037bb055c349",
+  "implemented_action_fingerprint": "hoist_ptx_export_row_base_and_quad_view_on_restored_ptx_surface",
   "score_breakdown": {
-    "policy_id": "manual_round20_node_b_v6",
-    "rank_score": 1.0,
-    "historical_close_to_best_bonus": 0.45,
-    "family_coverage_bonus": 0.35,
-    "latest_locality_penalty": 0.1,
-    "formula": "rank_score + historical_close_to_best_bonus + family_coverage_bonus - latest_locality_penalty"
+    "policy_id": "manual_round100_node_b_v7",
+    "rank_score": 3.0,
+    "restored_surface_bonus": 0.2,
+    "bounded_scope_bonus": 0.15,
+    "risk_penalty": 1.05,
+    "formula": "rank_score + restored_surface_bonus + bounded_scope_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
-    "restore_ptx_grouped_rows_4",
-    "revert_b_first_prologue_to_accepted_surface"
+    "hoist_ptx_export_row_base",
+    "reuse_ptx_export_quad_view_per_tile_row"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:156",
-    "src/kernels/bf16_gemm_v1.cu:2009-2021"
+    "src/kernels/bf16_gemm_v1.cu:925-945",
+    "src/kernels/bf16_gemm_v1.cu:1005-1054"
   ],
   "implementation": {
-    "commit": "82c8e608fba26a9b0398984dd20ce199bb1d46f6",
-    "commit_short": "82c8e60",
-    "subject": "node_c: round 6/100 implement dir_03 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 7/100 implement dir_01 Apply Only A Minimal PTX Export Address Cleanup",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:156",
-      "src/kernels/bf16_gemm_v1.cu:2009-2021"
+      "src/kernels/bf16_gemm_v1.cu:925-945",
+      "src/kernels/bf16_gemm_v1.cu:1005-1054"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 5,
-      "deletions": 5
+      "insertions": 18,
+      "deletions": 17
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 5,
-    "deletions": 5
+    "insertions": 18,
+    "deletions": 17
   },
   "measurement": {
-    "run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
-    "measurement_commit": "82c8e608fba26a9b0398984dd20ce199bb1d46f6",
-    "runtime_ms": 24.18065643,
-    "runtime_delta_ms": -0.3543834700000019,
-    "tflops": 30.06615737,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.37",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.84",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.13",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.48",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.59",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.62",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.48",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.17",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.16",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.65",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "improved",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260420_223530_bf16_gemm_v1_82c8e60 for candidate diagnosis_20260420_222929:dir_03; transition_label=PASS_WIN.",
-  "transition_label": "PASS_WIN"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
