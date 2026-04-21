@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- candidate id: `diagnosis_20260421_000409:dir_01`
+- base run id: `20260421_000316_bf16_gemm_v1_c643816`
+- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
+- planned action fingerprint: `26b22d7f05ca7ff6`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_000409`
 - round loop: `round 14/100`
+- hypothesis: `Round 13 gave a strong negative result on the repaired PTX surface: swapping the future-tile refill from `B->A` to `A->B` regressed runtime from the round-12 best 24.16427231 ms to 24.48483181 ms, even though the dominant hot-band kernel stayed the same PTX microkernel. A direct source diff versus the current best commit `489574e` shows the semantic delta is only that one refill-order hunk at `src/kernels/bf16_gemm_v1.cu:2042-2053`. The counters also moved in the wrong direction for this family: long-scoreboard dropped sharply, but barrier jumped from 5.43% to 6.29% and total runtime got much worse. The immediate next move is therefore not another exploit on top of the bad state; it is to restore the current best PTX surface first so the loop can continue exploring from the real winner instead of compounding a known negative handoff order.`
+- expected bottleneck: `Known-negative handoff ordering on the active PTX hot-band loop, where the A-then-B future refill increases effective barrier cost enough to overwhelm any scoreboard reduction.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:2042-2053, src/kernels/bf16_gemm_v1.cu:2110-2117`
+- risk: `Low. The restore is narrowly bounded and the current source differs from the best-known PTX surface by essentially one scheduler hunk, so this is the cleanest way to recover a valid search anchor after the round-13 regression.`
+- metrics to re-check: `end-to-end median runtime versus the 24.164272 ms best-known PTX run, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, Kernel Name in ncu_details.csv for the dominant hot-band launch, hot-band gpu__time_duration.sum`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

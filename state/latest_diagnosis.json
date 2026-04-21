@@ -1,18 +1,145 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_000409",
+  "status": "completed",
+  "created_at": "2026-04-21T00:04:09-07:00",
   "source_run_id": "20260421_000316_bf16_gemm_v1_c643816",
   "source_run_dir": "runs/20260421_000316_bf16_gemm_v1_c643816",
   "source_summary_json": "runs/20260421_000316_bf16_gemm_v1_c643816/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_000409:dir_01",
   "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "action_fingerprint": "26b22d7f05ca7ff6",
+      "mode": "restore",
+      "hypothesis": "Round 13 gave a strong negative result on the repaired PTX surface: swapping the future-tile refill from `B->A` to `A->B` regressed runtime from the round-12 best 24.16427231 ms to 24.48483181 ms, even though the dominant hot-band kernel stayed the same PTX microkernel. A direct source diff versus the current best commit `489574e` shows the semantic delta is only that one refill-order hunk at `src/kernels/bf16_gemm_v1.cu:2042-2053`. The counters also moved in the wrong direction for this family: long-scoreboard dropped sharply, but barrier jumped from 5.43% to 6.29% and total runtime got much worse. The immediate next move is therefore not another exploit on top of the bad state; it is to restore the current best PTX surface first so the loop can continue exploring from the real winner instead of compounding a known negative handoff order.",
+      "expected_bottleneck": "Known-negative handoff ordering on the active PTX hot-band loop, where the A-then-B future refill increases effective barrier cost enough to overwhelm any scoreboard reduction.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2042-2053",
+        "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      ],
+      "risk": "Low. The restore is narrowly bounded and the current source differs from the best-known PTX surface by essentially one scheduler hunk, so this is the cleanest way to recover a valid search anchor after the round-13 regression.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164272 ms best-known PTX run",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "Kernel Name in ncu_details.csv for the dominant hot-band launch",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 2.55,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v14",
+        "rank_score": 2.0,
+        "single_hunk_restore_bonus": 0.35,
+        "measured_regression_recovery_bonus": 0.45,
+        "best_surface_bonus": 0.25,
+        "risk_penalty": 0.5,
+        "formula": "rank_score + single_hunk_restore_bonus + measured_regression_recovery_bonus + best_surface_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.28,
+      "predicted_fail_risk": 0.12,
+      "ranking_notes": [
+        "Round 13 is a clean falsification of the A-then-B handoff on the correct PTX surface, not a noisy flat result.",
+        "The source diff to the current best run is one bounded hunk, so restoring the best surface is cheaper and more defensible than layering another family onto a known-regressed state.",
+        "It ranks first because the loop should recover a valid search anchor before evaluating any other open family."
+      ],
+      "stop_condition": "Stop if restoring the best-known PTX handoff order fails to recover near the 24.164272 ms band, because that would imply the current state drift is wider than the visible one-hunk delta."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "action_fingerprint": "8e91e546243f09ff",
+      "mode": "exploit",
+      "hypothesis": "Once the loop is restored to the round-12 best PTX surface, the broad active-PTX control family remains the strongest open follow-on in the frontier. Round 13 did not invalidate this family; it invalidated one specific handoff sub-variant. The PTX branch still sits at only 16.63% active warps on the best run, and the control family still offers bounded room to reshape issue/consume behavior without abandoning the winning dispatch. It stays second because the immediate task is to restore the search anchor before attempting another exploit.",
+      "expected_bottleneck": "Residual PTX hot-band control-path overhead and consume-order friction on the restored one-K 128x128 PTX surface, beyond the already-closed A-then-B handoff variant.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:718-802",
+        "src/kernels/bf16_gemm_v1.cu:1954-2053",
+        "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      ],
+      "risk": "Moderate. The family still targets the real hot path, but previous sub-variants have mixed evidence, so another attempt must be materially different from both the B-first prologue and the now-rejected A-then-B handoff.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164272 ms best-known PTX run",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__occupancy_limit_registers",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 2.15,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v14",
+        "rank_score": 1.85,
+        "frontier_alignment_bonus": 0.2,
+        "active_surface_bonus": 0.2,
+        "recent_negative_subvariant_penalty": 0.1,
+        "formula": "rank_score + frontier_alignment_bonus + active_surface_bonus - recent_negative_subvariant_penalty"
+      },
+      "predicted_gain_ms": 0.01,
+      "predicted_fail_risk": 0.33,
+      "ranking_notes": [
+        "This is still the top open frontier family after removing the round-13 handoff sub-variant from consideration.",
+        "It stays below dir_01 because exploiting on top of a known-regressed state would contaminate the comparison; the best surface should be restored first.",
+        "Keeping it second preserves the most coherent active-PTX next move once the restore lands."
+      ],
+      "stop_condition": "Stop if the next control-path tweak replays the already-rejected A-then-B handoff or any other previously measured no-op sub-variant."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
+      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "action_fingerprint": "b2d12d979d34a9d3",
+      "mode": "restore",
+      "hypothesis": "The loop should still keep one alternate PTX surface from `round_history` alive in case the grouped_rows=4 branch saturates again after the restore. The grouped_rows=8 consumer-ordering family remains the strongest such fallback in the frontier. It is still a genuine current-source delta and a real alternate PTX locality regime, but it now ranks below both the restore and the active control family because round 12 proved the grouped_rows=4 PTX surface is still the best measured branch when its handoff order is correct.",
+      "expected_bottleneck": "Consumer-side ordering and grouped-row locality inside the PTX hot-band microkernel under the grouped_rows=8 regime.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:153-156",
+        "src/kernels/bf16_gemm_v1.cu:1983-1993",
+        "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      ],
+      "risk": "Moderate. This is an alternate branch reset onto a historically slower PTX surface, so it should only be used after the loop has recovered the current best grouped_rows=4 anchor.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164272 ms best-known PTX run",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band gpu__time_duration.sum",
+        "correctness pass rate across all 3 cases"
+      ],
+      "search_score_v1": 1.95,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v14",
+        "rank_score": 1.6,
+        "round_history_bonus": 0.2,
+        "alternate_surface_bonus": 0.25,
+        "best_surface_penalty": 0.1,
+        "formula": "rank_score + round_history_bonus + alternate_surface_bonus - best_surface_penalty"
+      },
+      "predicted_gain_ms": 0.008,
+      "predicted_fail_risk": 0.38,
+      "ranking_notes": [
+        "This stays in the top three because the user explicitly asked to keep promising round-history states alive in the live queue.",
+        "It ranks behind the restore and active control family because the current grouped_rows=4 PTX branch remains the overall winner when not distorted by the bad handoff order.",
+        "Keeping it third preserves one real alternate PTX locality branch without derailing the immediate recovery step."
+      ],
+      "stop_condition": "Stop if the grouped_rows=8 restore remains materially behind the recovered grouped_rows=4 PTX surface without showing a clearly better scheduler signature."
+    }
+  ],
+  "notes": "Round 14/100 audit: round 13 cleanly falsified the A-then-B PTX handoff retime on the correct PTX surface. The dominant kernel stayed `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<(int)452>`, but runtime regressed by 0.320559 ms and barrier rose from 5.43% to 6.29%. The current source differs from the round-12 best PTX surface by essentially one refill-order hunk, so the next action should be to restore that best surface first, then continue active-PTX exploration from a valid anchor while keeping the grouped_rows=8 round-history fallback alive."
 }
