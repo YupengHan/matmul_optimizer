@@ -331,6 +331,10 @@ At the moment, the official benchmark snapshot in the repo is:
 
   Use the accumulated heuristic dataset to test RL-style improvements on top of the current A*-like family frontier: learn better family priors, reopen budgets, and exploration-vs-exploitation scheduling instead of relying only on hand-set heuristics.
 
+- [ ] TODO - make workflow state transitions deterministic scripts instead of agent judgments
+
+  The current agent flow still leaves part of the execution path in the hands of the model. One identified failure mode was that the agent received the correct Markdown instructions but still got stuck because of model drift under long context / annealing pressure. The fix should be structural: keep diagnosis and implementation in the agent, but move node dispatch and state-transition control into deterministic repo-local scripts so the loop cannot stall just because the model misread or mis-prioritized a long prompt.
+
 ## Document Map
 
 This README is intentionally public-facing now. The workflow-specific and Codex-specific operating details live in narrower docs:
