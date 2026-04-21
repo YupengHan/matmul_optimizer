@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_160001_bf16_gemm_v1_d7576a6e`
-- run dir: `runs/20260421_160001_bf16_gemm_v1_d7576a6e`
-- kernel tag: `bf16_gemm_v1_d7576a6e`
-- round label: `round 8/10`
+- run id: `20260421_160237_bf16_gemm_v1_404e8c44`
+- run dir: `runs/20260421_160237_bf16_gemm_v1_404e8c44`
+- kernel tag: `bf16_gemm_v1_404e8c44`
+- round label: `round 9/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.730480 ms`
-- p10 runtime: `26.471917 ms`
-- p90 runtime: `27.987863 ms`
-- TFLOP/s: `27.198143 TFLOP/s`
-- previous run id: `20260421_155533_bf16_gemm_v1_83acaae4`
-- runtime delta vs previous measured run: `+0.189425 ms`
-- TFLOP/s delta vs previous measured run: `-0.194114 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.996288 ms`
+- p10 runtime: `25.873305 ms`
+- p90 runtime: `27.359745 ms`
+- TFLOP/s: `27.966278 TFLOP/s`
+- previous run id: `20260421_160001_bf16_gemm_v1_d7576a6e`
+- runtime delta vs previous measured run: `-0.734192 ms`
+- TFLOP/s delta vs previous measured run: `+0.768135 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim The Grouped-Row 128x128 Sibling Export Scratch To Single Stage`
+- implemented direction name: `Retime The Non-PTX 3-CTA Barrier/Handoff Seam`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_160001_bf16_gemm_v1_d7576a6e/summary.json`
-- ncu analysis path: `runs/20260421_160001_bf16_gemm_v1_d7576a6e/ncu_analysis.json`
-- measured commit: `d7576a6e1833a4cb5fc914851ee6b2512930cb04`
+- raw summary json: `runs/20260421_160237_bf16_gemm_v1_404e8c44/summary.json`
+- ncu analysis path: `runs/20260421_160237_bf16_gemm_v1_404e8c44/ncu_analysis.json`
+- measured commit: `404e8c4448f47b60c80ebe2bd49a351d12b73535`
 - new best custom: `no`
-- generated at: `2026-04-21T16:00:12-07:00`
+- generated at: `2026-04-21T16:02:48-07:00`

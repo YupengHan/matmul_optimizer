@@ -1,98 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
-  "candidate_id": "diagnosis_20260421_160019:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime",
-  "subfamily_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime::future_tile_refill_order",
-  "action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax",
-  "selection_priority": 1.0425,
-  "base_run_id": "20260421_160001_bf16_gemm_v1_d7576a6e",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T16:02:13-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_160019",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
-    "family_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime",
-    "subfamily_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime::future_tile_refill_order",
-    "action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax",
-    "mode": "explore",
-    "hypothesis": "The export-scratch trim proved that the non-PTX 3-CTA surface is still losing for one main reason: barrier remains stuck above 11%. The registers, active warps, and long-scoreboard metrics are already where the occupancy family wanted them. The best last-chance salvage is therefore a scheduler-seam retime on the current non-PTX surface that changes the future-tile refill order without touching launch bounds, tile shape, or export scratch depth.",
-    "expected_bottleneck": "Barrier cadence and future-tile refill ordering on the non-PTX 3-CTA grouped-row hot-band kernel.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1928-1940"
-    ],
-    "risk": "Moderate. This is a tiny same-surface edit, but it may move stalls without recovering enough runtime to matter.",
-    "metrics_to_recheck": [
-      "correctness on all 3 dataset cases before trusting runtime",
-      "median runtime versus the 24.195072 ms accepted base",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "gpu__time_duration.sum"
-    ],
-    "search_score_v1": 0.89,
-    "score_breakdown": {
-      "policy_id": "manual_round09_last_nonptx_salvage_v1",
-      "headroom_score": 0.22,
-      "evidence_score": 0.31,
-      "implementation_bonus": 0.41,
-      "risk_penalty": -0.05,
-      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.3,
-    "predicted_fail_risk": 0.39,
-    "ranking_notes": [
-      "This is the highest-information next move because it isolates the last untested cause of the non-PTX 3-CTA regression.",
-      "If it fails, the family can be closed with confidence instead of staying half-alive on frontier."
-    ],
-    "stop_condition": "Stop and close this family if barrier stays near 11% or runtime remains materially slower than the accepted base after the seam retime.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "runs/20260421_160001_bf16_gemm_v1_d7576a6e/ncu_analysis.md",
-      "master:state/diagnosis_history.jsonl"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput"
-      }
-    ],
-    "expected_local_changes": [
-      "Keep the current grouped-row non-PTX 128x128 sibling surface with 3-CTA residency.",
-      "Retime the future-stage refill order around the barrier seam without changing launch bounds, tile shape, or export scratch depth."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "non_increasing"
-      },
-      {
-        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "guardrail": "non_decreasing"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

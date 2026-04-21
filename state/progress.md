@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `d7576a6e1833a4cb5fc914851ee6b2512930cb04`
-- plateau counter: `13`
-- round loop: `round 9/10`
-- rounds remaining: `2`
-- notes: `Node C build succeeded for round 9/10. Node A will now measure the new code path.`
+- latest measured commit: `404e8c4448f47b60c80ebe2bd49a351d12b73535`
+- plateau counter: `14`
+- round loop: `round 10/10`
+- rounds remaining: `1`
+- notes: `Node A completed round 9/10. Run node_b to continue round 10/10.`
 
 ## Latest measured custom run
 
-- run id: `20260421_160001_bf16_gemm_v1_d7576a6e`
-- run dir: `runs/20260421_160001_bf16_gemm_v1_d7576a6e`
+- run id: `20260421_160237_bf16_gemm_v1_404e8c44`
+- run dir: `runs/20260421_160237_bf16_gemm_v1_404e8c44`
 - correctness: `PASS`
-- median runtime: `26.730480 ms`
-- TFLOP/s: `27.198143 TFLOP/s`
+- median runtime: `25.996288 ms`
+- TFLOP/s: `27.966278 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_160019`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human guidance review for round 9: the current accepted-base family has now cleanly isolated the synchronization problem. That means the right next move is not another occupancy or export-lifetime theory; it is one final barrier/handoff retime on the current non-PTX 3-CTA surface. If that fails, the family should be closed and the final round can move to the broader 256x128 branch.`
-- dir_01: Retime The Non-PTX 3-CTA Barrier/Handoff Seam | bottleneck: Barrier cadence and future-tile refill ordering on the non-PTX 3-CTA grouped-row hot-band kernel.
-- dir_02: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra scratch growth.
-- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
