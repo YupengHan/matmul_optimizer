@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "candidate_selected",
+  "status": "measured_transition_recorded",
   "search_mode": "heuristic_mvp",
   "search_iteration": 38,
   "accepted_base_run_id": "20260421_014255_bf16_gemm_v1_a16425e",
@@ -8,9 +8,9 @@
   "accepted_base_runtime_ms": 24.17100811,
   "active_frontier_id": "frontier:global",
   "active_candidate_set_id": "candidate_set:diagnosis_20260421_073952",
-  "active_candidate_id": "diagnosis_20260421_073952:dir_01",
+  "active_candidate_id": null,
   "latest_attempt_id": "diagnosis_20260421_073952:dir_01",
-  "last_transition_type": "node_c_finalize",
+  "last_transition_type": "node_a_measurement",
   "selection_policy": {
     "policy_id": "heuristic_v1_fallback",
     "allow_restore_base": true,
@@ -25,7 +25,7 @@
   "closed_jsonl": "state/search_closed.jsonl",
   "family_ledger_json": "state/family_ledger.json",
   "latest_attempt_json": "state/latest_attempt.json",
-  "notes": "Latest implementation edge recorded for diagnosis_20260421_073952:dir_01.",
+  "notes": "Node A recorded transition_label=PASS_LOSS for candidate diagnosis_20260421_073952:dir_01.",
   "last_selected_candidate_id": "diagnosis_20260421_073952:dir_01",
   "last_selected_direction_id": "dir_01",
   "last_selected_selection_mode": "recommended",
@@ -36,11 +36,11 @@
   "best_known_run_id": "20260420_235922_bf16_gemm_v1_489574e",
   "best_known_measured_commit": "489574ed5013268dbb79c634450d9a60155a294a",
   "best_known_runtime_ms": 24.16427231,
-  "last_result_run_id": "20260421_014255_bf16_gemm_v1_a16425e",
-  "last_result_measured_commit": "a16425ea78ba002017dddae0549ba500472fb9e5",
-  "last_result_runtime_ms": 24.17100811,
+  "last_result_run_id": "20260421_074540_bf16_gemm_v1_0bd16be",
+  "last_result_measured_commit": "0bd16bee053d0ce6cc862e8dfeef452d34c35bad",
+  "last_result_runtime_ms": 24.33996868,
   "last_result_correctness_passed": true,
   "last_result_registers_per_thread": null,
   "last_result_shared_mem_per_block_allocated": null,
-  "last_transition_label": "PASS_WIN"
+  "last_transition_label": "PASS_LOSS"
 }
