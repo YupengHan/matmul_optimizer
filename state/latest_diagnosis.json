@@ -1,79 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_193146",
-  "status": "completed",
-  "created_at": "2026-04-20T19:31:46-07:00",
-  "source_run_id": "20260420_193054_bf16_gemm_v1_acb0976",
-  "source_run_dir": "runs/20260420_193054_bf16_gemm_v1_acb0976",
-  "source_summary_json": "runs/20260420_193054_bf16_gemm_v1_acb0976/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_193817_bf16_gemm_v1_0a37b0b",
+  "source_run_dir": "runs/20260420_193817_bf16_gemm_v1_0a37b0b",
+  "source_summary_json": "runs/20260420_193817_bf16_gemm_v1_0a37b0b/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Re-Lock The Accepted 128x128 Default Dispatch",
-      "hypothesis": "Round 13 has no extra human idea family in `state/human_review.md` beyond the approval gate, so the first audit step is to accept or reject the latest measured family directly. The latest run rejected the full-hot-band `64x384` family as the next default move: it regressed to `34.016768 ms`, and its main kernel became DRAM-heavy (`55.57%` DRAM throughput, `36.11%` tensor activity, `16.81%` barrier stalls, `172` regs/thread, register cap `1`). The restored accepted base `1181247` measured `24.422464 ms` on the `128x128` hot-band kernel with much lower DRAM pressure (`12.84%`) and barrier stalls (`5.58%`). The current source snapshot is already back on that accepted-base branch, so the best next move is to make that `128x128 + residual 64x384 + 64x96 tail` dispatch reproducible in code instead of letting the negative `64x384` full-band route stay reachable as the effective benchmark default.",
-      "expected_bottleneck": "Dispatch/configuration drift into the negative full-band `64x384` path, which turns the hot kernel from a compute-balanced `128x128` branch into a DRAM- and barrier-heavy main kernel.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1181-1243",
-        "src/kernels/bf16_gemm_v1.cu:1842-1950",
-        "src/kernels/bf16_gemm_v1.cu:2091-2137"
-      ],
-      "risk": "Low to moderate. This is the safest high-upside move, but if the bad launch came from an intentional benchmark override rather than accidental drift, locking dispatch more tightly can hide a side-path the supervisor still wants to test explicitly.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the `24.422464 ms` accepted base",
-        "which kernels appear in `runs/.../ncu_metrics.csv` for the fixed-shape run",
-        "hot-band `dram__throughput.avg.pct_of_peak_sustained_elapsed`",
-        "hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`",
-        "hot-band `launch__registers_per_thread` and `launch__occupancy_limit_registers`"
-      ],
-      "stop_condition": "Stop if the restored accepted-base dispatch is already reproducible without any code change, or if re-locking dispatch still fails to recover close to the `24.422464 ms` accepted-base performance."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Activate The Dormant 128x128x32 Hot-Band Pipeline",
-      "hypothesis": "With the human-review queue supplying no competing family this round, the next accepted optimization family after restoring dispatch discipline is to stay on the accepted `128x128` geometry and change only stage cadence. The source already contains a dormant `128x128x32` hot-band kernel that batches two K16 slices per stage. That is materially different from the rejected full-band `64x384` route: it preserves the accepted grouped-row `128x128` hot-band tiling that previously delivered `24.422464 ms`, but re-tests whether a K32 cadence can shave synchronization and staging overhead without reopening the broad tile-width sweep that just failed.",
-      "expected_bottleneck": "Hot-band stage cadence and synchronization on the accepted `128x128` branch, not the full-band tile-routing family that just regressed.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:148-156",
-        "src/kernels/bf16_gemm_v1.cu:1685-1840",
-        "src/kernels/bf16_gemm_v1.cu:2091-2137"
-      ],
-      "risk": "Moderate to high. The `128x128x32` kernel is dormant, so shared-memory footprint, occupancy, or correctness can regress before any stage-cadence gain appears.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the `24.422464 ms` accepted base",
-        "hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`",
-        "hot-band `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`",
-        "hot-band `launch__shared_mem_per_block_allocated`",
-        "hot-band `launch__occupancy_limit_shared_mem` and `launch__occupancy_limit_registers`"
-      ],
-      "stop_condition": "Stop if enabling the `128x128x32` branch raises shared-memory or occupancy limits without a compensating runtime win on the restored accepted-base path."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "If 64x384 Returns, Shrink Its Live Set Instead Of Reusing The Flat Sweep",
-      "hypothesis": "The latest evidence does not support keeping the sweep-backed full-band `64x384` path as the default, but it does explain how that family would need to change if it is ever revisited. The negative run shows the full-grid `64x384` main kernel is simultaneously register-limited and memory-heavy (`172` regs/thread, occupancy cap `1`, `55.57%` DRAM throughput, `34.74%` LSU wavefront pressure) while tensor activity falls to `36.11%`. That suggests the outer `384` width is carrying too much B-slab and accumulator state live per CTA. A tertiary salvage path is therefore to keep the CTA-count advantage only if the internal `384` loop is broken into smaller live-set chunks or otherwise staged more narrowly, rather than reusing the flat sweep result unchanged.",
-      "expected_bottleneck": "Excess live B/accumulator state and memory pressure inside the peeled `64x384` hot-band kernel, not the tail kernel or the accepted `128x128` branch.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:28-63",
-        "src/kernels/bf16_gemm_v1.cu:1423-1567",
-        "src/kernels/bf16_gemm_v1.cu:1150-1162"
-      ],
-      "risk": "High. This is broad surgery on the just-proven-negative family, and it can easily consume a round without recovering the `24.422464 ms` accepted-base result.",
-      "metrics_to_recheck": [
-        "full-band `64x384` main-kernel `launch__registers_per_thread`",
-        "full-band `64x384` main-kernel `dram__throughput.avg.pct_of_peak_sustained_elapsed`",
-        "full-band `64x384` main-kernel `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
-        "full-band `64x384` main-kernel `l1tex__data_pipe_lsu_wavefronts.avg.pct_of_peak_sustained_elapsed`",
-        "end-to-end median runtime if that family is re-enabled explicitly"
-      ],
-      "stop_condition": "Stop if a narrower-live-set `64x384` variant does not materially reduce DRAM pressure or register pressure on the main kernel after the first implementation pass."
-    }
-  ],
-  "notes": "Round 13/50 human-review audit: `state/human_review.md` currently contributes only the approval/selection gate and no extra user-authored idea family, so the diagnosis must explicitly accept, defer, or reject families from measured evidence alone. Rejected as the primary family for this round: the sweep-backed full-hot-band `64x384` route, because the latest run `20260420_193054_bf16_gemm_v1_acb0976` regressed to `34.016768 ms` and its main kernel shifted to `55.57%` DRAM throughput with `16.81%` barrier stalls, versus the accepted `1181247` base at `24.422464 ms` whose dominant `128x128` hot-band kernel sat at `12.84%` DRAM and `5.58%` barrier. Accepted for the next move: keep the restored accepted-base `128x128` hot-band family as the primary branch and make that dispatch reproducible. Deferred: tail-only cleanup, because the latest failure is dominated by the full-band main kernel rather than the `64x96` tail. Tertiary only: salvage the `64x384` family with a smaller internal live set if the restored-base branch later stalls."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

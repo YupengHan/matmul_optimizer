@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_193054_bf16_gemm_v1_acb0976`
-- run dir: `runs/20260420_193054_bf16_gemm_v1_acb0976`
-- kernel tag: `bf16_gemm_v1_acb0976`
-- round label: `round 12/50`
+- run id: `20260420_193817_bf16_gemm_v1_0a37b0b`
+- run dir: `runs/20260420_193817_bf16_gemm_v1_0a37b0b`
+- kernel tag: `bf16_gemm_v1_0a37b0b`
+- round label: `round 13/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `34.016768 ms`
-- p10 runtime: `33.748993 ms`
-- p90 runtime: `35.685459 ms`
-- TFLOP/s: `21.372384 TFLOP/s`
-- previous run id: `20260420_191909_bf16_gemm_v1_00b6a0a`
-- runtime delta vs previous measured run: `+8.637456 ms`
-- TFLOP/s delta vs previous measured run: `-7.273760 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.504256 ms`
+- p10 runtime: `25.037618 ms`
+- p90 runtime: `26.445210 ms`
+- TFLOP/s: `28.505808 TFLOP/s`
+- previous run id: `20260420_193054_bf16_gemm_v1_acb0976`
+- runtime delta vs previous measured run: `-8.512511 ms`
+- TFLOP/s delta vs previous measured run: `+7.133423 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore Sweep-Backed 64x384 Full Hot Band`
+- implemented direction name: `Re-Lock The Accepted 128x128 Default Dispatch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_193054_bf16_gemm_v1_acb0976/summary.json`
-- measured commit: `acb0976073afb9169746f4b08de037a4b77d386c`
+- raw summary json: `runs/20260420_193817_bf16_gemm_v1_0a37b0b/summary.json`
+- measured commit: `0a37b0bf9d796f268c056ce6bbdb5424f9f7e25f`
 - new best custom: `no`
-- generated at: `2026-04-20T19:31:02-07:00`
+- generated at: `2026-04-20T19:38:24-07:00`
