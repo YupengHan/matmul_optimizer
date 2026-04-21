@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `bb3fc522e8e54b6da3644845bce77f2182f5f41c`
-- plateau counter: `8`
-- round loop: `round 1/20`
-- rounds remaining: `20`
-- notes: `Node C build succeeded for round 1/20. Node A will now measure the new code path.`
+- latest measured commit: `0893f2c709f4c3d8d592b75fb4df066f13a5bafa`
+- plateau counter: `0`
+- round loop: `round 2/20`
+- rounds remaining: `19`
+- notes: `Node A completed round 1/20. Run node_b to continue round 2/20.`
 
 ## Latest measured custom run
 
-- run id: `20260420_205720_bf16_gemm_v1_bb3fc52`
-- run dir: `runs/20260420_205720_bf16_gemm_v1_bb3fc52`
+- run id: `20260420_220130_bf16_gemm_v1_0893f2c`
+- run dir: `runs/20260420_220130_bf16_gemm_v1_0893f2c`
 - correctness: `PASS`
-- median runtime: `25.381776 ms`
-- TFLOP/s: `28.643363 TFLOP/s`
+- median runtime: `24.419329 ms`
+- TFLOP/s: `29.772294 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_215833`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 1/20 human-review audit: `state/human_review.md` still contributes only the approval gate and the exactly-one-direction rule, with no extra user-authored family to prioritize. The just-measured round spent its budget on an in-family retune of the active one-K 128x128 copy cadence, and node_a measured that branch slightly slower at 25.381776 ms than the 25.325055 ms accepted base. That is enough evidence to step away from the same immediate family for the next round. Accepted as the primary family for this diagnosis is the PTX one-K 128x128 control branch, because it preserves the current hot-band geometry and split while testing a different control/export path that already produced a nearby 25.379312 ms run. Deferred fallback families are the existing 256x128 pivot hot-band kernel and a light grouped-CTA traversal retune on the current 128x128 grid. Rejected for this round are reopening the two-K 128x128x32 stage-deepening path and the stale full-band 64x384 sweep-backed route.`
-- dir_01: Reopen The PTX One-K 128x128 Hot-Band Control Branch | bottleneck: Hot-band inner-loop control and export overhead in the standard one-K 128x128 path, rather than the peeled 64x384 residual rows or the 64x96 tail.
-- dir_02: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: CTA geometry and block-count overhead on the hot-band region, rather than a pure one-K copy-cadence problem.
-- dir_03: Retune Hot-Band CTA Traversal On The 128x128 Grid | bottleneck: Inter-CTA locality and block traversal efficiency on the hot-band grid under register-limited low occupancy.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-1.495424 ms`, `0.942301x` slower than CUTLASS
+- current best custom gap: `-1.498560 ms`, `0.942180x` slower than CUTLASS

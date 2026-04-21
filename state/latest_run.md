@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_205720_bf16_gemm_v1_bb3fc52`
-- run dir: `runs/20260420_205720_bf16_gemm_v1_bb3fc52`
-- kernel tag: `bf16_gemm_v1_bb3fc52`
-- round label: `round 1/1`
+- run id: `20260420_220130_bf16_gemm_v1_0893f2c`
+- run dir: `runs/20260420_220130_bf16_gemm_v1_0893f2c`
+- kernel tag: `bf16_gemm_v1_0893f2c`
+- round label: `round 1/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.381776 ms`
-- p10 runtime: `24.892698 ms`
-- p90 runtime: `26.327552 ms`
-- TFLOP/s: `28.643363 TFLOP/s`
-- previous run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
-- runtime delta vs previous measured run: `+0.056721 ms`
-- TFLOP/s delta vs previous measured run: `-0.064153 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.419329 ms`
+- p10 runtime: `24.396479 ms`
+- p90 runtime: `25.151796 ms`
+- TFLOP/s: `29.772294 TFLOP/s`
+- previous run id: `20260420_205720_bf16_gemm_v1_bb3fc52`
+- runtime delta vs previous measured run: `-0.962447 ms`
+- TFLOP/s delta vs previous measured run: `+1.128930 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune The Active One-K 128x128 Hot-Band Copy Cadence`
+- implemented direction name: `Reopen The PTX One-K 128x128 Hot-Band Control Branch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_205720_bf16_gemm_v1_bb3fc52/summary.json`
-- measured commit: `bb3fc522e8e54b6da3644845bce77f2182f5f41c`
-- new best custom: `no`
-- generated at: `2026-04-20T20:57:27-07:00`
+- raw summary json: `runs/20260420_220130_bf16_gemm_v1_0893f2c/summary.json`
+- measured commit: `0893f2c709f4c3d8d592b75fb4df066f13a5bafa`
+- new best custom: `yes`
+- generated at: `2026-04-20T22:01:38-07:00`
