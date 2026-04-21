@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `342b1c5e41fb67ca4f7d1bc26a811a491ec7c3cf`
 - plateau counter: `93`
 - round loop: `round 2/100`
 - rounds remaining: `99`
-- notes: `Node A completed round 1/100. Run node_b to continue round 2/100.`
+- notes: `Node C is ready to implement diagnosis_20260421_110945:dir_01 via recommended selection for round 2/100.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_110945`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 2 diagnosis prioritizes recovery after the 256x128 probe regressed badly while only partially solving the original register hotspot.`
+- dir_01: Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe | bottleneck: Recovery to the known PTX plateau before any further latency-hiding or barrier experiment is attempted
+- dir_02: Recover the PTX baseline, then trim live control state before retrying geometry | bottleneck: occupancy_latency_hiding_issue on the accepted PTX hot-band path, with barrier as a secondary seam
+- dir_03: If 256x128 is revisited, pivot from register shaving to barrier and short-scoreboard cleanup | bottleneck: synchronization_barrier_issue and short_scoreboard pressure inside the 256x128 pivot after the register budget has already been reduced
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

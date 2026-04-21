@@ -2,15 +2,15 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_105134_bf16_gemm_v1_8dcab81",
-  "source_measured_commit": "8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f",
-  "source_diagnosis_id": "diagnosis_20260421_105526",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_105526",
+  "source_run_id": "20260421_110929_bf16_gemm_v1_342b1c5",
+  "source_measured_commit": "342b1c5e41fb67ca4f7d1bc26a811a491ec7c3cf",
+  "source_diagnosis_id": "diagnosis_20260421_110945",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_110945",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_105526:dir_01 closed via pass_loss after selection.",
+  "selected_candidate_id": "diagnosis_20260421_110945:dir_01",
+  "selection_reason": "selected_via_recommended",
+  "selection_summary": "Selected diagnosis_20260421_110945:dir_01 -> dir_01 via mode=recommended.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -7345,7 +7345,7 @@
       "target_hotspots": [],
       "expected_local_changes": [],
       "guardrail_metrics": [],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 34,
       "selection_count": 0,
       "reopen_count": 0,
@@ -7361,9 +7361,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 2.1975,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     },
@@ -22698,7 +22698,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.105,
+      "family_representative_score": 2.075,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -22768,7 +22768,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 1.91,
+      "family_representative_score": 1.88,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -22903,8 +22903,8 @@
       "last_result_runtime_ms": 30.16857624,
       "last_runtime_delta_ms": 5.981616020000001,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T11:09:37-07:00",
-      "last_closed_search_iteration": 106,
+      "last_closed_at": "2026-04-21T11:12:43-07:00",
+      "last_closed_search_iteration": 107,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -23048,7 +23048,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.3325,
+      "family_representative_score": 2.3025,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -23188,14 +23188,412 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.2175,
+      "family_representative_score": 2.1875,
       "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_110945:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_110945",
+      "base_run_id": "20260421_110929_bf16_gemm_v1_342b1c5",
+      "base_measured_commit": "342b1c5e41fb67ca4f7d1bc26a811a491ec7c3cf",
+      "base_runtime_ms": 30.16857624,
+      "direction_id": "dir_01",
+      "direction_name": "Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
+      "action_fingerprint": "restore_best_measured_ptx_surface_after_failed_256x128_probe",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "restore",
+      "priority": 2.72,
+      "search_score_v1": 2.72,
+      "score_breakdown": {
+        "policy_id": "rich_ncu_recovery_v1",
+        "recovery_bonus": 1.45,
+        "measured_regression_bonus": 0.95,
+        "low_fail_risk_bonus": 0.2,
+        "formula": "recovery_bonus + measured_regression_bonus + low_fail_risk_bonus + baseline_family_credit"
+      },
+      "predicted_gain_ms": 5.7,
+      "predicted_fail_risk": 0.06,
+      "ranking_notes": [
+        "This is recommended because the current surface is too far off the accepted base to support another meaningful experiment.",
+        "The rich NCU deltas make the restore argument stronger, not weaker: registers improved but throughput and barrier behavior regressed badly.",
+        "Treat the restored PTX surface as a recovery checkpoint, not as a new win."
+      ],
+      "hypothesis": "The 256x128 pivot probe achieved the intended register drop but still ran at 30.168576 ms because barrier and short-scoreboard stalls dominated. The correct next step is to restore the accepted PTX hot-band surface immediately so the loop can continue from a sane baseline instead of iterating on a +5.98 ms regression.",
+      "expected_bottleneck": "Recovery to the known PTX plateau before any further latency-hiding or barrier experiment is attempted",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:685 (compact 256x128-only B-fragment helper)",
+        "src/kernels/bf16_gemm_v1.cu:1668 (256x128 compact accumulate call site)",
+        "src/kernels/bf16_gemm_v1.cu:2130 (fixed hot-band dispatch route)"
+      ],
+      "risk": "Low. This is a bounded recovery revert back to the accepted PTX surface, not a new optimization hypothesis.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the change starts widening beyond a bounded restore or if it fails to return the hot band to the accepted PTX dispatch path.",
+      "evidence_refs": [
+        "state/node_b_context.md",
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_110929_bf16_gemm_v1_342b1c5/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 167.0,
+          "importance_score": 172.0,
+          "explanation": "Registers improved, but the probe still regressed overall throughput."
+        },
+        {
+          "hotspot_id": "stall::barrier",
+          "scope_type": "stall",
+          "scope_name": "barrier",
+          "location": "256x128 steady-state handoff",
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_value": 8.32,
+          "importance_score": 8.32,
+          "explanation": "Barrier stalls became the dominant issue on the probed surface."
+        },
+        {
+          "hotspot_id": "stall::short_scoreboard",
+          "scope_type": "stall",
+          "scope_name": "short_scoreboard",
+          "location": "256x128 shared / fragment handoff",
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "metric_value": 6.77,
+          "importance_score": 6.77,
+          "explanation": "Short-scoreboard stalls rose sharply versus the accepted PTX baseline."
+        }
+      ],
+      "expected_local_changes": [
+        "Route the hot band back to the accepted PTX 128x128 microkernel.",
+        "Remove or park the compact 256x128 probe path from the active dispatch.",
+        "Keep the recovery diff narrow enough that the next round can remeasure a clean baseline."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "median_runtime_ms",
+          "current_value": 30.16857624,
+          "guardrail": "strictly_decreasing",
+          "reason": "The current probe is materially regressed and must recover before forward search resumes."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "current_value": 8.32,
+          "guardrail": "non_increasing",
+          "reason": "Barrier stalls jumped on the failed probe and should come back down after recovery."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "current_value": 6.77,
+          "guardrail": "non_increasing",
+          "reason": "Short-scoreboard stalls are part of the current local failure mode."
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 107,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T11:12:43-07:00",
+      "last_selected_selection_mode": "recommended",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 2.955,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_110945:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_110945",
+      "base_run_id": "20260421_110929_bf16_gemm_v1_342b1c5",
+      "base_measured_commit": "342b1c5e41fb67ca4f7d1bc26a811a491ec7c3cf",
+      "base_runtime_ms": 30.16857624,
+      "direction_id": "dir_02",
+      "direction_name": "Recover the PTX baseline, then trim live control state before retrying geometry",
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "action_fingerprint": "recover_ptx_baseline_then_trim_live_control_state_after_256x128_probe",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "exploit",
+      "priority": 2.18,
+      "search_score_v1": 2.18,
+      "score_breakdown": {
+        "policy_id": "rich_ncu_followup_v1",
+        "accepted_surface_bonus": 0.82,
+        "post_probe_learning_bonus": 0.58,
+        "latency_hiding_alignment_bonus": 0.46,
+        "risk_penalty": 0.18,
+        "formula": "accepted_surface_bonus + post_probe_learning_bonus + latency_hiding_alignment_bonus - risk_penalty + family_credit"
+      },
+      "predicted_gain_ms": 0.09,
+      "predicted_fail_risk": 0.28,
+      "ranking_notes": [
+        "This remains the strongest forward family once the baseline is restored.",
+        "The 256x128 probe makes the PTX family more informative because it showed that geometry alone does not solve the latency-hiding ceiling.",
+        "It ranks behind dir_01 because recovery is mandatory first."
+      ],
+      "hypothesis": "The failed 256x128 probe showed that reducing registers without improving active warps is not enough. After recovery, the best forward branch is still the accepted PTX family, but with a new emphasis: reduce live control state and fragment lifetime there rather than chasing more export arithmetic or another geometry jump.",
+      "expected_bottleneck": "occupancy_latency_hiding_issue on the accepted PTX hot-band path, with barrier as a secondary seam",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1953 (PTX 128x128 hot-band microkernel)",
+        "src/kernels/bf16_gemm_v1.cu:2035 (steady-state PTX accumulate path)",
+        "src/kernels/bf16_gemm_v1.cu:2056 (PTX export handoff)"
+      ],
+      "risk": "Medium. This stays on the accepted PTX surface, but it needs careful trimming to avoid replaying already closed PTX variants.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the implementation reopens already-closed PTX copy-order variants or widens into a geometry change instead of a control-state trim.",
+      "evidence_refs": [
+        "state/node_b_context.md",
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_110929_bf16_gemm_v1_342b1c5/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy",
+          "metric_name": "Achieved Occupancy",
+          "metric_value": 16.66,
+          "importance_score": 88.34,
+          "explanation": "Active warps stayed flat even after the register drop."
+        },
+        {
+          "hotspot_id": "metric::launch__occupancy_limit_registers",
+          "scope_type": "headline_metric",
+          "scope_name": "launch__occupancy_limit_registers",
+          "location": "Launch Statistics",
+          "metric_name": "launch__occupancy_limit_registers",
+          "metric_value": 1.0,
+          "importance_score": 36.14,
+          "explanation": "Registers are still constraining occupancy on the probed surface."
+        },
+        {
+          "hotspot_id": "stall::barrier",
+          "scope_type": "stall",
+          "scope_name": "barrier",
+          "location": "steady-state handoff",
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_value": 8.32,
+          "importance_score": 8.32,
+          "explanation": "Barrier remains the clearest secondary seam to watch when the PTX baseline is restored."
+        }
+      ],
+      "expected_local_changes": [
+        "Restore first, then keep the accepted PTX launch shape while trimming live control bookkeeping.",
+        "Prioritize steady-state fragment lifetime and control-state cleanup over another export-only tweak.",
+        "Use the 256x128 barrier regression as a guardrail, not as a reason to stay on the regressed surface."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "current_value": 16.66,
+          "guardrail": "non_decreasing",
+          "reason": "Active warps must improve or at least stop regressing once the baseline is restored."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "current_value": 8.32,
+          "guardrail": "non_increasing",
+          "reason": "Barrier cost rose on the failed probe and should not be reintroduced."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "current_value": 2.19,
+          "guardrail": "non_increasing",
+          "reason": "Long scoreboard improved on the probe; the forward PTX follow-up should preserve that gain if possible."
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 107,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_110945:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_110945",
+      "base_run_id": "20260421_110929_bf16_gemm_v1_342b1c5",
+      "base_measured_commit": "342b1c5e41fb67ca4f7d1bc26a811a491ec7c3cf",
+      "base_runtime_ms": 30.16857624,
+      "direction_id": "dir_03",
+      "direction_name": "If 256x128 is revisited, pivot from register shaving to barrier and short-scoreboard cleanup",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "revisit_256x128_only_if_barrier_and_short_scoreboard_path_is_targeted",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 1.62,
+      "search_score_v1": 1.62,
+      "score_breakdown": {
+        "policy_id": "rich_ncu_salvage_v1",
+        "measured_learning_credit": 0.6,
+        "register_delta_bonus": 0.44,
+        "barrier_regression_penalty": 0.52,
+        "runtime_loss_penalty": 0.4,
+        "formula": "measured_learning_credit + register_delta_bonus - barrier_regression_penalty - runtime_loss_penalty + family_credit"
+      },
+      "predicted_gain_ms": 0.12,
+      "predicted_fail_risk": 0.52,
+      "ranking_notes": [
+        "This stays third only because the probe produced one useful new fact: the pivot can reach 167 registers.",
+        "It is far below the restore because a future revisit would need a very different local target than the one we just tried.",
+        "Do not select it again immediately unless the accepted PTX surface is already recovered."
+      ],
+      "hypothesis": "The current probe proved that the 256x128 pivot can lower registers materially, but throughput still collapsed because the new local wall shifted to barrier and short-scoreboard stalls. If this family is revisited later, it should keep the 167-register floor and attack the 256x128 handoff / shared-fragment seam directly instead of doing another generic low-register transplant.",
+      "expected_bottleneck": "synchronization_barrier_issue and short_scoreboard pressure inside the 256x128 pivot after the register budget has already been reduced",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:930 (64x64 export/store helpers)",
+        "src/kernels/bf16_gemm_v1.cu:1630 (256x128 wait-group handoff)",
+        "src/kernels/bf16_gemm_v1.cu:1668 (compact 256x128 accumulate path)"
+      ],
+      "risk": "High. This keeps a regressed family alive only because it produced a real register reduction, and any follow-up would still need to beat a large measured loss.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the implementation does not directly target barrier or short-scoreboard behavior on the 256x128 path, or if it widens into another generic geometry replay.",
+      "evidence_refs": [
+        "state/node_b_context.md",
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_110929_bf16_gemm_v1_342b1c5/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "stall::barrier",
+          "scope_type": "stall",
+          "scope_name": "barrier",
+          "location": "256x128 steady-state handoff",
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_value": 8.32,
+          "importance_score": 8.32,
+          "explanation": "Barrier is the new dominant local stall on the 256x128 path."
+        },
+        {
+          "hotspot_id": "stall::short_scoreboard",
+          "scope_type": "stall",
+          "scope_name": "short_scoreboard",
+          "location": "256x128 shared / fragment handoff",
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "metric_value": 6.77,
+          "importance_score": 6.77,
+          "explanation": "Short-scoreboard rose sharply after the compact pivot probe."
+        },
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 167.0,
+          "importance_score": 172.0,
+          "explanation": "The probe did achieve a meaningful register reduction that should be preserved if this family is revisited."
+        }
+      ],
+      "expected_local_changes": [
+        "Leave writer ownership intact and preserve the lower register floor.",
+        "Attack the 256x128 wait-group, export, or shared-fragment seam directly instead of replaying another geometry-only shift.",
+        "Treat the current 30 ms run as a learning branch, not as a candidate surface to iterate on blindly."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "current_value": 8.32,
+          "guardrail": "non_increasing",
+          "reason": "Any future 256x128 salvage attempt must reduce barrier cost."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "current_value": 6.77,
+          "guardrail": "non_increasing",
+          "reason": "The next 256x128-specific step must also reduce the short-scoreboard wall."
+        },
+        {
+          "metric_name": "Registers Per Thread",
+          "current_value": 167.0,
+          "guardrail": "non_increasing",
+          "reason": "A revisit should preserve the one successful register reduction from this probe."
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 107,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 317 historical candidates; 17 family representatives are currently active for selection.",
-  "updated_at": "2026-04-21T11:09:37-07:00",
+  "notes": "Persistent frontier tracks 320 historical candidates; 17 family representatives are currently active for selection.",
+  "updated_at": "2026-04-21T11:12:43-07:00",
   "family_representative_count": 17,
   "reopened_candidate_ids": []
 }

@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 2/100` with `99` rounds remaining
 
 ## Direction approval policy
@@ -15,16 +15,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_110945`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 2 diagnosis prioritizes recovery after the 256x128 probe regressed badly while only partially solving the original register hotspot.`
+- dir_01: Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe | bottleneck: Recovery to the known PTX plateau before any further latency-hiding or barrier experiment is attempted
+- dir_02: Recover the PTX baseline, then trim live control state before retrying geometry | bottleneck: occupancy_latency_hiding_issue on the accepted PTX hot-band path, with barrier as a secondary seam
+- dir_03: If 256x128 is revisited, pivot from register shaving to barrier and short-scoreboard cleanup | bottleneck: synchronization_barrier_issue and short_scoreboard pressure inside the 256x128 pivot after the register budget has already been reduced
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
