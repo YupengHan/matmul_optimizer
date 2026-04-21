@@ -21,13 +21,13 @@
   "exact_base_runtime_ms": 24.32352066,
   "active_frontier_id": "frontier:global",
   "active_candidate_set_id": "candidate_set:diagnosis_20260421_150910_round02_clean_7496aff2",
-  "active_candidate_id": null,
+  "active_candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
   "last_selected_candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
   "last_selected_direction_id": "dir_01",
   "last_selected_selection_mode": "recommended",
   "last_selected_at": "2026-04-21T15:11:26-07:00",
-  "latest_attempt_id": "restore_base:20260421_150626_bf16_gemm_v1_6cc462c4:20260421_151138",
-  "last_transition_type": "restore_base",
+  "latest_attempt_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
+  "last_transition_type": "node_c_finalize",
   "last_result_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
   "last_result_measured_commit": "7496aff21c8de79011caa26978ba7dd249179f64",
   "last_result_runtime_ms": 24.53708839,
@@ -53,5 +53,5 @@
   "closed_jsonl": "state/search_closed.jsonl",
   "family_ledger_json": "state/family_ledger.json",
   "latest_attempt_json": "state/latest_attempt.json",
-  "notes": "Restored exact base from run_id=20260421_150626_bf16_gemm_v1_6cc462c4 (6cc462c46b05712b972773911a1a7f31892ddcb2)."
+  "notes": "Latest implementation edge recorded for diagnosis_20260421_150910_round02_clean_7496aff2:dir_01."
 }

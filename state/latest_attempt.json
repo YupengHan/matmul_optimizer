@@ -1,28 +1,34 @@
 {
   "schema_version": 1,
-  "attempt_id": "restore_base:20260421_150626_bf16_gemm_v1_6cc462c4:20260421_151138",
-  "status": "restore_completed",
-  "candidate_id": "restore_base:20260421_150626_bf16_gemm_v1_6cc462c4",
-  "source_diagnosis_id": null,
-  "base_run_id": "20260421_150626_bf16_gemm_v1_6cc462c4",
-  "family_id": "restore_base",
-  "subfamily_id": "restore_base.exact",
-  "direction_id": "restore_base",
-  "direction_name": "Restore implementation surface from 20260421_150626_bf16_gemm_v1_6cc462c4",
-  "mode": "restore",
+  "attempt_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
+  "base_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
+  "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+  "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
+  "direction_id": "dir_01",
+  "direction_name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
+  "mode": "exploit",
   "commit": null,
   "commit_short": null,
-  "subject": null,
-  "selection_mode": "restore",
-  "selected_at": "2026-04-21T15:11:38-07:00",
-  "selected_from_frontier_id": null,
-  "source_run_id": "20260421_150626_bf16_gemm_v1_6cc462c4",
-  "selection_score": null,
-  "planned_action_fingerprint": "restore_base:6cc462c46b05712b972773911a1a7f31892ddcb2",
-  "implemented_action_fingerprint": "restore_base:6cc462c46b05712b972773911a1a7f31892ddcb2",
-  "score_breakdown": {},
+  "subject": "node_c: round 2/10 implement dir_01 Swap To The Single-K 128x128 Non-Microkernel Sibling",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T15:11:26-07:00",
+  "selected_from_frontier_id": "frontier:global",
+  "source_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
+  "selection_score": 0.9125,
+  "planned_action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+  "implemented_action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+  "score_breakdown": {
+    "expected_gain": 0.26,
+    "implementation_risk": 0.24,
+    "evidence_strength": 0.15,
+    "code_reuse": 0.11
+  },
   "semantic_delta_tags": [
-    "restore_base"
+    "single_direction_attempt",
+    "kernel_code"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
@@ -31,30 +37,30 @@
   "implementation": {
     "commit": null,
     "commit_short": null,
-    "subject": null,
-    "build_status": null,
+    "subject": "node_c: round 2/10 implement dir_01 Swap To The Single-K 128x128 Non-Microkernel Sibling",
+    "build_status": "PASS",
     "failure_mode": null,
-    "build_log_path": null,
+    "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
       "src/kernels/bf16_gemm_v1.cu"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 0,
-      "deletions": 0
+      "insertions": 1,
+      "deletions": 1
     }
   },
-  "build_status": null,
+  "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 0,
-    "deletions": 0
+    "insertions": 1,
+    "deletions": 1
   },
   "measurement": {
     "run_id": null,
-    "measurement_commit": "6cc462c46b05712b972773911a1a7f31892ddcb2",
-    "runtime_ms": 24.32352066,
+    "measurement_commit": null,
+    "runtime_ms": null,
     "runtime_delta_ms": null,
     "tflops": null,
     "correctness": null,
@@ -64,8 +70,7 @@
     "structured_bottleneck_deltas": [],
     "top_hotspot_deltas": []
   },
-  "transition_label": null,
   "transition_class": null,
-  "close_reason": "restore_base",
-  "notes": "Restored implementation surface from run_id=20260421_150626_bf16_gemm_v1_6cc462c4 using 6cc462c46b05712b972773911a1a7f31892ddcb2."
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
