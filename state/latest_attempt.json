@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_075055:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_075055:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_075055",
-  "base_run_id": "20260421_074828_bf16_gemm_v1_f07f873",
-  "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-  "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+  "attempt_id": "diagnosis_20260421_075421:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_075421:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_075421",
+  "base_run_id": "20260421_075335_bf16_gemm_v1_894a38d",
+  "family_id": "legacy::steady_state_barrier_handoff_retime",
+  "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
   "direction_id": "dir_01",
-  "direction_name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+  "direction_name": "Steady-state Barrier / Handoff Retime",
   "mode": "exploit",
-  "commit": "894a38d5136472c4d63ae862d55459e4f8b35374",
-  "commit_short": "894a38d",
-  "subject": "node_c: round 36/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 37/100 implement dir_01 Steady-state Barrier / Handoff Retime",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T07:52:07-07:00",
+  "selected_at": "2026-04-21T07:55:45-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_074828_bf16_gemm_v1_f07f873",
-  "selection_score": 2.285,
-  "planned_action_fingerprint": "retune_active_ptx_one_k_control_export_path_on_restored_anchor",
-  "implemented_action_fingerprint": "retune_active_ptx_one_k_control_export_path_on_restored_anchor",
+  "source_run_id": "20260421_075335_bf16_gemm_v1_894a38d",
+  "selection_score": 2.2725,
+  "planned_action_fingerprint": "retime_ptx_wait_group_and_future_refill_order_on_restored_anchor",
+  "implemented_action_fingerprint": "retime_ptx_wait_group_and_future_refill_order_on_restored_anchor",
   "score_breakdown": {
-    "policy_id": "manual_round36_post_recovery_v1",
-    "rank_score": 1.85,
-    "active_surface_bonus": 0.2,
-    "frontier_alignment_bonus": 0.2,
-    "risk_penalty": -0.13,
-    "formula": "rank_score + active_surface_bonus + frontier_alignment_bonus + risk_penalty"
+    "policy_id": "manual_round37_follow_partial_signal_v1",
+    "rank_score": 1.86,
+    "partial_signal_bonus": 0.28,
+    "active_surface_bonus": 0.14,
+    "risk_penalty": -0.1,
+    "formula": "rank_score + partial_signal_bonus + active_surface_bonus + risk_penalty"
   },
   "semantic_delta_tags": [
     "single_direction_attempt",
@@ -37,9 +37,9 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "894a38d5136472c4d63ae862d55459e4f8b35374",
-    "commit_short": "894a38d",
-    "subject": "node_c: round 36/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 37/100 implement dir_01 Steady-state Barrier / Handoff Retime",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
@@ -48,41 +48,28 @@
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 3,
-      "deletions": 2
+      "insertions": 4,
+      "deletions": 4
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 3,
-    "deletions": 2
+    "insertions": 4,
+    "deletions": 4
   },
   "measurement": {
-    "run_id": "20260421_075335_bf16_gemm_v1_894a38d",
-    "measurement_commit": "894a38d5136472c4d63ae862d55459e4f8b35374",
-    "runtime_ms": 24.19199944,
-    "runtime_delta_ms": 0.016528130000001084,
-    "tflops": 30.05206013,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.36",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.83",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.12",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.50",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.07",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.62",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.27",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.07",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.22",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.65",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "flat",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_075335_bf16_gemm_v1_894a38d for candidate diagnosis_20260421_075055:dir_01; transition_label=PASS_FLAT.",
-  "transition_label": "PASS_FLAT"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
