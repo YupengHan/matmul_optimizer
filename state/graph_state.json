@@ -10,5 +10,5 @@
   "recommended_direction_id": "dir_01",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "plateau_counter": 6,
-  "notes": "Node C is ready to implement diagnosis_20260421_150910_round02_clean_7496aff2:dir_01 via recommended selection for round 2/10."
+  "notes": "Restore-base reset the implementation surface to run_id=20260421_150626_bf16_gemm_v1_6cc462c4."
 }

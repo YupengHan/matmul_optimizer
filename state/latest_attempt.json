@@ -1,205 +1,71 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_150626_round01_clean_6cc462c4:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_150626_round01_clean_6cc462c4:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_150626_round01_clean_6cc462c4",
+  "attempt_id": "restore_base:20260421_150626_bf16_gemm_v1_6cc462c4:20260421_151138",
+  "status": "restore_completed",
+  "candidate_id": "restore_base:20260421_150626_bf16_gemm_v1_6cc462c4",
+  "source_diagnosis_id": null,
   "base_run_id": "20260421_150626_bf16_gemm_v1_6cc462c4",
-  "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
-  "subfamily_id": "launch_order::grouped_rows_4_to_8_for_b_reuse",
-  "direction_id": "dir_01",
-  "direction_name": "Increase PTX Grouped-Row Depth On The Clean Baseline",
-  "mode": "exploit",
-  "commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-  "commit_short": "7496aff",
-  "subject": "node_c: round 1/10 implement dir_01 Increase PTX Grouped-Row Depth On The Clean Baseline",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:08:54-07:00",
-  "selected_from_frontier_id": "frontier:global",
+  "family_id": "restore_base",
+  "subfamily_id": "restore_base.exact",
+  "direction_id": "restore_base",
+  "direction_name": "Restore implementation surface from 20260421_150626_bf16_gemm_v1_6cc462c4",
+  "mode": "restore",
+  "commit": null,
+  "commit_short": null,
+  "subject": null,
+  "selection_mode": "restore",
+  "selected_at": "2026-04-21T15:11:38-07:00",
+  "selected_from_frontier_id": null,
   "source_run_id": "20260421_150626_bf16_gemm_v1_6cc462c4",
-  "selection_score": 0.98,
-  "planned_action_fingerprint": "clean_ptx_hotband_baseline:grouped_rows_4->8",
-  "implemented_action_fingerprint": "clean_ptx_hotband_baseline:grouped_rows_4->8",
-  "score_breakdown": {
-    "expected_gain": 0.27,
-    "implementation_risk": 0.15,
-    "evidence_strength": 0.16,
-    "code_reuse": 0.21
-  },
+  "selection_score": null,
+  "planned_action_fingerprint": "restore_base:6cc462c46b05712b972773911a1a7f31892ddcb2",
+  "implemented_action_fingerprint": "restore_base:6cc462c46b05712b972773911a1a7f31892ddcb2",
+  "score_breakdown": {},
   "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
+    "restore_base"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-    "commit_short": "7496aff",
-    "subject": "node_c: round 1/10 implement dir_01 Increase PTX Grouped-Row Depth On The Clean Baseline",
-    "build_status": "PASS",
+    "commit": null,
+    "commit_short": null,
+    "subject": null,
+    "build_status": null,
     "failure_mode": null,
-    "build_log_path": "state/node_c_last_build.log",
+    "build_log_path": null,
     "touched_files": [
       "src/kernels/bf16_gemm_v1.cu"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 3,
-      "deletions": 1
+      "insertions": 0,
+      "deletions": 0
     }
   },
-  "build_status": "PASS",
+  "build_status": null,
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 3,
-    "deletions": 1
+    "insertions": 0,
+    "deletions": 0
   },
   "measurement": {
-    "run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-    "measurement_commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-    "runtime_ms": 24.53708839,
-    "runtime_delta_ms": 0.21356773000000118,
-    "tflops": 29.62940876,
-    "correctness": true,
-    "ncu_analysis_path": "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.json",
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 48.3,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 47.83,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 46.12,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 9.77,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 30.66,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 16.59,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 5.33,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 7.33,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 2.17,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 3.75,
-      "launch__occupancy_limit_registers": 2.0
-    },
-    "headline_metric_deltas_vs_previous_run": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": -0.07000000000000028,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": -0.010000000000005116,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": -0.010000000000005116,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": -2.7300000000000004,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 0.5399999999999991,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": -0.030000000000001137,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": -0.1299999999999999,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 0.08999999999999986,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 0.009999999999999787,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 0.1299999999999999,
-      "launch__occupancy_limit_registers": 0.0
-    },
-    "structured_bottleneck_deltas": [
-      {
-        "stall_group": "barrier",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "previous": 5.46,
-        "current": 5.33,
-        "delta": -0.1299999999999999,
-        "trend": "improved"
-      },
-      {
-        "stall_group": "mio_throttle",
-        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "previous": 3.62,
-        "current": 3.75,
-        "delta": 0.1299999999999999,
-        "trend": "regressed"
-      },
-      {
-        "stall_group": "long_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "previous": 7.24,
-        "current": 7.33,
-        "delta": 0.08999999999999986,
-        "trend": "regressed"
-      },
-      {
-        "stall_group": "short_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "previous": 2.16,
-        "current": 2.17,
-        "delta": 0.009999999999999787,
-        "trend": "regressed"
-      }
-    ],
-    "top_hotspot_deltas": [
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "DRAM Throughput",
-        "previous": 12.46,
-        "current": 9.73,
-        "delta": -2.7300000000000004,
-        "trend": "regressed",
-        "importance_score": 95.27,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l2_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L2 Cache Throughput",
-        "previous": 30.1,
-        "current": 30.65,
-        "delta": 0.5499999999999972,
-        "trend": "improved",
-        "importance_score": 74.9,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l1_tex_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L1/TEX Cache Throughput",
-        "previous": 46.66,
-        "current": 46.59,
-        "delta": -0.06999999999999318,
-        "trend": "regressed",
-        "importance_score": 58.41,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy",
-        "metric_name": "Achieved Occupancy",
-        "previous": 16.63,
-        "current": 16.59,
-        "delta": -0.03999999999999915,
-        "trend": "regressed",
-        "importance_score": 88.41,
-        "explanation": "Occupancy is carrying metric Achieved Occupancy.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::memory_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "Memory Throughput",
-        "previous": 46.13,
-        "current": 46.12,
-        "delta": -0.010000000000005116,
-        "trend": "regressed",
-        "importance_score": 58.88,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric Memory Throughput.",
-        "bucket": "regressed"
-      }
-    ]
+    "run_id": null,
+    "measurement_commit": "6cc462c46b05712b972773911a1a7f31892ddcb2",
+    "runtime_ms": 24.32352066,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "ncu_analysis_path": null,
+    "headline_metrics": {},
+    "headline_metric_deltas_vs_previous_run": {},
+    "structured_bottleneck_deltas": [],
+    "top_hotspot_deltas": []
   },
-  "transition_class": "regressed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_150910_bf16_gemm_v1_7496aff2 for candidate diagnosis_20260421_150626_round01_clean_6cc462c4:dir_01; transition_label=PASS_LOSS.",
-  "transition_label": "PASS_LOSS"
+  "transition_label": null,
+  "transition_class": null,
+  "close_reason": "restore_base",
+  "notes": "Restored implementation surface from run_id=20260421_150626_bf16_gemm_v1_6cc462c4 using 6cc462c46b05712b972773911a1a7f31892ddcb2."
 }

@@ -17,7 +17,7 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 - plateau counter: `6`
 - round loop: `round 2/10`
 - rounds remaining: `9`
-- notes: `Node C is ready to implement diagnosis_20260421_150910_round02_clean_7496aff2:dir_01 via recommended selection for round 2/10.`
+- notes: `Restore-base reset the implementation surface to run_id=20260421_150626_bf16_gemm_v1_6cc462c4.`
 
 ## Latest measured custom run
 
