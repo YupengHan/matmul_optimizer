@@ -77,12 +77,6 @@ using TensorCoreTile320 = TensorCoreTileConfig<10>;
 using TensorCoreTile384 = TensorCoreTileConfig<12>;
 using TensorCoreTile480 = TensorCoreTileConfig<15>;
 
-// The fixed 64-row residual band only launches one 64x384 CTA row, so it does
-// not need the broader two-stage Tile384 export scratch used by wider 384 paths.
-struct PeeledResidualTile384SingleStageExport : TensorCoreTile384 {
-  static constexpr int kCSharedStageCount = 1;
-};
-
 struct FixedHotBandTile256x128 {
   static constexpr int kWarpTilesM = kTensorWarpTilesM;
   static constexpr int kWarpTilesN = kTensorWarpTilesN;
@@ -2124,13 +2118,13 @@ bool launch_bf16_gemm_v1(
               stream>>>(a, b, c);
 
       launch_fixed_peeled_hot_band_row_band<
-          PeeledResidualTile384SingleStageExport,
+          TensorCoreTile384,
           kFixedBenchmarkKTiles>(
               a,
               b,
               c,
-              kFixedPivotHotRows / PeeledResidualTile384SingleStageExport::kTensorBlockM,
-              kFixedResidualHotRows / PeeledResidualTile384SingleStageExport::kTensorBlockM,
+              kFixedPivotHotRows / TensorCoreTile384::kTensorBlockM,
+              kFixedResidualHotRows / TensorCoreTile384::kTensorBlockM,
               stream);
 
       launch_tensor_core_region<TensorCoreTile96>(
