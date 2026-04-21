@@ -1,22 +1,272 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_160019",
+  "status": "completed",
+  "created_at": "2026-04-21T16:00:19-07:00",
   "source_run_id": "20260421_160001_bf16_gemm_v1_d7576a6e",
   "source_run_dir": "runs/20260421_160001_bf16_gemm_v1_d7576a6e",
   "source_summary_json": "runs/20260421_160001_bf16_gemm_v1_d7576a6e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "The live run context for `20260421_160001_bf16_gemm_v1_d7576a6e` at 26.730480 ms settled the export-scratch question: trimming the grouped-row non-PTX sibling back to a single-stage export scratch restored shared memory from 26,112 B to 22,016 B, but runtime still regressed slightly and barrier remained pinned at 11.23%. That means the family is no longer blocked on export scratch; it is blocked on the barrier/handoff seam itself. Registers are still at 168, occupancy_limit_registers is still 3, active warps are still 24.72%, and long scoreboard is still low at 1.94%, so the remaining tax is synchronization, not occupancy. The best final salvage move on this family is therefore one narrow seam-retime on the current non-PTX 3-CTA surface. If that does not recover the runtime, the family should be closed. Keep one PTX wait-group-collapse fallback behind it because the PTX anchor is still much closer to the accepted base, and keep the 256x128 half-panel family in third place because the user guidance still points toward that higher-ceiling tiling branch even though the current clean loop has not justified reopening it yet.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_160001_bf16_gemm_v1_d7576a6e/summary.json",
+    "runs/20260421_160001_bf16_gemm_v1_d7576a6e/ncu_analysis.md",
+    "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+    "master:state/diagnosis_history.jsonl"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_160019:dir_01",
+  "family_audit": [
+    "Tiling: keep 64x64 warp tiling accepted and keep 256x128 queued, but the next move should still finish the last unresolved synchronization question on the accepted-base family before reopening 256x128.",
+    "Coalescing Access: defer. The current run already has strong memory throughput recovery, so coalescing is not the first-order remaining limiter.",
+    "Data Reuse: accept as present baseline behavior. The remaining problem is synchronization cost on top of that reused dataflow.",
+    "Async Copy: accept strongly. The current evidence now points almost entirely at how the prefetched tiles are handed off and refilled.",
+    "Bank Conflict: defer again. The barrier wall is much clearer than any bank-conflict signature.",
+    "L2 Cache: defer. Cache and DRAM movement improved enough that reopening L2-specific work is not the best next round.",
+    "Register Reuse: accept, but mark the occupancy branch as exhausted unless one final barrier-seam retime saves it. The loop already reached the target 168-register / 24.72%-warps machine state twice.",
+    "Pg2s: accept as infrastructure already in place. The next round is about synchronization around the staged pipeline, not the existence of the pipeline.",
+    "Ps2r: accept. The fallback PTX wait-group collapse remains the best way to keep this human guidance represented if the non-PTX salvage fails again.",
+    "Stage: accept, but do not widen scratch or stage depth again. Round 7 and round 8 already ruled that out.",
+    "Promote a same-surface non-PTX barrier/handoff retime to rank 1 because export scratch is no longer the confound and barrier is now the clearly isolated tax.",
+    "Keep a PTX wait-group-collapse fallback at rank 2 because the PTX anchor remains much closer to the accepted base and still has actionable synchronization slack.",
+    "Keep the 256x128 half-panel family at rank 3 because the user tiling guidance still matters, but the current accepted-base family deserves one final clean sync-seam test first."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
+      "family_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime",
+      "subfamily_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime::future_tile_refill_order",
+      "action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax",
+      "mode": "explore",
+      "hypothesis": "The export-scratch trim proved that the non-PTX 3-CTA surface is still losing for one main reason: barrier remains stuck above 11%. The registers, active warps, and long-scoreboard metrics are already where the occupancy family wanted them. The best last-chance salvage is therefore a scheduler-seam retime on the current non-PTX surface that changes the future-tile refill order without touching launch bounds, tile shape, or export scratch depth.",
+      "expected_bottleneck": "Barrier cadence and future-tile refill ordering on the non-PTX 3-CTA grouped-row hot-band kernel.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1928-1940"
+      ],
+      "risk": "Moderate. This is a tiny same-surface edit, but it may move stalls without recovering enough runtime to matter.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.89,
+      "score_breakdown": {
+        "policy_id": "manual_round09_last_nonptx_salvage_v1",
+        "headroom_score": 0.22,
+        "evidence_score": 0.31,
+        "implementation_bonus": 0.41,
+        "risk_penalty": -0.05,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.3,
+      "predicted_fail_risk": 0.39,
+      "ranking_notes": [
+        "This is the highest-information next move because it isolates the last untested cause of the non-PTX 3-CTA regression.",
+        "If it fails, the family can be closed with confidence instead of staying half-alive on frontier."
+      ],
+      "stop_condition": "Stop and close this family if barrier stays near 11% or runtime remains materially slower than the accepted base after the seam retime.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_160001_bf16_gemm_v1_d7576a6e/ncu_analysis.md",
+        "master:state/diagnosis_history.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the current grouped-row non-PTX 128x128 sibling surface with 3-CTA residency.",
+        "Retime the future-stage refill order around the barrier seam without changing launch bounds, tile shape, or export scratch depth."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Collapse PTX Wait-Group Handoff Without Extra Export Scratch",
+      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance",
+      "action_fingerprint": "restore_ptx_anchor_and_collapse_wait_group_order_without_stagecount_growth",
+      "mode": "explore",
+      "hypothesis": "If the non-PTX 3-CTA salvage fails one more time, the loop should step back to the closer PTX anchor rather than keep spending rounds on the occupancy family. The PTX anchor is still much closer to the accepted base and still offers synchronization slack, but the fallback must avoid the extra export scratch growth from round 6.",
+      "expected_bottleneck": "Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra scratch growth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1983-2062",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Moderate-high. This requires restoring the PTX anchor and then making another control-flow retime, but it stays on the family that was much closer to the accepted base than the current 3-CTA sibling.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__shared_mem_per_block_allocated",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.69,
+      "score_breakdown": {
+        "policy_id": "manual_round09_last_nonptx_salvage_v1",
+        "headroom_score": 0.24,
+        "evidence_score": 0.23,
+        "implementation_bonus": 0.26,
+        "risk_penalty": -0.04,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.14,
+      "predicted_fail_risk": 0.47,
+      "ranking_notes": [
+        "Keep this as the fallback because the PTX anchor remains much closer to the accepted base than the occupancy-first sibling path.",
+        "It also preserves direct coverage of the user's Async Copy, Pg2s, Ps2r, and Stage guidance on the PTX control path."
+      ],
+      "stop_condition": "Stop if the restored PTX path still cannot beat the accepted base without adding scratch growth.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the PTX 128x128 anchor launch path.",
+        "Collapse the wait-group and refill seam without growing export scratch again."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Reopen The 256x128 Half-Panel Register-Reuse Branch Later",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "reopen_256x128_half_panel_register_reuse_after_current_sync_family_resolves",
+      "mode": "explore",
+      "hypothesis": "The 256x128 family should still remain queued because it is the highest-upside branch that aligns with the user's explicit tiling guidance. But with only one more round after this one, the better use of the current round is to finish the last clean synchronization question on the accepted-base family. If that fails, the final round can reopen the higher-ceiling 256x128 repair with a cleaner justification.",
+      "expected_bottleneck": "Register reuse, fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:694-730",
+        "src/kernels/bf16_gemm_v1.cu:1604-1701",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "High. This family remains broad and has already produced one strong regression plus one flat follow-up in the clean loop.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.57,
+      "score_breakdown": {
+        "policy_id": "manual_round09_last_nonptx_salvage_v1",
+        "headroom_score": 0.35,
+        "evidence_score": 0.05,
+        "implementation_bonus": 0.24,
+        "risk_penalty": -0.07,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.72,
+      "predicted_fail_risk": 0.77,
+      "ranking_notes": [
+        "Keep this family alive because it still best matches the human 256x128 guidance.",
+        "Rank it third because the current accepted-base family still deserves one final clean synchronization test before the last round."
+      ],
+      "stop_condition": "Stop immediately on another 28-30 ms regression or any correctness failure; do not let this family consume consecutive rounds without a new machine-state change.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_160001_bf16_gemm_v1_d7576a6e/ncu_analysis.md",
+        "state/human_guidance.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the correctness-safe 256x128 writer ownership path queued.",
+        "Only reopen this family after the current synchronization family has been resolved cleanly."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    }
+  ],
+  "notes": "Human guidance review for round 9: the current accepted-base family has now cleanly isolated the synchronization problem. That means the right next move is not another occupancy or export-lifetime theory; it is one final barrier/handoff retime on the current non-PTX 3-CTA surface. If that fails, the family should be closed and the final round can move to the broader 256x128 branch."
 }

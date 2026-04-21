@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 9/10` with `2` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_160019`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Human guidance review for round 9: the current accepted-base family has now cleanly isolated the synchronization problem. That means the right next move is not another occupancy or export-lifetime theory; it is one final barrier/handoff retime on the current non-PTX 3-CTA surface. If that fails, the family should be closed and the final round can move to the broader 256x128 branch.`
+- dir_01: Retime The Non-PTX 3-CTA Barrier/Handoff Seam | bottleneck: Barrier cadence and future-tile refill ordering on the non-PTX 3-CTA grouped-row hot-band kernel.
+- dir_02: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra scratch growth.
+- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 

@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `d7576a6e1833a4cb5fc914851ee6b2512930cb04`
 - plateau counter: `13`
 - round loop: `round 9/10`
 - rounds remaining: `2`
-- notes: `Node A completed round 8/10. Run node_b to continue round 9/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_160019:dir_01 via recommended selection for round 9/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_160019`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human guidance review for round 9: the current accepted-base family has now cleanly isolated the synchronization problem. That means the right next move is not another occupancy or export-lifetime theory; it is one final barrier/handoff retime on the current non-PTX 3-CTA surface. If that fails, the family should be closed and the final round can move to the broader 256x128 branch.`
+- dir_01: Retime The Non-PTX 3-CTA Barrier/Handoff Seam | bottleneck: Barrier cadence and future-tile refill ordering on the non-PTX 3-CTA grouped-row hot-band kernel.
+- dir_02: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra scratch growth.
+- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
