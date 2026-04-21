@@ -1,21 +1,58 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Steady-state Barrier / Handoff Retime",
+  "candidate_id": "diagnosis_20260420_233235:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "legacy::steady_state_barrier_handoff_retime",
+  "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
+  "action_fingerprint": "8f8b5eca1122e2da",
+  "selection_priority": 2.47,
+  "base_run_id": "20260420_233034_bf16_gemm_v1_11df0f1",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T23:34:53-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_233235",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Steady-state Barrier / Handoff Retime",
+    "family_id": "legacy::steady_state_barrier_handoff_retime",
+    "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
+    "action_fingerprint": "8f8b5eca1122e2da",
+    "mode": "exploit",
+    "hypothesis": "Round 10 forced an explicit audit of which queued families are still actionable versus already absorbed in the current source. After filtering out the sibling export-trim no-op and then measuring a real PTX control-path fallback, the latest run still regressed to 24.19046402 ms while the headline signature barely moved: active warps stayed at 16.61, barrier stayed at 5.46, and long-scoreboard stayed at 7.24. That combination means neither another export-side replay nor another trivial prologue-order nudge is the next best bet. The cleanest remaining unabsorbed lever on the current PTX winner is a narrower retime of the steady-state wait-group and handoff cadence around `cp.async`, `__syncthreads()`, and the future-tile refill path. It keeps the accepted PTX surface intact while attacking the scheduler seam that is still visibly exposed after the export cleanup and the latest control-path tweak.",
+    "expected_bottleneck": "Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the handoff between the current stage's MMA issue and the future-tile refill sequence.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1998-2017",
+      "src/kernels/bf16_gemm_v1.cu:2015-2027",
+      "src/kernels/bf16_gemm_v1.cu:2032-2033"
+    ],
+    "risk": "Moderate. The family is bounded and still unabsorbed, but the current source already contains the strongest obvious one-sync cleanup, so another retime can easily reshuffle barrier versus scoreboard without creating a real runtime win.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "hot-band gpu__time_duration.sum"
+    ],
+    "search_score_v1": 2.3,
+    "score_breakdown": {
+      "policy_id": "manual_round100_node_b_v11",
+      "rank_score": 2.0,
+      "unabsorbed_family_bonus": 0.35,
+      "flat_signature_bonus": 0.25,
+      "risk_penalty": 0.3,
+      "formula": "rank_score + unabsorbed_family_bonus + flat_signature_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.02,
+    "predicted_fail_risk": 0.32,
+    "ranking_notes": [
+      "This rises to rank 1 mainly because the round-10 audit proved several higher-priority-looking families were already absorbed and would only produce no-op node_c rounds.",
+      "It is the highest-priority open frontier family that is both unabsorbed and still aligned with the latest flat scheduler signature.",
+      "It stays ahead of restore-style fallbacks because it keeps the current PTX best surface live instead of stepping back onto a historically slower branch."
+    ],
+    "stop_condition": "Stop if the handoff retime lowers barrier only by raising scoreboard enough to keep runtime flat, or if the wait-group shuffle produces no measurable hot-band time change.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }

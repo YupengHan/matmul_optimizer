@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Steady-state Barrier / Handoff Retime`
+- candidate id: `diagnosis_20260420_233235:dir_01`
+- base run id: `20260420_233034_bf16_gemm_v1_11df0f1`
+- primary family id: `legacy::steady_state_barrier_handoff_retime`
+- planned action fingerprint: `8f8b5eca1122e2da`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_233235`
 - round loop: `round 11/100`
+- hypothesis: `Round 10 forced an explicit audit of which queued families are still actionable versus already absorbed in the current source. After filtering out the sibling export-trim no-op and then measuring a real PTX control-path fallback, the latest run still regressed to 24.19046402 ms while the headline signature barely moved: active warps stayed at 16.61, barrier stayed at 5.46, and long-scoreboard stayed at 7.24. That combination means neither another export-side replay nor another trivial prologue-order nudge is the next best bet. The cleanest remaining unabsorbed lever on the current PTX winner is a narrower retime of the steady-state wait-group and handoff cadence around `cp.async`, `__syncthreads()`, and the future-tile refill path. It keeps the accepted PTX surface intact while attacking the scheduler seam that is still visibly exposed after the export cleanup and the latest control-path tweak.`
+- expected bottleneck: `Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the handoff between the current stage's MMA issue and the future-tile refill sequence.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1998-2017, src/kernels/bf16_gemm_v1.cu:2015-2027, src/kernels/bf16_gemm_v1.cu:2032-2033`
+- risk: `Moderate. The family is bounded and still unabsorbed, but the current source already contains the strongest obvious one-sync cleanup, so another retime can easily reshuffle barrier versus scoreboard without creating a real runtime win.`
+- metrics to re-check: `end-to-end median runtime versus the 24.164352 ms best-known PTX run, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, hot-band gpu__time_duration.sum`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
