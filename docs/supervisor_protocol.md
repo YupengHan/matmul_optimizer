@@ -77,6 +77,33 @@ The supervisor may stop only when:
 - `remaining_rounds = 0`
 - the graph enters a failure / paused state
 - a required permission or environment dependency blocks further execution
+- the user explicitly redirects the conversation away from the active loop
+
+## Machine-readable continue contract
+
+When a multi-round loop is active, `state/supervisor_task.json` must also carry
+an explicit stop contract, not only prose guidance.
+
+Required meanings:
+
+- `continue_required = true`
+  - the current supervisor turn must keep dispatching; this is not a legal stop point
+- `stop_allowed = false`
+  - `ready_for_node_b`, `ready_for_node_c`, `ready_for_node_a`, and checkpoint states
+    are continue states while the loop is active
+- `continue_until = "remaining_rounds == 0 or explicit_user_redirect"`
+  - the loop continues until the budget finishes, unless the user explicitly changes topics
+- `continue_instruction`
+  - the immediate next dispatch action for the current node
+- `interrupt_policy = "only_explicit_user_redirect"`
+  - an intermediate summary, a completed round, or a newly ready node is not enough to stop
+
+Allowed stop reasons while `continue_required = true`:
+
+- `round_loop_complete`
+- `graph_failure_or_pause`
+- `permission_or_environment_block`
+- `explicit_user_redirect`
 
 ## Context-compression and display-refresh checkpoint rule
 

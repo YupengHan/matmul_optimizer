@@ -92,7 +92,25 @@ Supervisor no-stop rule:
 5. the main agent may stop only when:
    - `remaining_rounds = 0`, or
    - the graph enters a failure / paused state, or
-   - a required permission or environment dependency blocks further execution
+   - a required permission or environment dependency blocks further execution, or
+   - the user explicitly redirects the conversation away from the active loop
+
+Supervisor machine-readable continue contract:
+
+1. when `state/round_loop_state.json` reports `active = true` and `remaining_rounds > 0`, `state/supervisor_task.json` must encode the continue requirement directly, not only in prose
+2. during that active-loop window, the task file must expose:
+   - `continue_required = true`
+   - `stop_allowed = false`
+   - `continue_until = "remaining_rounds == 0 or explicit_user_redirect"`
+   - `continue_instruction = ...` for the current dispatch node
+   - `interrupt_policy = "only_explicit_user_redirect"`
+3. `ready_for_node_b`, `ready_for_node_c`, `ready_for_node_a`, and checkpoint states are continue states while `continue_required = true`
+4. an intermediate summary, a completed round, or a newly ready node is not a legal stop reason while `continue_required = true`
+5. the only legal stop reasons during an active loop are:
+   - `round_loop_complete`
+   - `graph_failure_or_pause`
+   - `permission_or_environment_block`
+   - `explicit_user_redirect`
 
 Supervisor checkpoint rule:
 
@@ -170,6 +188,7 @@ When the user says `开始运行N圈`:
 9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
 10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, and then continue the loop without treating that checkpoint as a completion point
 11. if the loop is still active, and `state/supervisor_task.json` later reports a 10-minute watchdog stall without reaching the target round count, issue the continue instruction and keep dispatching
+12. once the loop is armed, treat every `ready_for_node_*` state as a continue point until the round budget is exhausted or the user explicitly redirects the conversation
 
 If the user explicitly asks to prefer frontier-based selection for the loop, use:
 

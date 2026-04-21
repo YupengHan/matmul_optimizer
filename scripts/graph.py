@@ -1691,6 +1691,13 @@ def compute_supervisor_task(
         'watchdog_latest_progress_at': None,
         'watchdog_latest_progress_path': None,
         'watchdog_continue_instruction': None,
+        'continue_required': False,
+        'natural_stop_disallowed': False,
+        'stop_allowed': True,
+        'stop_allowed_reasons': ['current_dispatch_complete', 'explicit_user_redirect'],
+        'continue_until': None,
+        'continue_instruction': None,
+        'interrupt_policy': 'none',
         'notes': graph_state.get('notes', 'Inspect graph_state.json and dispatch the next node.'),
     }
 
@@ -1741,6 +1748,14 @@ def compute_supervisor_task(
         task['notes'] = f"Unknown current node {current_node!r}. Inspect state/graph_state.json before continuing."
 
     task.update(compute_watchdog_fields(task, graph_state, round_loop))
+    task.update(compute_continue_contract_fields(task, round_loop))
+    if task.get('continue_required'):
+        task['notes'] = (
+            f"{task.get('notes')} Active round loop in progress: `{graph_state.get('status', 'unknown')}` is a "
+            'continue state, not a legal stop point. Re-read `state/supervisor_task.json` after every node and '
+            'keep dispatching until `remaining_rounds = 0`, the graph fails/pauses, a required permission or '
+            'environment dependency blocks execution, or the user explicitly redirects the conversation.'
+        )
     return task
 
 
@@ -1770,6 +1785,10 @@ def render_supervisor_context(
     lines.append(f"- active direction: `{active_direction.get('direction_id', 'N/A')}`")
     lines.append(f"- display update due at current checkpoint: `{'yes' if supervisor_task.get('display_update_due') else 'no'}`")
     lines.append(f"- watchdog status: `{supervisor_task.get('watchdog_status', 'idle')}`")
+    lines.append(f"- continue required now: `{'yes' if supervisor_task.get('continue_required') else 'no'}`")
+    lines.append(f"- stop allowed now: `{'yes' if supervisor_task.get('stop_allowed') else 'no'}`")
+    lines.append(f"- natural stop states disallowed: `{'yes' if supervisor_task.get('natural_stop_disallowed') else 'no'}`")
+    lines.append(f"- interrupt policy: `{supervisor_task.get('interrupt_policy', 'none')}`")
     lines.append('')
     lines.append('## Supervisor protocol')
     lines.append('')
@@ -1815,6 +1834,10 @@ def render_supervisor_context(
             lines.append(f"- next display refresh checkpoint: after `{supervisor_task.get('next_display_update_round')}` completed rounds")
         lines.append(f"- display refresh checkpoint open now: `{'yes' if supervisor_task.get('display_update_due') else 'no'}`")
         lines.append(f"- display refresh action: {supervisor_task.get('display_update_instruction')}")
+        lines.append(f"- continue until: `{supervisor_task.get('continue_until') or 'N/A'}`")
+        if supervisor_task.get('continue_instruction'):
+            lines.append(f"- immediate continue instruction: {supervisor_task.get('continue_instruction')}")
+        lines.append(f"- allowed stop reasons while loop is active: `{', '.join(supervisor_task.get('stop_allowed_reasons') or [])}`")
         lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
     else:
         lines.append('- no multi-round loop is active')
@@ -2316,6 +2339,41 @@ def watchdog_continue_instruction(supervisor_task: Dict[str, Any], round_loop: D
     if prepare:
         return f"Continue now by dispatching the current step with `{prepare}` and then re-reading `state/supervisor_task.json`."
     return 'Continue now by re-reading `state/supervisor_task.json` and dispatching the current node.'
+
+
+def compute_continue_contract_fields(
+    supervisor_task: Dict[str, Any],
+    round_loop: Dict[str, Any],
+) -> Dict[str, Any]:
+    active_loop = bool(round_loop.get('active')) and int(round_loop.get('remaining_rounds', 0) or 0) > 0
+    fields: Dict[str, Any] = {
+        'continue_required': False,
+        'natural_stop_disallowed': False,
+        'stop_allowed': True,
+        'stop_allowed_reasons': ['current_dispatch_complete', 'explicit_user_redirect'],
+        'continue_until': None,
+        'continue_instruction': None,
+        'interrupt_policy': 'none',
+    }
+    if not active_loop:
+        return fields
+    fields.update(
+        {
+            'continue_required': True,
+            'natural_stop_disallowed': True,
+            'stop_allowed': False,
+            'stop_allowed_reasons': [
+                'round_loop_complete',
+                'graph_failure_or_pause',
+                'permission_or_environment_block',
+                'explicit_user_redirect',
+            ],
+            'continue_until': 'remaining_rounds == 0 or explicit_user_redirect',
+            'continue_instruction': watchdog_continue_instruction(supervisor_task, round_loop),
+            'interrupt_policy': 'only_explicit_user_redirect',
+        }
+    )
+    return fields
 
 
 def compute_watchdog_fields(
@@ -4339,6 +4397,10 @@ def run_status(_: argparse.Namespace) -> int:
     print(f"round_loop_label={round_label(round_loop)}")
     print(f"rounds_remaining={round_loop.get('remaining_rounds')}")
     print(f"round_loop_status={round_loop.get('status')}")
+    print(f"continue_required={supervisor_task.get('continue_required')}")
+    print(f"stop_allowed={supervisor_task.get('stop_allowed')}")
+    print(f"continue_until={supervisor_task.get('continue_until')}")
+    print(f"continue_instruction={supervisor_task.get('continue_instruction')}")
     print(f"display_update_due={supervisor_task.get('display_update_due')}")
     print(f"watchdog_status={supervisor_task.get('watchdog_status')}")
     print(f"watchdog_idle_minutes={supervisor_task.get('watchdog_idle_minutes')}")
@@ -4363,6 +4425,11 @@ def run_supervisor(_: argparse.Namespace) -> int:
     print(f"round_label={supervisor_task.get('round_label')}")
     print(f"round_loop_active={supervisor_task.get('round_loop_active')}")
     print(f"rounds_remaining={supervisor_task.get('rounds_remaining')}")
+    print(f"continue_required={supervisor_task.get('continue_required')}")
+    print(f"stop_allowed={supervisor_task.get('stop_allowed')}")
+    print(f"continue_until={supervisor_task.get('continue_until')}")
+    print(f"continue_instruction={supervisor_task.get('continue_instruction')}")
+    print(f"interrupt_policy={supervisor_task.get('interrupt_policy')}")
     print(f"auto_select_frontier={supervisor_task.get('auto_select_frontier')}")
     print(f"context_checkpoint_interval_rounds={supervisor_task.get('context_checkpoint_interval_rounds')}")
     print(f"last_context_checkpoint_round={supervisor_task.get('last_context_checkpoint_round')}")
