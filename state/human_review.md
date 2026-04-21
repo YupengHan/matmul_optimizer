@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 4/100` with `97` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 5/100` with `96` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_114106`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 4/100 diagnosis emitted after a large measured regression on the PTX live-state trim.`
-- dir_01: Restore the accepted PTX hot-band anchor after the failed live-state trim | bottleneck: Known register-limited plateau on the accepted 128x128 PTX surface; this direction is a recovery step, not a new bottleneck attack.
-- dir_02: After recovery, retime the PTX barrier handoff without changing the shared footprint | bottleneck: synchronization_barrier_issue on the accepted PTX hot-band path
-- dir_03: Keep the 256x128 half-panel repair alive, but only after the PTX base is recovered | bottleneck: occupancy_latency_hiding_issue on the wide geometry, with secondary barrier and short-scoreboard sensitivity
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

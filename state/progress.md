@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `6668d2193f6619c3de1cc6000711a62fc1f0fcd8`
-- plateau counter: `95`
-- round loop: `round 4/100`
-- rounds remaining: `97`
-- notes: `Node C build succeeded for round 4/100. Node A will now measure the new code path.`
+- latest measured commit: `4784c8dad3001272fc9bd5ac33581f8a9bde6129`
+- plateau counter: `96`
+- round loop: `round 5/100`
+- rounds remaining: `96`
+- notes: `Node A completed round 4/100. Run node_b to continue round 5/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_113859_bf16_gemm_v1_6668d21`
-- run dir: `runs/20260421_113859_bf16_gemm_v1_6668d21`
+- run id: `20260421_114147_bf16_gemm_v1_4784c8d`
+- run dir: `runs/20260421_114147_bf16_gemm_v1_4784c8d`
 - correctness: `PASS`
-- median runtime: `46.366718 ms`
-- TFLOP/s: `15.679769 TFLOP/s`
+- median runtime: `46.509056 ms`
+- TFLOP/s: `15.631782 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_114106`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 4/100 diagnosis emitted after a large measured regression on the PTX live-state trim.`
-- dir_01: Restore the accepted PTX hot-band anchor after the failed live-state trim | bottleneck: Known register-limited plateau on the accepted 128x128 PTX surface; this direction is a recovery step, not a new bottleneck attack.
-- dir_02: After recovery, retime the PTX barrier handoff without changing the shared footprint | bottleneck: synchronization_barrier_issue on the accepted PTX hot-band path
-- dir_03: Keep the 256x128 half-panel repair alive, but only after the PTX base is recovered | bottleneck: occupancy_latency_hiding_issue on the wide geometry, with secondary barrier and short-scoreboard sensitivity
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
