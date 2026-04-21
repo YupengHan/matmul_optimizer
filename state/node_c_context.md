@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- candidate id: `diagnosis_20260421_014129:dir_01`
+- base run id: `20260421_014052_bf16_gemm_v1_7296bf2`
+- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
+- planned action fingerprint: `restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_014129`
 - round loop: `round 33/100`
+- hypothesis: `Round 29 through round 32 are now enough evidence to step off the forced-3-CTA 128x128 family and recover. The PTX launch-bounds probe and the non-PTX sibling launch-bounds probe both converged on the same answer: they lowered the hot-band register budget to 168, raised achieved warps to about 24.7%, and collapsed long-scoreboard stalls, but they also pushed barrier stall to roughly 11% and regressed runtime into the mid-20s. That means the loop should return to the exact 489574e PTX anchor now so the next aggressive branch starts from the best correctness-proven base instead of from a measured loss.`
+- expected bottleneck: `Known register-limited plateau on the accepted PTX hot-band surface, used here as a recovery anchor.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1955-2060, src/kernels/bf16_gemm_v1.cu:2090-2137`
+- risk: `Low. This is the clean recovery path.`
+- metrics to re-check: `end-to-end median runtime versus the current 26.398208 ms run, hot-band gpu__time_duration.sum, hot-band launch__registers_per_thread, hot-band sm__warps_active.avg.pct_of_peak_sustained_active, hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
