@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 1/100` with `100` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 2/100` with `99` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_105526`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Re-evaluated the active live queue using the richer NCU diagnosis handoff; promoted register- and barrier-aligned families and demoted export-only families.`
-- dir_01: Transplant low-register half-panel staging into the correctness-safe 256x128 pivot | bottleneck: occupancy_latency_hiding_issue with tensor_core_underutilization driven by register pressure and oversized live state
-- dir_02: Trim live state inside the active 128x128 PTX control path before more epilogue work | bottleneck: occupancy_latency_hiding_issue on the accepted PTX hot-band path, with a smaller synchronization_barrier_issue component
-- dir_03: Collapse PTX wait-group and sync cadence without growing the shared-memory footprint | bottleneck: synchronization_barrier_issue with smaller occupancy side-effects on the PTX 128x128 microkernel
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

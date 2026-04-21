@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `0`
-- remaining rounds: `100`
-- current round label: `round 1/100`
+- completed rounds: `1`
+- remaining rounds: `99`
+- current round label: `round 2/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_105134_bf16_gemm_v1_8dcab81`
@@ -14,8 +14,15 @@
 - started at: `2026-04-21T11:05:50-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 1/100. Node A will measure the result next.`
+- notes: `Completed round 1/100. Continue with node_b for round 2/100. Accepted base: 20260421_105134_bf16_gemm_v1_8dcab81 at 24.186960 ms.`
 
 ## Last completed round
 
-- no completed round recorded yet
+- round: `1/100`
+- direction: `dir_01`
+- direction name: `Transplant low-register half-panel staging into the correctness-safe 256x128 pivot`
+- verdict: `regressed`
+- runtime delta: `+5.981616 ms`
+- TFLOP/s delta: `-5.959755 TFLOP/s`
+- run dir: `runs/20260421_110929_bf16_gemm_v1_342b1c5`
+- ncu rep path: `runs/20260421_110929_bf16_gemm_v1_342b1c5/ncu_profile.ncu-rep`
