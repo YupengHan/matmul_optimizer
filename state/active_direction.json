@@ -1,10 +1,31 @@
 {
-  "direction_id": null,
-  "name": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
+  "direction_id": "dir_01",
+  "name": "Reopen The Auxiliary 256x128 Hot-Band Schedule On The Restored Best Base",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T18:37:23-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_183131",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "rank": 1,
+    "name": "Reopen The Auxiliary 256x128 Hot-Band Schedule On The Restored Best Base",
+    "hypothesis": "The latest measured specialization run 20260420_183102_bf16_gemm_v1_29a10ec closes the current PTX inner-loop family on the restored grouped-rows-4 lineage: hot-band registers climbed from 200 on the accepted 2e4dd24 base to 242, long-scoreboard stalls jumped from 7.43% to 15.07%, barrier stalls rose from 5.61% to 6.75%, and end-to-end runtime regressed to 25.6650238 ms. The best next move is therefore to accept a materially different hot-band family rather than another PTX-loop tweak. The auxiliary 256x128 branch is the strongest alternate family in measured history, with a 24.69619179 ms result on 20260420_112149_bf16_gemm_v1_9a4bb85, so retuning that schedule on top of the restored 2e4dd24 base offers the best remaining upside.",
+    "expected_bottleneck": "The main risk is that the wider 256x128 CTA can trade away the grouped-row locality win unless its K-loop cadence and export timing are retuned for the current base. If it fails, the signature will be barrier or scoreboard pressure moving from the current PTX hot band into the auxiliary schedule rather than a clean runtime gain.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:145-156",
+      "src/kernels/bf16_gemm_v1.cu:1576-1664",
+      "src/kernels/bf16_gemm_v1.cu:2078-2125"
+    ],
+    "risk": "Medium. This is a real family pivot, but it has positive measured ancestry and avoids spending another round on the now-regressed fixed-452-tile PTX specialization path. The main failure mode is repeating the slower naive auxiliary-default restore that later measured 31.86790371 ms, so this should be treated as a schedule retune, not a blind path swap.",
+    "metrics_to_recheck": [
+      "median_runtime_ms",
+      "hot-band kernel gpu__time_duration.sum",
+      "hot-band registers per thread",
+      "smsp__pcsamp_warps_issue_stalled_long_scoreboard",
+      "smsp__pcsamp_warps_issue_stalled_barrier",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+    ],
+    "stop_condition": "Stop if the retuned 256x128 branch still lands above the accepted 24.44441605 ms base or if it cannot keep hot-band register pressure and long-scoreboard stalls below the current 29a10ec regression signature after one bounded retune pass."
+  },
+  "notes": "Node C may now implement this one direction."
 }
