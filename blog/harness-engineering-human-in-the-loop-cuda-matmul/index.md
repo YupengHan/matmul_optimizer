@@ -253,11 +253,9 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the repo, which now spans **305 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
+The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **8 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
-> **Data quality note:** the resumed loop interval labeled **round 37/100 through round 100/100** was later identified as a buggy execution path. Those rounds were driven by an invalid supervisor/helper path rather than the intended deep-reasoning `node_b` + real implementation `node_c` workflow. They remain in raw history for auditability, but **future historical optimization evaluation, scorer fitting, search-policy learning, or any other retrospective performance analysis must exclude this interval** instead of treating it as valid optimization evidence.
-
-Because the search has already moved below the local CUTLASS baseline, the chart now places the CUTLASS marker at the point where that threshold was first crossed instead of pinning it to the bottom as a future target. In the current history, that first sub-CUTLASS run is round **46**, version **`22b4466`**, at **25.68 ms**.
+This refactor checkpoint is intentionally separated from the older large-history search. The branch keeps the public benchmark snapshot fixed at the recorded best while the new queue/frontier loop rebuilds evidence on top of a smaller clean baseline and a local cuBLASLt reference.
 
 At the moment, the official benchmark snapshot in the repo is:
 - custom kernel: **24.16 ms**

@@ -20,14 +20,14 @@ The goal is not to solve general matmul. The goal is to see how far a single eng
 - dtype: BF16 inputs, FP32 accumulation, BF16 output reference
 - current official best custom runtime: `24.164272 ms`
 - current local CUTLASS baseline: `25.917889 ms`
-- current local cuBLAS baseline: `~22.18 ms` on this machine
+- current local cuBLAS baseline: `22.000000 ms` on this machine
 - current gap vs CUTLASS: `-1.753616 ms`, with custom at `0.932340x` the CUTLASS runtime / `6.766049%` faster than CUTLASS
 - refactor-branch goal: restore the best measured custom source as the clean branch baseline, then drive toward `<= 18.0 ms` and beat cuBLAS on the same workload
 - execution model: local and script-first, with Codex used for diagnosis and implementation
 - runtime dependencies: no OpenAI API key, cloud service, or LangGraph runtime required
 
 The authoritative benchmark snapshot lives in [state/benchmark_baselines.md](state/benchmark_baselines.md). The exact workload definition lives in [docs/benchmark_spec.md](docs/benchmark_spec.md).
-The current cuBLAS reference is a cuBLASLt path on the same fixed dataset. The best observed run on this branch is `22.176255 ms`; the latest full baseline refresh with NCU handoff is `22.289920 ms`.
+The current cuBLAS reference is a cuBLASLt path on the same fixed dataset. The authoritative recorded baseline is the clean post-cleanup run `20260421_150524_cublas_ref_clean_post_cleanup` at `22.000000 ms`.
 
 ## Current Operator Entry
 
@@ -321,7 +321,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in the repo, which now spans `305` recorded measurement rounds, so it reflects the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
+The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `8` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
@@ -341,7 +341,7 @@ At the moment, the official benchmark snapshot in the repo is:
 
 - [x] Checkpoint - Apr 21, 2026: refactor branches can now rebootstrap from a measured custom source and track cuBLAS as a first-class reference
 
-  The workflow now has a branch-safe `rebootstrap` path that restores only the implementation surface from a measured run, clears the live frontier/history, and keeps the richer NCU handoff intact. The same dataset can now also be benchmarked through a local cuBLASLt-backed runner, and the best observed local vendor baseline on this machine is now about `22.18 ms`. That baseline can feed node_b when the custom profile stops suggesting obvious next moves.
+  The workflow now has a branch-safe `rebootstrap` path that restores only the implementation surface from a measured run, clears the live frontier/history, and keeps the richer NCU handoff intact. The same dataset can now also be benchmarked through a local cuBLASLt-backed runner, and the current authoritative local vendor baseline on this machine is `22.000000 ms`. That baseline can feed node_b when the custom profile stops suggesting obvious next moves.
 
 - [ ] TODO - make workflow state transitions deterministic scripts instead of agent judgments
 
