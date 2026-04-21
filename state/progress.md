@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `5383596d7276d7daebbe92c3dc04bea84a505aac`
 - plateau counter: `3`
 - round loop: `round 3/10`
 - rounds remaining: `8`
-- notes: `Node A completed round 2/10. Run node_b to continue round 3/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_145629_round03_5383596d:dir_01 via recommended selection for round 3/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_145629_round03_5383596d`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 3 should return to the accepted base run 20260421_133418_bf16_gemm_v1_c859cd06 before implementing any new direction. The 64x384 row-band expansion family is now explicitly deprioritized after the 47.291 ms regression.`
+- dir_01: Restore The Accepted Base And Increase PTX Grouped-Row Depth | bottleneck: launch-order and B-tile reuse inefficiency inside the accepted PTX hot-band traversal
+- dir_02: Restore The Accepted Base And Swap To The Single-K 128x128 Sibling | bottleneck: microkernel-specific accumulate ordering is contributing to scoreboard overhead on the accepted hot-band split
+- dir_03: Restore The Accepted Base And Tighten PTX Launch Bounds | bottleneck: register pressure and low CTA residency on the accepted PTX hot-band path
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

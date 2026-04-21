@@ -1,22 +1,252 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_145629_round03_5383596d",
+  "status": "completed",
+  "created_at": "2026-04-21T14:57:58-07:00",
   "source_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
   "source_run_dir": "runs/20260421_145629_bf16_gemm_v1_5383596d",
   "source_summary_json": "runs/20260421_145629_bf16_gemm_v1_5383596d/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "Round 2 falsified the row-band expansion family much more strongly than the raw PTX kernel profile alone suggests. The profiled 128x128 PTX hotspot itself improved in almost every local metric versus the round-1 staged regression: runtime-facing tensor activity rose to 48.45%, barrier stalls dropped to 5.98%, registers fell to 198, and compute/memory throughput both improved. Yet total end-to-end runtime exploded to 47.291 ms. That means the extra 64x384 peeled work is far more expensive than the NCU-selected hotspot implies, so the search should stop expanding that family and return to the accepted base. The next best move is therefore a cheap, isolated launch-order tweak on top of the accepted PTX hot-band path: retune kFixedHotBandPtxGroupedRows to change how many row tiles share the same hot-band B tile traversal. The second-best move keeps the same row split but swaps to the existing single-K 128x128 non-microkernel sibling, isolating whether the microkernel-specific accumulate ordering is hurting scoreboard behavior. The third move is a more speculative launch-bounds retune to see whether the compiler can trim register pressure further without spills, but it ranks lower because the cuBLAS reference already shows that lower active-warps alone is not the main gap.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_145629_bf16_gemm_v1_5383596d/summary.json",
+    "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.md",
+    "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+    "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md",
+    "state/autotune_round18_main_tiles.md"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_145629_round03_5383596d:dir_01",
+  "family_audit": [
+    {
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "decision": "accept",
+      "rationale": "Round 2 showed the PTX hotspot is not the main thing to abandon; instead the total work split regressed badly. A grouped-row retune is the cheapest way to stay on the accepted PTX base while changing CTA traversal and B-tile reuse."
+    },
+    {
+      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+      "decision": "keep_hot",
+      "rationale": "The single-K non-microkernel sibling stays on the same row split and stage depth, so it remains a good second experiment if grouped-row retuning does not move long-scoreboard pressure enough."
+    },
+    {
+      "family_id": "register_pressure::retune_ptx_launch_bounds",
+      "decision": "keep_as_alternative",
+      "rationale": "The PTX hotspot still carries roughly 200 registers per thread, but the cuBLAS reference suggests occupancy is not the only answer. Launch-bounds tuning is worth keeping as a third lever, not the first."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Accepted Base And Increase PTX Grouped-Row Depth",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::grouped_rows_4_to_8_for_b_reuse",
+      "action_fingerprint": "restore_ptx_hotband_baseline:grouped_rows_4->8",
+      "mode": "exploit",
+      "hypothesis": "The accepted PTX hot-band kernel is still the fastest measured family, but its grouped-row traversal may not be feeding B-tile reuse aggressively enough. Restoring the accepted base and increasing kFixedHotBandPtxGroupedRows from 4 to 8 should keep more adjacent row tiles on the same hot-band B tile before advancing columns, which may reduce scoreboard waste without reopening the failed 64x384 expansion.",
+      "expected_bottleneck": "launch-order and B-tile reuse inefficiency inside the accepted PTX hot-band traversal",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1983",
+        "src/kernels/bf16_gemm_v1.cu:1988",
+        "src/kernels/bf16_gemm_v1.cu:2114"
+      ],
+      "risk": "Low-to-moderate risk: the change is isolated, but a larger grouped-row depth can easily help B reuse while hurting A locality.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 0.78,
+      "score_breakdown": {
+        "expected_gain": 0.26,
+        "implementation_risk": 0.15,
+        "evidence_strength": 0.15,
+        "code_reuse": 0.22
+      },
+      "predicted_gain_ms": 0.7,
+      "predicted_fail_risk": 0.24,
+      "ranking_notes": [
+        "The accepted PTX base still beats every attempted variant in this refactor loop, so the next move should be a small perturbation on that path.",
+        "Grouped-row depth is the cleanest way to change CTA issue order and B reuse without touching the K-stage structure."
+      ],
+      "stop_condition": "Stop if runtime change stays within noise or if long-scoreboard stalls rise further after the first measurement.",
+      "evidence_refs": [
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX hot-band baseline by undoing the round-2 pivot-row rebalance.",
+        "Increase kFixedHotBandPtxGroupedRows from 4 to 8 while keeping the default PTX hot-band launch and 64x96 tail intact."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The Accepted Base And Swap To The Single-K 128x128 Sibling",
+      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+      "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
+      "action_fingerprint": "restore_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+      "mode": "exploit",
+      "hypothesis": "The existing single-K 128x128 sibling preserves the accepted row split and one-K staging depth while using the regular accumulate ordering instead of the microkernel-specific path. That may improve scoreboard behavior without paying the staged-128x128x32 penalty or the 64x384 row-band penalty.",
+      "expected_bottleneck": "microkernel-specific accumulate ordering is contributing to scoreboard overhead on the accepted hot-band split",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1839",
+        "src/kernels/bf16_gemm_v1.cu:1924",
+        "src/kernels/bf16_gemm_v1.cu:1956",
+        "src/kernels/bf16_gemm_v1.cu:2114"
+      ],
+      "risk": "Moderate risk: the variant is in-tree but still lacks a direct measurement on the accepted row split in this refactor loop.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 0.67,
+      "score_breakdown": {
+        "expected_gain": 0.22,
+        "implementation_risk": 0.24,
+        "evidence_strength": 0.11,
+        "code_reuse": 0.1
+      },
+      "predicted_gain_ms": 0.8,
+      "predicted_fail_risk": 0.39,
+      "ranking_notes": [
+        "This is the most contained kernel-variant swap that stays on the accepted row split.",
+        "It ranks behind grouped-row retuning because the launch-order experiment is cheaper and more directly tied to the current scoreboard signal."
+      ],
+      "stop_condition": "Stop if runtime regresses again while register pressure and active-warps do not materially improve.",
+      "evidence_refs": [
+        "src/kernels/bf16_gemm_v1.cu",
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX hot-band baseline row split.",
+        "Replace the default hot-band launch with the existing single-K 128x128 non-microkernel sibling."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore The Accepted Base And Tighten PTX Launch Bounds",
+      "family_id": "register_pressure::retune_ptx_launch_bounds",
+      "subfamily_id": "register_pressure::launch_bounds_128x128_ptx_min_blocks_2_to_3",
+      "action_fingerprint": "restore_ptx_hotband_baseline:launch_bounds_min_blocks_2->3",
+      "mode": "explore",
+      "hypothesis": "The accepted PTX hotspot still sits around 200 registers per thread with occupancy capped at two blocks per SM. Tightening __launch_bounds__ to target three blocks per SM may trim enough register pressure to change latency hiding, provided the compiler does not spill heavily.",
+      "expected_bottleneck": "register pressure and low CTA residency on the accepted PTX hot-band path",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955"
+      ],
+      "risk": "High risk: forcing tighter launch bounds can introduce spills or a weaker instruction schedule, and the cuBLAS reference suggests occupancy alone is not the full answer.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 0.49,
+      "score_breakdown": {
+        "expected_gain": 0.18,
+        "implementation_risk": 0.33,
+        "evidence_strength": 0.06,
+        "code_reuse": 0.08
+      },
+      "predicted_gain_ms": 0.5,
+      "predicted_fail_risk": 0.56,
+      "ranking_notes": [
+        "This is still worth keeping because the PTX path remains latency-limited.",
+        "It ranks third because the cuBLAS ceiling does not point to occupancy as the main missing ingredient."
+      ],
+      "stop_condition": "Stop immediately if build output or NCU shows spills, or if runtime regresses without reducing register pressure.",
+      "evidence_refs": [
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX hot-band baseline row split.",
+        "Retune the PTX microkernel launch-bounds annotation and leave the rest of the launch topology unchanged for the first measurement."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 3 should return to the accepted base run 20260421_133418_bf16_gemm_v1_c859cd06 before implementing any new direction. The 64x384 row-band expansion family is now explicitly deprioritized after the 47.291 ms regression."
 }

@@ -2,17 +2,17 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
-  "source_measured_commit": "5ea07e356339f761e5361611762dceb0273a84b6",
-  "source_diagnosis_id": "diagnosis_20260421_142317_round02_5ea07e35",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_142317_round02_5ea07e35",
+  "source_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+  "source_measured_commit": "5383596d7276d7daebbe92c3dc04bea84a505aac",
+  "source_diagnosis_id": "diagnosis_20260421_145629_round03_5383596d",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_145629_round03_5383596d",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T14:56:48-07:00",
+  "updated_at": "2026-04-21T15:01:38-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_142317_round02_5ea07e35:dir_01 closed via pass_loss after selection.",
-  "family_representative_count": 4,
+  "selected_candidate_id": "diagnosis_20260421_145629_round03_5383596d:dir_01",
+  "selection_reason": "selected_via_recommended",
+  "selection_summary": "Selected diagnosis_20260421_145629_round03_5383596d:dir_01 -> dir_01 via mode=recommended.",
+  "family_representative_count": 5,
   "reopened_candidate_ids": [],
   "candidates": [
     {
@@ -201,7 +201,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.695,
+      "family_representative_score": 0.665,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -292,7 +292,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.5125,
+      "family_representative_score": 0.4825,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -385,8 +385,8 @@
       "last_result_runtime_ms": 47.2908802,
       "last_runtime_delta_ms": 17.283200259999997,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T14:56:48-07:00",
-      "last_closed_search_iteration": 3,
+      "last_closed_at": "2026-04-21T15:01:38-07:00",
+      "last_closed_search_iteration": 4,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -464,7 +464,7 @@
           "guardrail": "non_decreasing"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 3,
       "selection_count": 0,
       "reopen_count": 0,
@@ -480,9 +480,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 0.785,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     },
@@ -561,7 +561,7 @@
           "guardrail": "non_increasing"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 3,
       "selection_count": 0,
       "reopen_count": 0,
@@ -577,12 +577,295 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_145629_round03_5383596d:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_145629_round03_5383596d",
+      "base_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+      "base_measured_commit": "5383596d7276d7daebbe92c3dc04bea84a505aac",
+      "base_runtime_ms": 47.2908802,
+      "direction_id": "dir_01",
+      "direction_name": "Restore The Accepted Base And Increase PTX Grouped-Row Depth",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::grouped_rows_4_to_8_for_b_reuse",
+      "action_fingerprint": "restore_ptx_hotband_baseline:grouped_rows_4->8",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "exploit",
+      "priority": 0.78,
+      "search_score_v1": 0.78,
+      "score_breakdown": {
+        "expected_gain": 0.26,
+        "implementation_risk": 0.15,
+        "evidence_strength": 0.15,
+        "code_reuse": 0.22
+      },
+      "predicted_gain_ms": 0.7,
+      "predicted_fail_risk": 0.24,
+      "ranking_notes": [
+        "The accepted PTX base still beats every attempted variant in this refactor loop, so the next move should be a small perturbation on that path.",
+        "Grouped-row depth is the cleanest way to change CTA issue order and B reuse without touching the K-stage structure."
+      ],
+      "hypothesis": "The accepted PTX hot-band kernel is still the fastest measured family, but its grouped-row traversal may not be feeding B-tile reuse aggressively enough. Restoring the accepted base and increasing kFixedHotBandPtxGroupedRows from 4 to 8 should keep more adjacent row tiles on the same hot-band B tile before advancing columns, which may reduce scoreboard waste without reopening the failed 64x384 expansion.",
+      "expected_bottleneck": "launch-order and B-tile reuse inefficiency inside the accepted PTX hot-band traversal",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1983",
+        "src/kernels/bf16_gemm_v1.cu:1988",
+        "src/kernels/bf16_gemm_v1.cu:2114"
+      ],
+      "risk": "Low-to-moderate risk: the change is isolated, but a larger grouped-row depth can easily help B reuse while hurting A locality.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if runtime change stays within noise or if long-scoreboard stalls rise further after the first measurement.",
+      "evidence_refs": [
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX hot-band baseline by undoing the round-2 pivot-row rebalance.",
+        "Increase kFixedHotBandPtxGroupedRows from 4 to 8 while keeping the default PTX hot-band launch and 64x96 tail intact."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "non_decreasing"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 4,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T15:01:38-07:00",
+      "last_selected_selection_mode": "recommended",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.6275,
+      "family_representative_score": 0.97,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_145629_round03_5383596d:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_145629_round03_5383596d",
+      "base_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+      "base_measured_commit": "5383596d7276d7daebbe92c3dc04bea84a505aac",
+      "base_runtime_ms": 47.2908802,
+      "direction_id": "dir_02",
+      "direction_name": "Restore The Accepted Base And Swap To The Single-K 128x128 Sibling",
+      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+      "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
+      "action_fingerprint": "restore_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "exploit",
+      "priority": 0.67,
+      "search_score_v1": 0.67,
+      "score_breakdown": {
+        "expected_gain": 0.22,
+        "implementation_risk": 0.24,
+        "evidence_strength": 0.11,
+        "code_reuse": 0.1
+      },
+      "predicted_gain_ms": 0.8,
+      "predicted_fail_risk": 0.39,
+      "ranking_notes": [
+        "This is the most contained kernel-variant swap that stays on the accepted row split.",
+        "It ranks behind grouped-row retuning because the launch-order experiment is cheaper and more directly tied to the current scoreboard signal."
+      ],
+      "hypothesis": "The existing single-K 128x128 sibling preserves the accepted row split and one-K staging depth while using the regular accumulate ordering instead of the microkernel-specific path. That may improve scoreboard behavior without paying the staged-128x128x32 penalty or the 64x384 row-band penalty.",
+      "expected_bottleneck": "microkernel-specific accumulate ordering is contributing to scoreboard overhead on the accepted hot-band split",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1839",
+        "src/kernels/bf16_gemm_v1.cu:1924",
+        "src/kernels/bf16_gemm_v1.cu:1956",
+        "src/kernels/bf16_gemm_v1.cu:2114"
+      ],
+      "risk": "Moderate risk: the variant is in-tree but still lacks a direct measurement on the accepted row split in this refactor loop.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if runtime regresses again while register pressure and active-warps do not materially improve.",
+      "evidence_refs": [
+        "src/kernels/bf16_gemm_v1.cu",
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX hot-band baseline row split.",
+        "Replace the default hot-band launch with the existing single-K 128x128 non-microkernel sibling."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 4,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 0.7225,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_145629_round03_5383596d:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_145629_round03_5383596d",
+      "base_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+      "base_measured_commit": "5383596d7276d7daebbe92c3dc04bea84a505aac",
+      "base_runtime_ms": 47.2908802,
+      "direction_id": "dir_03",
+      "direction_name": "Restore The Accepted Base And Tighten PTX Launch Bounds",
+      "family_id": "register_pressure::retune_ptx_launch_bounds",
+      "subfamily_id": "register_pressure::launch_bounds_128x128_ptx_min_blocks_2_to_3",
+      "action_fingerprint": "restore_ptx_hotband_baseline:launch_bounds_min_blocks_2->3",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.49,
+      "search_score_v1": 0.49,
+      "score_breakdown": {
+        "expected_gain": 0.18,
+        "implementation_risk": 0.33,
+        "evidence_strength": 0.06,
+        "code_reuse": 0.08
+      },
+      "predicted_gain_ms": 0.5,
+      "predicted_fail_risk": 0.56,
+      "ranking_notes": [
+        "This is still worth keeping because the PTX path remains latency-limited.",
+        "It ranks third because the cuBLAS ceiling does not point to occupancy as the main missing ingredient."
+      ],
+      "hypothesis": "The accepted PTX hotspot still sits around 200 registers per thread with occupancy capped at two blocks per SM. Tightening __launch_bounds__ to target three blocks per SM may trim enough register pressure to change latency hiding, provided the compiler does not spill heavily.",
+      "expected_bottleneck": "register pressure and low CTA residency on the accepted PTX hot-band path",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955"
+      ],
+      "risk": "High risk: forcing tighter launch bounds can introduce spills or a weaker instruction schedule, and the cuBLAS reference suggests occupancy alone is not the full answer.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop immediately if build output or NCU shows spills, or if runtime regresses without reducing register pressure.",
+      "evidence_refs": [
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX hot-band baseline row split.",
+        "Retune the PTX microkernel launch-bounds annotation and leave the rest of the launch topology unchanged for the first measurement."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 4,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 0.5,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 6 historical candidates; 4 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 9 historical candidates; 5 family representatives are currently active for selection."
 }
