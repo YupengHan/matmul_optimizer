@@ -1,27 +1,27 @@
 # Latest Nsight Compute summary
 
-- source run id: `20260420_184822_bf16_gemm_v1_2ab9365`
-- source run dir: `runs/20260420_184822_bf16_gemm_v1_2ab9365`
+- source run id: `20260420_185423_bf16_gemm_v1_1181247`
+- source run dir: `runs/20260420_185423_bf16_gemm_v1_1181247`
 - status: `available`
 - kernel name: `None`
 - block size: `None`
 - grid size: `None`
 - registers / thread: `None`
 - shared mem / block allocated: `None`
-- raw csv path: `runs/20260420_184822_bf16_gemm_v1_2ab9365/ncu_metrics.csv`
-- raw rep path: `runs/20260420_184822_bf16_gemm_v1_2ab9365/ncu_profile.ncu-rep`
-- raw detailed csv path: `runs/20260420_184822_bf16_gemm_v1_2ab9365/ncu_details.csv`
+- raw csv path: `runs/20260420_185423_bf16_gemm_v1_1181247/ncu_metrics.csv`
+- raw rep path: `runs/20260420_185423_bf16_gemm_v1_1181247/ncu_profile.ncu-rep`
+- raw detailed csv path: `runs/20260420_185423_bf16_gemm_v1_1181247/ncu_details.csv`
 
 ## Headline metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`: `48.21`
-- `sm__throughput.avg.pct_of_peak_sustained_elapsed`: `47.66`
-- `gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed`: `45.96`
-- `dram__throughput.avg.pct_of_peak_sustained_elapsed`: `12.86`
-- `lts__throughput.avg.pct_of_peak_sustained_elapsed`: `30.14`
-- `sm__warps_active.avg.pct_of_peak_sustained_active`: `16.64`
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct`: `5.62`
-- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`: `7.41`
-- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct`: `2.15`
-- `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct`: `3.67`
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`: `48.24`
+- `sm__throughput.avg.pct_of_peak_sustained_elapsed`: `47.61`
+- `gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed`: `45.91`
+- `dram__throughput.avg.pct_of_peak_sustained_elapsed`: `12.84`
+- `lts__throughput.avg.pct_of_peak_sustained_elapsed`: `30.51`
+- `sm__warps_active.avg.pct_of_peak_sustained_active`: `16.66`
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct`: `5.58`
+- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`: `7.49`
+- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct`: `2.22`
+- `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct`: `3.60`
 - `launch__occupancy_limit_registers`: `2`

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_184822_bf16_gemm_v1_2ab9365`
-- run dir: `runs/20260420_184822_bf16_gemm_v1_2ab9365`
-- kernel tag: `bf16_gemm_v1_2ab9365`
-- round label: `round 7/50`
+- run id: `20260420_185423_bf16_gemm_v1_1181247`
+- run dir: `runs/20260420_185423_bf16_gemm_v1_1181247`
+- kernel tag: `bf16_gemm_v1_1181247`
+- round label: `round 8/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.449024 ms`
-- p10 runtime: `24.229990 ms`
-- p90 runtime: `25.325159 ms`
-- TFLOP/s: `29.736132 TFLOP/s`
-- previous run id: `20260420_184055_bf16_gemm_v1_9144f92`
-- runtime delta vs previous measured run: `-4.651440 ms`
-- TFLOP/s delta vs previous measured run: `+4.753045 TFLOP/s`
+- median runtime: `24.422464 ms`
+- p10 runtime: `24.221390 ms`
+- p90 runtime: `25.271095 ms`
+- TFLOP/s: `29.768471 TFLOP/s`
+- previous run id: `20260420_184822_bf16_gemm_v1_2ab9365`
+- runtime delta vs previous measured run: `-0.026560 ms`
+- TFLOP/s delta vs previous measured run: `+0.032339 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
+- implemented direction name: `Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_184822_bf16_gemm_v1_2ab9365/summary.json`
-- measured commit: `2ab93655cd79475876024fb5811e7c4c3be9c813`
-- new best custom: `no`
-- generated at: `2026-04-20T18:48:28-07:00`
+- raw summary json: `runs/20260420_185423_bf16_gemm_v1_1181247/summary.json`
+- measured commit: `1181247a12bfd0978dd155838558142b6386710e`
+- new best custom: `yes`
+- generated at: `2026-04-20T18:54:29-07:00`

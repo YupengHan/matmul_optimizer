@@ -6,45 +6,44 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `2ab93655cd79475876024fb5811e7c4c3be9c813`
-- plateau counter: `5`
-- round loop: `round 8/50`
-- rounds remaining: `43`
-- notes: `Node C build succeeded for round 8/50. Node A will now measure the new code path.`
+- latest measured commit: `1181247a12bfd0978dd155838558142b6386710e`
+- plateau counter: `0`
+- round loop: `round 9/50`
+- rounds remaining: `42`
+- notes: `Node A completed round 8/50. Run node_b to continue round 9/50.`
 
 ## Latest measured custom run
 
-- run id: `20260420_184822_bf16_gemm_v1_2ab9365`
-- run dir: `runs/20260420_184822_bf16_gemm_v1_2ab9365`
+- run id: `20260420_185423_bf16_gemm_v1_1181247`
+- run dir: `runs/20260420_185423_bf16_gemm_v1_1181247`
 - correctness: `PASS`
-- median runtime: `24.449024 ms`
-- TFLOP/s: `29.736132 TFLOP/s`
+- median runtime: `24.422464 ms`
+- TFLOP/s: `29.768471 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
+- result: `NEW BEST CUSTOM RUN`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_184841`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 8/50 diagnosis for 20260420_184822_bf16_gemm_v1_2ab9365. Human-review audit: state/human_review.md still contains workflow and approval policy only, with no explicit user-supplied idea-family bullets to accept or reject one by one, so the ranking remains measured-evidence-driven. Accepted for this round: bounded micro-tuning on the new grouped-row 128x128 sibling family, because the latest run is correct and only 4.608 microseconds slower than the accepted 2e4dd24 best. The profile shows this is a parity-quality base, not a regression: hot-band kernel time is 32.831584 ms versus 32.801760 ms on 2e4dd24, tensor active is 48.21% versus 48.16%, barrier stalls are 5.62% versus 5.61%, and long-scoreboard stalls are 7.41% versus 7.43%. Deferred: alternate PTX-family handoff retimes, which still have some historical upside but are no longer the first choice now that the sibling branch has reached parity. Rejected for this round: large family pivots such as the 256x128 auxiliary branch, which just failed at 29.10046387 ms and 0/3 correctness on 9144f92, and the broad fixed-main override family, whose autotune evidence belongs to an older surface and whose modern current-regime validations remain far from the 24.44 ms band. The main ranking consequence is that the next move should be a narrow export/shared or seam refinement on the new sibling base, not a restart into a different kernel family.`
-- dir_01: Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage | bottleneck: The likely residual bottleneck is shared export/writeback overhead rather than math scheduling. If the single-stage export trim works, it should lower the sibling's shared footprint and reduce the tiny hot-band gap without harming the already-matched barrier and long-scoreboard profile.
-- dir_02: Retune The 6400-Row Hot/Peeled Seam On The New Grouped-Row Sibling Base | bottleneck: This branch is constrained by the peeled 64x384 residual path becoming the dominant overhead. If the seam moves the wrong way, total hot-band plus peeled time will worsen even if one kernel improves in isolation.
-- dir_03: Reopen The Accepted PTX Handoff Window As The Alternate Control Family | bottleneck: The risk here is that the PTX base is already very close to its local optimum, so a handoff retime may simply move stalls between barrier, scoreboard, and export without producing a real win over the new sibling result.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
 
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-1.473473 ms`, `0.943148x` slower than CUTLASS
+- current best custom gap: `-1.495424 ms`, `0.942301x` slower than CUTLASS

@@ -1,27 +1,27 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `50`
-- completed rounds: `7`
-- remaining rounds: `43`
-- current round label: `round 8/50`
+- completed rounds: `8`
+- remaining rounds: `42`
+- current round label: `round 9/50`
 - auto use recommended: `yes`
-- accepted base run id: `20260420_180146_bf16_gemm_v1_2e4dd24`
-- accepted base measured commit: `2e4dd246f55b505bd095c42b62c56dc497c8fde1`
-- accepted base runtime: `24.444416 ms`
+- accepted base run id: `20260420_185423_bf16_gemm_v1_1181247`
+- accepted base measured commit: `1181247a12bfd0978dd155838558142b6386710e`
+- accepted base runtime: `24.422464 ms`
 - started at: `2026-04-20T17:42:35-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 8/50. Node A will measure the result next.`
+- notes: `Completed round 8/50. Continue with node_b for round 9/50. Accepted base: 20260420_185423_bf16_gemm_v1_1181247 at 24.422464 ms.`
 
 ## Last completed round
 
-- round: `7/50`
+- round: `8/50`
 - direction: `dir_01`
-- direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
+- direction name: `Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage`
 - verdict: `improved`
-- runtime delta: `-4.651440 ms`
-- TFLOP/s delta: `+4.753045 TFLOP/s`
-- run dir: `runs/20260420_184822_bf16_gemm_v1_2ab9365`
-- ncu rep path: `runs/20260420_184822_bf16_gemm_v1_2ab9365/ncu_profile.ncu-rep`
+- runtime delta: `-0.026560 ms`
+- TFLOP/s delta: `+0.032339 TFLOP/s`
+- run dir: `runs/20260420_185423_bf16_gemm_v1_1181247`
+- ncu rep path: `runs/20260420_185423_bf16_gemm_v1_1181247/ncu_profile.ncu-rep`
