@@ -150,10 +150,7 @@ constexpr int kHotBandStageKTiles = 2;
 constexpr int kFixedTailRegionN = TensorCoreTile96::kTensorBlockN;
 constexpr int kFixedHotBandN = kFixedBenchmarkN - kFixedTailRegionN;
 constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
-// Shift a few more 64-row bands into the 64x384 peeled path. The accepted PTX
-// hot-band baseline stays intact, but less of the fixed shape pays the 128x128
-// hotspot's per-tile synchronization cost.
-constexpr int kFixedPivotHotRows = 6144;
+constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
 constexpr int kFixedHotBandPtxGroupedRows = 4;

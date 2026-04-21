@@ -11,4 +11,4 @@
 - rounds remaining: `8`
 - recommended direction: `dir_01`
 - selected direction: `dir_01`
-- immediate next action: `Node C is ready to implement diagnosis_20260421_145629_round03_5383596d:dir_01 via recommended selection for round 3/10.`
+- immediate next action: `Restore-base reset the implementation surface to run_id=20260421_133418_bf16_gemm_v1_c859cd06.`
