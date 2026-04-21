@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `489574ed5013268dbb79c634450d9a60155a294a`
 - plateau counter: `0`
 - round loop: `round 13/100`
 - rounds remaining: `88`
-- notes: `Node A completed round 12/100. Run node_b to continue round 13/100.`
+- notes: `Node C is ready to implement diagnosis_20260420_235953:dir_01 via recommended selection for round 13/100.`
 
 ## Latest measured custom run
 
@@ -29,19 +29,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_235953`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 13/100 audit: round 12 repaired the search-surface mismatch and restored `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<(int)452>` as the dominant measured hot-band launch, producing a new best custom runtime at 24.16427231 ms. The current source is now semantically aligned with the previous best-known PTX surface, so restore and export-cleanup families are absorbed again and should be filtered out for this round. The ranking therefore returns to genuinely unabsorbed active-PTX follow-ons, while keeping one round-history PTX alternate alive in the live queue.`
+- dir_01: Steady-state Barrier / Handoff Retime | bottleneck: Residual wait-group and barrier cadence in the active PTX hot-band steady-state loop, especially the handoff between MMA issue completion and future-tile refill.
+- dir_02: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX hot-band control-path overhead and consume-order friction inside the active one-K 128x128 microkernel, beyond the already-absorbed export cleanup and exact restore.
+- dir_03: Restore accepted grouped_rows=8 hot-band consumer ordering | bottleneck: Consumer-side ordering and grouped-row locality inside the PTX hot-band microkernel, especially grouped CTA mapping and the export handoff under the grouped_rows=8 regime.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
