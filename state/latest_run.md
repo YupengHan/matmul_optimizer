@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_150200_bf16_gemm_v1_f4fa1bbe`
-- run dir: `runs/20260421_150200_bf16_gemm_v1_f4fa1bbe`
-- kernel tag: `bf16_gemm_v1_f4fa1bbe`
-- round label: `round 3/10`
+- run id: `20260421_150626_bf16_gemm_v1_6cc462c4`
+- run dir: `runs/20260421_150626_bf16_gemm_v1_6cc462c4`
+- kernel tag: `bf16_gemm_v1_6cc462c4`
+- round label: `single-run`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.570496 ms`
-- p10 runtime: `46.327296 ms`
-- p90 runtime: `55.847528 ms`
-- TFLOP/s: `15.611159 TFLOP/s`
-- previous run id: `20260421_145629_bf16_gemm_v1_5383596d`
-- runtime delta vs previous measured run: `-0.720385 ms`
-- TFLOP/s delta vs previous measured run: `+0.237806 TFLOP/s`
+- median runtime: `24.323521 ms`
+- p10 runtime: `24.169369 ms`
+- p90 runtime: `24.407766 ms`
+- TFLOP/s: `29.889564 TFLOP/s`
+- previous run id: `20260421_150200_bf16_gemm_v1_f4fa1bbe`
+- runtime delta vs previous measured run: `-22.246975 ms`
+- TFLOP/s delta vs previous measured run: `+14.278405 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `dir_01`
-- implemented direction name: `Restore The Accepted Base And Increase PTX Grouped-Row Depth`
-- implemented selection mode: `recommended`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_150200_bf16_gemm_v1_f4fa1bbe/summary.json`
-- ncu analysis path: `runs/20260421_150200_bf16_gemm_v1_f4fa1bbe/ncu_analysis.json`
-- measured commit: `f4fa1bbe415aebb8a5e0e571e9ae36fed4fbce87`
+- raw summary json: `runs/20260421_150626_bf16_gemm_v1_6cc462c4/summary.json`
+- ncu analysis path: `runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.json`
+- measured commit: `6cc462c46b05712b972773911a1a7f31892ddcb2`
 - new best custom: `no`
-- generated at: `2026-04-21T15:02:17-07:00`
+- generated at: `2026-04-21T15:06:37-07:00`

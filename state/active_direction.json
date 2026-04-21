@@ -1,21 +1,80 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Increase PTX Grouped-Row Depth On The Clean Baseline",
+  "candidate_id": "diagnosis_20260421_150626_round01_clean_6cc462c4:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+  "subfamily_id": "launch_order::grouped_rows_4_to_8_for_b_reuse",
+  "action_fingerprint": "clean_ptx_hotband_baseline:grouped_rows_4->8",
+  "selection_priority": 0.98,
+  "base_run_id": "20260421_150626_bf16_gemm_v1_6cc462c4",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T15:08:54-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_150626_round01_clean_6cc462c4",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Increase PTX Grouped-Row Depth On The Clean Baseline",
+    "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+    "subfamily_id": "launch_order::grouped_rows_4_to_8_for_b_reuse",
+    "action_fingerprint": "clean_ptx_hotband_baseline:grouped_rows_4->8",
+    "mode": "exploit",
+    "hypothesis": "The accepted PTX hot-band baseline may still be wasting issue slots because each hot-band B tile is only reused across four adjacent row tiles before the traversal advances columns. Increasing kFixedHotBandPtxGroupedRows from 4 to 8 should keep each B tile live across more rows, potentially reducing scoreboard pressure without changing the row split or K-stage structure.",
+    "expected_bottleneck": "launch-order and B-tile reuse inefficiency inside the accepted PTX hot-band traversal",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:156",
+      "src/kernels/bf16_gemm_v1.cu:1983",
+      "src/kernels/bf16_gemm_v1.cu:1988",
+      "src/kernels/bf16_gemm_v1.cu:2114"
+    ],
+    "risk": "Low-to-moderate risk: the edit is isolated, but deeper row grouping can help B reuse while hurting A locality or cache balance.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+    ],
+    "search_score_v1": 0.79,
+    "score_breakdown": {
+      "expected_gain": 0.27,
+      "implementation_risk": 0.15,
+      "evidence_strength": 0.16,
+      "code_reuse": 0.21
+    },
+    "predicted_gain_ms": 0.7,
+    "predicted_fail_risk": 0.24,
+    "ranking_notes": [
+      "This is the fastest clean experiment to run on the accepted PTX hot-band baseline.",
+      "It keeps the search on the same family that currently produces the best custom runtime."
+    ],
+    "stop_condition": "Stop if runtime change stays within noise or if long-scoreboard stalls rise after the first clean measurement.",
+    "evidence_refs": [
+      "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
+      "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "section",
+        "scope_name": "GPU Speed Of Light Throughput",
+        "location": "GPU Speed Of Light Throughput"
+      }
+    ],
+    "expected_local_changes": [
+      "Keep the accepted PTX hot-band row split and default launch intact.",
+      "Increase kFixedHotBandPtxGroupedRows from 4 to 8 and remeasure on the same fixed benchmark."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "guardrail": "non_increasing"
+      },
+      {
+        "metric_name": "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "guardrail": "non_decreasing"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
