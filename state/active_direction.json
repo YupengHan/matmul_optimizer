@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T19:58:49-07:00",
   "source_diagnosis_id": "diagnosis_20260420_195219",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -27,5 +27,5 @@
     ],
     "stop_condition": "Stop if reverting to the single-K `128x128` default does not recover close to the previous `25.504256 ms` result or if the hot-band kernel still stays near `212` regs/thread and `43,008` B shared/block after the swap."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
