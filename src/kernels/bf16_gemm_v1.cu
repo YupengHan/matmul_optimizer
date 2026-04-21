@@ -1056,21 +1056,28 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pair_64x64_ptx_microkern
       acc_tiles, warp_c_tile, c_tile_base, lane_id);
 }
 
+template <int TileRow = 0>
+__device__ __forceinline__ void ptx_wmma_store_tile_rows_64x64_ptx_microkernel(
+    const PtxWmmaAccTileSet64x64& acc_tiles,
+    float* c_shared,
+    __nv_bfloat16* c_tile_base,
+    int warp_id,
+    int lane_id) {
+  if constexpr (TileRow < FixedHotBandTile128x128::kWarpMmaTilesM) {
+    ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<TileRow>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+    ptx_wmma_store_tile_rows_64x64_ptx_microkernel<TileRow + 1>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
+}
+
 __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64_ptx_microkernel(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
     __nv_bfloat16* c_tile_base,
     int warp_id,
     int lane_id) {
-  static_assert(FixedHotBandTile128x128::kWarpMmaTilesM == 4,
-                "The explicit PTX writer sweep assumes four 16x16 tile rows per warp tile.");
-  ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<0>(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<1>(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<2>(
-      acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
-  ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<3>(
+  ptx_wmma_store_tile_rows_64x64_ptx_microkernel(
       acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
 }
 
