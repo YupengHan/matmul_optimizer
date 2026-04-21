@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 5/10` with `6` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 6/10` with `5` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_153357_round05_clean_f1c576ee`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 5 human-guidance review: Tiling(accept but reject simple 256x128 promotion), Coalescing Access(guardrail, already present), Data Reuse(accept), Async Copy(guardrail, already present), Bank Conflict(accept), L2 Cache(accept as secondary), Register Reuse(strong accept), Pg2s(accept), Ps2r(accept), Stage(accept but reject shared-memory blowup). The simple 256x128 pivot is now treated as a measured negative; only deeper 256x128 salvage or bounded occupancy probes stay active.`
-- dir_01: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint, stage design, and reuse efficiency inside the 256x128 hot-band path are still the missing pieces preventing the human-guided tiling family from becoming viable.
-- dir_02: Force 3-CTA Residency On The Non-PTX 128x128 Sibling | bottleneck: Register-limited occupancy and latency hiding on the current non-PTX 128x128 accepted surface.
-- dir_03: Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup | bottleneck: Barrier cadence inside the single-K 128x128 PTX microkernel while preserving the lower shared-memory footprint.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 

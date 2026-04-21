@@ -1,16 +1,16 @@
 # Latest Nsight Compute summary
 
 - schema version: `2`
-- source run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
-- source run dir: `runs/20260421_153357_bf16_gemm_v1_f1c576ee`
+- source run id: `20260421_154110_bf16_gemm_v1_afe26c16`
+- source run dir: `runs/20260421_154110_bf16_gemm_v1_afe26c16`
 - status: `available`
-- analysis path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_analysis.json`
-- raw csv path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_metrics.csv`
-- raw rep path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_profile.ncu-rep`
-- imported raw csv path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_import_raw.csv`
-- legacy import-raw alias path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_details.csv`
-- details page csv path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_details_page.csv`
-- source page csv path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_source.csv`
+- analysis path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.json`
+- raw csv path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_metrics.csv`
+- raw rep path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_profile.ncu-rep`
+- imported raw csv path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_import_raw.csv`
+- legacy import-raw alias path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_details.csv`
+- details page csv path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_details_page.csv`
+- source page csv path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_source.csv`
 
 ## Launch / kernel metadata
 
@@ -65,26 +65,19 @@
 
 ## Delta vs previous run
 
-- baseline run id: `20260421_153021_bf16_gemm_v1_24f31aab`
-- stall `long_scoreboard`: current `2.19` vs previous `7.21` | delta `-5.02` | trend `improved`
-- stall `short_scoreboard`: current `6.77` vs previous `2.24` | delta `4.529999999999999` | trend `regressed`
-- stall `barrier`: current `8.32` vs previous `5.49` | delta `2.83` | trend `regressed`
-- stall `mio_throttle`: current `0.84` vs previous `3.57` | delta `-2.73` | trend `improved`
-- hotspot delta: `improved` `Launch Statistics` | `Registers Per Thread` | delta `-29.0` | trend `improved`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | delta `-13.190000000000005` | trend `regressed`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `Memory Throughput` | delta `-13.159999999999997` | trend `regressed`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `L2 Cache Throughput` | delta `-11.939999999999998` | trend `regressed`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` | delta `-11.54` | trend `regressed`
-- hotspot delta: `improved` `GPU Speed Of Light Throughput` | `DRAM Throughput` | delta `3.389999999999999` | trend `improved`
+- baseline run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
+- stall `barrier`: current `8.32` vs previous `8.32` | delta `0.0` | trend `flat`
+- stall `short_scoreboard`: current `6.77` vs previous `6.77` | delta `0.0` | trend `flat`
+- stall `long_scoreboard`: current `2.19` vs previous `2.19` | delta `0.0` | trend `flat`
+- stall `mio_throttle`: current `0.84` vs previous `0.84` | delta `0.0` | trend `flat`
 
 ## Handoff to node_b
 
 - finding: Launch Statistics is carrying metric Registers Per Thread. (evidence: hotspot::section::launch_statistics::launch_statistics::registers_per_thread)
 - finding: GPU Speed Of Light Throughput is carrying metric DRAM Throughput. (evidence: hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput)
-- finding: improved hotspot delta at Launch Statistics: improved.
 - finding: Tensor activity (36.77%) is low relative to available memory bandwidth, and active warps (16.66%) are not hiding latency. (evidence: metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active)
-- finding: regressed hotspot delta at GPU Speed Of Light Throughput: regressed.
 - finding: Low active-warps and occupancy limits point to a latency-hiding problem rather than pure bandwidth saturation. (evidence: metric::sm__warps_active.avg.pct_of_peak_sustained_active)
+- finding: Barrier or synchronization evidence suggests CTA-level handoff overhead is interrupting the steady-state issue flow. (evidence: stall::barrier)
 - investigate `section` `Launch Statistics` @ `Launch Statistics` | Launch Statistics is carrying metric Registers Per Thread.
 - investigate `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
 - investigate `section` `Occupancy` @ `Occupancy` | Occupancy is carrying metric Achieved Occupancy.
@@ -107,5 +100,3 @@
 - recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
 - recheck `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` | Occupancy is carrying metric Achieved Occupancy.
 - recheck `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` | Occupancy is carrying metric Theoretical Occupancy.
-- recheck `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` | Previous delta was improved in the improved bucket.
-- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | Previous delta was regressed in the regressed bucket.

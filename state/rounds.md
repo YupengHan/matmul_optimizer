@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `10`
-- completed rounds: `4`
-- remaining rounds: `6`
-- current round label: `round 5/10`
+- completed rounds: `5`
+- remaining rounds: `5`
+- current round label: `round 6/10`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_153021_bf16_gemm_v1_24f31aab`
@@ -14,15 +14,15 @@
 - started at: `2026-04-21T15:07:19-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 5/10. Node A will measure the result next.`
+- notes: `Completed round 5/10. Continue with node_b for round 6/10. Accepted base: 20260421_153021_bf16_gemm_v1_24f31aab at 24.195072 ms.`
 
 ## Last completed round
 
-- round: `4/10`
+- round: `5/10`
 - direction: `dir_01`
-- direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
-- verdict: `regressed`
-- runtime delta: `+5.978543 ms`
-- TFLOP/s delta: `-5.953702 TFLOP/s`
-- run dir: `runs/20260421_153357_bf16_gemm_v1_f1c576ee`
-- ncu rep path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_profile.ncu-rep`
+- direction name: `Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot`
+- verdict: `improved`
+- runtime delta: `-0.005040 ms`
+- TFLOP/s delta: `+0.004025 TFLOP/s`
+- run dir: `runs/20260421_154110_bf16_gemm_v1_afe26c16`
+- ncu rep path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_profile.ncu-rep`

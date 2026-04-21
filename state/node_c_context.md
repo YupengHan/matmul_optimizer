@@ -5,28 +5,27 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot`
-- candidate id: `diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01`
-- base run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
-- primary family id: `aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot`
-- planned action fingerprint: `restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_153357_round05_clean_f1c576ee`
-- round loop: `round 5/10`
-- hypothesis: `The failed 256x128 pivot promotion proved that geometry alone is not enough, but it also proved that 256x128 can slash registers and long-scoreboard cost. The coherent follow-on is to keep the correctness-safe 256x128 pivot ownership path and transplant only the low-register staging and reuse ideas that the archived half-panel branch got right, without reviving the writer split that broke correctness.`
-- expected bottleneck: `Register footprint, stage design, and reuse efficiency inside the 256x128 hot-band path are still the missing pieces preventing the human-guided tiling family from becoming viable.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:1580-1676, src/kernels/bf16_gemm_v1.cu:539-693, src/kernels/bf16_gemm_v1.cu:903-995`
-- risk: `High. This is the highest-ceiling family left in the repo, but it touches the same 256x128 control/export surface that has failed correctness before.`
-- metrics to re-check: `correctness on all 3 dataset cases before trusting runtime, launch__registers_per_thread, launch__shared_mem_per_block_allocated, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, median runtime`
-- latest run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
-- latest runtime: `30.173615 ms`
-- latest NCU analysis: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_analysis.json`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 6/10`
+- latest run id: `20260421_154110_bf16_gemm_v1_afe26c16`
+- latest runtime: `30.168575 ms`
+- latest NCU analysis: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
-- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
+- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `167.0` | Launch Statistics is carrying metric Registers Per Thread.
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `15.87` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
+- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.66` | Occupancy is carrying metric Achieved Occupancy.
+- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `18.19` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `32.96` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
 
 ## Relevant bottleneck evidence
 
@@ -41,25 +40,23 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `correctness` `must_pass` from `N/A` | N/A
-- `launch__shared_mem_per_block_allocated` `non_increasing` from `N/A` | N/A
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `36.77` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
+- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.66` | Latency-hiding is already weak; active warps should not regress.
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `8.32` | barrier stalls are consuming 8.32% of active warp issue slots.
+- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct` `non_increasing` from `6.77` | short scoreboard stalls are consuming 6.77% of active warp issue slots.
 
 ## Expected local changes
 
-- `Restore the correctness-safe 256x128 pivot ownership path.`
-- `Transplant only the low-register staging and reuse behavior from the archived half-panel branch without reviving split-writer ownership.`
+- no direction-specific local change notes were provided
 
 ## Delta vs previous run
 
-- baseline run id: `20260421_153021_bf16_gemm_v1_24f31aab`
-- stall `long_scoreboard` | delta `-5.02` | trend `improved`
-- stall `short_scoreboard` | delta `4.529999999999999` | trend `regressed`
-- stall `barrier` | delta `2.83` | trend `regressed`
-- stall `mio_throttle` | delta `-2.73` | trend `improved`
-- hotspot delta: `improved` `Launch Statistics` | `Registers Per Thread` | delta `-29.0` | trend `improved`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | delta `-13.190000000000005` | trend `regressed`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `Memory Throughput` | delta `-13.159999999999997` | trend `regressed`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `L2 Cache Throughput` | delta `-11.939999999999998` | trend `regressed`
+- baseline run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
+- stall `barrier` | delta `0.0` | trend `flat`
+- stall `short_scoreboard` | delta `0.0` | trend `flat`
+- stall `long_scoreboard` | delta `0.0` | trend `flat`
+- stall `mio_throttle` | delta `0.0` | trend `flat`
+- no structured hotspot delta is available
 
 ## Finalize recheck points
 
@@ -67,8 +64,6 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 - recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
 - recheck `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` | Occupancy is carrying metric Achieved Occupancy.
 - recheck `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` | Occupancy is carrying metric Theoretical Occupancy.
-- recheck `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` | Previous delta was improved in the improved bucket.
-- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | Previous delta was regressed in the regressed bucket.
 
 ## Allowed edit surface
 
@@ -94,4 +89,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail

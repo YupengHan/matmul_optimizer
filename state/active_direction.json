@@ -1,96 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
-  "candidate_id": "diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
-  "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
-  "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
-  "selection_priority": 0.86,
-  "base_run_id": "20260421_153357_bf16_gemm_v1_f1c576ee",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:37:03-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_153357_round05_clean_f1c576ee",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
-    "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
-    "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
-    "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
-    "mode": "explore",
-    "hypothesis": "The failed 256x128 pivot promotion proved that geometry alone is not enough, but it also proved that 256x128 can slash registers and long-scoreboard cost. The coherent follow-on is to keep the correctness-safe 256x128 pivot ownership path and transplant only the low-register staging and reuse ideas that the archived half-panel branch got right, without reviving the writer split that broke correctness.",
-    "expected_bottleneck": "Register footprint, stage design, and reuse efficiency inside the 256x128 hot-band path are still the missing pieces preventing the human-guided tiling family from becoming viable.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1580-1676",
-      "src/kernels/bf16_gemm_v1.cu:539-693",
-      "src/kernels/bf16_gemm_v1.cu:903-995"
-    ],
-    "risk": "High. This is the highest-ceiling family left in the repo, but it touches the same 256x128 control/export surface that has failed correctness before.",
-    "metrics_to_recheck": [
-      "correctness on all 3 dataset cases before trusting runtime",
-      "launch__registers_per_thread",
-      "launch__shared_mem_per_block_allocated",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "median runtime"
-    ],
-    "search_score_v1": 0.86,
-    "score_breakdown": {
-      "policy_id": "manual_round05_human_guidance_salvage_v1",
-      "headroom_score": 0.56,
-      "evidence_score": 0.19,
-      "implementation_bonus": 0.06,
-      "risk_penalty": -0.15,
-      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 1.0,
-    "predicted_fail_risk": 0.72,
-    "ranking_notes": [
-      "This is now the most direct way to honor the human 256x128 guidance without repeating the already-failed simple pivot promotion.",
-      "The latest negative result actually strengthens this family because it isolated which parts of the 256x128 machine-state change were useful and which parts still need repair."
-    ],
-    "stop_condition": "Stop immediately if correctness fails again or if shared memory remains near the failed 42,496 B footprint without clear occupancy improvement.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "state/human_guidance.md",
-      "master:state/diagnosis_history.jsonl"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      }
-    ],
-    "expected_local_changes": [
-      "Restore the correctness-safe 256x128 pivot ownership path.",
-      "Transplant only the low-register staging and reuse behavior from the archived half-panel branch without reviving split-writer ownership."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "launch__shared_mem_per_block_allocated",
-        "guardrail": "non_increasing"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

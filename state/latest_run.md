@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
-- run dir: `runs/20260421_153357_bf16_gemm_v1_f1c576ee`
-- kernel tag: `bf16_gemm_v1_f1c576ee`
-- round label: `round 4/10`
+- run id: `20260421_154110_bf16_gemm_v1_afe26c16`
+- run dir: `runs/20260421_154110_bf16_gemm_v1_afe26c16`
+- kernel tag: `bf16_gemm_v1_afe26c16`
+- round label: `round 5/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.173615 ms`
-- p10 runtime: `30.139056 ms`
-- p90 runtime: `31.208432 ms`
-- TFLOP/s: `24.094541 TFLOP/s`
-- previous run id: `20260421_153021_bf16_gemm_v1_24f31aab`
-- runtime delta vs previous measured run: `+5.978543 ms`
-- TFLOP/s delta vs previous measured run: `-5.953702 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `30.168575 ms`
+- p10 runtime: `30.113178 ms`
+- p90 runtime: `31.295898 ms`
+- TFLOP/s: `24.098567 TFLOP/s`
+- previous run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
+- runtime delta vs previous measured run: `-0.005040 ms`
+- TFLOP/s delta vs previous measured run: `+0.004025 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
+- implemented direction name: `Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/summary.json`
-- ncu analysis path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_analysis.json`
-- measured commit: `f1c576ee202b38cd0287e625e807069c95525f77`
+- raw summary json: `runs/20260421_154110_bf16_gemm_v1_afe26c16/summary.json`
+- ncu analysis path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.json`
+- measured commit: `afe26c16b7d2d62c7e91cb7725ccc9f7bbba0d01`
 - new best custom: `no`
-- generated at: `2026-04-21T15:34:09-07:00`
+- generated at: `2026-04-21T15:41:22-07:00`
