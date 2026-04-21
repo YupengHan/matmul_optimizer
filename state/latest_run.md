@@ -1,26 +1,27 @@
 # Latest run
 
-- run id: `20260421_094231_bf16_gemm_v1_0b38abd`
-- run dir: `runs/20260421_094231_bf16_gemm_v1_0b38abd`
-- kernel tag: `bf16_gemm_v1_0b38abd`
+- run id: `20260421_105134_bf16_gemm_v1_8dcab81`
+- run dir: `runs/20260421_105134_bf16_gemm_v1_8dcab81`
+- kernel tag: `bf16_gemm_v1_8dcab81`
 - round label: `single-run`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `45.974016 ms`
-- p10 runtime: `45.924455 ms`
-- p90 runtime: `55.124377 ms`
-- TFLOP/s: `15.813703 TFLOP/s`
-- previous run id: `20260421_084952_bf16_gemm_v1_8b1af08`
-- runtime delta vs previous measured run: `+21.546912 ms`
-- TFLOP/s delta vs previous measured run: `-13.949114 TFLOP/s`
+- median runtime: `24.186960 ms`
+- p10 runtime: `24.173981 ms`
+- p90 runtime: `24.720897 ms`
+- TFLOP/s: `30.058321 TFLOP/s`
+- previous run id: `20260421_105021_bf16_gemm_v1_8dcab81`
+- runtime delta vs previous measured run: `+0.003153 ms`
+- TFLOP/s delta vs previous measured run: `-0.003919 TFLOP/s`
 - perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
-- implemented selection mode: `recommended`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_094231_bf16_gemm_v1_0b38abd/summary.json`
-- measured commit: `0b38abd3a13d0f518bfffb3849dbd8ef150686da`
+- raw summary json: `runs/20260421_105134_bf16_gemm_v1_8dcab81/summary.json`
+- ncu analysis path: `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_analysis.json`
+- measured commit: `8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f`
 - new best custom: `no`
-- generated at: `2026-04-21T09:42:41-07:00`
+- generated at: `2026-04-21T10:51:41-07:00`

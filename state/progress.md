@@ -6,34 +6,36 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `awaiting_direction_selection_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `0b38abd3a13d0f518bfffb3849dbd8ef150686da`
-- plateau counter: `89`
+- latest measured commit: `8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f`
+- plateau counter: `92`
 - round loop: `single-run`
 - rounds remaining: `0`
-- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
+- notes: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
 
 ## Latest measured custom run
 
-- run id: `20260421_094231_bf16_gemm_v1_0b38abd`
-- run dir: `runs/20260421_094231_bf16_gemm_v1_0b38abd`
+- run id: `20260421_105134_bf16_gemm_v1_8dcab81`
+- run dir: `runs/20260421_105134_bf16_gemm_v1_8dcab81`
 - correctness: `PASS`
-- median runtime: `45.974016 ms`
-- TFLOP/s: `15.813703 TFLOP/s`
+- median runtime: `24.186960 ms`
+- TFLOP/s: `30.058321 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_105526`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Re-evaluated the active live queue using the richer NCU diagnosis handoff; promoted register- and barrier-aligned families and demoted export-only families.`
+- dir_01: Transplant low-register half-panel staging into the correctness-safe 256x128 pivot | bottleneck: occupancy_latency_hiding_issue with tensor_core_underutilization driven by register pressure and oversized live state
+- dir_02: Trim live state inside the active 128x128 PTX control path before more epilogue work | bottleneck: occupancy_latency_hiding_issue on the accepted PTX hot-band path, with a smaller synchronization_barrier_issue component
+- dir_03: Collapse PTX wait-group and sync cadence without growing the shared-memory footprint | bottleneck: synchronization_barrier_issue with smaller occupancy side-effects on the PTX 128x128 microkernel
 
 ## Active implementation direction
 

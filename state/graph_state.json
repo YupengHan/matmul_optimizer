@@ -1,14 +1,14 @@
 {
-  "current_node": "node_b",
-  "previous_node": "node_a",
-  "status": "ready_for_node_b",
-  "latest_run_dir": "runs/20260421_094231_bf16_gemm_v1_0b38abd",
+  "current_node": "node_c",
+  "previous_node": "node_b",
+  "status": "awaiting_direction_selection_for_node_c",
+  "latest_run_dir": "runs/20260421_105134_bf16_gemm_v1_8dcab81",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
-  "latest_commit": "0b38abd3a13d0f518bfffb3849dbd8ef150686da",
+  "latest_commit": "8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f",
   "approved_direction_id": null,
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "plateau_counter": 89,
-  "notes": "Node A completed. Run node_b to produce exactly three directions from the latest measured summaries."
+  "plateau_counter": 92,
+  "notes": "Node B completed. Approve a direction or explicitly use the recommended direction before node_c."
 }

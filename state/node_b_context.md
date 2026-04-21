@@ -1,26 +1,38 @@
         # Node B context
 
         Node B is the diagnosis node. Read the files below, then write exactly three directions to `state/latest_diagnosis.json`.
+        Prioritize the structured bottleneck / hotspot / delta handoff first. Only fall back to raw CSV or `.ncu-rep` when the structured summary is insufficient.
 
         ## Read order
 
+        - `state/node_b_context.md`
         - `state/latest_run.md`
         - `state/latest_ncu_summary.md`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_analysis.md`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_analysis.json`
         - `docs/heuristics.md`
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
         - `src/kernels/bf16_gemm_v1.cu`
-        - `runs/20260421_094231_bf16_gemm_v1_0b38abd/summary.json`
-        - `runs/20260421_094231_bf16_gemm_v1_0b38abd/ncu_metrics.csv`
-        - `runs/20260421_094231_bf16_gemm_v1_0b38abd/ncu_details.csv`
-        - `runs/20260421_094231_bf16_gemm_v1_0b38abd/ncu_profile.ncu-rep`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/summary.json`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_details_page.csv`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_source.csv`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_import_raw.csv`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_details.csv`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_metrics.csv`
+        - `runs/20260421_105134_bf16_gemm_v1_8dcab81/ncu_profile.ncu-rep`
 
 - `state/autotune_round18_main_tiles.json`
 - `state/autotune_round18_main_tiles.md`
 
 
-        Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
+        Use the structured summary first:
+        - `bottleneck_classes` tells you which bottleneck family is currently dominant
+        - `top_findings` tells you which section, rule, hotspot, or delta is most actionable
+        - `top_source_hotspots` and `handoff.node_c.target_hotspots` tell you where local hardware pressure concentrates
+        - `delta_vs_previous_run` tells you what changed after the last code edit
+        Use the raw exports only when the structured findings are not enough to explain pipeline, memory, synchronization, or source-level behavior.
         Use the autotune sweep summaries when present to anchor direction ranking in measured tile-width data instead of only one run snapshot.
 
         ## Output contract
@@ -51,6 +63,11 @@
           - `predicted_gain_ms`
           - `predicted_fail_risk`
           - `ranking_notes`
+        - each direction may additionally include:
+          - `evidence_refs`
+          - `target_hotspots`
+          - `expected_local_changes`
+          - `guardrail_metrics`
         - set `recommended_direction_id`
         - every direction is also treated as a search candidate, so keep numeric score fields and prose notes auditable
         - after editing the diagnosis file, run `python scripts/graph.py node_b --finalize`
@@ -59,8 +76,10 @@
 
         - round loop: `single-run`
         - rounds remaining after this one: `0`
-        - latest run id: `20260421_094231_bf16_gemm_v1_0b38abd`
-        - median runtime: `45.974016 ms`
-        - TFLOP/s: `15.813703 TFLOP/s`
-        - measured commit: `0b38abd3a13d0f518bfffb3849dbd8ef150686da`
-        - existing diagnosis status: `pending_generation`
+        - latest run id: `20260421_105134_bf16_gemm_v1_8dcab81`
+        - median runtime: `24.186960 ms`
+        - TFLOP/s: `30.058321 TFLOP/s`
+        - measured commit: `8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f`
+        - existing diagnosis status: `completed`
+        - top bottleneck class: `occupancy_latency_hiding_issue`
+        - top finding: `Launch Statistics is carrying metric Registers Per Thread.`

@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `awaiting_direction_selection_for_node_c`
 - round loop: `single-run` with `0` rounds remaining
 
 ## Direction approval policy
@@ -15,12 +15,14 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_105526`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Re-evaluated the active live queue using the richer NCU diagnosis handoff; promoted register- and barrier-aligned families and demoted export-only families.`
+- dir_01: Transplant low-register half-panel staging into the correctness-safe 256x128 pivot | bottleneck: occupancy_latency_hiding_issue with tensor_core_underutilization driven by register pressure and oversized live state
+- dir_02: Trim live state inside the active 128x128 PTX control path before more epilogue work | bottleneck: occupancy_latency_hiding_issue on the accepted PTX hot-band path, with a smaller synchronization_barrier_issue component
+- dir_03: Collapse PTX wait-group and sync cadence without growing the shared-memory footprint | bottleneck: synchronization_barrier_issue with smaller occupancy side-effects on the PTX 128x128 microkernel
 
 ## Active direction
 
