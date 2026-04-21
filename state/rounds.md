@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `1`
-- remaining rounds: `19`
-- current round label: `round 2/20`
+- completed rounds: `2`
+- remaining rounds: `18`
+- current round label: `round 3/20`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_220130_bf16_gemm_v1_0893f2c`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 2/20. Node A will measure the result next.`
+- notes: `Completed round 2/20. Continue with node_b for round 3/20. Accepted base: 20260420_220130_bf16_gemm_v1_0893f2c at 24.419329 ms.`
 
 ## Last completed round
 
-- round: `1/20`
+- round: `2/20`
 - direction: `dir_01`
-- direction name: `Reopen The PTX One-K 128x128 Hot-Band Control Branch`
-- verdict: `improved`
-- runtime delta: `-0.962447 ms`
-- TFLOP/s delta: `+1.128930 TFLOP/s`
-- run dir: `runs/20260420_220130_bf16_gemm_v1_0893f2c`
-- ncu rep path: `runs/20260420_220130_bf16_gemm_v1_0893f2c/ncu_profile.ncu-rep`
+- direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
+- verdict: `regressed`
+- runtime delta: `+5.867519 ms`
+- TFLOP/s delta: `-5.767834 TFLOP/s`
+- run dir: `runs/20260420_220628_bf16_gemm_v1_676f10d`
+- ncu rep path: `runs/20260420_220628_bf16_gemm_v1_676f10d/ncu_profile.ncu-rep`

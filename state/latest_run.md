@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_220130_bf16_gemm_v1_0893f2c`
-- run dir: `runs/20260420_220130_bf16_gemm_v1_0893f2c`
-- kernel tag: `bf16_gemm_v1_0893f2c`
-- round label: `round 1/20`
+- run id: `20260420_220628_bf16_gemm_v1_676f10d`
+- run dir: `runs/20260420_220628_bf16_gemm_v1_676f10d`
+- kernel tag: `bf16_gemm_v1_676f10d`
+- round label: `round 2/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.419329 ms`
-- p10 runtime: `24.396479 ms`
-- p90 runtime: `25.151796 ms`
-- TFLOP/s: `29.772294 TFLOP/s`
-- previous run id: `20260420_205720_bf16_gemm_v1_bb3fc52`
-- runtime delta vs previous measured run: `-0.962447 ms`
-- TFLOP/s delta vs previous measured run: `+1.128930 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.286848 ms`
+- p10 runtime: `30.242713 ms`
+- p90 runtime: `31.545037 ms`
+- TFLOP/s: `24.004460 TFLOP/s`
+- previous run id: `20260420_220130_bf16_gemm_v1_0893f2c`
+- runtime delta vs previous measured run: `+5.867519 ms`
+- TFLOP/s delta vs previous measured run: `-5.767834 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reopen The PTX One-K 128x128 Hot-Band Control Branch`
+- implemented direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_220130_bf16_gemm_v1_0893f2c/summary.json`
-- measured commit: `0893f2c709f4c3d8d592b75fb4df066f13a5bafa`
-- new best custom: `yes`
-- generated at: `2026-04-20T22:01:38-07:00`
+- raw summary json: `runs/20260420_220628_bf16_gemm_v1_676f10d/summary.json`
+- measured commit: `676f10de876324a904cbb7d13cb85c6ade2a276b`
+- new best custom: `no`
+- generated at: `2026-04-20T22:06:34-07:00`
