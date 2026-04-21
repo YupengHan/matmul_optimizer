@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T11:37:50-07:00",
   "source_diagnosis_id": "diagnosis_20260421_113657",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Trim live state inside the recovered 128x128 PTX hot-band control path",
@@ -135,5 +135,15 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "implemented_action_fingerprint": "trim_group_mapping_scope_and_tile_address_lifetime_in_128x128_ptx_microkernel",
+  "semantic_delta_tags": [
+    "kernel_code",
+    "ptx_128x128_control_path",
+    "live_state_scope_narrowing",
+    "address_lifetime_trim"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ]
 }
