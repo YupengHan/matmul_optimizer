@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `78421da4dfba487599a691086ae54a1ec8197362`
-- plateau counter: `2`
-- round loop: `round 10/100`
-- rounds remaining: `91`
-- notes: `Node C build succeeded for round 10/100. Node A will now measure the new code path.`
+- latest measured commit: `11df0f1f1b3949e13d33e59024c9de95c414f134`
+- plateau counter: `3`
+- round loop: `round 11/100`
+- rounds remaining: `90`
+- notes: `Node A completed round 10/100. Run node_b to continue round 11/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_232254_bf16_gemm_v1_78421da`
-- run dir: `runs/20260420_232254_bf16_gemm_v1_78421da`
+- run id: `20260420_233034_bf16_gemm_v1_11df0f1`
+- run dir: `runs/20260420_233034_bf16_gemm_v1_11df0f1`
 - correctness: `PASS`
-- median runtime: `24.180737 ms`
-- TFLOP/s: `30.066058 TFLOP/s`
+- median runtime: `24.190464 ms`
+- TFLOP/s: `30.053968 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_232331`
-- recommended direction: `dir_01`
-- approved direction: `dir_02`
-- diagnosis notes: `Round 10/100 audit: round 9 converted the grouped-row non-PTX 128x128 sibling from a queued family into a directly measured live branch. The dispatch switch measured 24.18073654 ms with correctness intact, which is only 0.00008011 ms slower than the accepted-base run at 24.18065643 ms and therefore effectively PASS_FLAT on the active search anchor, even though it still trails the 24.16435242 ms best-known PTX run by 0.01638412 ms. The right next move is no longer to recommend the sibling pivot itself, because that validation step is now complete. Instead, the diagnosis promotes the sibling export-scratch trim to rank 1 as the bounded follow-on on top of the newly validated sibling surface, while keeping two active-PTX fallback families alive behind it. The live queue rehydration remains in effect; these rankings intentionally follow the strongest currently open family representatives rather than only the newest diagnosis lineage.`
-- dir_01: Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage | bottleneck: Shared export and writeback overhead inside the grouped-row non-PTX 128x128 sibling, especially the sibling branch's heavier export scratch lifetime after the hot-band dispatch has already moved onto that family.
-- dir_02: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX hot-band control-path overhead on the best-known 128x128 PTX surface, especially helper lifetime and consume-order friction that the export-address cleanup did not remove.
-- dir_03: Steady-state Barrier / Handoff Retime | bottleneck: Residual wait-group and barrier cadence in the hot-band steady-state loop, either on the active PTX branch or as a scheduler lens for comparing the sibling follow-on.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_02`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

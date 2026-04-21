@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_232254_bf16_gemm_v1_78421da`
-- run dir: `runs/20260420_232254_bf16_gemm_v1_78421da`
-- kernel tag: `bf16_gemm_v1_78421da`
-- round label: `round 9/100`
+- run id: `20260420_233034_bf16_gemm_v1_11df0f1`
+- run dir: `runs/20260420_233034_bf16_gemm_v1_11df0f1`
+- kernel tag: `bf16_gemm_v1_11df0f1`
+- round label: `round 10/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.180737 ms`
-- p10 runtime: `24.171694 ms`
-- p90 runtime: `24.436838 ms`
-- TFLOP/s: `30.066058 TFLOP/s`
-- previous run id: `20260420_225251_bf16_gemm_v1_306839d`
-- runtime delta vs previous measured run: `+0.010337 ms`
-- TFLOP/s delta vs previous measured run: `-0.012858 TFLOP/s`
+- median runtime: `24.190464 ms`
+- p10 runtime: `24.178688 ms`
+- p90 runtime: `25.264352 ms`
+- TFLOP/s: `30.053968 TFLOP/s`
+- previous run id: `20260420_232254_bf16_gemm_v1_78421da`
+- runtime delta vs previous measured run: `+0.009727 ms`
+- TFLOP/s delta vs previous measured run: `-0.012090 TFLOP/s`
 - perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
-- implemented selection mode: `recommended`
+- implemented direction id: `dir_02`
+- implemented direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
+- implemented selection mode: `approved`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_232254_bf16_gemm_v1_78421da/summary.json`
-- measured commit: `78421da4dfba487599a691086ae54a1ec8197362`
+- raw summary json: `runs/20260420_233034_bf16_gemm_v1_11df0f1/summary.json`
+- measured commit: `11df0f1f1b3949e13d33e59024c9de95c414f134`
 - new best custom: `no`
-- generated at: `2026-04-20T23:23:00-07:00`
+- generated at: `2026-04-20T23:30:40-07:00`
