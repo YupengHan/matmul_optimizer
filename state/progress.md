@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `dc6802e7f80f06f367fc414aa4e7ed5fdcb10c57`
 - plateau counter: `57`
 - round loop: `round 70/100`
 - rounds remaining: `31`
-- notes: `Node C is ready to implement auto_diagnosis_round_070:dir_01 via recommended selection for round 70/100.`
+- notes: `Node C build succeeded for round 70/100. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -41,8 +41,8 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 - direction id: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one candidate.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 
