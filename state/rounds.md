@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `44`
-- remaining rounds: `56`
-- current round label: `round 45/100`
+- completed rounds: `45`
+- remaining rounds: `55`
+- current round label: `round 46/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 45/100. Node A will measure the result next.`
+- notes: `Completed round 45/100. Continue with node_b for round 46/100. Accepted base: 20260420_235922_bf16_gemm_v1_489574e at 24.164272 ms.`
 
 ## Last completed round
 
-- round: `44/100`
+- round: `45/100`
 - direction: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- verdict: `improved`
-- runtime delta: `-5.972991 ms`
-- TFLOP/s delta: `+5.854707 TFLOP/s`
-- run dir: `runs/20260421_083853_bf16_gemm_v1_4f123f5`
-- ncu rep path: `runs/20260421_083853_bf16_gemm_v1_4f123f5/ncu_profile.ncu-rep`
+- direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
+- verdict: `regressed`
+- runtime delta: `+0.015423 ms`
+- TFLOP/s delta: `-0.018804 TFLOP/s`
+- run dir: `runs/20260421_083902_bf16_gemm_v1_ba5aa59`
+- ncu rep path: `runs/20260421_083902_bf16_gemm_v1_ba5aa59/ncu_profile.ncu-rep`
