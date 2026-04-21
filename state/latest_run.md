@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_191351_bf16_gemm_v1_69f60e6`
-- run dir: `runs/20260420_191351_bf16_gemm_v1_69f60e6`
-- kernel tag: `bf16_gemm_v1_69f60e6`
-- round label: `round 10/50`
+- run id: `20260420_191909_bf16_gemm_v1_00b6a0a`
+- run dir: `runs/20260420_191909_bf16_gemm_v1_00b6a0a`
+- kernel tag: `bf16_gemm_v1_00b6a0a`
+- round label: `round 11/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.164400 ms`
-- p10 runtime: `24.907456 ms`
-- p90 runtime: `26.283316 ms`
-- TFLOP/s: `28.890791 TFLOP/s`
-- previous run id: `20260420_190726_bf16_gemm_v1_cc89c17`
-- runtime delta vs previous measured run: `+0.011472 ms`
-- TFLOP/s delta vs previous measured run: `-0.013177 TFLOP/s`
+- median runtime: `25.379312 ms`
+- p10 runtime: `24.980479 ms`
+- p90 runtime: `26.202317 ms`
+- TFLOP/s: `28.646144 TFLOP/s`
+- previous run id: `20260420_191351_bf16_gemm_v1_69f60e6`
+- runtime delta vs previous measured run: `+0.214911 ms`
+- TFLOP/s delta vs previous measured run: `-0.244647 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim The Fixed 64x96 Tail On The Restored 1181247 Base`
+- implemented direction name: `Reopen The PTX 128x128 Hot-Band Control Branch On The Restored 1181247 Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_191351_bf16_gemm_v1_69f60e6/summary.json`
-- measured commit: `69f60e616da5be56d1786504c06088f10b6eaa46`
+- raw summary json: `runs/20260420_191909_bf16_gemm_v1_00b6a0a/summary.json`
+- measured commit: `00b6a0a4ce0ebbeb1b31342c943a6930b2f8af6e`
 - new best custom: `no`
-- generated at: `2026-04-20T19:13:58-07:00`
+- generated at: `2026-04-20T19:19:16-07:00`
