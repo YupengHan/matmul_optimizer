@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_083902_bf16_gemm_v1_ba5aa59`
-- run dir: `runs/20260421_083902_bf16_gemm_v1_ba5aa59`
-- kernel tag: `bf16_gemm_v1_ba5aa59`
-- round label: `round 45/100`
+- run id: `20260421_083912_bf16_gemm_v1_280dbc5`
+- run dir: `runs/20260421_083912_bf16_gemm_v1_280dbc5`
+- kernel tag: `bf16_gemm_v1_280dbc5`
+- round label: `round 46/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.426496 ms`
-- p10 runtime: `24.405913 ms`
-- p90 runtime: `25.410372 ms`
-- TFLOP/s: `29.763558 TFLOP/s`
-- previous run id: `20260421_083853_bf16_gemm_v1_4f123f5`
-- runtime delta vs previous measured run: `+0.015423 ms`
-- TFLOP/s delta vs previous measured run: `-0.018804 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.399680 ms`
+- p10 runtime: `24.389631 ms`
+- p90 runtime: `25.510678 ms`
+- TFLOP/s: `29.796269 TFLOP/s`
+- previous run id: `20260421_083902_bf16_gemm_v1_ba5aa59`
+- runtime delta vs previous measured run: `-0.026815 ms`
+- TFLOP/s delta vs previous measured run: `+0.032710 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_083902_bf16_gemm_v1_ba5aa59/summary.json`
-- measured commit: `ba5aa5948b2279ccf88d48ae14b223549910fb2d`
+- raw summary json: `runs/20260421_083912_bf16_gemm_v1_280dbc5/summary.json`
+- measured commit: `280dbc5992d17397ce31d073f0939b11ac0349e7`
 - new best custom: `no`
-- generated at: `2026-04-21T08:39:08-07:00`
+- generated at: `2026-04-21T08:39:19-07:00`
