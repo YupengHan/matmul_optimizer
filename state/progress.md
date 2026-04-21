@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `c643816563a8d5805f32896c9b0a041d34d27425`
-- plateau counter: `1`
-- round loop: `round 14/100`
-- rounds remaining: `87`
-- notes: `Node C build succeeded for round 14/100. Node A will now measure the new code path.`
+- latest measured commit: `7f84649e4684d1f8f0c55953524757ca10af6d97`
+- plateau counter: `2`
+- round loop: `round 15/100`
+- rounds remaining: `86`
+- notes: `Node A completed round 14/100. Run node_b to continue round 15/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_000316_bf16_gemm_v1_c643816`
-- run dir: `runs/20260421_000316_bf16_gemm_v1_c643816`
+- run id: `20260421_000626_bf16_gemm_v1_7f84649`
+- run dir: `runs/20260421_000626_bf16_gemm_v1_7f84649`
 - correctness: `PASS`
-- median runtime: `24.484832 ms`
-- TFLOP/s: `29.692645 TFLOP/s`
+- median runtime: `24.178592 ms`
+- TFLOP/s: `30.068725 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_000409`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 14/100 audit: round 13 cleanly falsified the A-then-B PTX handoff retime on the correct PTX surface. The dominant kernel stayed `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<(int)452>`, but runtime regressed by 0.320559 ms and barrier rose from 5.43% to 6.29%. The current source differs from the round-12 best PTX surface by essentially one refill-order hunk, so the next action should be to restore that best surface first, then continue active-PTX exploration from a valid anchor while keeping the grouped_rows=8 round-history fallback alive.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Known-negative handoff ordering on the active PTX hot-band loop, where the A-then-B future refill increases effective barrier cost enough to overwhelm any scoreboard reduction.
-- dir_02: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX hot-band control-path overhead and consume-order friction on the restored one-K 128x128 PTX surface, beyond the already-closed A-then-B handoff variant.
-- dir_03: Restore accepted grouped_rows=8 hot-band consumer ordering | bottleneck: Consumer-side ordering and grouped-row locality inside the PTX hot-band microkernel under the grouped_rows=8 regime.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

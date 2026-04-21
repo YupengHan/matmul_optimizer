@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_000316_bf16_gemm_v1_c643816`
-- run dir: `runs/20260421_000316_bf16_gemm_v1_c643816`
-- kernel tag: `bf16_gemm_v1_c643816`
-- round label: `round 13/100`
+- run id: `20260421_000626_bf16_gemm_v1_7f84649`
+- run dir: `runs/20260421_000626_bf16_gemm_v1_7f84649`
+- kernel tag: `bf16_gemm_v1_7f84649`
+- round label: `round 14/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.484832 ms`
-- p10 runtime: `24.471364 ms`
-- p90 runtime: `25.495289 ms`
-- TFLOP/s: `29.692645 TFLOP/s`
-- previous run id: `20260420_235922_bf16_gemm_v1_489574e`
-- runtime delta vs previous measured run: `+0.320559 ms`
-- TFLOP/s delta vs previous measured run: `-0.393898 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.178592 ms`
+- p10 runtime: `24.167219 ms`
+- p90 runtime: `24.628957 ms`
+- TFLOP/s: `30.068725 TFLOP/s`
+- previous run id: `20260421_000316_bf16_gemm_v1_c643816`
+- runtime delta vs previous measured run: `-0.306240 ms`
+- TFLOP/s delta vs previous measured run: `+0.376080 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Steady-state Barrier / Handoff Retime`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_000316_bf16_gemm_v1_c643816/summary.json`
-- measured commit: `c643816563a8d5805f32896c9b0a041d34d27425`
+- raw summary json: `runs/20260421_000626_bf16_gemm_v1_7f84649/summary.json`
+- measured commit: `7f84649e4684d1f8f0c55953524757ca10af6d97`
 - new best custom: `no`
-- generated at: `2026-04-21T00:03:23-07:00`
+- generated at: `2026-04-21T00:06:32-07:00`
