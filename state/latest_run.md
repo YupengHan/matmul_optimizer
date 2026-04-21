@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_153021_bf16_gemm_v1_24f31aab`
-- run dir: `runs/20260421_153021_bf16_gemm_v1_24f31aab`
-- kernel tag: `bf16_gemm_v1_24f31aab`
-- round label: `round 3/10`
+- run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
+- run dir: `runs/20260421_153357_bf16_gemm_v1_f1c576ee`
+- kernel tag: `bf16_gemm_v1_f1c576ee`
+- round label: `round 4/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.195072 ms`
-- p10 runtime: `24.178176 ms`
-- p90 runtime: `25.326591 ms`
-- TFLOP/s: `30.048244 TFLOP/s`
-- previous run id: `20260421_152228_bf16_gemm_v1_2fbb368d`
-- runtime delta vs previous measured run: `-0.197536 ms`
-- TFLOP/s delta vs previous measured run: `+0.243336 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.173615 ms`
+- p10 runtime: `30.139056 ms`
+- p90 runtime: `31.208432 ms`
+- TFLOP/s: `24.094541 TFLOP/s`
+- previous run id: `20260421_153021_bf16_gemm_v1_24f31aab`
+- runtime delta vs previous measured run: `+5.978543 ms`
+- TFLOP/s delta vs previous measured run: `-5.953702 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
+- implemented direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_153021_bf16_gemm_v1_24f31aab/summary.json`
-- ncu analysis path: `runs/20260421_153021_bf16_gemm_v1_24f31aab/ncu_analysis.json`
-- measured commit: `24f31aab56b50712067f744ffab280ba1e33c341`
+- raw summary json: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/summary.json`
+- ncu analysis path: `runs/20260421_153357_bf16_gemm_v1_f1c576ee/ncu_analysis.json`
+- measured commit: `f1c576ee202b38cd0287e625e807069c95525f77`
 - new best custom: `no`
-- generated at: `2026-04-21T15:30:32-07:00`
+- generated at: `2026-04-21T15:34:09-07:00`

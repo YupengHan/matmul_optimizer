@@ -1,95 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
-  "candidate_id": "diagnosis_20260421_153021_round04_clean_24f31aab:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-  "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-  "action_fingerprint": "538fb586502fa3b4",
-  "selection_priority": 1.02,
-  "base_run_id": "20260421_153021_bf16_gemm_v1_24f31aab",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:33:08-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_153021_round04_clean_24f31aab",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
-    "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-    "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-    "action_fingerprint": "538fb586502fa3b4",
-    "mode": "explore",
-    "hypothesis": "The 128x128 family has now delivered two incremental wins without moving achieved warps or occupancy limits. The cleanest next structural test is to route the default hot-band launch onto the existing 256x128 pivot kernel so the search directly tests the human-guided 256x128 / 64x64 tiling preference and a materially different CTA geometry on the accepted clean base.",
-    "expected_bottleneck": "Current four-warp 128x128 CTA geometry is capping residency and CTA-count efficiency on the hot-band region more than local pointer arithmetic is.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1580-1683",
-      "src/kernels/bf16_gemm_v1.cu:2090-2138"
-    ],
-    "risk": "Moderate. The kernel already exists and aligns with the human tiling guidance, but a larger CTA can still lose if it bloats the live set or export path.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "kernel name and grid size in ncu_metrics.csv",
-      "launch__registers_per_thread",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-    ],
-    "search_score_v1": 0.84,
-    "score_breakdown": {
-      "policy_id": "manual_round04_human_guidance_tiling_v1",
-      "headroom_score": 0.37,
-      "evidence_score": 0.21,
-      "implementation_bonus": 0.18,
-      "risk_penalty": -0.09,
-      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.4,
-    "predicted_fail_risk": 0.28,
-    "ranking_notes": [
-      "This is the simplest direction that directly matches the new persistent human guidance around 256x128 tiling and 64x64 warp tiles.",
-      "It outranks dir_02 because it is already in-tree and therefore tests the geometry thesis without immediately paying the cost of a correctness-sensitive rewrite."
-    ],
-    "stop_condition": "Stop if the 256x128 pivot kernel fails to improve achieved warps or regresses runtime materially versus the new accepted base.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "state/human_guidance.md",
-      "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      }
-    ],
-    "expected_local_changes": [
-      "Swap the default hot-band launch from the current 128x128 regular sibling to the existing 256x128 pivot kernel.",
-      "Keep the residual row-band and tail handling unchanged for the first measurement."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "guardrail": "non_decreasing"
-      },
-      {
-        "metric_name": "launch__registers_per_thread",
-        "guardrail": "watch"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "538fb586502fa3b4"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

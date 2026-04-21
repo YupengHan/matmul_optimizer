@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `24f31aab56b50712067f744ffab280ba1e33c341`
-- plateau counter: `8`
-- round loop: `round 4/10`
-- rounds remaining: `7`
-- notes: `Node C build succeeded for round 4/10. Node A will now measure the new code path.`
+- latest measured commit: `f1c576ee202b38cd0287e625e807069c95525f77`
+- plateau counter: `9`
+- round loop: `round 5/10`
+- rounds remaining: `6`
+- notes: `Node A completed round 4/10. Run node_b to continue round 5/10.`
 
 ## Latest measured custom run
 
-- run id: `20260421_153021_bf16_gemm_v1_24f31aab`
-- run dir: `runs/20260421_153021_bf16_gemm_v1_24f31aab`
+- run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
+- run dir: `runs/20260421_153357_bf16_gemm_v1_f1c576ee`
 - correctness: `PASS`
-- median runtime: `24.195072 ms`
-- TFLOP/s: `30.048244 TFLOP/s`
+- median runtime: `30.173615 ms`
+- TFLOP/s: `24.094541 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_153021_round04_clean_24f31aab`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 4 explicitly lets the persistent human guidance pull the ranking toward 256x128 families. The round-3 hoist win is accepted as a useful 128x128 cleanup, but it did not move occupancy or scoreboard enough to justify another small 128x128-only exploit first.`
-- dir_01: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: Current four-warp 128x128 CTA geometry is capping residency and CTA-count efficiency on the hot-band region more than local pointer arithmetic is.
-- dir_02: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint and steady-state staging efficiency inside the 256x128 hot-band path are still capping residency and latency hiding.
-- dir_03: Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup | bottleneck: Barrier cadence and PTX-stage handoff overhead inside the single-K 128x128 microkernel remain an unresolved latency tax on the accepted PTX surface.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
