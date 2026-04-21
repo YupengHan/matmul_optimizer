@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 33/100` with `68` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 34/100` with `67` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_014129`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 33 groups the PTX and non-PTX 128x128 launch-bounds probes into one coherent negative family. Both branches reached about 168 registers, about 24.7% active warps, and about 3 CTA residency, and both regressed because barrier stall climbed to about 11%. The x32 follow-on also already showed that doubling shared memory to amortize those barriers is not acceptable. The right move now is to restore the exact PTX anchor and then spend the next aggressive budget on true barrier surgery or on the broader 256x128 low-register branch, not on another launch-bounds replay.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Known register-limited plateau on the accepted PTX hot-band surface, used here as a recovery anchor.
-- dir_02: Trim PTX Microkernel Barriers Without Reintroducing Shared-Memory Blowup | bottleneck: Barrier cadence inside the single-K PTX microkernel after the residency experiments exposed synchronization as the real limiting cost.
-- dir_03: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint and synchronization strategy on the 256x128 path, plus correctness-sensitive writer ownership.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

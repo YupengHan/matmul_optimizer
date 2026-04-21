@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_014052_bf16_gemm_v1_7296bf2`
-- run dir: `runs/20260421_014052_bf16_gemm_v1_7296bf2`
-- kernel tag: `bf16_gemm_v1_7296bf2`
-- round label: `round 32/100`
+- run id: `20260421_014255_bf16_gemm_v1_a16425e`
+- run dir: `runs/20260421_014255_bf16_gemm_v1_a16425e`
+- kernel tag: `bf16_gemm_v1_a16425e`
+- round label: `round 33/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.398208 ms`
-- p10 runtime: `26.210899 ms`
-- p90 runtime: `27.752653 ms`
-- TFLOP/s: `27.540484 TFLOP/s`
-- previous run id: `20260421_013804_bf16_gemm_v1_b8a113b`
-- runtime delta vs previous measured run: `+2.229328 ms`
-- TFLOP/s delta vs previous measured run: `-2.540324 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.171008 ms`
+- p10 runtime: `24.147967 ms`
+- p90 runtime: `25.196442 ms`
+- TFLOP/s: `30.078159 TFLOP/s`
+- previous run id: `20260421_014052_bf16_gemm_v1_7296bf2`
+- runtime delta vs previous measured run: `-2.227200 ms`
+- TFLOP/s delta vs previous measured run: `+2.537675 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Force 3-CTA Residency On The Non-PTX 128x128 Sibling`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_014052_bf16_gemm_v1_7296bf2/summary.json`
-- measured commit: `7296bf25f5a6755c32d0c67ad96bec82369f14bf`
+- raw summary json: `runs/20260421_014255_bf16_gemm_v1_a16425e/summary.json`
+- measured commit: `a16425ea78ba002017dddae0549ba500472fb9e5`
 - new best custom: `no`
-- generated at: `2026-04-21T01:40:58-07:00`
+- generated at: `2026-04-21T01:43:01-07:00`
