@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_111322_bf16_gemm_v1_f768e80`
-- run dir: `runs/20260421_111322_bf16_gemm_v1_f768e80`
-- kernel tag: `bf16_gemm_v1_f768e80`
-- round label: `round 2/100`
+- run id: `20260421_113859_bf16_gemm_v1_6668d21`
+- run dir: `runs/20260421_113859_bf16_gemm_v1_6668d21`
+- kernel tag: `bf16_gemm_v1_6668d21`
+- round label: `round 3/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.293376 ms`
-- p10 runtime: `24.177357 ms`
-- p90 runtime: `25.265440 ms`
-- TFLOP/s: `29.926653 TFLOP/s`
-- previous run id: `20260421_110929_bf16_gemm_v1_342b1c5`
-- runtime delta vs previous measured run: `-5.875200 ms`
-- TFLOP/s delta vs previous measured run: `+5.828087 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `46.366718 ms`
+- p10 runtime: `46.001765 ms`
+- p90 runtime: `55.572069 ms`
+- TFLOP/s: `15.679769 TFLOP/s`
+- previous run id: `20260421_111322_bf16_gemm_v1_f768e80`
+- runtime delta vs previous measured run: `+22.073342 ms`
+- TFLOP/s delta vs previous measured run: `-14.246884 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe`
+- implemented direction name: `Trim live state inside the recovered 128x128 PTX hot-band control path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_111322_bf16_gemm_v1_f768e80/summary.json`
-- ncu analysis path: `N/A`
-- measured commit: `f768e80d950fa4cd036ea003b32af972278df540`
+- raw summary json: `runs/20260421_113859_bf16_gemm_v1_6668d21/summary.json`
+- ncu analysis path: `runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json`
+- measured commit: `6668d2193f6619c3de1cc6000711a62fc1f0fcd8`
 - new best custom: `no`
-- generated at: `2026-04-21T11:13:29-07:00`
+- generated at: `2026-04-21T11:39:09-07:00`

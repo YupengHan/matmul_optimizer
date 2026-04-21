@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `2`
-- remaining rounds: `98`
-- current round label: `round 3/100`
+- completed rounds: `3`
+- remaining rounds: `97`
+- current round label: `round 4/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_105134_bf16_gemm_v1_8dcab81`
@@ -14,15 +14,15 @@
 - started at: `2026-04-21T11:05:50-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 3/100. Node A will measure the result next.`
+- notes: `Completed round 3/100. Continue with node_b for round 4/100. Accepted base: 20260421_105134_bf16_gemm_v1_8dcab81 at 24.186960 ms.`
 
 ## Last completed round
 
-- round: `2/100`
+- round: `3/100`
 - direction: `dir_01`
-- direction name: `Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe`
-- verdict: `improved`
-- runtime delta: `-5.875200 ms`
-- TFLOP/s delta: `+5.828087 TFLOP/s`
-- run dir: `runs/20260421_111322_bf16_gemm_v1_f768e80`
-- ncu rep path: `runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_profile.ncu-rep`
+- direction name: `Trim live state inside the recovered 128x128 PTX hot-band control path`
+- verdict: `regressed`
+- runtime delta: `+22.073342 ms`
+- TFLOP/s delta: `-14.246884 TFLOP/s`
+- run dir: `runs/20260421_113859_bf16_gemm_v1_6668d21`
+- ncu rep path: `runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_profile.ncu-rep`
