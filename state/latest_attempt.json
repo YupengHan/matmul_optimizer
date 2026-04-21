@@ -1,92 +1,81 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_002435:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_002435:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_002435",
-  "base_run_id": "20260421_002405_bf16_gemm_v1_95723fb",
-  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+  "attempt_id": "diagnosis_20260421_002857:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_002857:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_002857",
+  "base_run_id": "20260421_002817_bf16_gemm_v1_a471728",
+  "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+  "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
   "direction_id": "dir_01",
-  "direction_name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+  "direction_name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
   "mode": "restore",
-  "commit": "a471728dccf675859934e8afab163929c08171be",
-  "commit_short": "a471728",
-  "subject": "node_c: round 17/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 18/100 implement dir_01 Restore accepted grouped_rows=8 hot-band consumer ordering",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T00:27:28-07:00",
+  "selected_at": "2026-04-21T00:30:27-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_002405_bf16_gemm_v1_95723fb",
-  "selection_score": 2.5,
-  "planned_action_fingerprint": "restore_ptx_surface_from_wait_and_hoist_drift",
-  "implemented_action_fingerprint": "restore_best_ptx_surface_from_489574e",
+  "source_run_id": "20260421_002817_bf16_gemm_v1_a471728",
+  "selection_score": 2.3325,
+  "planned_action_fingerprint": "restore_grouped_rows_8_ptx_consumer_ordering_surface",
+  "implemented_action_fingerprint": "restore_grouped_rows_8_ptx_window",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v17",
-    "rank_score": 2.0,
-    "measured_regression_recovery_bonus": 0.35,
-    "surface_reanchor_bonus": 0.2,
-    "implementation_certainty_bonus": 0.1,
-    "risk_penalty": 0.35,
-    "formula": "rank_score + measured_regression_recovery_bonus + surface_reanchor_bonus + implementation_certainty_bonus - risk_penalty"
+    "policy_id": "manual_round100_node_b_v18",
+    "rank_score": 1.85,
+    "round_history_bonus": 0.25,
+    "alternate_ptx_surface_bonus": 0.25,
+    "queue_preservation_bonus": 0.2,
+    "risk_penalty": 0.37,
+    "formula": "rank_score + round_history_bonus + alternate_ptx_surface_bonus + queue_preservation_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
-    "ptx_surface_restore",
-    "remove_prologue_wait_retime",
-    "remove_future_tile_k_hoist"
+    "ptx_grouped_rows_restore",
+    "grouped_rows_8",
+    "hot_band_consumer_locality"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2014-2022",
-    "src/kernels/bf16_gemm_v1.cu:2042-2054"
+    "src/kernels/bf16_gemm_v1.cu:153-156",
+    "src/kernels/bf16_gemm_v1.cu:1979-1993",
+    "src/kernels/bf16_gemm_v1.cu:2110-2117"
   ],
   "implementation": {
-    "commit": "a471728dccf675859934e8afab163929c08171be",
-    "commit_short": "a471728",
-    "subject": "node_c: round 17/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 18/100 implement dir_01 Restore accepted grouped_rows=8 hot-band consumer ordering",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:2014-2022",
-      "src/kernels/bf16_gemm_v1.cu:2042-2054"
+      "src/kernels/bf16_gemm_v1.cu:153-156",
+      "src/kernels/bf16_gemm_v1.cu:1979-1993",
+      "src/kernels/bf16_gemm_v1.cu:2110-2117"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 3,
-      "deletions": 4
+      "insertions": 1,
+      "deletions": 1
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 3,
-    "deletions": 4
+    "insertions": 1,
+    "deletions": 1
   },
   "measurement": {
-    "run_id": "20260421_002817_bf16_gemm_v1_a471728",
-    "measurement_commit": "a471728dccf675859934e8afab163929c08171be",
-    "runtime_ms": 24.17296028,
-    "runtime_delta_ms": -0.01790332999999933,
-    "tflops": 30.07572979,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.41",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.84",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.14",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.48",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.56",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.63",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.52",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.13",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.16",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.67",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "flat",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_002817_bf16_gemm_v1_a471728 for candidate diagnosis_20260421_002435:dir_01; transition_label=PASS_FLAT.",
-  "transition_label": "PASS_FLAT"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
