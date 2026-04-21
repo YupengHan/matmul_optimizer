@@ -1,111 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Retime the PTX barrier seam on the current correctness-safe 128x128 anchor",
-  "candidate_id": "diagnosis_20260421_124005:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
-  "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::current_1db08fc_anchor",
-  "action_fingerprint": "retime_wait_group_and_sync_seam_on_current_correct_1db08fc_anchor",
-  "selection_priority": 2.16,
-  "base_run_id": "20260421_123908_bf16_gemm_v1_1db08fc",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T12:41:41-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_124005",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Retime the PTX barrier seam on the current correctness-safe 128x128 anchor",
-    "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
-    "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::current_1db08fc_anchor",
-    "action_fingerprint": "retime_wait_group_and_sync_seam_on_current_correct_1db08fc_anchor",
-    "mode": "exploit",
-    "hypothesis": "The last two writer-family iterations both landed back on the same 198-register / 16.6%-active-warps regime, so the cheapest remaining local seam on the correct anchor is the cp.async wait-group plus CTA barrier handoff. A bounded retime can target the persistent 5.95% barrier stall and 6.85% long-scoreboard stall without touching writer coverage or geometry.",
-    "expected_bottleneck": "synchronization_barrier_issue layered on top of occupancy_latency_hiding_issue in the current correctness-safe 128x128 PTX anchor",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1955-2066",
-      "src/kernels/bf16_gemm_v1.cu:2023-2056",
-      "src/kernels/bf16_gemm_v1.cu:338-359"
-    ],
-    "risk": "medium",
-    "metrics_to_recheck": [
-      "correctness",
-      "median runtime",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 2.16,
-    "score_breakdown": {
-      "bottleneck_alignment": 0.86,
-      "implementation_scope": 0.74,
-      "anchor_stability": 0.7,
-      "risk_penalty": -0.14,
-      "reason": "Best current-anchor exploit after the writer-shape family flattened out."
-    },
-    "predicted_gain_ms": 0.1,
-    "predicted_fail_risk": 0.34,
-    "ranking_notes": [
-      "This is now the cleanest local seam on the current correctness-safe anchor.",
-      "It does not depend on preserving the round-7 low-register writer signal.",
-      "Keep the shared-memory footprint fixed."
-    ],
-    "stop_condition": "Stop if barrier retiming breaks correctness, grows shared memory, or improves barrier without any runtime win.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "hotspot_id": "stall::barrier",
-        "scope_type": "section",
-        "scope_name": "Warp Stall Sampling",
-        "location": "Warp Stall Sampling",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "metric_value": 5.95,
-        "importance_score": 55.95,
-        "explanation": "Barrier remains the most actionable local stall seam on the current correct anchor."
-      },
-      {
-        "hotspot_id": "stall::long_scoreboard",
-        "scope_type": "section",
-        "scope_name": "Warp Stall Sampling",
-        "location": "Warp Stall Sampling",
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "metric_value": 6.85,
-        "importance_score": 56.85,
-        "explanation": "Any handoff retime must not simply trade barrier time for worse scoreboard pressure."
-      }
-    ],
-    "expected_local_changes": [
-      "Retune cp.async wait-group completion versus CTA-wide sync on the steady-state PTX path.",
-      "Keep writer coverage and the 22016-byte shared-memory budget fixed.",
-      "Do not mix barrier work with another writer sweep rewrite."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "current_value": 1.0,
-        "guardrail": "must_pass",
-        "reason": "This stays on the current correctness-safe anchor."
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "current_value": 6.85,
-        "guardrail": "non_increasing",
-        "reason": "Do not improve barrier by worsening scoreboard stalls."
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "retime_wait_group_and_sync_seam_on_current_correct_1db08fc_anchor"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

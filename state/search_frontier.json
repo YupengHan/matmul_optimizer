@@ -8,9 +8,9 @@
   "candidate_set_id": "candidate_set:diagnosis_20260421_124005",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": "diagnosis_20260421_124005:dir_01",
-  "selection_reason": "selected_via_recommended",
-  "selection_summary": "Selected diagnosis_20260421_124005:dir_01 -> dir_01 via mode=recommended.",
+  "selected_candidate_id": null,
+  "selection_reason": null,
+  "selection_summary": "Candidate diagnosis_20260421_124005:dir_01 closed via pass_win after selection.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -26803,26 +26803,26 @@
           "reason": "Do not improve barrier by worsening scoreboard stalls."
         }
       ],
-      "status": "selected",
+      "status": "measured_win",
       "source_search_iteration": 116,
       "selection_count": 1,
       "reopen_count": 0,
       "last_selected_at": "2026-04-21T12:41:41-07:00",
       "last_selected_selection_mode": "recommended",
-      "last_transition_label": null,
-      "last_transition_class": null,
-      "last_result_run_id": null,
-      "last_result_runtime_ms": null,
-      "last_runtime_delta_ms": null,
-      "last_result_correctness_passed": null,
-      "last_closed_at": null,
-      "last_closed_search_iteration": null,
+      "last_transition_label": "PASS_WIN",
+      "last_transition_class": "improved",
+      "last_result_run_id": "20260421_124420_bf16_gemm_v1_fc400df",
+      "last_result_runtime_ms": 45.92025757,
+      "last_runtime_delta_ms": -0.13619041000000465,
+      "last_result_correctness_passed": true,
+      "last_closed_at": "2026-04-21T12:44:31-07:00",
+      "last_closed_search_iteration": 116,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
       "family_representative_score": null,
       "family_representative_reason": null,
-      "invalid_reason": null,
+      "invalid_reason": "measured_by_node_a",
       "notes": null
     },
     {
@@ -27024,7 +27024,7 @@
     }
   ],
   "notes": "Persistent frontier tracks 347 historical candidates; 18 family representatives are currently active for selection.",
-  "updated_at": "2026-04-21T12:41:41-07:00",
+  "updated_at": "2026-04-21T12:44:31-07:00",
   "family_representative_count": 18,
   "reopened_candidate_ids": []
 }

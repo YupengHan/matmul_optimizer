@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `1db08fc0e373507cd63d0a43e4791f43c6de5b17`
-- plateau counter: `101`
-- round loop: `round 10/100`
-- rounds remaining: `91`
-- notes: `Node C build succeeded for round 10/100. Node A will now measure the new code path.`
+- latest measured commit: `fc400df814258c9927aa72a78b213b2e9325787f`
+- plateau counter: `102`
+- round loop: `round 11/100`
+- rounds remaining: `90`
+- notes: `Node A completed round 10/100. Run node_b to continue round 11/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_123908_bf16_gemm_v1_1db08fc`
-- run dir: `runs/20260421_123908_bf16_gemm_v1_1db08fc`
+- run id: `20260421_124420_bf16_gemm_v1_fc400df`
+- run dir: `runs/20260421_124420_bf16_gemm_v1_fc400df`
 - correctness: `PASS`
-- median runtime: `46.056448 ms`
-- TFLOP/s: `15.785399 TFLOP/s`
+- median runtime: `45.920258 ms`
+- TFLOP/s: `15.832216 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_124005`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 10/100 diagnosis emitted after the compact writer sweep stayed correctness-safe but failed to move the 198-register anchor.`
-- dir_01: Retime the PTX barrier seam on the current correctness-safe 128x128 anchor | bottleneck: synchronization_barrier_issue layered on top of occupancy_latency_hiding_issue in the current correctness-safe 128x128 PTX anchor
-- dir_02: Apply only a minimal PTX export-address cleanup on the correct anchor | bottleneck: occupancy_latency_hiding_issue with a small tail_overhead_or_generic_path_issue in the PTX export address math
-- dir_03: Transplant the lower-register half-panel budget into the correctness-safe 256x128 pivot | bottleneck: occupancy_latency_hiding_issue attacked through geometry and register-budget change rather than another PTX-local cleanup
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

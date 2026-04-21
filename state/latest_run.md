@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_123908_bf16_gemm_v1_1db08fc`
-- run dir: `runs/20260421_123908_bf16_gemm_v1_1db08fc`
-- kernel tag: `bf16_gemm_v1_1db08fc`
-- round label: `round 9/100`
+- run id: `20260421_124420_bf16_gemm_v1_fc400df`
+- run dir: `runs/20260421_124420_bf16_gemm_v1_fc400df`
+- kernel tag: `bf16_gemm_v1_fc400df`
+- round label: `round 10/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.056448 ms`
-- p10 runtime: `45.980878 ms`
-- p90 runtime: `54.443623 ms`
-- TFLOP/s: `15.785399 TFLOP/s`
-- previous run id: `20260421_123502_bf16_gemm_v1_310a824`
-- runtime delta vs previous measured run: `-0.128000 ms`
-- TFLOP/s delta vs previous measured run: `+0.043749 TFLOP/s`
+- median runtime: `45.920258 ms`
+- p10 runtime: `45.839873 ms`
+- p90 runtime: `56.815105 ms`
+- TFLOP/s: `15.832216 TFLOP/s`
+- previous run id: `20260421_123908_bf16_gemm_v1_1db08fc`
+- runtime delta vs previous measured run: `-0.136190 ms`
+- TFLOP/s delta vs previous measured run: `+0.046816 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Recover a compact correctness-safe 4-row PTX writer sweep`
+- implemented direction name: `Retime the PTX barrier seam on the current correctness-safe 128x128 anchor`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_123908_bf16_gemm_v1_1db08fc/summary.json`
-- ncu analysis path: `runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.json`
-- measured commit: `1db08fc0e373507cd63d0a43e4791f43c6de5b17`
+- raw summary json: `runs/20260421_124420_bf16_gemm_v1_fc400df/summary.json`
+- ncu analysis path: `runs/20260421_124420_bf16_gemm_v1_fc400df/ncu_analysis.json`
+- measured commit: `fc400df814258c9927aa72a78b213b2e9325787f`
 - new best custom: `no`
-- generated at: `2026-04-21T12:39:18-07:00`
+- generated at: `2026-04-21T12:44:31-07:00`
