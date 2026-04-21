@@ -59,6 +59,13 @@ def load_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
         return json.load(handle)
 
 
+def load_json_if_exists(path: Path) -> Optional[Dict[str, Any]]:
+    if not path.exists():
+        return None
+    with path.open('r', encoding='utf-8') as handle:
+        return json.load(handle)
+
+
 def load_jsonl(path: Path) -> list[Dict[str, Any]]:
     if not path.exists():
         return []
@@ -199,6 +206,128 @@ def default_latest_ncu_summary() -> Dict[str, Any]:
         'artifacts': {},
         'generated_at': now_local_iso(),
     }
+
+
+def _merge_defaults(payload: Any, defaults: Any) -> Any:
+    if isinstance(payload, dict) and isinstance(defaults, dict):
+        merged: Dict[str, Any] = {}
+        for key, default_value in defaults.items():
+            merged[key] = _merge_defaults(payload.get(key), default_value)
+        for key, value in payload.items():
+            if key not in merged:
+                merged[key] = value
+        return merged
+    if payload is None:
+        if isinstance(defaults, dict):
+            return {key: _merge_defaults(None, value) for key, value in defaults.items()}
+        if isinstance(defaults, list):
+            return list(defaults)
+        return defaults
+    return payload
+
+
+def _resolve_repo_path(path_str: Optional[str]) -> Optional[Path]:
+    if not path_str:
+        return None
+    path = Path(path_str)
+    if path.is_absolute():
+        return path
+    return REPO_ROOT / path
+
+
+def _repo_rel_run_artifact(run_dir: Path, raw_path: Optional[str]) -> Optional[str]:
+    if not raw_path:
+        return None
+    path = Path(raw_path)
+    if path.is_absolute():
+        return repo_rel(path)
+    if path.parts and path.parts[0] == 'runs':
+        return repo_rel(REPO_ROOT / path)
+    if path.parts and path.parts[0] == run_dir.name:
+        return repo_rel(run_dir.parent / path)
+    return repo_rel(run_dir / path)
+
+
+def _relativize_ncu_summary_paths(run_dir: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    summary = _merge_defaults(payload, {})
+    for key in (
+        'analysis_path',
+        'raw_csv_path',
+        'raw_rep_path',
+        'raw_details_csv_path',
+        'import_raw_csv_path',
+        'details_page_csv_path',
+        'source_csv_path',
+    ):
+        if key in summary:
+            summary[key] = _repo_rel_run_artifact(run_dir, summary.get(key))
+
+    artifacts = summary.get('artifacts')
+    if isinstance(artifacts, dict):
+        for artifact in artifacts.values():
+            if not isinstance(artifact, dict):
+                continue
+            if 'path' in artifact:
+                artifact['path'] = _repo_rel_run_artifact(run_dir, artifact.get('path'))
+            if 'legacy_alias_path' in artifact:
+                artifact['legacy_alias_path'] = _repo_rel_run_artifact(run_dir, artifact.get('legacy_alias_path'))
+    return summary
+
+
+def _has_rich_ncu_handoff(summary: Dict[str, Any]) -> bool:
+    if not isinstance(summary, dict):
+        return False
+    launch = summary.get('launch')
+    if isinstance(launch, dict) and any(launch.get(key) is not None for key in (
+        'kernel_name',
+        'block_size',
+        'grid_size',
+        'registers_per_thread',
+        'shared_mem_per_block_allocated',
+    )):
+        return True
+    if summary.get('analysis_path'):
+        return True
+    for key in ('bottleneck_classes', 'top_findings', 'top_source_hotspots', 'stall_breakdown'):
+        value = summary.get(key)
+        if isinstance(value, list) and value:
+            return True
+    handoff = summary.get('handoff')
+    if isinstance(handoff, dict):
+        for node_key in ('node_b', 'node_c'):
+            node_payload = handoff.get(node_key)
+            if isinstance(node_payload, dict) and any(node_payload.values()):
+                return True
+    return False
+
+
+def _hydrate_latest_ncu_summary(summary: Dict[str, Any]) -> Dict[str, Any]:
+    latest_run = load_json_if_exists(LATEST_RUN_PATH) or default_latest_run()
+    latest_run_id = latest_run.get('run_id')
+    latest_run_dir = _resolve_repo_path(latest_run.get('run_dir'))
+    if not latest_run_id or latest_run_dir is None:
+        return _merge_defaults(summary, default_latest_ncu_summary())
+
+    run_summary_path = latest_run_dir / 'ncu_summary.json'
+    run_summary = load_json_if_exists(run_summary_path)
+    if run_summary is None:
+        return _merge_defaults(summary, default_latest_ncu_summary())
+
+    summary_run_id = summary.get('source_run_id')
+    needs_hydration = (
+        summary_run_id != latest_run_id
+        or not _has_rich_ncu_handoff(summary)
+    )
+    if not needs_hydration:
+        return _merge_defaults(summary, default_latest_ncu_summary())
+
+    hydrated = _merge_defaults(
+        _relativize_ncu_summary_paths(latest_run_dir, run_summary),
+        default_latest_ncu_summary(),
+    )
+    hydrated['source_run_id'] = latest_run_id
+    hydrated['source_run_dir'] = repo_rel(latest_run_dir)
+    return hydrated
 
 
 def default_latest_diagnosis() -> Dict[str, Any]:
@@ -528,7 +657,12 @@ def load_latest_run() -> Dict[str, Any]:
 
 
 def load_latest_ncu_summary() -> Dict[str, Any]:
-    return load_json(LATEST_NCU_SUMMARY_PATH, default_latest_ncu_summary())
+    summary = load_json(LATEST_NCU_SUMMARY_PATH, default_latest_ncu_summary())
+    hydrated = _hydrate_latest_ncu_summary(summary)
+    normalized = _merge_defaults(hydrated, default_latest_ncu_summary())
+    if normalized != summary:
+        write_json(LATEST_NCU_SUMMARY_PATH, normalized)
+    return normalized
 
 
 def load_latest_diagnosis() -> Dict[str, Any]:

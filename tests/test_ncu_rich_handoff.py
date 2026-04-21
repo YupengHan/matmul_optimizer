@@ -16,6 +16,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 import graph  # noqa: E402
 import ncu_analysis  # noqa: E402
+import state_lib  # noqa: E402
 from state_lib import default_benchmark_state  # noqa: E402
 
 
@@ -46,6 +47,23 @@ class NcuRichHandoffTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.tempdir.cleanup()
+
+    def patch_state_lib_paths(self, repo_root: Path) -> None:
+        originals = {}
+        for name, value in {
+            'REPO_ROOT': repo_root,
+            'STATE_DIR': repo_root / 'state',
+            'RUNS_DIR': repo_root / 'runs',
+            'LATEST_RUN_PATH': repo_root / 'state' / 'latest_run.json',
+            'LATEST_NCU_SUMMARY_PATH': repo_root / 'state' / 'latest_ncu_summary.json',
+        }.items():
+            originals[name] = getattr(state_lib, name)
+            setattr(state_lib, name, value)
+        self.addCleanup(self.restore_state_lib_paths, originals)
+
+    def restore_state_lib_paths(self, originals: dict[str, object]) -> None:
+        for name, value in originals.items():
+            setattr(state_lib, name, value)
 
     def stage_run_dir(
         self,
@@ -345,6 +363,50 @@ class NcuRichHandoffTests(unittest.TestCase):
         self.assertIn('source correlation missing in fixture', analysis['artifacts']['source_page']['unavailable_reason'])
         self.assertTrue(analysis['source_hotspots'])
         self.assertTrue(analysis['handoff']['node_b']['top_findings'])
+
+    def test_load_latest_ncu_summary_hydrates_from_latest_run_when_state_is_shallow(self) -> None:
+        repo_root = self.tmp
+        state_dir = repo_root / 'state'
+        state_dir.mkdir(parents=True, exist_ok=True)
+
+        run_dir = self.stage_run_dir(
+            '20260421_hydrate_current',
+            headline_fixture='headline_metrics.csv',
+            import_raw_fixture='import_raw.csv',
+            details_fixture='details_page.csv',
+            source_fixture='source_page.csv',
+        )
+        analysis, analysis_json_path, _ = self.analyze_fixture_run(
+            run_dir,
+            details_available=True,
+            source_available=True,
+        )
+        run_summary = ncu_analysis.build_rich_summary_from_analysis(analysis)
+        run_summary['analysis_path'] = analysis_json_path.name
+        (run_dir / 'ncu_summary.json').write_text(json.dumps(run_summary, indent=2), encoding='utf-8')
+
+        latest_run_payload = {
+            'run_id': run_dir.name,
+            'run_dir': f'runs/{run_dir.name}',
+        }
+        shallow_state_summary = {
+            'status': 'available',
+            'source_run_id': 'older_run',
+            'headline_metrics': {
+                'sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active': 11.0,
+            },
+        }
+        (state_dir / 'latest_run.json').write_text(json.dumps(latest_run_payload, indent=2), encoding='utf-8')
+        (state_dir / 'latest_ncu_summary.json').write_text(json.dumps(shallow_state_summary, indent=2), encoding='utf-8')
+
+        self.patch_state_lib_paths(repo_root)
+        hydrated = state_lib.load_latest_ncu_summary()
+
+        self.assertEqual(hydrated['schema_version'], 2)
+        self.assertEqual(hydrated['source_run_id'], run_dir.name)
+        self.assertEqual(hydrated['analysis_path'], f'runs/{run_dir.name}/ncu_analysis.json')
+        self.assertTrue(hydrated['top_findings'])
+        self.assertTrue(hydrated['handoff']['node_b']['top_findings'])
 
 
 if __name__ == '__main__':

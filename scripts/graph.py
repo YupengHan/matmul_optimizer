@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import eval_kernel
+import ncu_analysis
 from search_policy import (
     classify_transition,
     fallback_search_score_v1,
@@ -92,6 +93,15 @@ ALLOWED_NODE_C_PATHS = [
     REPO_ROOT / 'scripts' / 'graph.py',
     SWEEP_FIXED_MAIN_TILES_PATH,
 ]
+
+RESTORE_IMPLEMENTATION_PATHS = [
+    REPO_ROOT / 'src' / 'kernels',
+    REPO_ROOT / 'src' / 'runner' / 'main.cpp',
+    REPO_ROOT / 'include',
+    REPO_ROOT / 'CMakeLists.txt',
+]
+if SWEEP_FIXED_MAIN_TILES_PATH.exists():
+    RESTORE_IMPLEMENTATION_PATHS.append(SWEEP_FIXED_MAIN_TILES_PATH)
 
 
 def fmt_value(value: Any, suffix: str = '') -> str:
@@ -447,15 +457,65 @@ def load_json_file(path: Path) -> Dict[str, Any]:
         return json.load(handle)
 
 
+def resolve_repo_path(path_str: Optional[str]) -> Optional[Path]:
+    if not path_str:
+        return None
+    path = Path(path_str)
+    if path.is_absolute():
+        return path
+    return REPO_ROOT / path
+
+
+def repo_rel_run_artifact(run_dir: Path, raw_path: Optional[str]) -> Optional[str]:
+    if not raw_path:
+        return None
+    path = Path(raw_path)
+    if path.is_absolute():
+        return repo_rel(path)
+    if path.parts and path.parts[0] == 'runs':
+        return repo_rel(REPO_ROOT / path)
+    if path.parts and path.parts[0] == run_dir.name:
+        return repo_rel(run_dir.parent / path)
+    return repo_rel(run_dir / path)
+
+
+def relativize_ncu_summary_paths(run_dir: Path, payload: Dict[str, Any]) -> Dict[str, Any]:
+    summary = copy.deepcopy(payload)
+    for key in (
+        'analysis_path',
+        'raw_csv_path',
+        'raw_rep_path',
+        'raw_details_csv_path',
+        'import_raw_csv_path',
+        'details_page_csv_path',
+        'source_csv_path',
+    ):
+        if key in summary:
+            summary[key] = repo_rel_run_artifact(run_dir, summary.get(key))
+
+    artifacts = summary.get('artifacts')
+    if isinstance(artifacts, dict):
+        for artifact in artifacts.values():
+            if not isinstance(artifact, dict):
+                continue
+            if 'path' in artifact:
+                artifact['path'] = repo_rel_run_artifact(run_dir, artifact.get('path'))
+            if 'legacy_alias_path' in artifact:
+                artifact['legacy_alias_path'] = repo_rel_run_artifact(run_dir, artifact.get('legacy_alias_path'))
+    return summary
+
+
 def summarize_run(
     run_dir: Path,
     measured_commit: Optional[str],
     benchmark_state: Dict[str, Any],
 ) -> tuple[Dict[str, Any], Dict[str, Any], bool]:
     raw_summary = load_json_file(run_dir / 'summary.json')
+    analysis_path = run_dir / 'ncu_analysis.json'
     ncu_summary_path = run_dir / 'ncu_summary.json'
-    if ncu_summary_path.exists():
-        raw_ncu = load_json_file(ncu_summary_path)
+    if analysis_path.exists():
+        analysis = load_json_file(analysis_path)
+        raw_ncu = ncu_analysis.build_rich_summary_from_analysis(analysis)
     else:
         csv_path = run_dir / 'ncu_metrics.csv'
         metrics = {}
@@ -507,29 +567,63 @@ def summarize_run(
         'tflops': perf.get('tflops'),
         'ncu_rep_path': repo_rel(run_dir / 'ncu_profile.ncu-rep') if (run_dir / 'ncu_profile.ncu-rep').exists() else None,
         'ncu_csv_path': repo_rel(run_dir / 'ncu_metrics.csv') if (run_dir / 'ncu_metrics.csv').exists() else None,
+        'ncu_analysis_path': repo_rel(analysis_path) if analysis_path.exists() else None,
         'ncu_summary_json': repo_rel(LATEST_NCU_SUMMARY_PATH),
         'is_new_best_custom': is_new_best,
         'measured_commit': measured_commit,
         'generated_at': now_local_iso(),
     }
 
+    raw_ncu = relativize_ncu_summary_paths(run_dir, raw_ncu)
     latest_ncu = {
+        'schema_version': raw_ncu.get('schema_version', 2),
         'status': raw_ncu.get('status', 'missing'),
         'source_run_id': run_id,
         'source_run_dir': repo_rel(run_dir),
+        'analysis_path': repo_rel(analysis_path) if analysis_path.exists() else raw_ncu.get('analysis_path'),
         'kernel_name': raw_ncu.get('kernel_name'),
         'block_size': raw_ncu.get('block_size'),
         'grid_size': raw_ncu.get('grid_size'),
         'registers_per_thread': raw_ncu.get('registers_per_thread'),
         'shared_mem_per_block_allocated': raw_ncu.get('shared_mem_per_block_allocated'),
-        'headline_metrics': raw_ncu.get('headline_metrics', {}),
-        'raw_csv_path': repo_rel(run_dir / 'ncu_metrics.csv') if (run_dir / 'ncu_metrics.csv').exists() else None,
-        'raw_rep_path': repo_rel(run_dir / 'ncu_profile.ncu-rep') if (run_dir / 'ncu_profile.ncu-rep').exists() else None,
-        'raw_details_csv_path': (
-            repo_rel(run_dir / Path(raw_ncu['raw_details_csv_path']).name)
-            if raw_ncu.get('raw_details_csv_path')
-            else (repo_rel(run_dir / 'ncu_details.csv') if (run_dir / 'ncu_details.csv').exists() else None)
+        'launch': raw_ncu.get(
+            'launch',
+            {
+                'kernel_name': raw_ncu.get('kernel_name'),
+                'block_size': raw_ncu.get('block_size'),
+                'grid_size': raw_ncu.get('grid_size'),
+                'registers_per_thread': raw_ncu.get('registers_per_thread'),
+                'shared_mem_per_block_allocated': raw_ncu.get('shared_mem_per_block_allocated'),
+            },
         ),
+        'headline_metrics': raw_ncu.get('headline_metrics', {}),
+        'stall_breakdown': raw_ncu.get('stall_breakdown', []),
+        'bottleneck_classes': raw_ncu.get('bottleneck_classes', []),
+        'top_findings': raw_ncu.get('top_findings', []),
+        'top_source_hotspots': raw_ncu.get('top_source_hotspots', []),
+        'handoff': raw_ncu.get(
+            'handoff',
+            {
+                'node_b': {'top_findings': [], 'code_regions_to_investigate': []},
+                'node_c': {'target_hotspots': [], 'guardrail_metrics': [], 'expected_recheck_points': []},
+            },
+        ),
+        'delta_vs_previous_run': raw_ncu.get(
+            'delta_vs_previous_run',
+            {
+                'baseline_run_id': None,
+                'headline_metrics': {},
+                'stall_breakdown': [],
+                'source_hotspots': {'improved': [], 'regressed': [], 'new': [], 'disappeared': []},
+            },
+        ),
+        'raw_csv_path': raw_ncu.get('raw_csv_path') or (repo_rel(run_dir / 'ncu_metrics.csv') if (run_dir / 'ncu_metrics.csv').exists() else None),
+        'raw_rep_path': raw_ncu.get('raw_rep_path') or (repo_rel(run_dir / 'ncu_profile.ncu-rep') if (run_dir / 'ncu_profile.ncu-rep').exists() else None),
+        'raw_details_csv_path': raw_ncu.get('raw_details_csv_path') or (repo_rel(run_dir / 'ncu_details.csv') if (run_dir / 'ncu_details.csv').exists() else None),
+        'import_raw_csv_path': raw_ncu.get('import_raw_csv_path'),
+        'details_page_csv_path': raw_ncu.get('details_page_csv_path'),
+        'source_csv_path': raw_ncu.get('source_csv_path'),
+        'artifacts': raw_ncu.get('artifacts', {}),
         'generated_at': now_local_iso(),
     }
     return latest_run, latest_ncu, is_new_best
@@ -636,6 +730,10 @@ def candidate_summary_from_record(candidate: Dict[str, Any]) -> Dict[str, Any]:
         'predicted_fail_risk': candidate.get('predicted_fail_risk'),
         'ranking_notes': normalize_string_list(candidate.get('ranking_notes')),
         'stop_condition': candidate.get('stop_condition'),
+        'evidence_refs': normalize_string_list(candidate.get('evidence_refs')),
+        'target_hotspots': normalize_dict_list(candidate.get('target_hotspots')),
+        'expected_local_changes': normalize_string_list(candidate.get('expected_local_changes')),
+        'guardrail_metrics': normalize_dict_list(candidate.get('guardrail_metrics')),
         'idea_origin': candidate.get('idea_origin', 'auto-analysis'),
     }
 
@@ -667,6 +765,10 @@ def frontier_candidate_defaults(candidate_id: Optional[str]) -> Dict[str, Any]:
         'risk': None,
         'metrics_to_recheck': [],
         'stop_condition': None,
+        'evidence_refs': [],
+        'target_hotspots': [],
+        'expected_local_changes': [],
+        'guardrail_metrics': [],
         'status': 'open',
         'source_search_iteration': None,
         'selection_count': 0,
@@ -718,6 +820,10 @@ def merge_missing_candidate_fields(target: Dict[str, Any], source: Dict[str, Any
         'risk',
         'metrics_to_recheck',
         'stop_condition',
+        'evidence_refs',
+        'target_hotspots',
+        'expected_local_changes',
+        'guardrail_metrics',
     ):
         if not has_meaningful_value(target.get(key)) and has_meaningful_value(source.get(key)):
             target[key] = copy.deepcopy(source.get(key))
@@ -747,6 +853,10 @@ def normalize_frontier_candidate(raw_candidate: Dict[str, Any]) -> Dict[str, Any
     candidate['ranking_notes'] = normalize_string_list(candidate.get('ranking_notes'))
     candidate['code_locations'] = normalize_string_list(candidate.get('code_locations'))
     candidate['metrics_to_recheck'] = normalize_string_list(candidate.get('metrics_to_recheck'))
+    candidate['evidence_refs'] = normalize_string_list(candidate.get('evidence_refs'))
+    candidate['target_hotspots'] = normalize_dict_list(candidate.get('target_hotspots'))
+    candidate['expected_local_changes'] = normalize_string_list(candidate.get('expected_local_changes'))
+    candidate['guardrail_metrics'] = normalize_dict_list(candidate.get('guardrail_metrics'))
 
     priority = parse_priority(candidate.get('priority'))
     search_score = parse_priority(candidate.get('search_score_v1'))
@@ -1235,6 +1345,77 @@ def active_direction_summary(
     return {}
 
 
+def normalize_dict_list(values: Any) -> List[Dict[str, Any]]:
+    if not isinstance(values, list):
+        return []
+    normalized: List[Dict[str, Any]] = []
+    for value in values:
+        if isinstance(value, dict):
+            normalized.append(copy.deepcopy(value))
+    return normalized
+
+
+def sibling_repo_path(path_str: Optional[str], new_name: Optional[str] = None, suffix: Optional[str] = None) -> Optional[str]:
+    path = resolve_repo_path(path_str)
+    if path is None:
+        return None
+    if new_name is not None:
+        path = path.with_name(new_name)
+    if suffix is not None:
+        path = path.with_suffix(suffix)
+    return repo_rel(path)
+
+
+def format_top_finding(item: Dict[str, Any]) -> str:
+    summary = str(item.get('summary') or 'N/A').strip()
+    evidence = item.get('evidence') or []
+    if evidence:
+        first = evidence[0] or {}
+        evidence_ref = first.get('ref_id') or first.get('kind')
+        if evidence_ref:
+            return f"{summary} (evidence: {evidence_ref})"
+    return summary
+
+
+def format_hotspot_label(item: Dict[str, Any]) -> str:
+    scope_type = item.get('scope_type') or 'unknown_scope'
+    scope_name = item.get('scope_name') or 'unknown_scope_name'
+    location = item.get('location') or 'N/A'
+    metric_name = item.get('metric_name') or 'unknown_metric'
+    metric_value = item.get('metric_value')
+    explanation = item.get('explanation') or item.get('reason') or 'N/A'
+    return (
+        f"`{scope_type}` `{scope_name}` @ `{location}` | "
+        f"`{metric_name}` = `{metric_value}` | {explanation}"
+    )
+
+
+def format_guardrail_label(item: Dict[str, Any]) -> str:
+    return (
+        f"`{item.get('metric_name', 'unknown_metric')}` "
+        f"`{item.get('guardrail', 'observe')}` from `{item.get('current_value', 'N/A')}` | "
+        f"{item.get('reason', 'N/A')}"
+    )
+
+
+def format_delta_hotspot_label(item: Dict[str, Any]) -> str:
+    return (
+        f"`{item.get('bucket', 'changed')}` `{item.get('scope_name') or item.get('location') or 'unknown_scope'}` | "
+        f"`{item.get('metric_name', 'unknown_metric')}` | delta `{item.get('delta', 'N/A')}` | "
+        f"trend `{item.get('trend', 'changed')}`"
+    )
+
+
+def format_evidence_label(item: Dict[str, Any]) -> str:
+    if not isinstance(item, dict):
+        return str(item)
+    return (
+        f"`{item.get('kind', 'evidence')}` `{item.get('ref_id', 'N/A')}` | "
+        f"`{item.get('metric_name', 'N/A')}` = `{item.get('metric_value', 'N/A')}` | "
+        f"{item.get('summary', 'N/A')}"
+    )
+
+
 def render_latest_run_md(latest_run: Dict[str, Any]) -> str:
     lines = ['# Latest run', '']
     lines.append(f"- run id: `{latest_run.get('run_id', 'N/A')}`")
@@ -1260,6 +1441,7 @@ def render_latest_run_md(latest_run: Dict[str, Any]) -> str:
     lines.append(f"- implemented selection mode: `{latest_run.get('implemented_selection_mode', 'N/A')}`")
     lines.append(f"- implemented idea origin: `{latest_run.get('implemented_idea_origin', 'N/A')}`")
     lines.append(f"- raw summary json: `{latest_run.get('raw_summary_json', 'N/A')}`")
+    lines.append(f"- ncu analysis path: `{latest_run.get('ncu_analysis_path', 'N/A')}`")
     lines.append(f"- measured commit: `{latest_run.get('measured_commit', 'N/A')}`")
     lines.append(f"- new best custom: `{'yes' if latest_run.get('is_new_best_custom') else 'no'}`")
     lines.append(f"- generated at: `{latest_run.get('generated_at', 'N/A')}`")
@@ -1267,27 +1449,130 @@ def render_latest_run_md(latest_run: Dict[str, Any]) -> str:
 
 
 def render_latest_ncu_md(ncu_summary: Dict[str, Any]) -> str:
+    launch = ncu_summary.get('launch') or {}
+    delta_summary = ncu_summary.get('delta_vs_previous_run') or {}
+    source_hotspot_deltas = delta_summary.get('source_hotspots') or {}
+    node_b = (ncu_summary.get('handoff') or {}).get('node_b') or {}
+    node_c = (ncu_summary.get('handoff') or {}).get('node_c') or {}
+    artifacts = ncu_summary.get('artifacts') or {}
+
     lines = ['# Latest Nsight Compute summary', '']
+    lines.append(f"- schema version: `{ncu_summary.get('schema_version', 'N/A')}`")
     lines.append(f"- source run id: `{ncu_summary.get('source_run_id', 'N/A')}`")
     lines.append(f"- source run dir: `{ncu_summary.get('source_run_dir', 'N/A')}`")
     lines.append(f"- status: `{ncu_summary.get('status', 'unknown')}`")
-    lines.append(f"- kernel name: `{ncu_summary.get('kernel_name', 'N/A')}`")
-    lines.append(f"- block size: `{ncu_summary.get('block_size', 'N/A')}`")
-    lines.append(f"- grid size: `{ncu_summary.get('grid_size', 'N/A')}`")
-    lines.append(f"- registers / thread: `{ncu_summary.get('registers_per_thread', 'N/A')}`")
-    lines.append(f"- shared mem / block allocated: `{ncu_summary.get('shared_mem_per_block_allocated', 'N/A')}`")
+    lines.append(f"- analysis path: `{ncu_summary.get('analysis_path', 'N/A')}`")
     lines.append(f"- raw csv path: `{ncu_summary.get('raw_csv_path', 'N/A')}`")
     lines.append(f"- raw rep path: `{ncu_summary.get('raw_rep_path', 'N/A')}`")
-    lines.append(f"- raw detailed csv path: `{ncu_summary.get('raw_details_csv_path', 'N/A')}`")
+    lines.append(f"- imported raw csv path: `{ncu_summary.get('import_raw_csv_path', 'N/A')}`")
+    lines.append(f"- legacy import-raw alias path: `{ncu_summary.get('raw_details_csv_path', 'N/A')}`")
+    lines.append(f"- details page csv path: `{ncu_summary.get('details_page_csv_path', 'N/A')}`")
+    lines.append(f"- source page csv path: `{ncu_summary.get('source_csv_path', 'N/A')}`")
+    lines.append('')
+    lines.append('## Launch / kernel metadata')
+    lines.append('')
+    lines.append(f"- kernel name: `{launch.get('kernel_name', ncu_summary.get('kernel_name', 'N/A'))}`")
+    lines.append(f"- block size: `{launch.get('block_size', ncu_summary.get('block_size', 'N/A'))}`")
+    lines.append(f"- grid size: `{launch.get('grid_size', ncu_summary.get('grid_size', 'N/A'))}`")
+    lines.append(f"- registers / thread: `{launch.get('registers_per_thread', ncu_summary.get('registers_per_thread', 'N/A'))}`")
+    lines.append(
+        f"- shared mem / block allocated: `{launch.get('shared_mem_per_block_allocated', ncu_summary.get('shared_mem_per_block_allocated', 'N/A'))}`"
+    )
     lines.append('')
     lines.append('## Headline metrics')
     lines.append('')
     headline_metrics = ncu_summary.get('headline_metrics') or {}
-    if not headline_metrics:
-        lines.append('No parsed headline metrics are available yet.')
-    else:
+    if headline_metrics:
         for key, value in headline_metrics.items():
             lines.append(f"- `{key}`: `{value}`")
+    else:
+        lines.append('No parsed headline metrics are available yet.')
+    lines.append('')
+    lines.append('## Primary bottlenecks')
+    lines.append('')
+    bottlenecks = ncu_summary.get('bottleneck_classes') or []
+    if bottlenecks:
+        for item in bottlenecks[:6]:
+            lines.append(
+                f"- `{item.get('class_id', 'unknown_bottleneck')}` | severity `{item.get('severity_score', 'N/A')}` | {item.get('summary', 'N/A')}"
+            )
+            for evidence in item.get('evidence', [])[:2]:
+                lines.append(f"- evidence: {format_evidence_label(evidence)}")
+    else:
+        lines.append('No structured bottleneck classes are available.')
+    lines.append('')
+    lines.append('## Stall breakdown')
+    lines.append('')
+    stalls = ncu_summary.get('stall_breakdown') or []
+    if stalls:
+        for item in stalls:
+            lines.append(
+                f"- `{item.get('stall_group', 'unknown_stall')}`: `{item.get('metric_value', 'N/A')}` | {item.get('explanation', 'N/A')}"
+            )
+    else:
+        lines.append('No structured stall breakdown is available.')
+    lines.append('')
+    lines.append('## Top hotspots')
+    lines.append('')
+    hotspots = ncu_summary.get('top_source_hotspots') or []
+    if hotspots:
+        for hotspot in hotspots[:8]:
+            lines.append(f"- {format_hotspot_label(hotspot)}")
+    else:
+        source_page = artifacts.get('source_page') or {}
+        lines.append('No source-level hotspots were produced.')
+        if source_page.get('status') == 'unavailable':
+            lines.append(f"- source page unavailable reason: `{source_page.get('unavailable_reason', 'unknown')}`")
+    lines.append('')
+    lines.append('## Delta vs previous run')
+    lines.append('')
+    lines.append(f"- baseline run id: `{delta_summary.get('baseline_run_id', 'N/A')}`")
+    stall_deltas = delta_summary.get('stall_breakdown') or []
+    if stall_deltas:
+        for item in stall_deltas[:6]:
+            lines.append(
+                f"- stall `{item.get('stall_group', 'unknown_stall')}`: current `{item.get('current', 'N/A')}` vs previous `{item.get('previous', 'N/A')}` | delta `{item.get('delta', 'N/A')}` | trend `{item.get('trend', 'changed')}`"
+            )
+    else:
+        lines.append('- no structured stall delta is available')
+    delta_hotspots = ncu_analysis.top_hotspot_deltas(delta_summary)
+    if delta_hotspots:
+        for item in delta_hotspots[:6]:
+            lines.append(f"- hotspot delta: {format_delta_hotspot_label(item)}")
+    else:
+        for bucket_name in ('regressed', 'new', 'improved', 'disappeared'):
+            bucket = source_hotspot_deltas.get(bucket_name) or []
+            if bucket:
+                lines.append(f"- hotspot delta bucket `{bucket_name}` recorded with `{len(bucket)}` item(s)")
+    lines.append('')
+    lines.append('## Handoff to node_b')
+    lines.append('')
+    if node_b.get('top_findings'):
+        for item in node_b.get('top_findings', [])[:6]:
+            lines.append(f"- finding: {format_top_finding(item)}")
+    else:
+        lines.append('- no node_b findings were generated')
+    if node_b.get('code_regions_to_investigate'):
+        for item in node_b.get('code_regions_to_investigate', [])[:6]:
+            lines.append(
+                f"- investigate `{item.get('scope_type', 'region')}` `{item.get('scope_name', 'N/A')}` @ `{item.get('location', 'N/A')}` | {item.get('reason', 'N/A')}"
+            )
+    lines.append('')
+    lines.append('## Handoff to node_c')
+    lines.append('')
+    if node_c.get('target_hotspots'):
+        for item in node_c.get('target_hotspots', [])[:6]:
+            lines.append(f"- target hotspot: {format_hotspot_label(item)}")
+    else:
+        lines.append('- no target hotspots were generated')
+    if node_c.get('guardrail_metrics'):
+        for item in node_c.get('guardrail_metrics', [])[:6]:
+            lines.append(f"- guardrail: {format_guardrail_label(item)}")
+    if node_c.get('expected_recheck_points'):
+        for item in node_c.get('expected_recheck_points', [])[:6]:
+            lines.append(
+                f"- recheck `{item.get('scope_type', 'scope')}` `{item.get('scope_name', 'N/A')}` @ `{item.get('location', 'N/A')}` | `{item.get('metric_name', 'N/A')}` | {item.get('reason', 'N/A')}"
+            )
     return '\n'.join(lines) + '\n'
 
 
@@ -1509,6 +1794,8 @@ def render_node_b_context(
     diagnosis: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
+    analysis_json_path = latest_run.get('ncu_analysis_path') or ncu_summary.get('analysis_path')
+    analysis_md_path = sibling_repo_path(analysis_json_path, suffix='.md')
     autotune_paths = sorted(
         path for path in STATE_DIR.glob('autotune_*_main_tiles.*')
         if path.suffix in {'.json', '.md'}
@@ -1522,31 +1809,50 @@ def render_node_b_context(
         # Node B context
 
         Node B is the diagnosis node. Read the files below, then write exactly three directions to `state/latest_diagnosis.json`.
+        Prioritize the structured bottleneck / hotspot / delta handoff first. Only fall back to raw CSV or `.ncu-rep` when the structured summary is insufficient.
 
         ## Read order
 
+        - `state/node_b_context.md`
         - `state/latest_run.md`
         - `state/latest_ncu_summary.md`
+        - `{analysis_md_path or 'N/A'}`
+        - `{analysis_json_path or 'N/A'}`
         - `docs/heuristics.md`
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
         - `{graph_state.get('current_kernel_path', current_kernel_path())}`
         - `{latest_run.get('raw_summary_json', 'N/A')}`
-        - `{ncu_summary.get('raw_csv_path', 'N/A')}`
+        - `{ncu_summary.get('details_page_csv_path', 'N/A')}`
+        - `{ncu_summary.get('source_csv_path', 'N/A')}`
+        - `{ncu_summary.get('import_raw_csv_path', 'N/A')}`
         - `{ncu_summary.get('raw_details_csv_path', 'N/A')}`
+        - `{ncu_summary.get('raw_csv_path', 'N/A')}`
         - `{ncu_summary.get('raw_rep_path', 'N/A')}`
 {autotune_lines if autotune_lines else ''}
 
-        Use the raw detailed CSV when the headline summary is too shallow to explain pipeline, memory, or bank-conflict behavior.
+        Use the structured summary first:
+        - `bottleneck_classes` tells you which bottleneck family is currently dominant
+        - `top_findings` tells you which section, rule, hotspot, or delta is most actionable
+        - `top_source_hotspots` and `handoff.node_c.target_hotspots` tell you where local hardware pressure concentrates
+        - `delta_vs_previous_run` tells you what changed after the last code edit
+        Use the raw exports only when the structured findings are not enough to explain pipeline, memory, synchronization, or source-level behavior.
         Use the autotune sweep summaries when present to anchor direction ranking in measured tile-width data instead of only one run snapshot.
 
         ## Output contract
 
         - write exactly 3 directions
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
-        - keep top-level `family_audit` as a list, even if empty
+        - keep top-level `family_audit` as a list
         - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
+        - set `reasoning_source` to `main_codex_agent` or `codex_sub_agent`
+        - set `reasoning_mode` to `manual_reasoned_best_model`
+        - write a non-empty `reasoning_summary` with concrete ranking rationale
+        - write `evidence_refs` as a non-empty list of concrete files reviewed
+        - the diagnosis must come from live reasoning, not from a repo-external scripted helper
+        - all 3 direction `name` fields must be distinct
+        - all 3 direction `action_fingerprint` values must be distinct
         - each direction must include:
           - `family_id`
           - `subfamily_id`
@@ -1562,6 +1868,11 @@ def render_node_b_context(
           - `predicted_gain_ms`
           - `predicted_fail_risk`
           - `ranking_notes`
+        - each direction may additionally include:
+          - `evidence_refs`
+          - `target_hotspots`
+          - `expected_local_changes`
+          - `guardrail_metrics`
         - set `recommended_direction_id`
         - every direction is also treated as a search candidate, so keep numeric score fields and prose notes auditable
         - after editing the diagnosis file, run `python scripts/graph.py node_b --finalize`
@@ -1575,12 +1886,16 @@ def render_node_b_context(
         - TFLOP/s: `{fmt_tflops(latest_run.get('tflops'))}`
         - measured commit: `{latest_run.get('measured_commit', 'N/A')}`
         - existing diagnosis status: `{diagnosis.get('status', 'pending_generation')}`
+        - top bottleneck class: `{((ncu_summary.get('bottleneck_classes') or [{}])[0]).get('class_id', 'N/A')}`
+        - top finding: `{((ncu_summary.get('top_findings') or [{}])[0]).get('summary', 'N/A')}`
         '''
     ).rstrip() + '\n'
 
 
 def render_node_c_context(
     graph_state: Dict[str, Any],
+    latest_run: Dict[str, Any],
+    ncu_summary: Dict[str, Any],
     diagnosis: Dict[str, Any],
     active_direction: Dict[str, Any],
     dirty_paths: List[str],
@@ -1588,8 +1903,23 @@ def render_node_c_context(
 ) -> str:
     direction = active_direction_summary(active_direction, diagnosis)
     direction_name = direction.get('name') if direction else None
+    direction_target_hotspots = normalize_dict_list(direction.get('target_hotspots'))
+    target_hotspots = direction_target_hotspots or normalize_dict_list(
+        ((ncu_summary.get('handoff') or {}).get('node_c') or {}).get('target_hotspots')
+    )
+    guardrail_metrics = normalize_dict_list(direction.get('guardrail_metrics')) or normalize_dict_list(
+        ((ncu_summary.get('handoff') or {}).get('node_c') or {}).get('guardrail_metrics')
+    )
+    expected_local_changes = normalize_string_list(direction.get('expected_local_changes'))
+    delta_summary = ncu_summary.get('delta_vs_previous_run') or {}
+    hotspot_deltas = ncu_analysis.top_hotspot_deltas(delta_summary)
+    recheck_points = normalize_dict_list(
+        ((ncu_summary.get('handoff') or {}).get('node_c') or {}).get('expected_recheck_points')
+    )
+    relevant_bottlenecks = ncu_summary.get('bottleneck_classes') or []
     lines = ['# Node C context', '']
     lines.append('Node C is the implementation node. Implement exactly one approved or explicitly selected recommended direction.')
+    lines.append('Use the structured NCU handoff as the default source of truth for local hotspots, guardrails, and delta checks.')
     lines.append('')
     lines.append('## Selected direction')
     lines.append('')
@@ -1608,6 +1938,72 @@ def render_node_c_context(
         lines.append(f"- code locations: `{', '.join(direction.get('code_locations', [])) or 'N/A'}`")
         lines.append(f"- risk: `{direction.get('risk', 'N/A')}`")
         lines.append(f"- metrics to re-check: `{', '.join(direction.get('metrics_to_recheck', [])) or 'N/A'}`")
+    lines.append(f"- latest run id: `{latest_run.get('run_id', 'N/A')}`")
+    lines.append(f"- latest runtime: `{fmt_runtime(latest_run.get('median_runtime_ms'))}`")
+    lines.append(f"- latest NCU analysis: `{latest_run.get('ncu_analysis_path') or ncu_summary.get('analysis_path') or 'N/A'}`")
+    lines.append('')
+    lines.append('## Relevant hotspots')
+    lines.append('')
+    if target_hotspots:
+        for item in target_hotspots[:6]:
+            lines.append(f"- {format_hotspot_label(item)}")
+    else:
+        lines.append('- no structured hotspot list is available; fall back to `state/latest_ncu_summary.md` or raw exports only if needed')
+    lines.append('')
+    lines.append('## Relevant bottleneck evidence')
+    lines.append('')
+    if relevant_bottlenecks:
+        for item in relevant_bottlenecks[:4]:
+            lines.append(
+                f"- `{item.get('class_id', 'unknown_bottleneck')}` | severity `{item.get('severity_score', 'N/A')}` | {item.get('summary', 'N/A')}"
+            )
+            for evidence in item.get('evidence', [])[:2]:
+                lines.append(f"- evidence: {format_evidence_label(evidence)}")
+    else:
+        lines.append('- no structured bottleneck evidence is available')
+    lines.append('')
+    lines.append('## Guardrail metrics')
+    lines.append('')
+    if guardrail_metrics:
+        for item in guardrail_metrics[:6]:
+            lines.append(f"- {format_guardrail_label(item)}")
+    else:
+        lines.append('- no explicit guardrail metrics were provided')
+    lines.append('')
+    lines.append('## Expected local changes')
+    lines.append('')
+    if expected_local_changes:
+        for item in expected_local_changes:
+            lines.append(f"- `{item}`")
+    else:
+        lines.append('- no direction-specific local change notes were provided')
+    lines.append('')
+    lines.append('## Delta vs previous run')
+    lines.append('')
+    lines.append(f"- baseline run id: `{delta_summary.get('baseline_run_id', 'N/A')}`")
+    stall_deltas = delta_summary.get('stall_breakdown') or []
+    if stall_deltas:
+        for item in stall_deltas[:4]:
+            lines.append(
+                f"- stall `{item.get('stall_group', 'unknown_stall')}` | delta `{item.get('delta', 'N/A')}` | trend `{item.get('trend', 'changed')}`"
+            )
+    else:
+        lines.append('- no structured stall delta is available')
+    if hotspot_deltas:
+        for item in hotspot_deltas[:4]:
+            lines.append(f"- hotspot delta: {format_delta_hotspot_label(item)}")
+    else:
+        lines.append('- no structured hotspot delta is available')
+    lines.append('')
+    lines.append('## Finalize recheck points')
+    lines.append('')
+    if recheck_points:
+        for item in recheck_points[:6]:
+            lines.append(
+                f"- recheck `{item.get('scope_type', 'scope')}` `{item.get('scope_name', 'N/A')}` @ `{item.get('location', 'N/A')}` | `{item.get('metric_name', 'N/A')}` | {item.get('reason', 'N/A')}"
+            )
+    else:
+        lines.append('- no explicit recheck points were provided')
     lines.append('')
     lines.append('## Allowed edit surface')
     lines.append('')
@@ -1683,7 +2079,8 @@ def compute_supervisor_task(
         'display_update_instruction': (
             'Use the matmul-doc-sync skill or an equivalent narrow doc-refresh pass to update '
             '`README.md`, `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`, '
-            'and the rendered optimization tree, then commit only those doc/image files.'
+            'and the rendered optimization tree, then commit only those doc/image files and run '
+            '`git push origin master`.'
         ),
         'watchdog_timeout_minutes': supervisor_watchdog_timeout_minutes(),
         'watchdog_status': 'idle',
@@ -1691,6 +2088,13 @@ def compute_supervisor_task(
         'watchdog_latest_progress_at': None,
         'watchdog_latest_progress_path': None,
         'watchdog_continue_instruction': None,
+        'continue_required': False,
+        'natural_stop_disallowed': False,
+        'stop_allowed': True,
+        'stop_allowed_reasons': ['current_dispatch_complete', 'explicit_user_redirect'],
+        'continue_until': None,
+        'continue_instruction': None,
+        'interrupt_policy': 'none',
         'notes': graph_state.get('notes', 'Inspect graph_state.json and dispatch the next node.'),
     }
 
@@ -1712,7 +2116,7 @@ def compute_supervisor_task(
                 'finalize_command': 'python scripts/graph.py node_b --finalize',
                 'protocol_doc': 'docs/node_b_protocol.md',
                 'context_file': repo_rel(NODE_B_CONTEXT_PATH),
-                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.',
+                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent for live reasoning, and do not replace node_b with a scripted helper before finalizing from the main Codex agent.',
             }
         )
     elif current_node == 'node_c':
@@ -1734,13 +2138,21 @@ def compute_supervisor_task(
                 'finalize_command': 'python scripts/graph.py node_c --finalize',
                 'protocol_doc': 'docs/node_c_protocol.md',
                 'context_file': repo_rel(NODE_C_CONTEXT_PATH),
-                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.',
+                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent for a real code edit, and do not replace node_c with a scripted helper before finalizing from the main Codex agent.',
             }
         )
     else:
         task['notes'] = f"Unknown current node {current_node!r}. Inspect state/graph_state.json before continuing."
 
     task.update(compute_watchdog_fields(task, graph_state, round_loop))
+    task.update(compute_continue_contract_fields(task, round_loop))
+    if task.get('continue_required'):
+        task['notes'] = (
+            f"{task.get('notes')} Active round loop in progress: `{graph_state.get('status', 'unknown')}` is a "
+            'continue state, not a legal stop point. Re-read `state/supervisor_task.json` after every node and '
+            'keep dispatching until `remaining_rounds = 0`, the graph fails/pauses, a required permission or '
+            'environment dependency blocks execution, or the user explicitly redirects the conversation.'
+        )
     return task
 
 
@@ -1770,6 +2182,10 @@ def render_supervisor_context(
     lines.append(f"- active direction: `{active_direction.get('direction_id', 'N/A')}`")
     lines.append(f"- display update due at current checkpoint: `{'yes' if supervisor_task.get('display_update_due') else 'no'}`")
     lines.append(f"- watchdog status: `{supervisor_task.get('watchdog_status', 'idle')}`")
+    lines.append(f"- continue required now: `{'yes' if supervisor_task.get('continue_required') else 'no'}`")
+    lines.append(f"- stop allowed now: `{'yes' if supervisor_task.get('stop_allowed') else 'no'}`")
+    lines.append(f"- natural stop states disallowed: `{'yes' if supervisor_task.get('natural_stop_disallowed') else 'no'}`")
+    lines.append(f"- interrupt policy: `{supervisor_task.get('interrupt_policy', 'none')}`")
     lines.append('')
     lines.append('## Supervisor protocol')
     lines.append('')
@@ -1815,6 +2231,10 @@ def render_supervisor_context(
             lines.append(f"- next display refresh checkpoint: after `{supervisor_task.get('next_display_update_round')}` completed rounds")
         lines.append(f"- display refresh checkpoint open now: `{'yes' if supervisor_task.get('display_update_due') else 'no'}`")
         lines.append(f"- display refresh action: {supervisor_task.get('display_update_instruction')}")
+        lines.append(f"- continue until: `{supervisor_task.get('continue_until') or 'N/A'}`")
+        if supervisor_task.get('continue_instruction'):
+            lines.append(f"- immediate continue instruction: {supervisor_task.get('continue_instruction')}")
+        lines.append(f"- allowed stop reasons while loop is active: `{', '.join(supervisor_task.get('stop_allowed_reasons') or [])}`")
         lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
     else:
         lines.append('- no multi-round loop is active')
@@ -1915,6 +2335,8 @@ def refresh_node_c_context() -> None:
         NODE_C_CONTEXT_PATH,
         render_node_c_context(
             load_graph_state(),
+            load_latest_run(),
+            load_latest_ncu_summary(),
             load_latest_diagnosis(),
             load_active_direction(),
             dirty_paths,
@@ -2124,6 +2546,10 @@ def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any
         'source_run_dir': latest_run.get('run_dir'),
         'source_measured_commit': latest_run.get('measured_commit'),
         'diagnosis_id': diagnosis.get('diagnosis_id'),
+        'reasoning_source': diagnosis.get('reasoning_source'),
+        'reasoning_mode': diagnosis.get('reasoning_mode'),
+        'reasoning_summary': diagnosis.get('reasoning_summary'),
+        'evidence_refs': diagnosis.get('evidence_refs', []),
         'notes': diagnosis.get('notes'),
         'recommended_direction_id': diagnosis.get('recommended_direction_id'),
         'recommended_idea_origin': recommended.get('idea_origin', 'auto-analysis') if recommended else 'auto-analysis',
@@ -2318,6 +2744,41 @@ def watchdog_continue_instruction(supervisor_task: Dict[str, Any], round_loop: D
     return 'Continue now by re-reading `state/supervisor_task.json` and dispatching the current node.'
 
 
+def compute_continue_contract_fields(
+    supervisor_task: Dict[str, Any],
+    round_loop: Dict[str, Any],
+) -> Dict[str, Any]:
+    active_loop = bool(round_loop.get('active')) and int(round_loop.get('remaining_rounds', 0) or 0) > 0
+    fields: Dict[str, Any] = {
+        'continue_required': False,
+        'natural_stop_disallowed': False,
+        'stop_allowed': True,
+        'stop_allowed_reasons': ['current_dispatch_complete', 'explicit_user_redirect'],
+        'continue_until': None,
+        'continue_instruction': None,
+        'interrupt_policy': 'none',
+    }
+    if not active_loop:
+        return fields
+    fields.update(
+        {
+            'continue_required': True,
+            'natural_stop_disallowed': True,
+            'stop_allowed': False,
+            'stop_allowed_reasons': [
+                'round_loop_complete',
+                'graph_failure_or_pause',
+                'permission_or_environment_block',
+                'explicit_user_redirect',
+            ],
+            'continue_until': 'remaining_rounds == 0 or explicit_user_redirect',
+            'continue_instruction': watchdog_continue_instruction(supervisor_task, round_loop),
+            'interrupt_policy': 'only_explicit_user_redirect',
+        }
+    )
+    return fields
+
+
 def compute_watchdog_fields(
     supervisor_task: Dict[str, Any],
     graph_state: Dict[str, Any],
@@ -2388,6 +2849,19 @@ def normalize_string_list(values: Any) -> List[str]:
     if not isinstance(values, list):
         return []
     return [str(value).strip() for value in values if str(value).strip()]
+
+
+def is_compiled_node_c_path(rel_path: str) -> bool:
+    return (
+        rel_path.startswith('src/kernels/')
+        or rel_path.startswith('include/')
+        or rel_path == 'src/runner/main.cpp'
+        or rel_path == 'CMakeLists.txt'
+    )
+
+
+def compiled_node_c_regions(actual_code_regions: Sequence[str]) -> List[str]:
+    return [rel_path for rel_path in actual_code_regions if is_compiled_node_c_path(rel_path)]
 
 
 def derive_semantic_delta_tags(actual_code_regions: Sequence[str], build_status: str) -> List[str]:
@@ -2483,8 +2957,11 @@ def build_latest_attempt_payload(
             'runtime_delta_ms': None,
             'tflops': None,
             'correctness': None,
+            'ncu_analysis_path': None,
             'headline_metrics': {},
             'headline_metric_deltas_vs_previous_run': {},
+            'structured_bottleneck_deltas': [],
+            'top_hotspot_deltas': [],
         },
         'transition_class': None,
         'close_reason': None,
@@ -2702,11 +3179,14 @@ def record_measurement_into_search_memory(
         'runtime_delta_ms': runtime_delta_ms,
         'tflops': latest_run.get('tflops'),
         'correctness': latest_run.get('correctness_passed'),
+        'ncu_analysis_path': latest_ncu.get('analysis_path'),
         'headline_metrics': latest_ncu.get('headline_metrics') or {},
         'headline_metric_deltas_vs_previous_run': headline_metric_deltas(
             previous_ncu.get('headline_metrics') or {},
             latest_ncu.get('headline_metrics') or {},
         ),
+        'structured_bottleneck_deltas': list((latest_ncu.get('delta_vs_previous_run') or {}).get('stall_breakdown') or []),
+        'top_hotspot_deltas': ncu_analysis.top_hotspot_deltas(latest_ncu.get('delta_vs_previous_run') or {}),
     }
     latest_attempt['transition_label'] = transition_label
     latest_attempt['transition_class'] = transition.get('transition_class')
@@ -2916,7 +3396,7 @@ def perform_restore_implementation(
     ]
     unrelated_dirty = [
         path for path in tracked_non_state
-        if not path_is_allowed(path, ALLOWED_NODE_C_PATHS)
+        if not path_is_allowed(path, RESTORE_IMPLEMENTATION_PATHS)
     ]
     if unrelated_dirty:
         raise RuntimeError(
@@ -2924,7 +3404,7 @@ def perform_restore_implementation(
             + ', '.join(unrelated_dirty)
         )
 
-    changed_paths = restore_paths_from_commit(source_commit, ALLOWED_NODE_C_PATHS)
+    changed_paths = restore_paths_from_commit(source_commit, RESTORE_IMPLEMENTATION_PATHS)
     refresh_node_c_context()
 
     if not changed_paths:
@@ -3061,8 +3541,11 @@ def record_restore_base_action(
             'runtime_delta_ms': None,
             'tflops': None,
             'correctness': None,
+            'ncu_analysis_path': None,
             'headline_metrics': {},
             'headline_metric_deltas_vs_previous_run': {},
+            'structured_bottleneck_deltas': [],
+            'top_hotspot_deltas': [],
         },
         'transition_label': None,
         'transition_class': None,
@@ -3201,6 +3684,9 @@ def run_node_a(args: argparse.Namespace) -> int:
         cmd.extend(['--warmup', str(args.warmup)])
     if args.iters is not None:
         cmd.extend(['--iters', str(args.iters)])
+    previous_analysis_path = resolve_repo_path(previous_ncu.get('analysis_path'))
+    if previous_analysis_path and previous_analysis_path.exists():
+        cmd.extend(['--previous-ncu-analysis', str(previous_analysis_path)])
 
     proc = run_command(cmd, capture=True)
     if proc.returncode != 0:
@@ -3327,6 +3813,10 @@ def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) 
     diagnosis['source_summary_json'] = latest_run.get('raw_summary_json')
     diagnosis['source_ncu_summary_json'] = repo_rel(LATEST_NCU_SUMMARY_PATH)
     diagnosis['current_kernel_path'] = graph_state.get('current_kernel_path', current_kernel_path())
+    diagnosis['reasoning_source'] = None
+    diagnosis['reasoning_mode'] = None
+    diagnosis['reasoning_summary'] = None
+    diagnosis['evidence_refs'] = []
     diagnosis['selected_direction_id'] = None
     diagnosis['family_audit'] = []
     diagnosis['directions'] = [
@@ -3349,6 +3839,10 @@ def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) 
             'predicted_fail_risk': None,
             'ranking_notes': [],
             'stop_condition': '',
+            'evidence_refs': [],
+            'target_hotspots': [],
+            'expected_local_changes': [],
+            'guardrail_metrics': [],
         },
         {
             'direction_id': 'dir_02',
@@ -3369,6 +3863,10 @@ def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) 
             'predicted_fail_risk': None,
             'ranking_notes': [],
             'stop_condition': '',
+            'evidence_refs': [],
+            'target_hotspots': [],
+            'expected_local_changes': [],
+            'guardrail_metrics': [],
         },
         {
             'direction_id': 'dir_03',
@@ -3389,6 +3887,10 @@ def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) 
             'predicted_fail_risk': None,
             'ranking_notes': [],
             'stop_condition': '',
+            'evidence_refs': [],
+            'target_hotspots': [],
+            'expected_local_changes': [],
+            'guardrail_metrics': [],
         },
     ]
     return diagnosis
@@ -3558,6 +4060,10 @@ def normalize_direction_for_finalize(direction: Dict[str, Any], recommended_dire
     if normalized.get('predicted_fail_risk') is None:
         normalized['predicted_fail_risk'] = legacy_predicted_fail_risk(normalized.get('risk'))
     normalized['ranking_notes'] = legacy_ranking_notes(normalized, recommended)
+    normalized['evidence_refs'] = normalize_string_list(normalized.get('evidence_refs'))
+    normalized['target_hotspots'] = normalize_dict_list(normalized.get('target_hotspots'))
+    normalized['expected_local_changes'] = normalize_string_list(normalized.get('expected_local_changes'))
+    normalized['guardrail_metrics'] = normalize_dict_list(normalized.get('guardrail_metrics'))
     return normalized
 
 
@@ -3565,6 +4071,22 @@ def normalize_diagnosis_for_finalize(diagnosis: Dict[str, Any]) -> Dict[str, Any
     normalized = dict(diagnosis)
     if not isinstance(normalized.get('family_audit'), list):
         normalized['family_audit'] = []
+    normalized['reasoning_source'] = (
+        str(normalized.get('reasoning_source')).strip()
+        if normalized.get('reasoning_source') is not None
+        else None
+    )
+    normalized['reasoning_mode'] = (
+        str(normalized.get('reasoning_mode')).strip()
+        if normalized.get('reasoning_mode') is not None
+        else None
+    )
+    normalized['reasoning_summary'] = (
+        str(normalized.get('reasoning_summary')).strip()
+        if normalized.get('reasoning_summary') is not None
+        else None
+    )
+    normalized['evidence_refs'] = normalize_string_list(normalized.get('evidence_refs'))
     if not normalized.get('recommended_direction_id'):
         directions = normalized.get('directions', [])
         if directions:
@@ -3577,15 +4099,91 @@ def normalize_diagnosis_for_finalize(diagnosis: Dict[str, Any]) -> Dict[str, Any
     return normalized
 
 
-def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
+def _looks_like_placeholder(text: str) -> bool:
+    lowered = text.strip().lower()
+    placeholder_tokens = (
+        'todo',
+        'tbd',
+        'placeholder',
+        'auto-analysis',
+        'auto analysis',
+        'template',
+        'fill me',
+        'n/a',
+        'unknown',
+    )
+    return any(token in lowered for token in placeholder_tokens)
+
+
+def validate_diagnosis(
+    diagnosis: Dict[str, Any],
+    *,
+    latest_run: Dict[str, Any],
+    latest_ncu: Dict[str, Any],
+) -> None:
     diagnosis_id = diagnosis.get('diagnosis_id')
     if not isinstance(diagnosis_id, str) or not diagnosis_id.strip():
         raise RuntimeError('node_b diagnosis requires a non-empty diagnosis_id')
+    if diagnosis_id.startswith('auto_diagnosis_'):
+        raise RuntimeError('node_b diagnosis ids must not be auto-generated helper ids')
+    reasoning_source = diagnosis.get('reasoning_source')
+    if reasoning_source not in {'main_codex_agent', 'codex_sub_agent'}:
+        raise RuntimeError('node_b diagnosis requires reasoning_source=main_codex_agent or codex_sub_agent')
+    reasoning_mode = diagnosis.get('reasoning_mode')
+    if reasoning_mode != 'manual_reasoned_best_model':
+        raise RuntimeError('node_b diagnosis requires reasoning_mode=manual_reasoned_best_model')
+    reasoning_summary = diagnosis.get('reasoning_summary')
+    if not isinstance(reasoning_summary, str) or len(reasoning_summary.strip()) < 80:
+        raise RuntimeError('node_b diagnosis requires a non-trivial reasoning_summary')
+    if _looks_like_placeholder(reasoning_summary):
+        raise RuntimeError('node_b diagnosis reasoning_summary looks like placeholder text instead of live reasoning')
+    source_run_id = diagnosis.get('source_run_id')
+    if source_run_id != latest_run.get('run_id'):
+        raise RuntimeError(
+            f'node_b diagnosis must target the latest measured run ({latest_run.get("run_id")}); got {source_run_id}'
+        )
+    runtime_ms = latest_run.get('median_runtime_ms')
+    if runtime_ms is not None:
+        runtime_token = f'{float(runtime_ms):.3f}'
+        if runtime_token not in reasoning_summary and str(latest_run.get('run_id')) not in reasoning_summary:
+            raise RuntimeError(
+                'node_b reasoning_summary must reference the live run context '
+                '(include latest run id or current runtime).'
+            )
+    evidence_refs = set(normalize_string_list(diagnosis.get('evidence_refs')))
+    required_evidence_refs = {
+        'state/node_b_context.md',
+        'state/latest_run.md',
+        'state/latest_ncu_summary.md',
+        'state/human_review.md',
+    }
+    missing_evidence_refs = sorted(required_evidence_refs.difference(evidence_refs))
+    if missing_evidence_refs:
+        raise RuntimeError(
+            'node_b diagnosis is missing required evidence_refs: ' + ', '.join(missing_evidence_refs)
+        )
     if not isinstance(diagnosis.get('family_audit'), list):
         raise RuntimeError('node_b diagnosis requires family_audit to be a list')
+    if not diagnosis.get('family_audit'):
+        raise RuntimeError('node_b diagnosis requires family_audit to document accept/defer/reject reasoning')
     directions = diagnosis.get('directions', [])
     if len(directions) != 3:
         raise RuntimeError('node_b requires exactly 3 directions')
+    direction_names = {
+        str(direction.get('name') or '').strip()
+        for direction in directions
+        if str(direction.get('name') or '').strip()
+    }
+    if len(direction_names) != 3:
+        raise RuntimeError('node_b requires three distinct direction names')
+    fingerprints = {
+        str(direction.get('action_fingerprint') or '').strip()
+        for direction in directions
+        if str(direction.get('action_fingerprint') or '').strip()
+    }
+    if len(fingerprints) != 3:
+        raise RuntimeError('node_b requires three distinct action_fingerprint values')
+    ncu_metric_keys = set((latest_ncu.get('headline_metrics') or {}).keys())
     seen_ids = set()
     for direction in directions:
         direction_id = direction.get('direction_id')
@@ -3607,6 +4205,8 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
             value = direction.get(key)
             if not isinstance(value, str) or not value.strip():
                 raise RuntimeError(f'{direction_id} is missing non-empty field: {key}')
+            if _looks_like_placeholder(value):
+                raise RuntimeError(f'{direction_id} field {key} looks like placeholder text')
         if direction.get('mode') not in {'exploit', 'explore', 'restore'}:
             raise RuntimeError(f"{direction_id} mode must be one of: exploit, explore, restore")
         fingerprint = direction.get('action_fingerprint')
@@ -3618,6 +4218,11 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
         metrics = direction.get('metrics_to_recheck')
         if not isinstance(metrics, list) or not metrics or not all(isinstance(item, str) and item.strip() for item in metrics):
             raise RuntimeError(f'{direction_id} needs a non-empty metrics_to_recheck list')
+        if not any(metric in ncu_metric_keys for metric in metrics) and 'median runtime' not in ' '.join(metrics).lower():
+            raise RuntimeError(
+                f'{direction_id} metrics_to_recheck should include at least one live NCU headline metric '
+                'or an explicit runtime metric'
+            )
         if direction.get('search_score_v1') is None:
             raise RuntimeError(f'{direction_id} requires search_score_v1')
         try:
@@ -3642,6 +4247,25 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
         ranking_notes = direction.get('ranking_notes')
         if not isinstance(ranking_notes, list) or not all(isinstance(item, str) and item.strip() for item in ranking_notes):
             raise RuntimeError(f'{direction_id} requires ranking_notes as a non-empty string list')
+        evidence_refs = direction.get('evidence_refs')
+        if evidence_refs is not None and (
+            not isinstance(evidence_refs, list)
+            or not all(isinstance(item, str) and item.strip() for item in evidence_refs)
+        ):
+            raise RuntimeError(f'{direction_id} optional evidence_refs must be a string list when provided')
+        expected_local_changes = direction.get('expected_local_changes')
+        if expected_local_changes is not None and (
+            not isinstance(expected_local_changes, list)
+            or not all(isinstance(item, str) and item.strip() for item in expected_local_changes)
+        ):
+            raise RuntimeError(f'{direction_id} optional expected_local_changes must be a string list when provided')
+        for key in ('target_hotspots', 'guardrail_metrics'):
+            value = direction.get(key)
+            if value is not None and (
+                not isinstance(value, list)
+                or not all(isinstance(item, dict) for item in value)
+            ):
+                raise RuntimeError(f'{direction_id} optional {key} must be a list of objects when provided')
 
     recommended = diagnosis.get('recommended_direction_id')
     if recommended not in seen_ids:
@@ -3689,6 +4313,10 @@ def candidate_record_from_direction(
         'risk': direction.get('risk'),
         'metrics_to_recheck': direction.get('metrics_to_recheck'),
         'stop_condition': direction.get('stop_condition'),
+        'evidence_refs': direction.get('evidence_refs'),
+        'target_hotspots': direction.get('target_hotspots'),
+        'expected_local_changes': direction.get('expected_local_changes'),
+        'guardrail_metrics': direction.get('guardrail_metrics'),
         'status': 'open',
     }
 
@@ -3739,6 +4367,10 @@ def merge_candidate_into_frontier(
         'risk',
         'metrics_to_recheck',
         'stop_condition',
+        'evidence_refs',
+        'target_hotspots',
+        'expected_local_changes',
+        'guardrail_metrics',
     ):
         raw[key] = copy.deepcopy(candidate.get(key))
     if raw.get('source_search_iteration') is None:
@@ -3825,8 +4457,9 @@ def run_node_b(args: argparse.Namespace) -> int:
     graph_state = load_graph_state()
     round_loop = load_round_loop_state()
     if args.finalize:
+        latest_ncu = load_latest_ncu_summary()
         diagnosis = normalize_diagnosis_for_finalize(load_json_file(REPO_ROOT / args.diagnosis_file))
-        validate_diagnosis(diagnosis)
+        validate_diagnosis(diagnosis, latest_run=latest_run, latest_ncu=latest_ncu)
         diagnosis['status'] = 'completed'
         diagnosis['created_at'] = diagnosis.get('created_at') or now_local_iso()
         diagnosis['source_run_id'] = diagnosis.get('source_run_id') or latest_run.get('run_id')
@@ -4203,11 +4836,44 @@ def run_node_c(args: argparse.Namespace) -> int:
     attempt_scope_paths = node_c_attempt_surface_paths()
     commit_message = node_c_commit_message(active_direction, direction, round_loop)
     commit_subject = commit_subject_from_message(commit_message)
-    build_ok = maybe_run_build(runner_path, force=args.force_build, log_path=NODE_C_BUILD_LOG_PATH)
     actual_code_regions = diff_name_only_against_head(attempt_scope_paths)
     diff_stats = diff_stats_against_head(attempt_scope_paths)
+    compiled_regions = compiled_node_c_regions(actual_code_regions)
     if not active_direction.get('actual_code_regions'):
         active_direction['actual_code_regions'] = actual_code_regions
+    if not compiled_regions:
+        latest_attempt = build_latest_attempt_payload(
+            active_direction,
+            build_status='FAIL',
+            failure_mode='no_compiled_code_change',
+            diff_stats=diff_stats,
+            actual_code_regions=actual_code_regions,
+            commit_sha=None,
+            commit_subject=commit_subject,
+        )
+        write_latest_attempt_payload(latest_attempt)
+        graph_state['current_node'] = 'node_c'
+        graph_state['previous_node'] = 'node_b'
+        graph_state['status'] = 'node_c_invalid_no_code_change'
+        graph_state['notes'] = (
+            'Node C finalize requires a real compiled-code edit in src/kernels/, include/, '
+            'src/runner/main.cpp, or CMakeLists.txt before build.'
+        )
+        active_direction['status'] = 'invalid_no_code_change'
+        active_direction['notes'] = graph_state['notes']
+        write_json(GRAPH_STATE_PATH, graph_state)
+        write_json(ACTIVE_DIRECTION_PATH, active_direction)
+        record_build_failure_into_search_memory(latest_attempt, active_direction)
+        if round_loop.get('active'):
+            round_loop['status'] = 'paused_on_invalid_node_c'
+            round_loop['notes'] = f'Paused {round_label(round_loop)} because node_c made no compiled code change.'
+            write_json(ROUND_LOOP_STATE_PATH, round_loop)
+        refresh_all_views()
+        raise RuntimeError(
+            'node_c finalize requires at least one compiled-code change before build '
+            '(src/kernels/, include/, src/runner/main.cpp, or CMakeLists.txt)'
+        )
+    build_ok = maybe_run_build(runner_path, force=True, log_path=NODE_C_BUILD_LOG_PATH)
     if not active_direction.get('semantic_delta_tags'):
         active_direction['semantic_delta_tags'] = derive_semantic_delta_tags(
             actual_code_regions,
@@ -4339,6 +5005,10 @@ def run_status(_: argparse.Namespace) -> int:
     print(f"round_loop_label={round_label(round_loop)}")
     print(f"rounds_remaining={round_loop.get('remaining_rounds')}")
     print(f"round_loop_status={round_loop.get('status')}")
+    print(f"continue_required={supervisor_task.get('continue_required')}")
+    print(f"stop_allowed={supervisor_task.get('stop_allowed')}")
+    print(f"continue_until={supervisor_task.get('continue_until')}")
+    print(f"continue_instruction={supervisor_task.get('continue_instruction')}")
     print(f"display_update_due={supervisor_task.get('display_update_due')}")
     print(f"watchdog_status={supervisor_task.get('watchdog_status')}")
     print(f"watchdog_idle_minutes={supervisor_task.get('watchdog_idle_minutes')}")
@@ -4363,6 +5033,11 @@ def run_supervisor(_: argparse.Namespace) -> int:
     print(f"round_label={supervisor_task.get('round_label')}")
     print(f"round_loop_active={supervisor_task.get('round_loop_active')}")
     print(f"rounds_remaining={supervisor_task.get('rounds_remaining')}")
+    print(f"continue_required={supervisor_task.get('continue_required')}")
+    print(f"stop_allowed={supervisor_task.get('stop_allowed')}")
+    print(f"continue_until={supervisor_task.get('continue_until')}")
+    print(f"continue_instruction={supervisor_task.get('continue_instruction')}")
+    print(f"interrupt_policy={supervisor_task.get('interrupt_policy')}")
     print(f"auto_select_frontier={supervisor_task.get('auto_select_frontier')}")
     print(f"context_checkpoint_interval_rounds={supervisor_task.get('context_checkpoint_interval_rounds')}")
     print(f"last_context_checkpoint_round={supervisor_task.get('last_context_checkpoint_round')}")
