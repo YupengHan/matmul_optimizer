@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `2d59c53bd4db8d90980c6e5a9a70f09c8dda482b`
-- plateau counter: `13`
-- round loop: `round 26/100`
-- rounds remaining: `75`
-- notes: `Node C build succeeded for round 26/100. Node A will now measure the new code path.`
+- latest measured commit: `4c6e7a1bac5778edccc11a1267e301c1a0d37401`
+- plateau counter: `14`
+- round loop: `round 27/100`
+- rounds remaining: `74`
+- notes: `Node A completed round 26/100. Run node_b to continue round 27/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_011200_bf16_gemm_v1_2d59c53`
-- run dir: `runs/20260421_011200_bf16_gemm_v1_2d59c53`
+- run id: `20260421_011620_bf16_gemm_v1_4c6e7a1`
+- run dir: `runs/20260421_011620_bf16_gemm_v1_4c6e7a1`
 - correctness: `PASS`
-- median runtime: `24.690687 ms`
-- TFLOP/s: `29.445087 TFLOP/s`
+- median runtime: `24.183295 ms`
+- TFLOP/s: `30.062877 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_011427`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 26 treats round 25 as a clear negative on the auxiliary 256x128 structural probe. The ranking now returns to correctness-proven alternate surfaces rather than spending another round on a closed geometry family or a frozen PTX micro-retime family.`
-- dir_01: Restore The Grouped-Row Non-PTX 128x128 Sibling Surface | bottleneck: PTX-microkernel-specific control and export coupling on the current winner surface, while preserving grouped-row locality and the same broad 128x128 footprint.
-- dir_02: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: No new bottleneck is being attacked here; this is the exact recovery path back to the best measured correct surface.
-- dir_03: Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering | bottleneck: Grouped-row traversal and consumer-order locality in the PTX hot-band path, not the same surface restore targeted by dir_02.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
