@@ -11,7 +11,17 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T22:46:04-07:00",
   "source_diagnosis_id": "diagnosis_20260420_224213",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "retime_ptx_issue_grouping_inside_64x64_row_pair_helpers",
+  "semantic_delta_tags": [
+    "factor_ptx_col_issue_into_step_helpers",
+    "preserve_ptx_hot_band_3_0_2_1_consume_order",
+    "preserve_ptx_hot_band_2_to_0_row_pair_traversal"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:718-736",
+    "src/kernels/bf16_gemm_v1.cu:738-765"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
@@ -55,5 +65,5 @@
     "stop_condition": "Stop if another bounded PTX control-path adjustment again lands as PASS_FLAT noise or if it worsens both scoreboard and barrier while leaving active warps pinned.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

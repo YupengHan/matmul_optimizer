@@ -715,6 +715,26 @@ __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
   ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
 }
 
+template <int RowPairBase, int Step>
+__device__ __forceinline__ void ptx_wmma_issue_col_tile_64x64_ptx_microkernel(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag0,
+    const PtxWmmaBf16Fragment& a_frag1,
+    const __nv_bfloat16* b_tile) {
+  constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<Step>::kValue;
+  PtxWmmaBf16Fragment b_frag;
+  ptx_wmma_load_b_row(
+      b_frag,
+      b_tile + ColIdx * kWmmaN,
+      FixedHotBandTile128x128::kBSharedStride);
+  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
+                       a_frag0,
+                       b_frag);
+  ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
+                       a_frag1,
+                       b_frag);
+}
+
 template <int RowPairBase>
 __device__ __forceinline__ void ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel(
     PtxWmmaAccTileSet64x64& acc_tiles,
@@ -735,62 +755,14 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pair_64x64_ptx_microkern
       a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
       kWmmaK);
 
-  {
-    PtxWmmaBf16Fragment b_frag;
-    constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<0>::kValue;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + ColIdx * kWmmaN,
-        FixedHotBandTile128x128::kBSharedStride);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
-                         a_frag0,
-                         b_frag);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
-                         a_frag1,
-                         b_frag);
-  }
-  {
-    PtxWmmaBf16Fragment b_frag;
-    constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<1>::kValue;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + ColIdx * kWmmaN,
-        FixedHotBandTile128x128::kBSharedStride);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
-                         a_frag0,
-                         b_frag);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
-                         a_frag1,
-                         b_frag);
-  }
-  {
-    PtxWmmaBf16Fragment b_frag;
-    constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<2>::kValue;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + ColIdx * kWmmaN,
-        FixedHotBandTile128x128::kBSharedStride);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
-                         a_frag0,
-                         b_frag);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
-                         a_frag1,
-                         b_frag);
-  }
-  {
-    PtxWmmaBf16Fragment b_frag;
-    constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<3>::kValue;
-    ptx_wmma_load_b_row(
-        b_frag,
-        b_tile + ColIdx * kWmmaN,
-        FixedHotBandTile128x128::kBSharedStride);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
-                         a_frag0,
-                         b_frag);
-    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
-                         a_frag1,
-                         b_frag);
-  }
+  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 0>(
+      acc_tiles, a_frag0, a_frag1, b_tile);
+  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 1>(
+      acc_tiles, a_frag0, a_frag1, b_tile);
+  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 2>(
+      acc_tiles, a_frag0, a_frag1, b_tile);
+  ptx_wmma_issue_col_tile_64x64_ptx_microkernel<RowPairBase, 3>(
+      acc_tiles, a_frag0, a_frag1, b_tile);
 }
 
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
