@@ -1,22 +1,300 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_123602",
+  "status": "completed",
+  "created_at": "2026-04-21T12:36:02-07:00",
   "source_run_id": "20260421_123502_bf16_gemm_v1_310a824",
   "source_run_dir": "runs/20260421_123502_bf16_gemm_v1_310a824",
   "source_summary_json": "runs/20260421_123502_bf16_gemm_v1_310a824/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "For live run 20260421_123502_bf16_gemm_v1_310a824 at 46.184448 ms, the direct correctness repair did exactly what it was supposed to do for semantics and exactly what we did not want for performance: correctness came back, but registers jumped from 104 back to 198, active warps fell from 33.20% back to 16.63%, and the whole profile collapsed onto the old occupancy-limited anchor. That means the round-7 speedup was not pure fantasy, but the round-8 fix recovered it in the most expensive possible way by expanding the full PTX writer sweep directly. The next best move is therefore not to abandon that performance signal, but to try one more bounded writer-side variant that preserves full 4-row correctness while making the row sweep more compact than the current explicit 0/1/2/3 expansion. Barrier retiming stays second because it is still the next local seam on the correct anchor, and a full writer restore remains only the fallback guardrail if a compact full-row sweep still cannot hold any of the lower-register regime.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.md",
+    "runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.json",
+    "runs/20260421_123502_bf16_gemm_v1_310a824/summary.json",
+    "state/latest_attempt.json",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "auto-analysis",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_123602:dir_01",
+  "family_audit": [
+    {
+      "family_id": "exploit::recover_compact_full_row_ptx_writer_sweep",
+      "decision": "accept",
+      "score": 2.74,
+      "reason": "Round 7 exposed a valuable low-register surface, and round 8 proved the naive correctness repair gives all of it back. One more bounded writer-shape attempt is justified."
+    },
+    {
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "decision": "keep_live",
+      "score": 2.02,
+      "reason": "On the current correct anchor the main remaining local seam is still barrier plus long-scoreboard, so this stays second."
+    },
+    {
+      "family_id": "legacy::restore_current_workload_correct_ptx_writer_surface",
+      "decision": "guardrail_only",
+      "score": 1.72,
+      "reason": "We already have the current correctness-safe writer anchor in hand; use it as fallback, not as the main search direction."
+    },
+    {
+      "family_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface",
+      "decision": "accept_signal_but_refine_shape",
+      "score": 2.3,
+      "reason": "This family still matters, but the direct 0/1/2/3 expansion is no longer the right implementation shape."
+    },
+    {
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "decision": "defer",
+      "score": 1.18,
+      "reason": "The current 128x128 PTX writer still has one more bounded search unit left before paying for a broader geometry jump."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Recover a compact correctness-safe 4-row PTX writer sweep",
+      "family_id": "exploit::recover_compact_full_row_ptx_writer_sweep",
+      "subfamily_id": "exploit::recover_compact_full_row_ptx_writer_sweep::keep_per_tile_helper_reduce_row_sweep_bloat",
+      "action_fingerprint": "compact_correct_4row_ptx_writer_sweep_without_returning_to_full_198reg_shape",
+      "mode": "exploit",
+      "hypothesis": "The round-8 repair showed that simply appending TileRow 2 and 3 restores correctness but also restores the old 198-register anchor. The next meaningful variant is to keep the new per-tile export helper shape but make the full 4-row sweep more compact than the current explicit 0/1/2/3 expansion, for example through a tighter compile-time row walker or paired-row emission that still writes every row exactly once.",
+      "expected_bottleneck": "occupancy_latency_hiding_issue in the PTX export/store path if a compact full-row sweep can retain some of the low-register behavior while staying correct",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:934-975",
+        "src/kernels/bf16_gemm_v1.cu:1034-1069",
+        "src/kernels/bf16_gemm_v1.cu:107-116"
+      ],
+      "risk": "medium",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.74,
+      "score_breakdown": {
+        "performance_signal_value": 1.02,
+        "correctness_recovered_base": 0.88,
+        "implementation_scope": 0.76,
+        "risk_penalty": -0.14,
+        "reason": "Best next move because it directly tests whether the round-7 low-register signal can survive a better full-row writer shape."
+      },
+      "predicted_gain_ms": 0.45,
+      "predicted_fail_risk": 0.27,
+      "ranking_notes": [
+        "Round 7 is still worth mining because it doubled active warps and cut registers drastically.",
+        "Round 8 falsified only the naive correctness repair shape, not the overall value of a tighter writer.",
+        "Keep this bounded to the PTX export sweep; do not mix in barrier or geometry changes."
+      ],
+      "stop_condition": "Stop if a compact full-row sweep still snaps back to the same 198-register profile within noise, or if correctness fails again.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "state/latest_attempt.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 198.0,
+          "importance_score": 203.0,
+          "explanation": "The direct correctness repair returned to 198 registers, which is exactly the regression this direction tries to avoid."
+        },
+        {
+          "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy",
+          "metric_name": "Achieved Occupancy",
+          "metric_value": 16.62,
+          "importance_score": 88.38,
+          "explanation": "The target is to recover at least part of the lost active-warps gain while staying correct."
+        }
+      ],
+      "expected_local_changes": [
+        "Keep full 4-row correctness, but replace the current direct 0/1/2/3 expansion with a more compact row sweep.",
+        "Preserve the new per-tile export helper and late address arithmetic shape if possible.",
+        "Avoid mixing this with barrier retiming or geometry changes."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 1.0,
+          "guardrail": "must_pass",
+          "reason": "The compact writer is only meaningful if it stays correct."
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "current_value": 2.0,
+          "guardrail": "non_increasing",
+          "reason": "A writer-side refinement should not get worse than the current correct anchor."
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Retime the barrier seam on the current correct 128x128 PTX anchor",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::current_310a824_correct_anchor",
+      "action_fingerprint": "retime_wait_group_on_current_correct_198reg_anchor_after_writer_fix",
+      "mode": "exploit",
+      "hypothesis": "If the writer surface cannot stay compact while correct, the best remaining bounded exploit on the current correct anchor is still the wait-group and CTA barrier seam. The live profile is back to the familiar 198-register / 16.63%-active-warps regime with 5.96% barrier and 6.8% long-scoreboard, so the barrier handoff remains the next local seam.",
+      "expected_bottleneck": "synchronization_barrier_issue layered on top of occupancy_latency_hiding_issue in the current correctness-safe PTX anchor",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955-2066",
+        "src/kernels/bf16_gemm_v1.cu:2023-2056",
+        "src/kernels/bf16_gemm_v1.cu:338-359"
+      ],
+      "risk": "medium",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.02,
+      "score_breakdown": {
+        "bottleneck_alignment": 0.82,
+        "implementation_scope": 0.72,
+        "anchor_readiness": 0.62,
+        "risk_penalty": -0.14,
+        "reason": "This is still the best bounded follow-on if the writer-side compact sweep does not materialize."
+      },
+      "predicted_gain_ms": 0.1,
+      "predicted_fail_risk": 0.35,
+      "ranking_notes": [
+        "Barrier remains real on the current correct anchor, but it is not the first thing to test while the round-7 speed signal is still partially unexplained.",
+        "Use this if dir_01 cannot retain any occupancy win while staying correct.",
+        "Keep the shared-memory footprint fixed."
+      ],
+      "stop_condition": "Stop if barrier retiming grows shared memory, breaks correctness, or improves barrier without any runtime win.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "stall::barrier",
+          "scope_type": "section",
+          "scope_name": "Warp Stall Sampling",
+          "location": "Warp Stall Sampling",
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_value": 5.96,
+          "importance_score": 55.96,
+          "explanation": "Barrier remains the cleanest local seam on the current correct anchor."
+        }
+      ],
+      "expected_local_changes": [
+        "Retime the cp.async wait-group and CTA sync seam only on the current correct PTX path.",
+        "Keep the writer semantics and 22016-byte shared-memory footprint fixed.",
+        "Do not mix barrier work with a writer sweep rewrite."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 1.0,
+          "guardrail": "must_pass",
+          "reason": "Any barrier follow-up must stay on a correctness-safe surface."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "current_value": 6.8,
+          "guardrail": "non_increasing",
+          "reason": "Do not just swap barrier for scoreboard stalls."
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Fallback to the current correctness-safe PTX writer anchor if compact sweeping stalls out",
+      "family_id": "legacy::restore_current_workload_correct_ptx_writer_surface",
+      "subfamily_id": "legacy::restore_current_workload_correct_ptx_writer_surface::exact_b79a9bf_writer_semantics",
+      "action_fingerprint": "fallback_restore_b79a9bf_writer_if_compact_full_row_sweep_stalls_out",
+      "mode": "exploit",
+      "hypothesis": "If the compact full-row writer sweep cannot preserve any of the round-7 signal, the search should fall back to the current correctness-safe writer anchor and stop spending budget on this local family for a while. That keeps the loop disciplined instead of repeatedly re-learning the same writer-side loss.",
+      "expected_bottleneck": "fallback recovery to the current correctness-safe PTX writer anchor",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:934-1069",
+        "restore source commit: b79a9bff2c5466a7cdd23c591f7eda181f319daf"
+      ],
+      "risk": "low",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 1.72,
+      "score_breakdown": {
+        "recovery_value": 0.88,
+        "search_breadth_penalty": -0.18,
+        "implementation_scope": 0.74,
+        "reason": "Necessary guardrail fallback if the compact writer sweep still cannot retain the low-register signal."
+      },
+      "predicted_gain_ms": 0.0,
+      "predicted_fail_risk": 0.08,
+      "ranking_notes": [
+        "This is a fallback, not the main recommendation.",
+        "Select it only if dir_01 proves that the round-7 speedup cannot survive a correctness-safe full-row writer.",
+        "Keep workflow and workload support files on HEAD if any implementation restore is used."
+      ],
+      "stop_condition": "Stop if this restore is chosen before the compact full-row writer sweep gets a fair attempt, unless new evidence shows the signal was entirely due to missing work.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_attempt.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 198.0,
+          "importance_score": 203.0,
+          "explanation": "This restore is the safety net if the compact writer sweep still cannot improve the current correct anchor."
+        }
+      ],
+      "expected_local_changes": [
+        "If needed, return to the known correct writer semantics from b79a9bf.",
+        "Preserve workflow/workload support files on HEAD.",
+        "Treat this as a guardrail recovery, not as the preferred search move."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 1.0,
+          "guardrail": "must_pass",
+          "reason": "The fallback exists to preserve a correctness-safe anchor."
+        }
+      ]
+    }
+  ],
+  "notes": "Round 9/100 diagnosis emitted after the direct writer correctness fix erased the round-7 low-register gain, suggesting the next search unit should target a more compact full-row sweep rather than abandoning the signal immediately."
 }

@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Recover a compact correctness-safe 4-row PTX writer sweep`
+- candidate id: `diagnosis_20260421_123602:dir_01`
+- base run id: `20260421_123502_bf16_gemm_v1_310a824`
+- primary family id: `exploit::recover_compact_full_row_ptx_writer_sweep`
+- planned action fingerprint: `compact_correct_4row_ptx_writer_sweep_without_returning_to_full_198reg_shape`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_123602`
 - round loop: `round 9/100`
+- hypothesis: `The round-8 repair showed that simply appending TileRow 2 and 3 restores correctness but also restores the old 198-register anchor. The next meaningful variant is to keep the new per-tile export helper shape but make the full 4-row sweep more compact than the current explicit 0/1/2/3 expansion, for example through a tighter compile-time row walker or paired-row emission that still writes every row exactly once.`
+- expected bottleneck: `occupancy_latency_hiding_issue in the PTX export/store path if a compact full-row sweep can retain some of the low-register behavior while staying correct`
+- code locations: `src/kernels/bf16_gemm_v1.cu:934-975, src/kernels/bf16_gemm_v1.cu:1034-1069, src/kernels/bf16_gemm_v1.cu:107-116`
+- risk: `medium`
+- metrics to re-check: `correctness, median runtime, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 - latest run id: `20260421_123502_bf16_gemm_v1_310a824`
 - latest runtime: `46.184448 ms`
 - latest NCU analysis: `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `198.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `13.42` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.62` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `27.69` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.1` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `198.0` | The direct correctness repair returned to 198 registers, which is exactly the regression this direction tries to avoid.
+- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.62` | The target is to recover at least part of the lost active-warps gain while staying correct.
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,14 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `48.34` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.63` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `6.8` | long scoreboard stalls are consuming 6.80% of active warp issue slots.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `5.96` | barrier stalls are consuming 5.96% of active warp issue slots.
+- `correctness` `must_pass` from `1.0` | The compact writer is only meaningful if it stays correct.
+- `launch__occupancy_limit_registers` `non_increasing` from `2.0` | A writer-side refinement should not get worse than the current correct anchor.
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Keep full 4-row correctness, but replace the current direct 0/1/2/3 expansion with a more compact row sweep.`
+- `Preserve the new per-tile export helper and late address arithmetic shape if possible.`
+- `Avoid mixing this with barrier retiming or geometry changes.`
 
 ## Delta vs previous run
 
@@ -94,4 +95,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
