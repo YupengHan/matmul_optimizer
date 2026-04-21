@@ -8,20 +8,20 @@
         - `state/node_b_context.md`
         - `state/latest_run.md`
         - `state/latest_ncu_summary.md`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_analysis.md`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_analysis.json`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.md`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.json`
         - `docs/heuristics.md`
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
         - `src/kernels/bf16_gemm_v1.cu`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/summary.json`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_details_page.csv`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_source.csv`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_import_raw.csv`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_details.csv`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_metrics.csv`
-        - `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_profile.ncu-rep`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/summary.json`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_details_page.csv`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_source.csv`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_import_raw.csv`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_details.csv`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_metrics.csv`
+        - `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_profile.ncu-rep`
 
 - `state/autotune_round18_main_tiles.json`
 - `state/autotune_round18_main_tiles.md`
@@ -74,12 +74,12 @@
 
         ## Current source snapshot
 
-        - round loop: `round 8/100`
-        - rounds remaining after this one: `92`
-        - latest run id: `20260421_122942_bf16_gemm_v1_3eed315`
-        - median runtime: `43.250160 ms`
-        - TFLOP/s: `16.809635 TFLOP/s`
-        - measured commit: `3eed315e7f97652818bc8a8b129b4f977ac7613c`
-        - existing diagnosis status: `completed`
-        - top bottleneck class: `tensor_core_underutilization`
-        - top finding: `improved hotspot delta at Launch Statistics: improved.`
+        - round loop: `round 9/100`
+        - rounds remaining after this one: `91`
+        - latest run id: `20260421_123502_bf16_gemm_v1_310a824`
+        - median runtime: `46.184448 ms`
+        - TFLOP/s: `15.741650 TFLOP/s`
+        - measured commit: `310a8243e68c0bb6de2fed90d7d5074ab342567f`
+        - existing diagnosis status: `pending_generation`
+        - top bottleneck class: `occupancy_latency_hiding_issue`
+        - top finding: `Launch Statistics is carrying metric Registers Per Thread.`

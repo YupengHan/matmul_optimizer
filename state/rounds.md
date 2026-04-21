@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `7`
-- remaining rounds: `93`
-- current round label: `round 8/100`
+- completed rounds: `8`
+- remaining rounds: `92`
+- current round label: `round 9/100`
 - selection strategy: `frontier_every_5_rounds_else_recommended_v1`
 - effective selection mode this round: `recommended`
 - auto use recommended: `no`
@@ -16,15 +16,15 @@
 - started at: `2026-04-21T11:05:50-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 8/100. Node A will measure the result next.`
+- notes: `Completed round 8/100. Continue with node_b for round 9/100. Accepted base: 20260421_105134_bf16_gemm_v1_8dcab81 at 24.186960 ms.`
 
 ## Last completed round
 
-- round: `7/100`
+- round: `8/100`
 - direction: `dir_01`
-- direction name: `Trim PTX export/store-path scalar live state on the current 128x128 anchor`
-- verdict: `improved`
-- runtime delta: `-2.771471 ms`
-- TFLOP/s delta: `+1.012294 TFLOP/s`
-- run dir: `runs/20260421_122942_bf16_gemm_v1_3eed315`
-- ncu rep path: `runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_profile.ncu-rep`
+- direction name: `Repair the PTX writer row sweep while preserving the 104-register surface`
+- verdict: `regressed`
+- runtime delta: `+2.934288 ms`
+- TFLOP/s delta: `-1.067985 TFLOP/s`
+- run dir: `runs/20260421_123502_bf16_gemm_v1_310a824`
+- ncu rep path: `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_profile.ncu-rep`
