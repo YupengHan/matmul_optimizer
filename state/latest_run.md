@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_160237_bf16_gemm_v1_404e8c44`
-- run dir: `runs/20260421_160237_bf16_gemm_v1_404e8c44`
-- kernel tag: `bf16_gemm_v1_404e8c44`
-- round label: `round 9/10`
+- run id: `20260421_160557_bf16_gemm_v1_35400d35`
+- run dir: `runs/20260421_160557_bf16_gemm_v1_35400d35`
+- kernel tag: `bf16_gemm_v1_35400d35`
+- round label: `round 10/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.996288 ms`
-- p10 runtime: `25.873305 ms`
-- p90 runtime: `27.359745 ms`
-- TFLOP/s: `27.966278 TFLOP/s`
-- previous run id: `20260421_160001_bf16_gemm_v1_d7576a6e`
-- runtime delta vs previous measured run: `-0.734192 ms`
-- TFLOP/s delta vs previous measured run: `+0.768135 TFLOP/s`
+- median runtime: `24.691072 ms`
+- p10 runtime: `24.489546 ms`
+- p90 runtime: `25.398051 ms`
+- TFLOP/s: `29.444627 TFLOP/s`
+- previous run id: `20260421_160237_bf16_gemm_v1_404e8c44`
+- runtime delta vs previous measured run: `-1.305216 ms`
+- TFLOP/s delta vs previous measured run: `+1.478349 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retime The Non-PTX 3-CTA Barrier/Handoff Seam`
+- implemented direction name: `Collapse PTX Wait-Group Handoff Without Extra Export Scratch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_160237_bf16_gemm_v1_404e8c44/summary.json`
-- ncu analysis path: `runs/20260421_160237_bf16_gemm_v1_404e8c44/ncu_analysis.json`
-- measured commit: `404e8c4448f47b60c80ebe2bd49a351d12b73535`
+- raw summary json: `runs/20260421_160557_bf16_gemm_v1_35400d35/summary.json`
+- ncu analysis path: `runs/20260421_160557_bf16_gemm_v1_35400d35/ncu_analysis.json`
+- measured commit: `35400d356bf46fb91f112282fe39c8fa1960b391`
 - new best custom: `no`
-- generated at: `2026-04-21T16:02:48-07:00`
+- generated at: `2026-04-21T16:06:08-07:00`
