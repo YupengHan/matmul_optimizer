@@ -1,28 +1,21 @@
 # Round loop
 
-- active: `no`
-- status: `completed`
+- active: `yes`
+- status: `awaiting_measurement`
 - total rounds: `100`
-- completed rounds: `100`
-- remaining rounds: `0`
-- current round label: `single-run`
+- completed rounds: `0`
+- remaining rounds: `100`
+- current round label: `round 1/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
-- accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
-- accepted base measured commit: `489574ed5013268dbb79c634450d9a60155a294a`
-- accepted base runtime: `24.164272 ms`
-- started at: `2026-04-20T21:51:52-07:00`
-- completed at: `2026-04-21T08:49:58-07:00`
+- accepted base run id: `20260421_105134_bf16_gemm_v1_8dcab81`
+- accepted base measured commit: `8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f`
+- accepted base runtime: `24.186960 ms`
+- started at: `2026-04-21T11:05:50-07:00`
+- completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Completed 100 planned rounds.`
+- notes: `Build passed for round 1/100. Node A will measure the result next.`
 
 ## Last completed round
 
-- round: `100/100`
-- direction: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- verdict: `improved`
-- runtime delta: `-6.279072 ms`
-- TFLOP/s delta: `+6.086165 TFLOP/s`
-- run dir: `runs/20260421_084952_bf16_gemm_v1_8b1af08`
-- ncu rep path: `runs/20260421_084952_bf16_gemm_v1_8b1af08/ncu_profile.ncu-rep`
+- no completed round recorded yet

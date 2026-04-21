@@ -1,13 +1,13 @@
 # Current focus
 
-- next node: `node_c`
-- status: `awaiting_direction_selection_for_node_c`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - latest run id: `20260421_105134_bf16_gemm_v1_8dcab81`
 - latest kernel tag: `bf16_gemm_v1_8dcab81`
 - median runtime: `24.186960 ms`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- round loop: `single-run`
-- rounds remaining: `0`
+- round loop: `round 1/100`
+- rounds remaining: `100`
 - recommended direction: `dir_01`
-- selected direction: `None`
-- immediate next action: `Node B completed. Approve a direction or explicitly use the recommended direction before node_c.`
+- selected direction: `dir_01`
+- immediate next action: `Node C build succeeded for round 1/100. Node A will now measure the new code path.`

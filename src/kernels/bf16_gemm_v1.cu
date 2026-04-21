@@ -685,7 +685,24 @@ __device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64(
   }
 }
 
-template <int RowPairBase = 0>
+template <int RowPairBase, int Step = 0>
+__device__ __forceinline__ void ptx_wmma_accumulate_col_tiles_64x64_compact(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const PtxWmmaBf16Fragment& a_frag0,
+    const PtxWmmaBf16Fragment& a_frag1,
+    const __nv_bfloat16* b_tile) {
+  if constexpr (Step < FixedHotBandTile256x128::kWarpMmaTilesN) {
+    constexpr int ColIdx = PtxWmmaMirroredTileIndex64x64<Step>::kValue;
+    PtxWmmaBf16Fragment b_frag;
+    ptx_wmma_load_col_fragment_64x64<Step>(b_frag, b_tile);
+    ptx_wmma_mma_row_pair_col_64x64<RowPairBase, ColIdx>(
+        acc_tiles, a_frag0, a_frag1, b_frag);
+    ptx_wmma_accumulate_col_tiles_64x64_compact<RowPairBase, Step + 1>(
+        acc_tiles, a_frag0, a_frag1, b_tile);
+  }
+}
+
+template <bool EnableBLookahead, int RowPairBase = 0>
 __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
@@ -701,18 +718,25 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pairs_64x64(
         a_frag1,
         a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
         kWmmaK);
-    ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
-        acc_tiles, a_frag0, a_frag1, b_tile);
-    ptx_wmma_accumulate_row_pairs_64x64<RowPairBase + 2>(
+    if constexpr (EnableBLookahead) {
+      ptx_wmma_accumulate_col_tiles_64x64<RowPairBase>(
+          acc_tiles, a_frag0, a_frag1, b_tile);
+    } else {
+      ptx_wmma_accumulate_col_tiles_64x64_compact<RowPairBase>(
+          acc_tiles, a_frag0, a_frag1, b_tile);
+    }
+    ptx_wmma_accumulate_row_pairs_64x64<EnableBLookahead, RowPairBase + 2>(
         acc_tiles, a_tile, b_tile);
   }
 }
 
+template <bool EnableBLookahead = true>
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  ptx_wmma_accumulate_row_pairs_64x64(acc_tiles, a_tile, b_tile);
+  ptx_wmma_accumulate_row_pairs_64x64<EnableBLookahead>(
+      acc_tiles, a_tile, b_tile);
 }
 
 template <int RowPairBase>
@@ -1644,7 +1668,9 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
         b_shared_col_from_logical<FixedHotBandTile256x128>(
             warp_tile_n * FixedHotBandTile256x128::kWarpGroupCols);
 
-    ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
+    // Keep the pivot kernel on the same tile ownership and shared footprint,
+    // but shorten the live B-fragment window to reduce register pressure.
+    ptx_wmma_accumulate_tile_set_64x64<false>(acc_tiles, a_tile, b_tile);
     // Keep the double-buffered stage live until every warp finishes consuming it.
     __syncthreads();
 
@@ -2104,12 +2130,12 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<
           kFixedBenchmarkKTiles><<<
-              dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
+              dim3(kFixedHotBandN / FixedHotBandTile256x128::kTensorBlockN,
+                   kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
                    1),
-              dim3(FixedHotBandTile128x128::kWarpsPerBlock * kWarpSize, 1, 1),
+              dim3(FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize, 1, 1),
               0,
               stream>>>(a, b, c);
 
