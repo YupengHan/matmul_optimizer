@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_180146_bf16_gemm_v1_2e4dd24`
-- run dir: `runs/20260420_180146_bf16_gemm_v1_2e4dd24`
-- kernel tag: `bf16_gemm_v1_2e4dd24`
-- round label: `round 2/50`
+- run id: `20260420_181354_bf16_gemm_v1_e1c12b7`
+- run dir: `runs/20260420_181354_bf16_gemm_v1_e1c12b7`
+- kernel tag: `bf16_gemm_v1_e1c12b7`
+- round label: `round 3/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.444416 ms`
-- p10 runtime: `24.225792 ms`
-- p90 runtime: `24.888217 ms`
-- TFLOP/s: `29.741738 TFLOP/s`
-- previous run id: `20260420_175429_bf16_gemm_v1_134ec64`
-- runtime delta vs previous measured run: `-5.853184 ms`
-- TFLOP/s delta vs previous measured run: `+5.745797 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.515008 ms`
+- p10 runtime: `25.148842 ms`
+- p90 runtime: `26.174567 ms`
+- TFLOP/s: `28.493796 TFLOP/s`
+- previous run id: `20260420_180146_bf16_gemm_v1_2e4dd24`
+- runtime delta vs previous measured run: `+1.070592 ms`
+- TFLOP/s delta vs previous measured run: `-1.247943 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- implemented direction name: `Retune The Hot-Band Steady-State Handoff On The New Grouped-Rows-4 Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_180146_bf16_gemm_v1_2e4dd24/summary.json`
-- measured commit: `2e4dd246f55b505bd095c42b62c56dc497c8fde1`
-- new best custom: `yes`
-- generated at: `2026-04-20T18:01:54-07:00`
+- raw summary json: `runs/20260420_181354_bf16_gemm_v1_e1c12b7/summary.json`
+- measured commit: `e1c12b7e611db6887f307c378b80accb49501bca`
+- new best custom: `no`
+- generated at: `2026-04-20T18:14:03-07:00`
