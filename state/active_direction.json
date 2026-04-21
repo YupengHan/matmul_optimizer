@@ -1,93 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
-  "candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
-  "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
-  "action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
-  "selection_priority": 0.9125,
-  "base_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:11:26-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
-    "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
-    "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
-    "action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
-    "mode": "exploit",
-    "hypothesis": "The grouped-row experiment showed that launch-order changes alone are not enough. The existing single-K 128x128 sibling keeps the accepted row split and one-K stage depth while changing the accumulate ordering away from the microkernel-specific path, which may reduce long-scoreboard waste directly.",
-    "expected_bottleneck": "microkernel-specific accumulate ordering is contributing to long-scoreboard stalls on the accepted hot-band split",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1839",
-      "src/kernels/bf16_gemm_v1.cu:1924",
-      "src/kernels/bf16_gemm_v1.cu:1956",
-      "src/kernels/bf16_gemm_v1.cu:2114"
-    ],
-    "risk": "Moderate risk: the variant is in-tree, but it still lacks a clean measurement on the accepted row split.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "launch__occupancy_limit_registers",
-      "sm__warps_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 0.76,
-    "score_breakdown": {
-      "expected_gain": 0.26,
-      "implementation_risk": 0.24,
-      "evidence_strength": 0.15,
-      "code_reuse": 0.11
-    },
-    "predicted_gain_ms": 0.9,
-    "predicted_fail_risk": 0.39,
-    "ranking_notes": [
-      "This is the cleanest next experiment that directly targets the long-scoreboard gap exposed by the grouped-row result.",
-      "It preserves the accepted hot-band row split, so the measurement stays focused on one kernel-variant change."
-    ],
-    "stop_condition": "Stop if runtime regresses again while long-scoreboard stalls stay flat or worsen.",
-    "evidence_refs": [
-      "src/kernels/bf16_gemm_v1.cu",
-      "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.md",
-      "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput"
-      }
-    ],
-    "expected_local_changes": [
-      "Restore the grouped-row constant back to the clean accepted base if needed.",
-      "Swap the default hot-band launch from the PTX microkernel path to the existing single-K non-microkernel 128x128 sibling."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "guardrail": "non_increasing"
-      },
-      {
-        "metric_name": "launch__occupancy_limit_registers",
-        "guardrail": "non_increasing"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

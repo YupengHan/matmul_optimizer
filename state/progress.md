@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `7496aff21c8de79011caa26978ba7dd249179f64`
-- plateau counter: `6`
-- round loop: `round 2/10`
-- rounds remaining: `9`
-- notes: `Node C build succeeded for round 2/10. Node A will now measure the new code path.`
+- latest measured commit: `2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4`
+- plateau counter: `7`
+- round loop: `round 3/10`
+- rounds remaining: `8`
+- notes: `Node A completed round 2/10. Run node_b to continue round 3/10.`
 
 ## Latest measured custom run
 
-- run id: `20260421_150910_bf16_gemm_v1_7496aff2`
-- run dir: `runs/20260421_150910_bf16_gemm_v1_7496aff2`
+- run id: `20260421_152228_bf16_gemm_v1_2fbb368d`
+- run dir: `runs/20260421_152228_bf16_gemm_v1_2fbb368d`
 - correctness: `PASS`
-- median runtime: `24.537088 ms`
-- TFLOP/s: `29.629409 TFLOP/s`
+- median runtime: `24.392608 ms`
+- TFLOP/s: `29.804908 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_150910_round02_clean_7496aff2`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `This diagnosis continues the clean 10-round loop. The 8-row grouped setting is now treated as a measured negative result, so the next recommended clean round moves to the non-microkernel sibling.`
-- dir_01: Swap To The Single-K 128x128 Non-Microkernel Sibling | bottleneck: microkernel-specific accumulate ordering is contributing to long-scoreboard stalls on the accepted hot-band split
-- dir_02: Retune PTX Launch Bounds On The Clean Baseline | bottleneck: register pressure and low CTA residency on the accepted PTX hot-band path
-- dir_03: Try A Shallower PTX Grouped-Row Setting | bottleneck: current grouped-row traversal may still be mismatched to A/B locality balance on the accepted PTX hot-band path
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
