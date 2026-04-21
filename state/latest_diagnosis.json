@@ -1,22 +1,279 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_154619",
+  "status": "completed",
+  "created_at": "2026-04-21T15:46:19-07:00",
   "source_run_id": "20260421_154110_bf16_gemm_v1_afe26c16",
   "source_run_dir": "runs/20260421_154110_bf16_gemm_v1_afe26c16",
   "source_summary_json": "runs/20260421_154110_bf16_gemm_v1_afe26c16/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "The live run context for `20260421_154110_bf16_gemm_v1_afe26c16` at 30.168575 ms answered the immediate 256x128 salvage question more clearly than the tiny runtime delta suggests. The compact half-panel transplant preserved correctness, but the run stayed at 30.168575 ms, only 0.005040 ms better than the already-bad 30.173615 ms pivot probe, and the structured NCU deltas were flat: 167 regs/thread, 42,496 B shared/block, 16.66% active warps, 8.32% barrier stall, and 2.19% long scoreboard all stayed pinned. That means the new edit did not unlock a fresh machine state; it simply reproduced the same losing 256x128 regime. Comparing against the clean cuBLASLt reference makes the next ranking more concrete: cuBLAS is at 22.000000 ms with only 8.33% active warps, yet it keeps barrier at 0.16% and long scoreboard at 0.18% while reaching 49.39% tensor activity. Our current custom run already has more active warps than cuBLAS but is much slower because synchronization and handoff cost dominate. So this round should not prioritize another pure occupancy or tiling gamble. The best next move is to return to the tighter 128x128 anchor family and attack the wait/sync/export seam directly, with a bounded non-PTX 3-CTA restore kept as the second choice and the 256x128 half-panel family kept alive only as a deferred high-ceiling branch.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_154110_bf16_gemm_v1_afe26c16/summary.json",
+    "runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.md",
+    "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+    "master:state/diagnosis_history.jsonl"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_154619:dir_01",
+  "family_audit": [
+    "Tiling: accept the 64x64 warp-tile idea as still aligned with the live kernels, but defer 256x128 block tiling for this round because the simple 256x128 pivot regressed to 30.173615 ms and the follow-on compact transplant stayed flat at 30.168575 ms.",
+    "Coalescing Access: keep as a guardrail rather than a primary family. The current loss does not look like a first-order global-memory packing failure, and the cuBLAS ceiling suggests synchronization is the larger remaining gap.",
+    "Data Reuse: accept as already-present baseline behavior. Both the 128x128 and 256x128 hot-band paths already rely on shared-memory reuse of A and B, so reuse alone is not what changed between round 4 and round 5.",
+    "Async Copy: accept strongly, but map it to wait/sync retiming instead of a new copy primitive. The next move should improve how the existing cp.async stages are consumed, not add a broader staging rewrite.",
+    "Bank Conflict: defer for this round. The live profile is barrier-dominated rather than shared-bank dominated, so bank-conflict work does not rank ahead of handoff/synchronization surgery.",
+    "L2 Cache: defer. The failed 256x128 pivot already lowered L2 and memory throughput versus the accepted base while still losing badly, so swizzle/L2 ideas are not the best first recovery path.",
+    "Register Reuse: accept, but demote the 256x128 half-panel branch from primary to tertiary. The compact round-5 transplant tested this thesis directly and produced no new machine-state movement.",
+    "Pg2s: accept as already-present infrastructure. The ranking question is now about stage handoff and refill cadence, not whether global-to-shared prefetch exists at all.",
+    "Ps2r: accept strongly. The flat round-5 result says the next useful Ps2r work is the B-fragment lifetime and export/handoff seam on the 128x128 anchor, not another immediate 256x128 salvage attempt.",
+    "Stage: accept, but reject any repeat of larger shared-memory stage growth for now. Historical x32-like barrier-amortization attempts already showed that extra stage footprint can erase occupancy gains on this shape.",
+    "Promote the 128x128 synchronization-surgery family to rank 1 because the cuBLAS comparison says sync cost, not raw occupancy, is the biggest current delta.",
+    "Keep one bounded non-PTX 3-CTA restore as rank 2 because it is the cleanest alternate family on top of the accepted base, but do not rank it first because cuBLAS weakens the occupancy-only thesis.",
+    "Keep the 256x128 half-panel family in queue as rank 3 because the user guidance still points toward that tiling direction, but two consecutive negative or flat probes mean it should not be the next implementation."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Trim PTX Wait/Sync Handoff On The 128x128 Anchor",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
+      "action_fingerprint": "restore_ptx_128x128_anchor_then_batch_export_and_trim_wait_sync_without_x32_shared_growth",
+      "mode": "explore",
+      "hypothesis": "The current 256x128 branch is no longer the right place to keep pushing: it already reached 167 regs/thread and 16.66% active warps, but it still lost badly because the synchronization regime stayed at 8.32% barrier stall and the overall kernel remained far from the cuBLASLt ceiling. cuBLAS reaches 49.39% tensor activity with only 8.33% active warps because it keeps barrier and scoreboard cost near zero. That makes the next coherent move a return to the tighter 128x128 PTX anchor plus a narrow handoff surgery that trims the wait-group and export cadence while keeping the smaller 22,016 B shared-memory footprint.",
+      "expected_bottleneck": "Barrier cadence and export/control handoff inside the single-K 128x128 PTX microkernel, especially the seam between finishing a tile, releasing the stage with __syncthreads(), and refilling the reused buffer.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1002-1084",
+        "src/kernels/bf16_gemm_v1.cu:1983-2062",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Moderate-high. This stays inside a bounded hot-band surface, but it is still PTX control-path surgery and therefore sensitive to both correctness and codegen shifts.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base and the 22.000000 ms cuBLAS baseline",
+        "launch__shared_mem_per_block_allocated",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.92,
+      "score_breakdown": {
+        "policy_id": "manual_round06_post_flat_256x128_v1",
+        "headroom_score": 0.47,
+        "evidence_score": 0.31,
+        "implementation_bonus": 0.19,
+        "risk_penalty": -0.05,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.35,
+      "predicted_fail_risk": 0.58,
+      "ranking_notes": [
+        "This is the most direct response to the cuBLAS comparison: our gap is dominated by synchronization quality, not by lack of raw occupancy.",
+        "It also aligns best with the human guidance on Async Copy, Pg2s, Ps2r, and Stage because it improves the existing staged pipeline instead of widening it.",
+        "Round 5's flat 256x128 transplant result is the reason this family moves ahead of both the non-PTX occupancy probe and the broader 256x128 reuse branch."
+      ],
+      "stop_condition": "Stop if the edit increases shared memory beyond the 22,016 B-class 128x128 anchor footprint, or if barrier and long-scoreboard metrics stay flat while runtime remains above the accepted base.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the 128x128 PTX anchor launch path from the current losing 256x128 pivot.",
+        "Retune the PTX wait/sync or export batching seam without reintroducing the larger x32-style shared-memory footprint."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Force 3-CTA Residency On The Non-PTX 128x128 Sibling",
+      "family_id": "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling",
+      "subfamily_id": "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling::restore_910beff_then_raise_launch_bounds_to_3",
+      "action_fingerprint": "restore_non_ptx_128x128_sibling_surface_then_raise_launch_bounds_to_three_cta_residency",
+      "mode": "explore",
+      "hypothesis": "The current source should still be pulled back toward the accepted 128x128 sibling before making another broad bet. A bounded 3-CTA experiment on that sibling remains worth keeping because it starts from the already-proven non-PTX 128x128 surface that produced the current accepted base at 24.195072 ms. If the sibling can lower its register budget enough to gain latency hiding without reproducing the PTX microkernel's barrier pathology, it is the cleanest alternate family still capable of improving the accepted base with a small edit.",
+      "expected_bottleneck": "Register-limited occupancy and latency hiding on the accepted non-PTX 128x128 hot-band surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1869-1981",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Moderate. The surface is correctness-safe and the edit is small, but cuBLAS makes it clear that more active warps alone will not close the remaining gap if synchronization degrades.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.76,
+      "score_breakdown": {
+        "policy_id": "manual_round06_post_flat_256x128_v1",
+        "headroom_score": 0.32,
+        "evidence_score": 0.19,
+        "implementation_bonus": 0.29,
+        "risk_penalty": -0.04,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.18,
+      "predicted_fail_risk": 0.47,
+      "ranking_notes": [
+        "This remains the cleanest restore-plus-probe direction in the queue because it stays closest to the accepted base and only nudges one machine-state axis.",
+        "It ranks behind dir_01 because the cuBLAS profile shows that pure occupancy is not the main missing ingredient on this workload.",
+        "If dir_01 stalls, this is the best next fallback for a fast bounded test on top of the accepted 128x128 family."
+      ],
+      "stop_condition": "Stop if registers stay near the accepted-base level, or if active warps rise but barrier cost regresses into another losing occupancy probe.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "master:state/diagnosis_history.jsonl",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted non-PTX 128x128 sibling launch path.",
+        "Raise the launch-bounds target on that sibling to test whether 3-CTA residency is viable without repeating the PTX-specific sync tax."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Reopen The 256x128 Half-Panel Register-Reuse Branch Later",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "reopen_256x128_half_panel_register_reuse_only_after_128x128_recovery",
+      "mode": "explore",
+      "hypothesis": "The user guidance still points toward a 256x128 / 64x64 tiling family, and the 256x128 branch is still the only place in repo history with a plausible path to a much lower register budget. But the latest two measurements say the live correctness-safe 256x128 surface is not ready yet: the simple pivot promotion regressed by almost 6 ms, and the bounded compact transplant changed essentially nothing. That means the right move this round is to keep the family open in the queue while deferring further work until the loop has recovered onto a better 128x128 surface.",
+      "expected_bottleneck": "Register reuse, B-fragment lifetime, and writer-ownership constraints inside the 256x128 hot-band pivot.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:694-730",
+        "src/kernels/bf16_gemm_v1.cu:1604-1701",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "High. This is still the broadest active family and it already has one strong regression plus one flat follow-up in the current clean loop.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.61,
+      "score_breakdown": {
+        "policy_id": "manual_round06_post_flat_256x128_v1",
+        "headroom_score": 0.43,
+        "evidence_score": 0.08,
+        "implementation_bonus": 0.17,
+        "risk_penalty": -0.07,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.8,
+      "predicted_fail_risk": 0.78,
+      "ranking_notes": [
+        "Keep this family alive because it is still the one most directly aligned with the user's 256x128 tiling guidance.",
+        "Demote it to third because the latest two clean-loop measurements do not justify another immediate 256x128 implementation before recovering the faster 128x128 surface.",
+        "If the next 128x128 recovery round still plateaus, this remains the obvious high-ceiling family to reopen with a broader repair."
+      ],
+      "stop_condition": "Stop immediately on another 28-30 ms class regression or on any correctness failure; do not spend consecutive rounds on this family without a new machine-state change.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.md",
+        "state/human_guidance.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the correctness-safe 256x128 writer ownership path.",
+        "Only reopen this family after the loop has recovered to a faster 128x128 surface and can afford a broader register-reuse repair."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    }
+  ],
+  "notes": "Human guidance review for round 6: the 256x128 / 64x64 idea family remains strategically relevant, but the latest clean-loop evidence says it should not be the next code edit. The round-4 256x128 pivot and round-5 compact transplant both left the branch in the same losing machine state, while the cuBLASLt reference makes the ceiling clearer: this workload is not missing raw active-warps so much as it is missing a low-friction synchronization and handoff regime. That is why dir_01 ranks first even though it steps away from the currently running 256x128 surface. The queue still preserves one bounded occupancy probe on the accepted non-PTX 128x128 sibling and one deferred high-ceiling 256x128 branch so the search does not collapse back into a single-family local minimum."
 }
