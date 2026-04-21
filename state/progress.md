@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `83acaae48069fdc5202a8bddf7cc4120d9d2ac62`
 - plateau counter: `12`
 - round loop: `round 8/10`
 - rounds remaining: `3`
-- notes: `Node A completed round 7/10. Run node_b to continue round 8/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_155620:dir_01 via recommended selection for round 8/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_155620`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human guidance review for round 8: the current loop still respects the user's 256x128/64x64 preference, but the latest negative result is not yet a clean reason to abandon the accepted-base family. The round-7 surface carried both 3-CTA residency and a two-stage export scratch lifetime, so the first priority is to separate those effects. That is why dir_01 trims export scratch first, dir_02 keeps a same-surface barrier retime in reserve, and the 256x128 family stays queued rather than selected immediately.`
+- dir_01: Trim The Grouped-Row 128x128 Sibling Export Scratch To Single Stage | bottleneck: Shared export lifetime and barrier tax on the grouped-row non-PTX 128x128 sibling, currently confounded with the 3-CTA residency probe.
+- dir_02: Retime The Non-PTX 3-CTA Barrier/Handoff Seam | bottleneck: Barrier cadence at the seam between cp.async wait completion, __syncthreads(), and future-tile refill ordering on the non-PTX 3-CTA sibling.
+- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, B-fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
