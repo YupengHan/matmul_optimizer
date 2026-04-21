@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `73538057b3407f9d2c532c6575080b9c4b4ab031`
-- plateau counter: `52`
-- round loop: `round 65/100`
-- rounds remaining: `36`
-- notes: `Node C build succeeded for round 65/100. Node A will now measure the new code path.`
+- latest measured commit: `d912e6859ddbfa1897a16f5deecdbcc4060a1c95`
+- plateau counter: `53`
+- round loop: `round 66/100`
+- rounds remaining: `35`
+- notes: `Node A completed round 65/100. Run node_b to continue round 66/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_084349_bf16_gemm_v1_7353805`
-- run dir: `runs/20260421_084349_bf16_gemm_v1_7353805`
+- run id: `20260421_084358_bf16_gemm_v1_d912e68`
+- run dir: `runs/20260421_084358_bf16_gemm_v1_d912e68`
 - correctness: `PASS`
-- median runtime: `24.405503 ms`
-- TFLOP/s: `29.789159 TFLOP/s`
+- median runtime: `24.740864 ms`
+- TFLOP/s: `29.385369 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `auto_diagnosis_round_065`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Auto-generated round 65 diagnosis. Recommended family: legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering.`
-- dir_01: Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering | bottleneck: A branch-local hot-band scheduling or geometry bottleneck on the dominant kernel path, rather than a pure restore-only action.
-- dir_02: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Search drift away from the accepted PTX steady state rather than a missing structural opportunity.
-- dir_03: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: A branch-local hot-band scheduling or geometry bottleneck on the dominant kernel path, rather than a pure restore-only action.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
