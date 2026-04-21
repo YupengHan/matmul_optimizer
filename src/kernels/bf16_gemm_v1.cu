@@ -1855,9 +1855,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
   __shared__ __align__(16)
       __nv_bfloat16 b_shared[2][FixedHotBandTile128x128::kBSharedTileElems];
   __shared__ __align__(16)
-      float c_shared[FixedHotBandTile128x128::kCSharedStageCount *
-                     FixedHotBandTile128x128::kWarpsPerBlock *
-                     FixedHotBandTile128x128::kCSharedTileElemsPerWarp];
+      float c_shared[FixedHotBandTile128x128PtxExportScratch::kTotalElems];
 
   const int warp_id = threadIdx.x / kWarpSize;
   const int lane_id = threadIdx.x % kWarpSize;
@@ -1945,7 +1943,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
   }
 
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
-  ptx_wmma_store_tile_pairs_64x64<FixedHotBandTile128x128>(
+  ptx_wmma_store_tile_pairs_64x64_ptx_microkernel(
       acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
 #else
   (void)a;
