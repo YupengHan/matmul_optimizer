@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_183102_bf16_gemm_v1_29a10ec`
-- run dir: `runs/20260420_183102_bf16_gemm_v1_29a10ec`
-- kernel tag: `bf16_gemm_v1_29a10ec`
-- round label: `round 5/50`
+- run id: `20260420_184055_bf16_gemm_v1_9144f92`
+- run dir: `runs/20260420_184055_bf16_gemm_v1_9144f92`
+- kernel tag: `bf16_gemm_v1_9144f92`
+- round label: `round 6/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `PASS`
-- correctness cases: `3/3`
+- correctness: `FAIL`
+- correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `25.665024 ms`
-- p10 runtime: `25.256551 ms`
-- p90 runtime: `26.772496 ms`
-- TFLOP/s: `28.327245 TFLOP/s`
-- previous run id: `20260420_182305_bf16_gemm_v1_e003c0e`
-- runtime delta vs previous measured run: `+0.135168 ms`
-- TFLOP/s delta vs previous measured run: `-0.149979 TFLOP/s`
+- median runtime: `29.100464 ms`
+- p10 runtime: `28.847206 ms`
+- p90 runtime: `30.381670 ms`
+- TFLOP/s: `24.983087 TFLOP/s`
+- previous run id: `20260420_183102_bf16_gemm_v1_29a10ec`
+- runtime delta vs previous measured run: `+3.435440 ms`
+- TFLOP/s delta vs previous measured run: `-3.344158 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Specialize The 452-Tile PTX Hot-Band Loop On The Restored Grouped-Rows-4 Base`
+- implemented direction name: `Reopen The Auxiliary 256x128 Hot-Band Schedule On The Restored Best Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_183102_bf16_gemm_v1_29a10ec/summary.json`
-- measured commit: `29a10ec11c08f9648a277030c3340013f3eb8492`
+- raw summary json: `runs/20260420_184055_bf16_gemm_v1_9144f92/summary.json`
+- measured commit: `9144f92dd9a6f5b4f85ab4278581ccabe96eae93`
 - new best custom: `no`
-- generated at: `2026-04-20T18:31:10-07:00`
+- generated at: `2026-04-20T18:41:02-07:00`
