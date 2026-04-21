@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_224147_bf16_gemm_v1_df5bac2`
-- run dir: `runs/20260420_224147_bf16_gemm_v1_df5bac2`
-- kernel tag: `bf16_gemm_v1_df5bac2`
-- round label: `round 7/100`
+- run id: `20260420_225251_bf16_gemm_v1_306839d`
+- run dir: `runs/20260420_225251_bf16_gemm_v1_306839d`
+- kernel tag: `bf16_gemm_v1_306839d`
+- round label: `round 8/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.164352 ms`
-- p10 runtime: `24.046081 ms`
-- p90 runtime: `25.054618 ms`
-- TFLOP/s: `30.086443 TFLOP/s`
-- previous run id: `20260420_223530_bf16_gemm_v1_82c8e60`
-- runtime delta vs previous measured run: `-0.016304 ms`
-- TFLOP/s delta vs previous measured run: `+0.020286 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `24.170400 ms`
+- p10 runtime: `24.054185 ms`
+- p90 runtime: `24.803110 ms`
+- TFLOP/s: `30.078916 TFLOP/s`
+- previous run id: `20260420_224147_bf16_gemm_v1_df5bac2`
+- runtime delta vs previous measured run: `+0.006047 ms`
+- TFLOP/s delta vs previous measured run: `-0.007527 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Apply Only A Minimal PTX Export Address Cleanup`
+- implemented direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_224147_bf16_gemm_v1_df5bac2/summary.json`
-- measured commit: `df5bac281a2efef7f02478947a334a51b6510138`
-- new best custom: `yes`
-- generated at: `2026-04-20T22:41:53-07:00`
+- raw summary json: `runs/20260420_225251_bf16_gemm_v1_306839d/summary.json`
+- measured commit: `306839d2e4d5567c408ad1b9f70c4010f30fe6de`
+- new best custom: `no`
+- generated at: `2026-04-20T22:52:57-07:00`

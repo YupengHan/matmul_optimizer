@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `7`
-- remaining rounds: `93`
-- current round label: `round 8/100`
+- completed rounds: `8`
+- remaining rounds: `92`
+- current round label: `round 9/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_224147_bf16_gemm_v1_df5bac2`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 8/100. Node A will measure the result next.`
+- notes: `Completed round 8/100. Continue with node_b for round 9/100. Accepted base: 20260420_224147_bf16_gemm_v1_df5bac2 at 24.164352 ms.`
 
 ## Last completed round
 
-- round: `7/100`
+- round: `8/100`
 - direction: `dir_01`
-- direction name: `Apply Only A Minimal PTX Export Address Cleanup`
-- verdict: `improved`
-- runtime delta: `-0.016304 ms`
-- TFLOP/s delta: `+0.020286 TFLOP/s`
-- run dir: `runs/20260420_224147_bf16_gemm_v1_df5bac2`
-- ncu rep path: `runs/20260420_224147_bf16_gemm_v1_df5bac2/ncu_profile.ncu-rep`
+- direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
+- verdict: `regressed`
+- runtime delta: `+0.006047 ms`
+- TFLOP/s delta: `-0.007527 TFLOP/s`
+- run dir: `runs/20260420_225251_bf16_gemm_v1_306839d`
+- ncu rep path: `runs/20260420_225251_bf16_gemm_v1_306839d/ncu_profile.ncu-rep`
