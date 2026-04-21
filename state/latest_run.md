@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_193817_bf16_gemm_v1_0a37b0b`
-- run dir: `runs/20260420_193817_bf16_gemm_v1_0a37b0b`
-- kernel tag: `bf16_gemm_v1_0a37b0b`
-- round label: `round 13/50`
+- run id: `20260420_194440_bf16_gemm_v1_cb070a7`
+- run dir: `runs/20260420_194440_bf16_gemm_v1_cb070a7`
+- kernel tag: `bf16_gemm_v1_cb070a7`
+- round label: `round 14/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.504256 ms`
-- p10 runtime: `25.037618 ms`
-- p90 runtime: `26.445210 ms`
-- TFLOP/s: `28.505808 TFLOP/s`
-- previous run id: `20260420_193054_bf16_gemm_v1_acb0976`
-- runtime delta vs previous measured run: `-8.512511 ms`
-- TFLOP/s delta vs previous measured run: `+7.133423 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `31.797344 ms`
+- p10 runtime: `31.233229 ms`
+- p90 runtime: `32.544974 ms`
+- TFLOP/s: `22.864155 TFLOP/s`
+- previous run id: `20260420_193817_bf16_gemm_v1_0a37b0b`
+- runtime delta vs previous measured run: `+6.293088 ms`
+- TFLOP/s delta vs previous measured run: `-5.641652 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-Lock The Accepted 128x128 Default Dispatch`
+- implemented direction name: `Activate 128x128x32 Two-K Hot-Band Staging`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_193817_bf16_gemm_v1_0a37b0b/summary.json`
-- measured commit: `0a37b0bf9d796f268c056ce6bbdb5424f9f7e25f`
+- raw summary json: `runs/20260420_194440_bf16_gemm_v1_cb070a7/summary.json`
+- measured commit: `cb070a739eb38f4ea8ca9c5e0243a825338dbf67`
 - new best custom: `no`
-- generated at: `2026-04-20T19:38:24-07:00`
+- generated at: `2026-04-20T19:44:48-07:00`
