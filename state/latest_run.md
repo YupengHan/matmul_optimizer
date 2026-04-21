@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_233034_bf16_gemm_v1_11df0f1`
-- run dir: `runs/20260420_233034_bf16_gemm_v1_11df0f1`
-- kernel tag: `bf16_gemm_v1_11df0f1`
-- round label: `round 10/100`
+- run id: `20260420_233546_bf16_gemm_v1_4bc0218`
+- run dir: `runs/20260420_233546_bf16_gemm_v1_4bc0218`
+- kernel tag: `bf16_gemm_v1_4bc0218`
+- round label: `round 11/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.190464 ms`
-- p10 runtime: `24.178688 ms`
-- p90 runtime: `25.264352 ms`
-- TFLOP/s: `30.053968 TFLOP/s`
-- previous run id: `20260420_232254_bf16_gemm_v1_78421da`
-- runtime delta vs previous measured run: `+0.009727 ms`
-- TFLOP/s delta vs previous measured run: `-0.012090 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_02`
-- implemented direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
-- implemented selection mode: `approved`
+- median runtime: `24.173968 ms`
+- p10 runtime: `24.109751 ms`
+- p90 runtime: `25.385628 ms`
+- TFLOP/s: `30.074476 TFLOP/s`
+- previous run id: `20260420_233034_bf16_gemm_v1_11df0f1`
+- runtime delta vs previous measured run: `-0.016496 ms`
+- TFLOP/s delta vs previous measured run: `+0.020508 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `dir_01`
+- implemented direction name: `Steady-state Barrier / Handoff Retime`
+- implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_233034_bf16_gemm_v1_11df0f1/summary.json`
-- measured commit: `11df0f1f1b3949e13d33e59024c9de95c414f134`
+- raw summary json: `runs/20260420_233546_bf16_gemm_v1_4bc0218/summary.json`
+- measured commit: `4bc0218b26dba8ac7adf77968d7d74314c47ed84`
 - new best custom: `no`
-- generated at: `2026-04-20T23:30:40-07:00`
+- generated at: `2026-04-20T23:35:52-07:00`

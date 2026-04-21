@@ -1,151 +1,18 @@
 {
-  "diagnosis_id": "diagnosis_20260420_233235",
-  "status": "completed",
-  "created_at": "2026-04-20T23:32:35-07:00",
-  "source_run_id": "20260420_233034_bf16_gemm_v1_11df0f1",
-  "source_run_dir": "runs/20260420_233034_bf16_gemm_v1_11df0f1",
-  "source_summary_json": "runs/20260420_233034_bf16_gemm_v1_11df0f1/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_233546_bf16_gemm_v1_4bc0218",
+  "source_run_dir": "runs/20260420_233546_bf16_gemm_v1_4bc0218",
+  "source_summary_json": "runs/20260420_233546_bf16_gemm_v1_4bc0218/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260420_233235:dir_01",
-  "family_audit": [
-    "accepted: legacy::steady_state_barrier_handoff_retime because round 10 spent another real PTX control-path tweak and still regressed with essentially unchanged active-warps, barrier, and scoreboard metrics, which leaves the steady-state wait-group and handoff cadence as the cleanest remaining unabsorbed scheduler lever on the best-known PTX surface.",
-    "deferred: legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering because the round-history rehydration surfaced it as a real, currently unabsorbed PTX-local restore family rather than a no-op, but its historical band still sits well behind the current best-known PTX run.",
-    "deferred: legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid as the cheapest locality probe still not absorbed by the current source, kept behind the two stronger scheduler and restore families.",
-    "rejected for this round: legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage and legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling because current-source audit showed both ideas are already absorbed into the sibling path that round 9 measured.",
-    "rejected for this round: legacy::apply_only_a_minimal_ptx_export_address_cleanup because it is now the accepted best-known PTX surface, so recommending it again would be a restore/no-op rather than a new direction.",
-    "rejected for this round: legacy::promote_the_existing_256x128_pivot_hot_band_kernel because its historical regressions remain materially larger than the live PTX-local fallback families."
-  ],
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Steady-state Barrier / Handoff Retime",
-      "family_id": "legacy::steady_state_barrier_handoff_retime",
-      "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
-      "action_fingerprint": "8f8b5eca1122e2da",
-      "mode": "exploit",
-      "hypothesis": "Round 10 forced an explicit audit of which queued families are still actionable versus already absorbed in the current source. After filtering out the sibling export-trim no-op and then measuring a real PTX control-path fallback, the latest run still regressed to 24.19046402 ms while the headline signature barely moved: active warps stayed at 16.61, barrier stayed at 5.46, and long-scoreboard stayed at 7.24. That combination means neither another export-side replay nor another trivial prologue-order nudge is the next best bet. The cleanest remaining unabsorbed lever on the current PTX winner is a narrower retime of the steady-state wait-group and handoff cadence around `cp.async`, `__syncthreads()`, and the future-tile refill path. It keeps the accepted PTX surface intact while attacking the scheduler seam that is still visibly exposed after the export cleanup and the latest control-path tweak.",
-      "expected_bottleneck": "Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the handoff between the current stage's MMA issue and the future-tile refill sequence.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1998-2017",
-        "src/kernels/bf16_gemm_v1.cu:2015-2027",
-        "src/kernels/bf16_gemm_v1.cu:2032-2033"
-      ],
-      "risk": "Moderate. The family is bounded and still unabsorbed, but the current source already contains the strongest obvious one-sync cleanup, so another retime can easily reshuffle barrier versus scoreboard without creating a real runtime win.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "hot-band gpu__time_duration.sum"
-      ],
-      "search_score_v1": 2.3,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v11",
-        "rank_score": 2.0,
-        "unabsorbed_family_bonus": 0.35,
-        "flat_signature_bonus": 0.25,
-        "risk_penalty": 0.3,
-        "formula": "rank_score + unabsorbed_family_bonus + flat_signature_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.02,
-      "predicted_fail_risk": 0.32,
-      "ranking_notes": [
-        "This rises to rank 1 mainly because the round-10 audit proved several higher-priority-looking families were already absorbed and would only produce no-op node_c rounds.",
-        "It is the highest-priority open frontier family that is both unabsorbed and still aligned with the latest flat scheduler signature.",
-        "It stays ahead of restore-style fallbacks because it keeps the current PTX best surface live instead of stepping back onto a historically slower branch."
-      ],
-      "stop_condition": "Stop if the handoff retime lowers barrier only by raising scoreboard enough to keep runtime flat, or if the wait-group shuffle produces no measurable hot-band time change."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
-      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
-      "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
-      "action_fingerprint": "b2d12d979d34a9d3",
-      "mode": "restore",
-      "hypothesis": "Once the absorbed sibling families and the latest PTX control-path tweak are filtered out, one of the few materially different PTX-local surfaces still sitting in the live queue is the grouped_rows=8 consumer-ordering restore family rehydrated from `round_history`. The current grouped_rows=4 PTX surface is repeatedly landing in the 24.16-24.19 ms band with almost unchanged scheduler counters, which is strong evidence that a real local-surface reset may be more valuable than another tiny variation on the same grouped_rows=4 regime. Restoring the grouped_rows=8 hot-band consumer ordering is therefore the best second-ranked escape hatch: it is a true current-source delta, it keeps the search on the PTX family, and it preserves room for a later narrower consumer-side tweak if the restored branch lands close enough to the current best-known run.",
-      "expected_bottleneck": "Consumer-side ordering and grouped-row locality inside the PTX hot-band microkernel, especially around the grouped CTA mapping and export-handoff behavior.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-156",
-        "src/kernels/bf16_gemm_v1.cu:1954-1967",
-        "src/kernels/bf16_gemm_v1.cu:2015-2027"
-      ],
-      "risk": "Moderate. This is a real restore-style branch change rather than a micro-retime, and its historical runtime band is still clearly slower than the current best PTX surface, so it only makes sense as an auditable alternate branch rather than the first recommendation.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "hot-band gpu__time_duration.sum",
-        "correctness pass rate across all 3 cases"
-      ],
-      "search_score_v1": 1.85,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v11",
-        "rank_score": 1.7,
-        "rehydration_bonus": 0.3,
-        "unabsorbed_family_bonus": 0.2,
-        "historical_gap_penalty": 0.35,
-        "formula": "rank_score + rehydration_bonus + unabsorbed_family_bonus - historical_gap_penalty"
-      },
-      "predicted_gain_ms": 0.015,
-      "predicted_fail_risk": 0.38,
-      "ranking_notes": [
-        "This stays in the set because it is a genuine rehydrated family that is still actionable on the current source, unlike the absorbed sibling and export-cleanup candidates.",
-        "It ranks below the handoff retime because its historical gap to the current PTX best is still large enough that it should be treated as a branch reset, not the default next move.",
-        "Keeping it second preserves a real alternate PTX-local surface if the current grouped_rows=4 scheduler families fully flatten."
-      ],
-      "stop_condition": "Stop if the grouped_rows=8 restore remains materially behind the 24.164352 ms PTX best without producing a clearly improved stall mix worth exploiting further."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Retune Hot-Band CTA Traversal On The 128x128 PTX Grid",
-      "family_id": "legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid",
-      "subfamily_id": "legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid",
-      "action_fingerprint": "cb77d05553cb3c86",
-      "mode": "exploit",
-      "hypothesis": "After removing the already-absorbed families from consideration, the grouped CTA traversal family becomes the cheapest remaining orthogonal locality probe on top of the current PTX best surface. The latest run still shows the same overall 16.61 active-warps ceiling and low DRAM pressure, which suggests there is not a new bandwidth problem to solve; if the scheduler retimes flatten, a small grouped-row or serpentine traversal remap is still the lightest reversible test of whether inter-CTA locality and launch ordering are leaving a few microseconds on the table. It stays third because similar experiments were mixed historically and the likely upside is smaller than the two higher-ranked families.",
-      "expected_bottleneck": "Inter-CTA locality and traversal efficiency on the current 128x128 PTX hot-band grid rather than another inner-loop scheduler issue.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-156",
-        "src/kernels/bf16_gemm_v1.cu:1954-1967",
-        "src/kernels/bf16_gemm_v1.cu:1979-1985"
-      ],
-      "risk": "Low to moderate. The surface is small and reversible, but the family already showed mixed evidence historically, so another traversal tweak can easily land flat.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "hot-band gpu__time_duration.sum",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "search_score_v1": 1.5,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v11",
-        "rank_score": 1.3,
-        "cheap_probe_bonus": 0.25,
-        "unabsorbed_family_bonus": 0.2,
-        "risk_penalty": 0.25,
-        "formula": "rank_score + cheap_probe_bonus + unabsorbed_family_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.01,
-      "predicted_fail_risk": 0.24,
-      "ranking_notes": [
-        "This remains the cheapest truly different probe once the no-op families are filtered out of the live queue.",
-        "It stays below the other two because the likely upside is smaller and prior CTA-order experiments were mixed.",
-        "It is still worth carrying because it is a real current-source delta rather than another absorbed candidate."
-      ],
-      "stop_condition": "Stop if the traversal tweak leaves hot-band time and cache-facing counters effectively unchanged after one round."
-    }
-  ],
-  "notes": "Round 11/100 audit: round 10 exposed a search-memory hygiene issue that the loop now has to account for explicitly. The nominally top-ranked sibling export-trim family is already absorbed in the current source, so repeating it would only create a fake node_c round; after switching to an approved PTX control fallback, the latest measured run still regressed to 24.19046402 ms while the headline signature stayed effectively unchanged at 16.61 active warps, 5.46 barrier, and 7.24 long-scoreboard. This diagnosis therefore filters absorbed or already-baked families out of the top ranks and reorders only the still-actionable current-source deltas. The recommendation moves to the steady-state barrier/handoff retime because it is the strongest open frontier family that is both unabsorbed and still aligned with the latest flat scheduler signature."
+  "selected_direction_id": null,
+  "selected_candidate_id": null,
+  "family_audit": [],
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

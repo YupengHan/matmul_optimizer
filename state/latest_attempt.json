@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260420_233235:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260420_233235:dir_01",
   "source_diagnosis_id": "diagnosis_20260420_233235",
   "base_run_id": "20260420_233034_bf16_gemm_v1_11df0f1",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Steady-state Barrier / Handoff Retime",
   "mode": "exploit",
-  "commit": null,
-  "commit_short": null,
+  "commit": "4bc0218b26dba8ac7adf77968d7d74314c47ed84",
+  "commit_short": "4bc0218",
   "subject": "node_c: round 11/100 implement dir_01 Steady-state Barrier / Handoff Retime",
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T23:34:53-07:00",
@@ -38,8 +38,8 @@
     "src/kernels/bf16_gemm_v1.cu:2015-2027"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "4bc0218b26dba8ac7adf77968d7d74314c47ed84",
+    "commit_short": "4bc0218",
     "subject": "node_c: round 11/100 implement dir_01 Steady-state Barrier / Handoff Retime",
     "build_status": "PASS",
     "failure_mode": null,
@@ -61,16 +61,29 @@
     "deletions": 4
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260420_233546_bf16_gemm_v1_4bc0218",
+    "measurement_commit": "4bc0218b26dba8ac7adf77968d7d74314c47ed84",
+    "runtime_ms": 24.17396832,
+    "runtime_delta_ms": -0.016495700000000113,
+    "tflops": 30.07447566,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.33",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.82",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.12",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.48",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.25",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.60",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.47",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.22",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.24",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.58",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "flat",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260420_233546_bf16_gemm_v1_4bc0218 for candidate diagnosis_20260420_233235:dir_01; transition_label=PASS_FLAT.",
+  "transition_label": "PASS_FLAT"
 }

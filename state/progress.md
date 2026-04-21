@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `11df0f1f1b3949e13d33e59024c9de95c414f134`
-- plateau counter: `3`
-- round loop: `round 11/100`
-- rounds remaining: `90`
-- notes: `Node C build succeeded for round 11/100. Node A will now measure the new code path.`
+- latest measured commit: `4bc0218b26dba8ac7adf77968d7d74314c47ed84`
+- plateau counter: `4`
+- round loop: `round 12/100`
+- rounds remaining: `89`
+- notes: `Node A completed round 11/100. Run node_b to continue round 12/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_233034_bf16_gemm_v1_11df0f1`
-- run dir: `runs/20260420_233034_bf16_gemm_v1_11df0f1`
+- run id: `20260420_233546_bf16_gemm_v1_4bc0218`
+- run dir: `runs/20260420_233546_bf16_gemm_v1_4bc0218`
 - correctness: `PASS`
-- median runtime: `24.190464 ms`
-- TFLOP/s: `30.053968 TFLOP/s`
+- median runtime: `24.173968 ms`
+- TFLOP/s: `30.074476 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_233235`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 11/100 audit: round 10 exposed a search-memory hygiene issue that the loop now has to account for explicitly. The nominally top-ranked sibling export-trim family is already absorbed in the current source, so repeating it would only create a fake node_c round; after switching to an approved PTX control fallback, the latest measured run still regressed to 24.19046402 ms while the headline signature stayed effectively unchanged at 16.61 active warps, 5.46 barrier, and 7.24 long-scoreboard. This diagnosis therefore filters absorbed or already-baked families out of the top ranks and reorders only the still-actionable current-source deltas. The recommendation moves to the steady-state barrier/handoff retime because it is the strongest open frontier family that is both unabsorbed and still aligned with the latest flat scheduler signature.`
-- dir_01: Steady-state Barrier / Handoff Retime | bottleneck: Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the handoff between the current stage's MMA issue and the future-tile refill sequence.
-- dir_02: Restore accepted grouped_rows=8 hot-band consumer ordering | bottleneck: Consumer-side ordering and grouped-row locality inside the PTX hot-band microkernel, especially around the grouped CTA mapping and export-handoff behavior.
-- dir_03: Retune Hot-Band CTA Traversal On The 128x128 PTX Grid | bottleneck: Inter-CTA locality and traversal efficiency on the current 128x128 PTX hot-band grid rather than another inner-loop scheduler issue.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
