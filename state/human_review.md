@@ -3,8 +3,8 @@
 ## Current workflow gate
 
 - next node: `node_c`
-- status: `ready_for_node_c`
-- round loop: `round 16/50` with `35` rounds remaining
+- status: `node_c_context_ready`
+- round loop: `single-run` with `35` rounds remaining
 
 ## Direction approval policy
 

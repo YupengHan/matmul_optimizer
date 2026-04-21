@@ -7,6 +7,21 @@ The state layer now has two tiers:
 
 The two tiers should describe the same workflow state.
 
+## Start Here
+
+If you are reopening this repo for operator work, read these files first:
+
+1. `migration_handoff.md`
+2. `current_focus.md`
+3. `progress.md`
+4. `supervisor_task.json`
+
+Current operator note:
+
+- the previous round loop was intentionally stopped by user request
+- the repo is paused before `node_c` of round `16/50`
+- the next intended task is migration work on `heuristic-search-migration`, not continuing the old round loop
+
 ## Machine-readable files
 
 ## `graph_state.json`

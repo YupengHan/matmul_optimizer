@@ -25,6 +25,17 @@ The goal is not to solve general matmul. The goal is to see how far a single eng
 
 The authoritative benchmark snapshot lives in [state/benchmark_baselines.md](state/benchmark_baselines.md). The exact workload definition lives in [docs/benchmark_spec.md](docs/benchmark_spec.md).
 
+## Current Operator Entry
+
+For local operator work, start from the lightweight state entrypoints instead of reconstructing context from the whole repo:
+
+- [state/migration_handoff.md](state/migration_handoff.md)
+- [state/current_focus.md](state/current_focus.md)
+- [state/progress.md](state/progress.md)
+- [state/supervisor_task.json](state/supervisor_task.json)
+
+The repo is currently paused on purpose before `node_c` of round `16/50` so the next terminal can focus on the `heuristic-search-migration` workflow update.
+
 ## Quick Start
 
 Generate the fixed dataset once:

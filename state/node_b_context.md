@@ -38,8 +38,8 @@
 
         ## Current source snapshot
 
-        - round loop: `round 16/50`
-        - rounds remaining after this one: `34`
+        - round loop: `single-run`
+        - rounds remaining after this one: `0`
         - latest run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
         - median runtime: `25.325055 ms`
         - TFLOP/s: `28.707516 TFLOP/s`

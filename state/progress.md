@@ -8,13 +8,13 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 - next node: `node_c`
 - previous node: `node_b`
-- status: `ready_for_node_c`
+- status: `node_c_context_ready`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `e6fdb8b21ac8bff36d581073faf117875347f3ea`
 - plateau counter: `7`
-- round loop: `round 16/50`
+- round loop: `single-run`
 - rounds remaining: `35`
-- notes: `Node C is ready to implement dir_01 via recommended selection for round 16/50.`
+- notes: `Round loop stopped by user request. Hold the repo at this paused point and do not continue node_c or any further rounds before the heuristic-search migration work is done.`
 
 ## Latest measured custom run
 
