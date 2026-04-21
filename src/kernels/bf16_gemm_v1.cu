@@ -135,7 +135,9 @@ struct FixedHotBandTile128x128PtxExportScratch {
   static constexpr int kPadFloatsPerRow = 0;
   static constexpr int kLeadingDim = kWmmaN + kPadFloatsPerRow;
   static constexpr int kTileElemsPerWarp = kWmmaM * kLeadingDim;
-  static constexpr int kStageCount = 1;
+  // Batch adjacent 16x16 exports in pairs so each warp pays one sync point
+  // per pair instead of serializing all four columns independently.
+  static constexpr int kStageCount = 2;
   static constexpr int kStageStride =
       FixedHotBandTile128x128::kWarpsPerBlock * kTileElemsPerWarp;
   static constexpr int kTotalElems = kStageCount * kStageStride;
@@ -1024,7 +1026,7 @@ __device__ __forceinline__ void ptx_wmma_store_tile_pairs_64x64(
   }
 }
 
-template <int TileRow>
+template <int TileRow, int TilePairColBase = 0>
 __device__ __forceinline__ void ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel(
     const PtxWmmaAccTileSet64x64& acc_tiles,
     float* c_shared,
@@ -1033,47 +1035,43 @@ __device__ __forceinline__ void ptx_wmma_store_tile_row_pair_64x64_ptx_microkern
     int lane_id) {
   static_assert(TileRow >= 0 && TileRow < FixedHotBandTile128x128::kWarpMmaTilesM,
                 "PTX 64x64 export tile row index out of range.");
-  static_assert(FixedHotBandTile128x128PtxExportScratch::kStageCount == 1,
-                "PTX 64x64 export lifetime trimming expects a single per-warp scratch stage.");
+  static_assert(FixedHotBandTile128x128PtxExportScratch::kStageCount == 2,
+                "PTX 64x64 export pair batching expects two per-warp scratch stages.");
   static_assert(FixedHotBandTile128x128::kWarpMmaTilesN == 4,
                 "The PTX 64x64 export helper assumes the hot-band row emits four 16x16 columns.");
-  float* warp_c_tile =
-      c_shared + warp_id * FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
-  const float4* warp_c_tile_quads = reinterpret_cast<const float4*>(warp_c_tile);
-  __nv_bfloat16* c_tile_row_base =
-      c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN;
+  if constexpr (TilePairColBase < FixedHotBandTile128x128::kWarpMmaTilesN) {
+    constexpr int kCSharedStageStride =
+        FixedHotBandTile128x128::kWarpsPerBlock *
+        FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
+    float* warp_c_tile_stage0 =
+        c_shared + warp_id * FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
+    float* warp_c_tile_stage1 =
+        c_shared + kCSharedStageStride +
+        warp_id * FixedHotBandTile128x128PtxExportScratch::kTileElemsPerWarp;
+    const float4* warp_c_tile_stage0_quads =
+        reinterpret_cast<const float4*>(warp_c_tile_stage0);
+    const float4* warp_c_tile_stage1_quads =
+        reinterpret_cast<const float4*>(warp_c_tile_stage1);
+    __nv_bfloat16* c_tile_row_base =
+        c_tile_base + TileRow * kWmmaM * kFixedBenchmarkN;
 
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 0>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<0>(
-      warp_c_tile_quads, c_tile_row_base, lane_id);
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage0,
+        ptx_wmma_acc_tile<TileRow, TilePairColBase>(acc_tiles),
+        FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+    ptx_wmma_store_d_row_shared(
+        warp_c_tile_stage1,
+        ptx_wmma_acc_tile<TileRow, TilePairColBase + 1>(acc_tiles),
+        FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
+    __syncwarp();
+    ptx_export_shared_tile_quads_64x64_ptx_microkernel<TilePairColBase>(
+        warp_c_tile_stage0_quads, c_tile_row_base, lane_id);
+    ptx_export_shared_tile_quads_64x64_ptx_microkernel<TilePairColBase + 1>(
+        warp_c_tile_stage1_quads, c_tile_row_base, lane_id);
 
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 1>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<1>(
-      warp_c_tile_quads, c_tile_row_base, lane_id);
-
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 2>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<2>(
-      warp_c_tile_quads, c_tile_row_base, lane_id);
-
-  ptx_wmma_store_d_row_shared(
-      warp_c_tile,
-      ptx_wmma_acc_tile<TileRow, 3>(acc_tiles),
-      FixedHotBandTile128x128PtxExportScratch::kLeadingDim);
-  __syncwarp();
-  ptx_export_shared_tile_quads_64x64_ptx_microkernel<3>(
-      warp_c_tile_quads, c_tile_row_base, lane_id);
+    ptx_wmma_store_tile_row_pair_64x64_ptx_microkernel<TileRow, TilePairColBase + 2>(
+        acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
+  }
 }
 
 template <int TileRow = 0>
@@ -2136,12 +2134,12 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
           kFixedBenchmarkKTiles><<<
-              dim3(kFixedHotBandN / FixedHotBandTile256x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile256x128::kTensorBlockM,
+              dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
+                   kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
                    1),
-              dim3(FixedHotBandTile256x128::kWarpsPerBlock * kWarpSize, 1, 1),
+              dim3(FixedHotBandTile128x128::kWarpsPerBlock * kWarpSize, 1, 1),
               0,
               stream>>>(a, b, c);
 

@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_153357_round05_clean_f1c576ee",
-  "base_run_id": "20260421_153357_bf16_gemm_v1_f1c576ee",
-  "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
-  "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+  "attempt_id": "diagnosis_20260421_154619:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_154619:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_154619",
+  "base_run_id": "20260421_154110_bf16_gemm_v1_afe26c16",
+  "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+  "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
   "direction_id": "dir_01",
-  "direction_name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+  "direction_name": "Trim PTX Wait/Sync Handoff On The 128x128 Anchor",
   "mode": "explore",
-  "commit": "afe26c16b7d2d62c7e91cb7725ccc9f7bbba0d01",
-  "commit_short": "afe26c1",
-  "subject": "node_c: round 5/10 implement dir_01 Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 6/10 implement dir_01 Trim PTX Wait/Sync Handoff On The 128x128 Anchor",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:37:03-07:00",
+  "selected_at": "2026-04-21T15:51:03-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_153357_bf16_gemm_v1_f1c576ee",
-  "selection_score": 0.86,
-  "planned_action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
-  "implemented_action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
+  "source_run_id": "20260421_154110_bf16_gemm_v1_afe26c16",
+  "selection_score": 0.92,
+  "planned_action_fingerprint": "restore_ptx_128x128_anchor_then_batch_export_and_trim_wait_sync_without_x32_shared_growth",
+  "implemented_action_fingerprint": "restore_ptx_128x128_anchor_then_batch_export_and_trim_wait_sync_without_x32_shared_growth",
   "score_breakdown": {
-    "policy_id": "manual_round05_human_guidance_salvage_v1",
-    "headroom_score": 0.56,
-    "evidence_score": 0.19,
-    "implementation_bonus": 0.06,
-    "risk_penalty": -0.15,
+    "policy_id": "manual_round06_post_flat_256x128_v1",
+    "headroom_score": 0.47,
+    "evidence_score": 0.31,
+    "implementation_bonus": 0.19,
+    "risk_penalty": -0.05,
     "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
   },
   "semantic_delta_tags": [
@@ -37,9 +37,9 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "afe26c16b7d2d62c7e91cb7725ccc9f7bbba0d01",
-    "commit_short": "afe26c1",
-    "subject": "node_c: round 5/10 implement dir_01 Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 6/10 implement dir_01 Trim PTX Wait/Sync Handoff On The 128x128 Anchor",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
@@ -48,89 +48,31 @@
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 32,
-      "deletions": 6
+      "insertions": 43,
+      "deletions": 45
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 32,
-    "deletions": 6
+    "insertions": 43,
+    "deletions": 45
   },
   "measurement": {
-    "run_id": "20260421_154110_bf16_gemm_v1_afe26c16",
-    "measurement_commit": "afe26c16b7d2d62c7e91cb7725ccc9f7bbba0d01",
-    "runtime_ms": 30.16857529,
-    "runtime_delta_ms": -0.005040170000000899,
-    "tflops": 24.09856663,
-    "correctness": true,
-    "ncu_analysis_path": "runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.json",
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 36.77,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 36.28,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 32.96,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 15.87,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 18.19,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 16.66,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 8.32,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 2.19,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 6.77,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 0.84,
-      "launch__occupancy_limit_registers": 1.0
-    },
-    "headline_metric_deltas_vs_previous_run": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 0.0,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 0.0,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 0.0,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 0.0,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 0.0,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 0.0,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 0.0,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 0.0,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 0.0,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 0.0,
-      "launch__occupancy_limit_registers": 0.0
-    },
-    "structured_bottleneck_deltas": [
-      {
-        "stall_group": "barrier",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "previous": 8.32,
-        "current": 8.32,
-        "delta": 0.0,
-        "trend": "flat"
-      },
-      {
-        "stall_group": "short_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "previous": 6.77,
-        "current": 6.77,
-        "delta": 0.0,
-        "trend": "flat"
-      },
-      {
-        "stall_group": "long_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "previous": 2.19,
-        "current": 2.19,
-        "delta": 0.0,
-        "trend": "flat"
-      },
-      {
-        "stall_group": "mio_throttle",
-        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "previous": 0.84,
-        "current": 0.84,
-        "delta": 0.0,
-        "trend": "flat"
-      }
-    ],
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "ncu_analysis_path": null,
+    "headline_metrics": {},
+    "headline_metric_deltas_vs_previous_run": {},
+    "structured_bottleneck_deltas": [],
     "top_hotspot_deltas": []
   },
-  "transition_class": "flat",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_154110_bf16_gemm_v1_afe26c16 for candidate diagnosis_20260421_153357_round05_clean_f1c576ee:dir_01; transition_label=PASS_FLAT.",
-  "transition_label": "PASS_FLAT"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
