@@ -97,9 +97,24 @@ Supervisor no-stop rule:
 Supervisor checkpoint rule:
 
 1. during an active multi-round loop, the main agent must run a context-compression checkpoint after every 5 completed rounds
-2. the checkpoint must refresh `state/supervisor_context.md` with the latest dispatch state, active round, accepted base, and current selected direction or candidate
-3. the checkpoint is a continue point, not a stop point
-4. after the checkpoint, the main agent must immediately re-read `state/supervisor_task.json` and keep dispatching unless one of the no-stop-rule stop conditions is met
+2. that same 5-round checkpoint must also refresh the public display snapshot:
+   - update `README.md`
+   - update `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`
+   - refresh the rendered optimization tree image
+   - commit only the doc/image files touched by that display refresh
+3. the checkpoint must refresh `state/supervisor_context.md` with the latest dispatch state, active round, accepted base, current selected direction or candidate, display-refresh checkpoint state, and watchdog state
+4. the checkpoint is a continue point, not a stop point
+5. after the checkpoint, the main agent must immediately re-read `state/supervisor_task.json` and keep dispatching unless one of the no-stop-rule stop conditions is met
+
+Supervisor watchdog rule:
+
+1. during an active multi-round loop, if 10 minutes pass with no repo-visible workflow progress and `remaining_rounds > 0`, the main agent must treat the workflow as stalled rather than completed
+2. on that stall condition, the main agent must re-read `state/supervisor_task.json` and issue the current continue instruction for the active dispatch node
+3. for `node_b` and `node_c`, the continue instruction must still preserve the supervisor contract:
+   - prepare or refresh the node context if needed
+   - spawn exactly one sub-agent
+   - run the finalize command from the main agent
+4. the watchdog is a continue mechanism, not a stop condition by itself
 
 ## Natural-language command mapping
 
@@ -153,7 +168,8 @@ When the user says `开始运行N圈`:
    - performance delta
    - profile paths
 9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
-10. after every 5 completed rounds, refresh `state/supervisor_context.md` as a context-compression checkpoint and then continue the loop without treating that checkpoint as a completion point
+10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, and then continue the loop without treating that checkpoint as a completion point
+11. if the loop is still active, and `state/supervisor_task.json` later reports a 10-minute watchdog stall without reaching the target round count, issue the continue instruction and keep dispatching
 
 If the user explicitly asks to prefer frontier-based selection for the loop, use:
 

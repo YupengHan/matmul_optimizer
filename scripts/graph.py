@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import datetime as dt
 import json
 import shlex
 import subprocess
@@ -133,22 +134,20 @@ def context_compression_interval() -> int:
     return 5
 
 
-def latest_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
+def checkpoint_round(round_loop: Dict[str, Any], interval: int) -> Optional[int]:
     completed = int(round_loop.get('completed_rounds', 0) or 0)
-    interval = context_compression_interval()
     if completed < interval:
         return None
     return completed - (completed % interval)
 
 
-def next_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
+def next_checkpoint_round(round_loop: Dict[str, Any], interval: int) -> Optional[int]:
     if not round_loop.get('active'):
         return None
     total = int(round_loop.get('total_rounds', 0) or 0)
     if total <= 0:
         return None
     completed = int(round_loop.get('completed_rounds', 0) or 0)
-    interval = context_compression_interval()
     if completed > 0 and completed % interval == 0:
         checkpoint = completed + interval
     else:
@@ -156,6 +155,36 @@ def next_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
     if checkpoint > total:
         return None
     return checkpoint
+
+
+def latest_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
+    return checkpoint_round(round_loop, context_compression_interval())
+
+
+def next_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
+    return next_checkpoint_round(round_loop, context_compression_interval())
+
+
+def display_update_interval() -> int:
+    return 5
+
+
+def latest_display_update_round(round_loop: Dict[str, Any]) -> Optional[int]:
+    return checkpoint_round(round_loop, display_update_interval())
+
+
+def next_display_update_round(round_loop: Dict[str, Any]) -> Optional[int]:
+    return next_checkpoint_round(round_loop, display_update_interval())
+
+
+def display_update_due(round_loop: Dict[str, Any]) -> bool:
+    completed = int(round_loop.get('completed_rounds', 0) or 0)
+    interval = display_update_interval()
+    return completed > 0 and completed % interval == 0 and round_loop.get('current_round_index') is None
+
+
+def supervisor_watchdog_timeout_minutes() -> int:
+    return 10
 
 
 def compute_perf_delta(previous_run: Dict[str, Any], latest_run: Dict[str, Any]) -> tuple[Optional[float], Optional[float], str]:
@@ -282,6 +311,25 @@ def stage_paths(paths: Sequence[Path | str]) -> None:
     rels = relative_paths(paths)
     if rels:
         run_command(['git', 'add', '--', *rels], check=True)
+
+
+def existing_files_in_scope(paths: Sequence[Path | str]) -> List[Path]:
+    existing: List[Path] = []
+    seen: set[Path] = set()
+    for raw_path in paths:
+        path = Path(raw_path)
+        if not path.exists():
+            continue
+        if path.is_dir():
+            for child in sorted(path.rglob('*')):
+                if child.is_file() and child not in seen:
+                    existing.append(child)
+                    seen.add(child)
+            continue
+        if path.is_file() and path not in seen:
+            existing.append(path)
+            seen.add(path)
+    return existing
 
 
 def commit_paths(paths: Sequence[Path | str], message: str) -> Optional[str]:
@@ -1625,6 +1673,24 @@ def compute_supervisor_task(
         'context_file': None,
         'active_direction_id': active_direction.get('direction_id'),
         'recommended_direction_id': diagnosis.get('recommended_direction_id'),
+        'context_checkpoint_interval_rounds': context_compression_interval(),
+        'last_context_checkpoint_round': latest_context_checkpoint_round(round_loop),
+        'next_context_checkpoint_round': next_context_checkpoint_round(round_loop),
+        'display_update_interval_rounds': display_update_interval(),
+        'last_display_update_round': latest_display_update_round(round_loop),
+        'next_display_update_round': next_display_update_round(round_loop),
+        'display_update_due': display_update_due(round_loop),
+        'display_update_instruction': (
+            'Use the matmul-doc-sync skill or an equivalent narrow doc-refresh pass to update '
+            '`README.md`, `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`, '
+            'and the rendered optimization tree, then commit only those doc/image files.'
+        ),
+        'watchdog_timeout_minutes': supervisor_watchdog_timeout_minutes(),
+        'watchdog_status': 'idle',
+        'watchdog_idle_minutes': None,
+        'watchdog_latest_progress_at': None,
+        'watchdog_latest_progress_path': None,
+        'watchdog_continue_instruction': None,
         'notes': graph_state.get('notes', 'Inspect graph_state.json and dispatch the next node.'),
     }
 
@@ -1638,9 +1704,7 @@ def compute_supervisor_task(
                 'notes': 'Run node_a directly from the main Codex agent outside the sandbox, then re-read graph state.',
             }
         )
-        return task
-
-    if current_node == 'node_b':
+    elif current_node == 'node_b':
         task.update(
             {
                 'dispatch_mode': 'sub_agent',
@@ -1651,9 +1715,7 @@ def compute_supervisor_task(
                 'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.',
             }
         )
-        return task
-
-    if current_node == 'node_c':
+    elif current_node == 'node_c':
         selection_command = None
         if not active_direction.get('direction_id'):
             if round_loop.get('active') and round_loop.get('auto_select_frontier') and has_frontier_candidate:
@@ -1675,9 +1737,10 @@ def compute_supervisor_task(
                 'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.',
             }
         )
-        return task
+    else:
+        task['notes'] = f"Unknown current node {current_node!r}. Inspect state/graph_state.json before continuing."
 
-    task['notes'] = f"Unknown current node {current_node!r}. Inspect state/graph_state.json before continuing."
+    task.update(compute_watchdog_fields(task, graph_state, round_loop))
     return task
 
 
@@ -1705,6 +1768,8 @@ def render_supervisor_context(
     lines.append(f"- latest runtime: `{fmt_runtime(latest_run.get('median_runtime_ms'))}`")
     lines.append(f"- recommended direction: `{diagnosis.get('recommended_direction_id', 'N/A')}`")
     lines.append(f"- active direction: `{active_direction.get('direction_id', 'N/A')}`")
+    lines.append(f"- display update due at current checkpoint: `{'yes' if supervisor_task.get('display_update_due') else 'no'}`")
+    lines.append(f"- watchdog status: `{supervisor_task.get('watchdog_status', 'idle')}`")
     lines.append('')
     lines.append('## Supervisor protocol')
     lines.append('')
@@ -1738,17 +1803,33 @@ def render_supervisor_context(
         lines.append(f"- active loop: `{round_label(round_loop)}` with `{round_loop.get('remaining_rounds', 0)}` rounds remaining")
         lines.append(f"- auto-use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
         lines.append(f"- auto-select frontier: `{'yes' if round_loop.get('auto_select_frontier') else 'no'}`")
-        lines.append(f"- context compression cadence: every `{context_compression_interval()}` completed rounds")
-        latest_checkpoint = latest_context_checkpoint_round(round_loop)
-        next_checkpoint = next_context_checkpoint_round(round_loop)
-        if latest_checkpoint is not None:
-            lines.append(f"- last context compression checkpoint: after `{latest_checkpoint}` completed rounds")
-        if next_checkpoint is not None:
-            lines.append(f"- next context compression checkpoint: after `{next_checkpoint}` completed rounds")
+        lines.append(f"- context compression cadence: every `{supervisor_task.get('context_checkpoint_interval_rounds', context_compression_interval())}` completed rounds")
+        lines.append(f"- public display refresh cadence: every `{supervisor_task.get('display_update_interval_rounds', display_update_interval())}` completed rounds")
+        if supervisor_task.get('last_context_checkpoint_round') is not None:
+            lines.append(f"- last context compression checkpoint: after `{supervisor_task.get('last_context_checkpoint_round')}` completed rounds")
+        if supervisor_task.get('next_context_checkpoint_round') is not None:
+            lines.append(f"- next context compression checkpoint: after `{supervisor_task.get('next_context_checkpoint_round')}` completed rounds")
+        if supervisor_task.get('last_display_update_round') is not None:
+            lines.append(f"- last display refresh checkpoint: after `{supervisor_task.get('last_display_update_round')}` completed rounds")
+        if supervisor_task.get('next_display_update_round') is not None:
+            lines.append(f"- next display refresh checkpoint: after `{supervisor_task.get('next_display_update_round')}` completed rounds")
+        lines.append(f"- display refresh checkpoint open now: `{'yes' if supervisor_task.get('display_update_due') else 'no'}`")
+        lines.append(f"- display refresh action: {supervisor_task.get('display_update_instruction')}")
         lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
     else:
         lines.append('- no multi-round loop is active')
         lines.append('- to arm one, run `python scripts/graph.py rounds --count N --auto-use-recommended`')
+    lines.append('')
+    lines.append('## Watchdog')
+    lines.append('')
+    lines.append(f"- timeout: `{supervisor_task.get('watchdog_timeout_minutes', supervisor_watchdog_timeout_minutes())}` minutes without workflow changes")
+    lines.append(f"- latest observed progress: `{supervisor_task.get('watchdog_latest_progress_at') or 'N/A'}` via `{supervisor_task.get('watchdog_latest_progress_path') or 'N/A'}`")
+    lines.append(f"- idle minutes: `{supervisor_task.get('watchdog_idle_minutes') if supervisor_task.get('watchdog_idle_minutes') is not None else 'N/A'}`")
+    lines.append(f"- watchdog status: `{supervisor_task.get('watchdog_status', 'idle')}`")
+    if supervisor_task.get('watchdog_continue_instruction'):
+        lines.append(f"- continue instruction: {supervisor_task.get('watchdog_continue_instruction')}")
+    else:
+        lines.append('- continue instruction: `No watchdog action is currently required.`')
     lines.append('')
     lines.append('## Notes')
     lines.append('')
@@ -2157,6 +2238,117 @@ def node_c_attempt_surface_paths() -> List[Path]:
     if SWEEP_FIXED_MAIN_TILES_PATH.exists():
         paths.append(SWEEP_FIXED_MAIN_TILES_PATH)
     return paths
+
+
+def supervisor_progress_watch_paths(graph_state: Dict[str, Any]) -> List[Path]:
+    watched: List[Path] = [
+        GRAPH_STATE_PATH,
+        LATEST_RUN_PATH,
+        LATEST_DIAGNOSIS_PATH,
+        ACTIVE_DIRECTION_PATH,
+        BENCHMARK_STATE_PATH,
+        ROUND_LOOP_STATE_PATH,
+        SEARCH_STATE_PATH,
+        SEARCH_FRONTIER_PATH,
+        SEARCH_CANDIDATES_PATH,
+        FAMILY_LEDGER_PATH,
+        LATEST_ATTEMPT_PATH,
+    ]
+    watched.extend(candidate_build_inputs())
+    watched.append(REPO_ROOT / 'scripts' / 'graph.py')
+    if SWEEP_FIXED_MAIN_TILES_PATH.exists():
+        watched.append(SWEEP_FIXED_MAIN_TILES_PATH)
+
+    current_kernel = graph_state.get('current_kernel_path')
+    if current_kernel:
+        watched.append(REPO_ROOT / current_kernel)
+    return existing_files_in_scope(watched)
+
+
+def iso_from_timestamp(timestamp: float) -> str:
+    tz = dt.datetime.now().astimezone().tzinfo
+    return dt.datetime.fromtimestamp(timestamp, tz=tz).isoformat(timespec='seconds')
+
+
+def latest_progress_snapshot(graph_state: Dict[str, Any]) -> Dict[str, Any]:
+    latest_path: Optional[Path] = None
+    latest_mtime: Optional[float] = None
+    for path in supervisor_progress_watch_paths(graph_state):
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        if latest_mtime is None or mtime > latest_mtime:
+            latest_mtime = mtime
+            latest_path = path
+    return {
+        'path': repo_rel(latest_path) if latest_path else None,
+        'timestamp': iso_from_timestamp(latest_mtime) if latest_mtime is not None else None,
+        'mtime': latest_mtime,
+    }
+
+
+def watchdog_continue_instruction(supervisor_task: Dict[str, Any], round_loop: Dict[str, Any]) -> Optional[str]:
+    if not round_loop.get('active') or int(round_loop.get('remaining_rounds', 0) or 0) <= 0:
+        return None
+    dispatch_node = supervisor_task.get('dispatch_node')
+    prepare = supervisor_task.get('prepare_command')
+    finalize = supervisor_task.get('finalize_command')
+    selection = supervisor_task.get('selection_command')
+    if dispatch_node == 'node_a' and prepare:
+        return f"Continue now by running `{prepare}` outside the sandbox, then re-read `state/supervisor_task.json`."
+    if dispatch_node == 'node_b' and prepare and finalize:
+        return (
+            f"Continue now: run `{prepare}` if the node_b context is stale, spawn one diagnosis sub-agent "
+            f"with `docs/node_b_protocol.md` + `state/node_b_context.md`, then run `{finalize}`."
+        )
+    if dispatch_node == 'node_c' and prepare and finalize:
+        if selection:
+            return (
+                f"Continue now: run `{selection}` if no direction is selected, run `{prepare}`, spawn one "
+                f"implementation sub-agent with `docs/node_c_protocol.md` + `state/node_c_context.md`, "
+                f"then run `{finalize}`."
+            )
+        return (
+            f"Continue now: run `{prepare}`, spawn one implementation sub-agent with "
+            f"`docs/node_c_protocol.md` + `state/node_c_context.md`, then run `{finalize}`."
+        )
+    if prepare:
+        return f"Continue now by dispatching the current step with `{prepare}` and then re-reading `state/supervisor_task.json`."
+    return 'Continue now by re-reading `state/supervisor_task.json` and dispatching the current node.'
+
+
+def compute_watchdog_fields(
+    supervisor_task: Dict[str, Any],
+    graph_state: Dict[str, Any],
+    round_loop: Dict[str, Any],
+) -> Dict[str, Any]:
+    timeout_minutes = supervisor_watchdog_timeout_minutes()
+    snapshot = latest_progress_snapshot(graph_state)
+    fields: Dict[str, Any] = {
+        'watchdog_timeout_minutes': timeout_minutes,
+        'watchdog_status': 'idle',
+        'watchdog_idle_minutes': None,
+        'watchdog_latest_progress_at': snapshot.get('timestamp'),
+        'watchdog_latest_progress_path': snapshot.get('path'),
+        'watchdog_continue_instruction': None,
+    }
+    if not round_loop.get('active') or int(round_loop.get('remaining_rounds', 0) or 0) <= 0:
+        return fields
+
+    fields['watchdog_status'] = 'healthy'
+    latest_mtime = snapshot.get('mtime')
+    if latest_mtime is None:
+        fields['watchdog_status'] = 'stalled'
+        fields['watchdog_continue_instruction'] = watchdog_continue_instruction(supervisor_task, round_loop)
+        return fields
+
+    idle_minutes = max((dt.datetime.now().astimezone().timestamp() - latest_mtime) / 60.0, 0.0)
+    fields['watchdog_idle_minutes'] = round(idle_minutes, 1)
+    if idle_minutes >= timeout_minutes:
+        fields['watchdog_status'] = 'stalled'
+        fields['watchdog_continue_instruction'] = watchdog_continue_instruction(supervisor_task, round_loop)
+    return fields
 
 
 def parse_numstat_output(text: str) -> Dict[str, int]:
@@ -4147,6 +4339,9 @@ def run_status(_: argparse.Namespace) -> int:
     print(f"round_loop_label={round_label(round_loop)}")
     print(f"rounds_remaining={round_loop.get('remaining_rounds')}")
     print(f"round_loop_status={round_loop.get('status')}")
+    print(f"display_update_due={supervisor_task.get('display_update_due')}")
+    print(f"watchdog_status={supervisor_task.get('watchdog_status')}")
+    print(f"watchdog_idle_minutes={supervisor_task.get('watchdog_idle_minutes')}")
     print(f"cutlass_gap_ms={absolute_gap}")
     print(f"cutlass_gap_ratio={runtime_ratio}")
     return 0
@@ -4169,6 +4364,20 @@ def run_supervisor(_: argparse.Namespace) -> int:
     print(f"round_loop_active={supervisor_task.get('round_loop_active')}")
     print(f"rounds_remaining={supervisor_task.get('rounds_remaining')}")
     print(f"auto_select_frontier={supervisor_task.get('auto_select_frontier')}")
+    print(f"context_checkpoint_interval_rounds={supervisor_task.get('context_checkpoint_interval_rounds')}")
+    print(f"last_context_checkpoint_round={supervisor_task.get('last_context_checkpoint_round')}")
+    print(f"next_context_checkpoint_round={supervisor_task.get('next_context_checkpoint_round')}")
+    print(f"display_update_interval_rounds={supervisor_task.get('display_update_interval_rounds')}")
+    print(f"last_display_update_round={supervisor_task.get('last_display_update_round')}")
+    print(f"next_display_update_round={supervisor_task.get('next_display_update_round')}")
+    print(f"display_update_due={supervisor_task.get('display_update_due')}")
+    print(f"display_update_instruction={supervisor_task.get('display_update_instruction')}")
+    print(f"watchdog_timeout_minutes={supervisor_task.get('watchdog_timeout_minutes')}")
+    print(f"watchdog_status={supervisor_task.get('watchdog_status')}")
+    print(f"watchdog_idle_minutes={supervisor_task.get('watchdog_idle_minutes')}")
+    print(f"watchdog_latest_progress_at={supervisor_task.get('watchdog_latest_progress_at')}")
+    print(f"watchdog_latest_progress_path={supervisor_task.get('watchdog_latest_progress_path')}")
+    print(f"watchdog_continue_instruction={supervisor_task.get('watchdog_continue_instruction')}")
     print(f"notes={supervisor_task.get('notes')}")
     return 0
 

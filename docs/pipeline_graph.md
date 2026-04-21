@@ -172,6 +172,8 @@ The extra orchestration layer is explicit rather than implicit.
 - whether to run it directly or through a `sub-agent`
 - which protocol doc to use
 - which prepare / selection / finalize commands to run
+- when the next 5-round context/display maintenance checkpoint lands
+- whether the 10-minute idle watchdog has emitted a continue instruction
 
 `state/supervisor_context.md` is the human-readable mirror of that dispatch state.
 

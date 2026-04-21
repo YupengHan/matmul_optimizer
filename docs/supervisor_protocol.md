@@ -78,7 +78,7 @@ The supervisor may stop only when:
 - the graph enters a failure / paused state
 - a required permission or environment dependency blocks further execution
 
-## Context-compression checkpoint rule
+## Context-compression and display-refresh checkpoint rule
 
 During an active multi-round loop, the supervisor must run a context-compression
 checkpoint after every 5 completed rounds.
@@ -87,10 +87,35 @@ Operational consequences:
 
 - refresh `state/supervisor_context.md` before dispatching past that checkpoint
 - include the latest dispatch node, active round, remaining rounds, accepted base,
-  and active direction or candidate in that checkpoint summary
+  active direction or candidate, display-refresh checkpoint state, and watchdog
+  state in that checkpoint summary
+- at that same 5-round checkpoint, refresh the public display content:
+  - `README.md`
+  - `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`
+  - `blog/harness-engineering-human-in-the-loop-cuda-matmul/matmul_optimization_tree_pretty.svg`
+  - `blog/harness-engineering-human-in-the-loop-cuda-matmul/matmul_optimization_tree_pretty.png`
+- use the `matmul-doc-sync` skill or an equivalent narrow doc-refresh pass
+- commit only the doc/image files touched by that display refresh
 - treat the checkpoint as a continue state, not a natural summary or stop point
 - after refreshing the checkpoint, re-read `state/supervisor_task.json` and keep
   dispatching unless a real stop condition is present
+
+## Watchdog rule
+
+During an active multi-round loop, the supervisor must also watch for idle stalls.
+
+Operational consequences:
+
+- if 10 minutes pass with no repo-visible workflow progress and `remaining_rounds > 0`,
+  treat the loop as stalled rather than completed
+- re-read `state/supervisor_task.json` and use the emitted continue instruction for
+  the current dispatch node
+- if the current dispatch is `node_b` or `node_c`, the continue instruction still
+  preserves the normal supervisor contract:
+  - prepare or refresh the node context if needed
+  - spawn exactly one `sub-agent`
+  - run the finalize command from the main agent
+- the watchdog is a continue mechanism, not a stop condition on its own
 
 ## Node-specific sub-agent use
 
@@ -148,7 +173,8 @@ Then the supervisor repeats this control flow:
    - `state/round_loop_state.json` reports `remaining_rounds = 0`, or
    - the graph enters a failure state that pauses the loop
 6. otherwise continue immediately into the next dispatch step instead of treating the round boundary as a natural stopping point
-7. after every 5 completed rounds, refresh `state/supervisor_context.md` as the required context-compression checkpoint and then continue immediately
+7. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display content, commit only the doc/image refresh, and then continue immediately
+8. if the loop stays active and the 10-minute watchdog later fires, issue the current continue instruction instead of treating the idle gap as a natural stop
 
 One completed round is always:
 
