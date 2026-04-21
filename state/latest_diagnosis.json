@@ -1,139 +1,18 @@
 {
-  "diagnosis_id": "auto_diagnosis_round_083",
-  "status": "completed",
-  "created_at": "2026-04-21T08:46:58-0700",
-  "source_run_id": "20260421_084652_bf16_gemm_v1_4b361ba",
-  "source_run_dir": "runs/20260421_084652_bf16_gemm_v1_4b361ba",
-  "source_summary_json": "runs/20260421_084652_bf16_gemm_v1_4b361ba/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260421_084701_bf16_gemm_v1_b5784f4",
+  "source_run_dir": "runs/20260421_084701_bf16_gemm_v1_b5784f4",
+  "source_summary_json": "runs/20260421_084701_bf16_gemm_v1_b5784f4/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "auto_diagnosis_round_083:dir_01",
+  "selected_direction_id": null,
+  "selected_candidate_id": null,
   "family_audit": [],
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
-      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
-      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
-      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
-      "mode": "explore",
-      "hypothesis": "The latest run is 24.617472 ms against an accepted anchor of 24.164272 ms. Round round 82/100 should replay the bounded `pivot_256x128` family once from the current state so the search keeps advancing instead of restoring forever.",
-      "expected_bottleneck": "A branch-local hot-band scheduling or geometry bottleneck on the dominant kernel path, rather than a pure restore-only action.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1580-1670",
-        "src/kernels/bf16_gemm_v1.cu:2107-2128",
-        "src/kernels/bf16_gemm_v1.cu:2130-2135"
-      ],
-      "risk": "High. This branch materially changes the dominant hot-band geometry and has historically carried large regression risk.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "hot-band gpu__time_duration.sum"
-      ],
-      "search_score_v1": 2.16,
-      "score_breakdown": {
-        "policy_id": "auto_round_runner_v1",
-        "rank_score": 2.0,
-        "recommended_bonus": 0.25,
-        "risk_penalty": 0.225,
-        "evidence_bonus": 0.18,
-        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-      },
-      "predicted_gain_ms": 0.35,
-      "predicted_fail_risk": 0.45,
-      "ranking_notes": [
-        "Replay the `pivot_256x128` family as an exact historical surface to keep the loop bounded and auditable.",
-        "Keep restore as the deterministic fallback behind any replay branch."
-      ],
-      "stop_condition": "Stop if this replay does not beat the active anchor cleanly or if it broadens beyond an exact bounded historical surface."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-      "mode": "restore",
-      "hypothesis": "The latest measured run landed at 24.617472 ms, still +0.453199 ms away from the accepted 24.164272 ms anchor. The fastest way to keep the loop grounded is to replay the exact accepted PTX surface before reopening another branch.",
-      "expected_bottleneck": "Search drift away from the accepted PTX steady state rather than a missing structural opportunity.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-156",
-        "src/kernels/bf16_gemm_v1.cu:2000-2060",
-        "src/kernels/bf16_gemm_v1.cu:2107-2128"
-      ],
-      "risk": "Low. This is the known accepted PTX anchor surface.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "search_score_v1": 2.04,
-      "score_breakdown": {
-        "policy_id": "auto_round_runner_v1",
-        "rank_score": 1.8,
-        "recommended_bonus": 0.0,
-        "risk_penalty": 0.06,
-        "evidence_bonus": 0.03,
-        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-      },
-      "predicted_gain_ms": 0.02,
-      "predicted_fail_risk": 0.06,
-      "ranking_notes": [
-        "Use restore whenever the active branch drifts or the prior variant closed as a loss.",
-        "This keeps the loop anchored to the best-known PTX surface before the next replay."
-      ],
-      "stop_condition": "Stop if this replay does not beat the active anchor cleanly or if it broadens beyond an exact bounded historical surface."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
-      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
-      "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling::exact_910beff_surface",
-      "action_fingerprint": "restore_910beff_non_ptx_grouped_row_surface",
-      "mode": "exploit",
-      "hypothesis": "The latest run is 24.617472 ms against an accepted anchor of 24.164272 ms. Round round 82/100 should replay the bounded `non_ptx_grouped` family once from the current state so the search keeps advancing instead of restoring forever.",
-      "expected_bottleneck": "A branch-local hot-band scheduling or geometry bottleneck on the dominant kernel path, rather than a pure restore-only action.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1700-1768",
-        "src/kernels/bf16_gemm_v1.cu:1890-1942",
-        "src/kernels/bf16_gemm_v1.cu:2107-2128"
-      ],
-      "risk": "Moderate. This branch swaps the dominant hot-band dispatch away from the PTX winner, so it can regress meaningfully if the sibling surface is still under-tuned.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "search_score_v1": 1.92,
-      "score_breakdown": {
-        "policy_id": "auto_round_runner_v1",
-        "rank_score": 1.8,
-        "recommended_bonus": 0.0,
-        "risk_penalty": 0.15,
-        "evidence_bonus": 0.18,
-        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-      },
-      "predicted_gain_ms": 0.05,
-      "predicted_fail_risk": 0.3,
-      "ranking_notes": [
-        "Replay the `non_ptx_grouped` family as an exact historical surface to keep the loop bounded and auditable.",
-        "Keep restore as the deterministic fallback behind any replay branch."
-      ],
-      "stop_condition": "Stop if this replay does not beat the active anchor cleanly or if it broadens beyond an exact bounded historical surface."
-    }
-  ],
-  "notes": "Auto-generated round 83 diagnosis. Recommended family: aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
