@@ -1,59 +1,62 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_150910_round02_clean_7496aff2",
-  "source_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-  "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-  "generated_at": "2026-04-21T15:11:26-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_152228_round03_clean_2fbb368d",
+  "source_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+  "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+  "generated_at": "2026-04-21T15:29:22-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-      "base_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-      "base_measured_commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-      "base_runtime_ms": 24.53708839,
+      "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+      "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+      "base_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+      "base_runtime_ms": 24.39260769,
       "direction_id": "dir_01",
-      "direction_name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
-      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
-      "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
-      "action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+      "direction_name": "Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
+      "family_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops",
+      "subfamily_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops::ptx_and_non_ptx_hot_band_paths",
+      "action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops",
       "rank_in_diagnosis": 1,
       "recommended": true,
       "mode": "exploit",
-      "priority": 0.76,
-      "search_score_v1": 0.76,
+      "priority": 0.81,
+      "search_score_v1": 0.81,
       "score_breakdown": {
-        "expected_gain": 0.26,
-        "implementation_risk": 0.24,
-        "evidence_strength": 0.15,
-        "code_reuse": 0.11
+        "policy_id": "manual_round03_diverse_family_refresh_v1",
+        "headroom_score": 0.34,
+        "evidence_score": 0.22,
+        "implementation_bonus": 0.18,
+        "risk_penalty": -0.07,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.9,
-      "predicted_fail_risk": 0.39,
+      "predicted_gain_ms": 0.08,
+      "predicted_fail_risk": 0.12,
       "ranking_notes": [
-        "This is the cleanest next experiment that directly targets the long-scoreboard gap exposed by the grouped-row result.",
-        "It preserves the accepted hot-band row split, so the measurement stays focused on one kernel-variant change."
+        "This is the cleanest follow-on after the regular-sibling experiment because it preserves the same recovered register footprint and tests whether control overhead is the remaining gap.",
+        "It also matches the user request to inject a materially different family without reopening a stale negative branch immediately.",
+        "This is the least aligned with the new 256x128 tiling preference, but it is still the cheapest next exploit on the current live 128x128 surface."
       ],
-      "hypothesis": "The grouped-row experiment showed that launch-order changes alone are not enough. The existing single-K 128x128 sibling keeps the accepted row split and one-K stage depth while changing the accumulate ordering away from the microkernel-specific path, which may reduce long-scoreboard waste directly.",
-      "expected_bottleneck": "microkernel-specific accumulate ordering is contributing to long-scoreboard stalls on the accepted hot-band split",
+      "hypothesis": "The regular 128x128 sibling already showed that a small register reduction and a cleaner consume path can recover some of the grouped-row loss. The next cheapest win is to hoist warp-local A-row and B-column shared offsets out of the hot-band steady-state loops so the active 128x128 path spends fewer issue slots on invariant pointer math while keeping the same CTA geometry, stage depth, and shared-memory footprint.",
+      "expected_bottleneck": "Warp-local shared-pointer arithmetic and loop-carried control overhead in the 128x128 hot-band steady state are still diluting tensor issue on a latency-limited path.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1839",
-        "src/kernels/bf16_gemm_v1.cu:1924",
-        "src/kernels/bf16_gemm_v1.cu:1956",
-        "src/kernels/bf16_gemm_v1.cu:2114"
+        "src/kernels/bf16_gemm_v1.cu:1775-1796",
+        "src/kernels/bf16_gemm_v1.cu:1910-1924",
+        "src/kernels/bf16_gemm_v1.cu:2024-2039"
       ],
-      "risk": "Moderate risk: the variant is in-tree, but it still lacks a clean measurement on the accepted row split.",
+      "risk": "Low. The change stays inside the active 128x128 hot-band loops and should not alter CTA geometry, staging depth, or ownership.",
       "metrics_to_recheck": [
         "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
         "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
+        "launch__registers_per_thread"
       ],
-      "stop_condition": "Stop if runtime regresses again while long-scoreboard stalls stay flat or worsen.",
+      "stop_condition": "Stop if the implementation needs to change CTA geometry, stage count, or dispatch order instead of remaining a local offset-hoist cleanup.",
       "evidence_refs": [
-        "src/kernels/bf16_gemm_v1.cu",
-        "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_152228_bf16_gemm_v1_2fbb368d/ncu_analysis.md",
         "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
       ],
       "target_hotspots": [
@@ -64,161 +67,181 @@
         },
         {
           "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput"
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
         }
       ],
       "expected_local_changes": [
-        "Restore the grouped-row constant back to the clean accepted base if needed.",
-        "Swap the default hot-band launch from the PTX microkernel path to the existing single-K non-microkernel 128x128 sibling."
+        "Precompute warp-local A and B shared offsets once per warp before the 128x128 steady-state loops.",
+        "Keep the current single-K staging and grouped_rows=4 traversal unchanged."
       ],
       "guardrail_metrics": [
         {
-          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "metric_name": "launch__registers_per_thread",
           "guardrail": "non_increasing"
         },
         {
-          "metric_name": "launch__occupancy_limit_registers",
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
           "guardrail": "non_increasing"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-      "base_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-      "base_measured_commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-      "base_runtime_ms": 24.53708839,
+      "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+      "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+      "base_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+      "base_runtime_ms": 24.39260769,
       "direction_id": "dir_02",
-      "direction_name": "Retune PTX Launch Bounds On The Clean Baseline",
-      "family_id": "register_pressure::retune_ptx_launch_bounds",
-      "subfamily_id": "register_pressure::launch_bounds_128x128_ptx_min_blocks_2_to_3",
-      "action_fingerprint": "clean_ptx_hotband_baseline:launch_bounds_min_blocks_2->3",
+      "direction_name": "Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
+      "action_fingerprint": "restore_three_cta_microkernel_surface_then_trim_wait_sync_cadence_without_two_k_stage_buffers",
       "rank_in_diagnosis": 2,
       "recommended": false,
       "mode": "explore",
-      "priority": 0.54,
-      "search_score_v1": 0.54,
+      "priority": 0.67,
+      "search_score_v1": 0.67,
       "score_breakdown": {
-        "expected_gain": 0.19,
-        "implementation_risk": 0.32,
-        "evidence_strength": 0.06,
-        "code_reuse": 0.09
+        "policy_id": "manual_round03_diverse_family_refresh_v1",
+        "headroom_score": 0.43,
+        "evidence_score": 0.17,
+        "implementation_bonus": 0.09,
+        "risk_penalty": -0.22,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.5,
-      "predicted_fail_risk": 0.54,
+      "predicted_gain_ms": 0.55,
+      "predicted_fail_risk": 0.58,
       "ranking_notes": [
-        "This remains worth keeping because the clean PTX path is still latency-limited.",
-        "It ranks behind the non-microkernel sibling because the grouped-row result points more strongly at scoreboard behavior than at occupancy."
+        "This keeps the highest-value PTX family alive without reopening the shared-memory blowup path that was already falsified.",
+        "It ranks behind dir_01 because the current live run suggests there is still cheaper control-overhead cleanup available on the active sibling.",
+        "This direction stays consistent with the human guidance on async copy, shared-memory reuse, and staging depth, but keeps the risk on the accepted PTX surface bounded."
       ],
-      "hypothesis": "The clean PTX hotspot still sits at 200 registers per thread with occupancy capped at two blocks per SM. Tightening __launch_bounds__ may trim enough register pressure to improve latency hiding if the compiler does not spill.",
-      "expected_bottleneck": "register pressure and low CTA residency on the accepted PTX hot-band path",
+      "hypothesis": "The accepted clean base is still the PTX microkernel surface, and the current regular sibling only recovered part of the loss. If the low-risk exploit is not enough, the next best family is to go back to the PTX single-K surface and trim wait/sync cadence more surgically while preserving the 22,016 B shared-memory footprint, instead of repeating the two-K-stage experiment that destroyed occupancy.",
+      "expected_bottleneck": "Barrier cadence inside the single-K 128x128 PTX microkernel is still interrupting the steady-state issue flow even on the smaller shared-memory footprint.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1955"
+        "src/kernels/bf16_gemm_v1.cu:1956-2056",
+        "src/kernels/bf16_gemm_v1.cu:2107-2116"
       ],
-      "risk": "High risk: forcing tighter launch bounds can introduce spills or a worse schedule, and the clean cuBLAS reference does not point to occupancy as the main missing ingredient.",
+      "risk": "High. This is PTX-microkernel surgery on the accepted surface, so small schedule mistakes can erase the current stability or reintroduce barrier spikes.",
       "metrics_to_recheck": [
         "median runtime",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        "launch__shared_mem_per_block_allocated",
+        "launch__registers_per_thread",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
       ],
-      "stop_condition": "Stop immediately if build output or NCU shows spills, or if runtime regresses without lowering register pressure.",
+      "stop_condition": "Stop if shared memory rises above the accepted 22,016 B footprint or if barrier stall does not improve materially versus the PTX accepted-base profile.",
       "evidence_refs": [
         "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
-        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
-        "src/kernels/bf16_gemm_v1.cu"
+        "state/latest_ncu_summary.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
       ],
       "target_hotspots": [
         {
           "scope_type": "section",
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
         }
       ],
       "expected_local_changes": [
-        "Restore the grouped-row constant back to the clean accepted base if needed.",
-        "Retune the PTX microkernel launch-bounds annotation and keep the rest of the launch topology unchanged for the first measurement."
+        "Restore the accepted PTX microkernel launch surface if needed before editing the wait/sync cadence.",
+        "Retune the single-K consumer-barrier handoff without adding a second full K-tile shared buffer pair."
       ],
       "guardrail_metrics": [
         {
-          "metric_name": "launch__occupancy_limit_registers",
+          "metric_name": "launch__shared_mem_per_block_allocated",
           "guardrail": "non_increasing"
         },
         {
-          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "guardrail": "non_decreasing"
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-      "base_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-      "base_measured_commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-      "base_runtime_ms": 24.53708839,
+      "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+      "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+      "base_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+      "base_runtime_ms": 24.39260769,
       "direction_id": "dir_03",
-      "direction_name": "Try A Shallower PTX Grouped-Row Setting",
-      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
-      "subfamily_id": "launch_order::grouped_rows_4_to_2_for_a_locality",
-      "action_fingerprint": "clean_ptx_hotband_baseline:grouped_rows_4->2",
+      "direction_name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
       "rank_in_diagnosis": 3,
       "recommended": false,
       "mode": "explore",
-      "priority": 0.45,
-      "search_score_v1": 0.45,
+      "priority": 0.53,
+      "search_score_v1": 0.53,
       "score_breakdown": {
-        "expected_gain": 0.14,
-        "implementation_risk": 0.18,
-        "evidence_strength": 0.05,
-        "code_reuse": 0.08
+        "policy_id": "manual_round03_diverse_family_refresh_v1",
+        "headroom_score": 0.52,
+        "evidence_score": 0.14,
+        "implementation_bonus": 0.04,
+        "risk_penalty": -0.17,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.3,
-      "predicted_fail_risk": 0.31,
+      "predicted_gain_ms": 1.1,
+      "predicted_fail_risk": 0.72,
       "ranking_notes": [
-        "This stays in reserve as the opposite-direction launch-order test after the 8-row setting failed.",
-        "It ranks third because the non-microkernel sibling is now the more direct scoreboard experiment."
+        "This remains in the top three because it is one of the only branches in repo history that materially attacked the occupancy plateau instead of nudging stalls by tenths.",
+        "It ranks third because the correctness and implementation surface are both much larger than the two 128x128 options above it.",
+        "This is the direction that matches the new human guidance most directly because it pushes toward 256x128 tiling, stronger register reuse, and a deeper pipeline model."
       ],
-      "hypothesis": "The failed 8-row grouping suggests the PTX hot-band path may prefer tighter A locality over deeper B reuse. Dropping kFixedHotBandPtxGroupedRows from 4 to 2 tests the opposite launch-order direction without changing the row split or K-stage structure.",
-      "expected_bottleneck": "current grouped-row traversal may still be mismatched to A/B locality balance on the accepted PTX hot-band path",
+      "hypothesis": "If the 128x128 families stay trapped around 16.6% active warps, the highest-headroom branch left is still the 256x128 pivot family that historically proved the machine can run at far lower registers and much higher warps. The disciplined version is not to replay the broken branch, but to start from the correctness-safe 256x128 pivot ownership model and transplant only the low-register staging ideas that made the archived half-panel branch interesting.",
+      "expected_bottleneck": "Register footprint and steady-state staging efficiency inside the 256x128 hot-band path are still capping residency and latency hiding on the current workload.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156",
-        "src/kernels/bf16_gemm_v1.cu:1983",
-        "src/kernels/bf16_gemm_v1.cu:1988"
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:539-693",
+        "src/kernels/bf16_gemm_v1.cu:903-995"
       ],
-      "risk": "Moderate risk: this is the same family that just failed in the opposite direction, so the upside may be small.",
+      "risk": "High. This is the highest-ceiling family left in the repo, but it touches the same 256x128 control/export surface that has failed correctness before.",
       "metrics_to_recheck": [
-        "median runtime",
+        "correctness on all 3 dataset cases before trusting runtime",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
         "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+        "median runtime"
       ],
-      "stop_condition": "Stop if runtime change is within noise or if scoreboard stalls do not improve after one measurement.",
+      "stop_condition": "Stop immediately if correctness fails again or if the edit revives the old split-writer ownership pattern.",
       "evidence_refs": [
-        "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
-        "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.md",
-        "src/kernels/bf16_gemm_v1.cu"
+        "state/latest_ncu_summary.md",
+        "src/kernels/bf16_gemm_v1.cu",
+        "master:state/diagnosis_history.jsonl"
       ],
       "target_hotspots": [
         {
           "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput"
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
         }
       ],
       "expected_local_changes": [
-        "Restore the grouped-row constant back to the clean accepted base if needed.",
-        "Decrease kFixedHotBandPtxGroupedRows from 4 to 2 and remeasure."
+        "Start from the correctness-safe 256x128 pivot launch surface.",
+        "Transplant only the low-register staging and reuse ideas from the archived half-panel branch, without reintroducing writer-split ownership."
       ],
       "guardrail_metrics": [
         {
-          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "guardrail": "non_increasing"
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
         },
         {
-          "metric_name": "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
           "guardrail": "non_decreasing"
         }
       ],

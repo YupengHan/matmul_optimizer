@@ -2,16 +2,16 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-  "source_measured_commit": "7496aff21c8de79011caa26978ba7dd249179f64",
-  "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_150910_round02_clean_7496aff2",
+  "source_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+  "source_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+  "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_152228_round03_clean_2fbb368d",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T15:22:39-07:00",
+  "updated_at": "2026-04-21T15:29:22-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_150910_round02_clean_7496aff2:dir_01 closed via pass_win after selection.",
+  "selected_candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
+  "selection_reason": "selected_via_recommended",
+  "selection_summary": "Selected diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01 -> dir_01 via mode=recommended.",
   "family_representative_count": 9,
   "reopened_candidate_ids": [],
   "candidates": [
@@ -481,7 +481,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.615,
+      "family_representative_score": 0.585,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -1045,7 +1045,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.7025,
+      "family_representative_score": 0.6725,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -1230,8 +1230,8 @@
       "last_result_runtime_ms": 24.39260769,
       "last_runtime_delta_ms": -0.14448070000000257,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T15:22:39-07:00",
-      "last_closed_search_iteration": 6,
+      "last_closed_at": "2026-04-21T15:29:22-07:00",
+      "last_closed_search_iteration": 7,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -1324,7 +1324,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.555,
+      "family_representative_score": 0.525,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -1495,7 +1495,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 1.885,
+      "family_representative_score": 1.855,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260421_013500 / run 20260421_013416_bf16_gemm_v1_17032e6; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
@@ -1579,7 +1579,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.21,
+      "family_representative_score": 2.18,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260421_012211 / run 20260421_012143_bf16_gemm_v1_803e749; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
@@ -1662,7 +1662,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.44,
+      "family_representative_score": 2.41,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260421_093739 / run 20260421_084952_bf16_gemm_v1_8b1af08; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
@@ -1745,12 +1745,312 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.6625,
+      "family_representative_score": 0.6325,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260420_200135 / run 20260420_200110_bf16_gemm_v1_e6fdb8b; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
       "idea_origin": "master_heuristic_history_rehydration"
+    },
+    {
+      "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+      "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+      "base_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+      "base_runtime_ms": 24.39260769,
+      "direction_id": "dir_01",
+      "direction_name": "Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
+      "family_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops",
+      "subfamily_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops::ptx_and_non_ptx_hot_band_paths",
+      "action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "exploit",
+      "priority": 0.81,
+      "search_score_v1": 0.81,
+      "score_breakdown": {
+        "policy_id": "manual_round03_diverse_family_refresh_v1",
+        "headroom_score": 0.34,
+        "evidence_score": 0.22,
+        "implementation_bonus": 0.18,
+        "risk_penalty": -0.07,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.08,
+      "predicted_fail_risk": 0.12,
+      "ranking_notes": [
+        "This is the cleanest follow-on after the regular-sibling experiment because it preserves the same recovered register footprint and tests whether control overhead is the remaining gap.",
+        "It also matches the user request to inject a materially different family without reopening a stale negative branch immediately.",
+        "This is the least aligned with the new 256x128 tiling preference, but it is still the cheapest next exploit on the current live 128x128 surface."
+      ],
+      "hypothesis": "The regular 128x128 sibling already showed that a small register reduction and a cleaner consume path can recover some of the grouped-row loss. The next cheapest win is to hoist warp-local A-row and B-column shared offsets out of the hot-band steady-state loops so the active 128x128 path spends fewer issue slots on invariant pointer math while keeping the same CTA geometry, stage depth, and shared-memory footprint.",
+      "expected_bottleneck": "Warp-local shared-pointer arithmetic and loop-carried control overhead in the 128x128 hot-band steady state are still diluting tensor issue on a latency-limited path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1775-1796",
+        "src/kernels/bf16_gemm_v1.cu:1910-1924",
+        "src/kernels/bf16_gemm_v1.cu:2024-2039"
+      ],
+      "risk": "Low. The change stays inside the active 128x128 hot-band loops and should not alter CTA geometry, staging depth, or ownership.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread"
+      ],
+      "stop_condition": "Stop if the implementation needs to change CTA geometry, stage count, or dispatch order instead of remaining a local offset-hoist cleanup.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_152228_bf16_gemm_v1_2fbb368d/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Precompute warp-local A and B shared offsets once per warp before the 128x128 steady-state loops.",
+        "Keep the current single-K staging and grouped_rows=4 traversal unchanged."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 7,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T15:29:22-07:00",
+      "last_selected_selection_mode": "recommended",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+      "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+      "base_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+      "base_runtime_ms": 24.39260769,
+      "direction_id": "dir_02",
+      "direction_name": "Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
+      "action_fingerprint": "restore_three_cta_microkernel_surface_then_trim_wait_sync_cadence_without_two_k_stage_buffers",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.67,
+      "search_score_v1": 0.67,
+      "score_breakdown": {
+        "policy_id": "manual_round03_diverse_family_refresh_v1",
+        "headroom_score": 0.43,
+        "evidence_score": 0.17,
+        "implementation_bonus": 0.09,
+        "risk_penalty": -0.22,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.55,
+      "predicted_fail_risk": 0.58,
+      "ranking_notes": [
+        "This keeps the highest-value PTX family alive without reopening the shared-memory blowup path that was already falsified.",
+        "It ranks behind dir_01 because the current live run suggests there is still cheaper control-overhead cleanup available on the active sibling.",
+        "This direction stays consistent with the human guidance on async copy, shared-memory reuse, and staging depth, but keeps the risk on the accepted PTX surface bounded."
+      ],
+      "hypothesis": "The accepted clean base is still the PTX microkernel surface, and the current regular sibling only recovered part of the loss. If the low-risk exploit is not enough, the next best family is to go back to the PTX single-K surface and trim wait/sync cadence more surgically while preserving the 22,016 B shared-memory footprint, instead of repeating the two-K-stage experiment that destroyed occupancy.",
+      "expected_bottleneck": "Barrier cadence inside the single-K 128x128 PTX microkernel is still interrupting the steady-state issue flow even on the smaller shared-memory footprint.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1956-2056",
+        "src/kernels/bf16_gemm_v1.cu:2107-2116"
+      ],
+      "risk": "High. This is PTX-microkernel surgery on the accepted surface, so small schedule mistakes can erase the current stability or reintroduce barrier spikes.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__shared_mem_per_block_allocated",
+        "launch__registers_per_thread",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if shared memory rises above the accepted 22,016 B footprint or if barrier stall does not improve materially versus the PTX accepted-base profile.",
+      "evidence_refs": [
+        "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX microkernel launch surface if needed before editing the wait/sync cadence.",
+        "Retune the single-K consumer-barrier handoff without adding a second full K-tile shared buffer pair."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 7,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+      "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+      "base_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
+      "base_runtime_ms": 24.39260769,
+      "direction_id": "dir_03",
+      "direction_name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.53,
+      "search_score_v1": 0.53,
+      "score_breakdown": {
+        "policy_id": "manual_round03_diverse_family_refresh_v1",
+        "headroom_score": 0.52,
+        "evidence_score": 0.14,
+        "implementation_bonus": 0.04,
+        "risk_penalty": -0.17,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 1.1,
+      "predicted_fail_risk": 0.72,
+      "ranking_notes": [
+        "This remains in the top three because it is one of the only branches in repo history that materially attacked the occupancy plateau instead of nudging stalls by tenths.",
+        "It ranks third because the correctness and implementation surface are both much larger than the two 128x128 options above it.",
+        "This is the direction that matches the new human guidance most directly because it pushes toward 256x128 tiling, stronger register reuse, and a deeper pipeline model."
+      ],
+      "hypothesis": "If the 128x128 families stay trapped around 16.6% active warps, the highest-headroom branch left is still the 256x128 pivot family that historically proved the machine can run at far lower registers and much higher warps. The disciplined version is not to replay the broken branch, but to start from the correctness-safe 256x128 pivot ownership model and transplant only the low-register staging ideas that made the archived half-panel branch interesting.",
+      "expected_bottleneck": "Register footprint and steady-state staging efficiency inside the 256x128 hot-band path are still capping residency and latency hiding on the current workload.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:539-693",
+        "src/kernels/bf16_gemm_v1.cu:903-995"
+      ],
+      "risk": "High. This is the highest-ceiling family left in the repo, but it touches the same 256x128 control/export surface that has failed correctness before.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "median runtime"
+      ],
+      "stop_condition": "Stop immediately if correctness fails again or if the edit revives the old split-writer ownership pattern.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "src/kernels/bf16_gemm_v1.cu",
+        "master:state/diagnosis_history.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Start from the correctness-safe 256x128 pivot launch surface.",
+        "Transplant only the low-register staging and reuse ideas from the archived half-panel branch, without reintroducing writer-split ownership."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 7,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 19 historical candidates; 9 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 22 historical candidates; 9 family representatives are currently active for selection."
 }

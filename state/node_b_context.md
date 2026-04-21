@@ -14,6 +14,7 @@
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
+        - `state/human_guidance.md`
         - `src/kernels/bf16_gemm_v1.cu`
         - `runs/20260421_152228_bf16_gemm_v1_2fbb368d/summary.json`
         - `runs/20260421_152228_bf16_gemm_v1_2fbb368d/ncu_details_page.csv`
@@ -43,6 +44,21 @@
         - `delta_vs_previous_run` tells you what changed after the last code edit
         Use the raw exports only when the structured findings are not enough to explain pipeline, memory, synchronization, or source-level behavior.
         Use the autotune sweep summaries when present to anchor direction ranking in measured tile-width data instead of only one run snapshot.
+
+        ## Persistent human guidance
+
+        Review these items on every frontier-search / node_b ranking pass and map them explicitly into `family_audit`, diagnosis notes, or direction ranking when relevant.
+
+- `Tiling`: `256 x 128` for block tiling size and `64 x 64` for warp tiling size
+- `Coalescing Access`: use wide-instruction access to global memory
+- `Data Reuse`: use shared memory to reuse data from matrix `A` and matrix `B`
+- `Async Copy`: use asynchronous copy operations with non-blocking instructions
+- `Bank Conflict`: use padding for the WMMA API and a permuted layout for MMA PTX instructions to eliminate bank conflicts
+- `L2 Cache`: use swizzle access mode to increase the L2 cache hit ratio
+- `Register Reuse`: calculate the internal warp tile as `Right Left Right Left`
+- `Pg2s`: use a double-buffer algorithm that prefetches global memory into shared memory
+- `Ps2r`: use a double-buffer algorithm that prefetches shared memory into registers
+- `Stage`: use a multi-buffer algorithm that prefetches global memory into shared memory
 
         ## Output contract
 
@@ -89,6 +105,6 @@
         - median runtime: `24.392608 ms`
         - TFLOP/s: `29.804908 TFLOP/s`
         - measured commit: `2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`
         - top bottleneck class: `occupancy_latency_hiding_issue`
         - top finding: `Launch Statistics is carrying metric Registers Per Thread.`
