@@ -1,15 +1,88 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_190757",
+  "status": "completed",
+  "created_at": "2026-04-20T19:07:57-07:00",
   "source_run_id": "20260420_190726_bf16_gemm_v1_cc89c17",
   "source_run_dir": "runs/20260420_190726_bf16_gemm_v1_cc89c17",
   "source_summary_json": "runs/20260420_190726_bf16_gemm_v1_cc89c17/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Trim The Fixed 64x96 Tail On The Restored 1181247 Base",
+      "hypothesis": "The human-review queue still contains only workflow state and no new user-supplied idea bullets, so round 10 has to make the accept/defer/reject mapping directly from the measured evidence. The latest measured run cc89c17 rejected the peeled-single-stage residual family as the default next move because end-to-end performance regressed from 24.422464 ms to 25.152928 ms even though the hot-band kernel stayed essentially unchanged and the peeled kernel looked better in isolation. On that regressed run, the fixed 64x96 tail is now the clearest remaining bounded outlier: it still consumes about 0.908 ms while showing the worst stall mix in the profile at 26.14% barrier, 15.59% long-scoreboard, 13.50% short-scoreboard, and 14.66% MIO throttle. Since the implementation surface is already restored to the accepted 1181247 base, the best next move is to leave the main hot-band and peeled default alone and trim the isolated tail path.",
+      "expected_bottleneck": "Generic 64x96 tail staging and epilogue synchronization overhead on the restored fixed split.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:40-78",
+        "src/kernels/bf16_gemm_v1.cu:1167-1178",
+        "src/kernels/bf16_gemm_v1.cu:1298-1405",
+        "src/kernels/bf16_gemm_v1.cu:2130-2136"
+      ],
+      "risk": "Low to moderate. The tail path is isolated and the current source is already back on the accepted base, but the tail is a sub-millisecond kernel so the upside is bounded and easy to lose in noise if the edit leaks into generic paths.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.422464 ms 1181247 baseline",
+        "p10 and p90 runtime spread on the fixed perf run",
+        "64x96 tail kernel gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the tail kernel",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the tail kernel",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct for the tail kernel",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct for the tail kernel"
+      ],
+      "stop_condition": "Stop if a tail-only cleanup cannot beat the restored 1181247 median by more than noise or if it starts perturbing the hot-band or peeled kernels."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Reintroduce The Peeled Single-Stage Export Only Behind An Explicit Gate",
+      "hypothesis": "The latest measured evidence says the peeled single-stage export family should be deferred rather than promoted. In cc89c17, that family reduced the peeled kernel from 907520 ns to 869920 ns and cut its shared-memory footprint from 46592 B to 38400 B, but the full perf run still regressed by 0.730464 ms. Because the implementation surface has already been restored to 1181247, the only justifiable way to revisit this family is as an isolated A/B branch or opt-in tile configuration that keeps the restored TensorCoreTile384 peeled path as the default while checking whether the regression came from cross-kernel interaction, runtime variance, or an incomplete export rewrite rather than the peeled microkernel itself.",
+      "expected_bottleneck": "Residual 64x384 epilogue export lifetime and cross-kernel interaction at the hot-band to peeled handoff, not the dominant hot-band kernel itself.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:40-78",
+        "src/kernels/bf16_gemm_v1.cu:1416-1571",
+        "src/kernels/bf16_gemm_v1.cu:1150-1164",
+        "src/kernels/bf16_gemm_v1.cu:2120-2128"
+      ],
+      "risk": "Moderate. The measured run already showed that a peeled-kernel micro-win can still lose badly end to end, so this family is easy to mis-rank if it is reintroduced without a hard gate and like-for-like comparison.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.422464 ms 1181247 baseline",
+        "p10 and p90 runtime spread on the fixed perf run",
+        "peeled 64x384 kernel gpu__time_duration.sum",
+        "launch__shared_mem_per_block_allocated.sum for the peeled kernel",
+        "launch__registers_per_thread for the peeled kernel",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the peeled kernel",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the peeled kernel"
+      ],
+      "stop_condition": "Stop if the gated peeled-single-stage branch still trails the restored 1181247 baseline or if it requires replacing the restored default before it proves an end-to-end win."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Reopen The PTX 128x128 Hot-Band Branch As The Alternate Recovery Family",
+      "hypothesis": "The deferred alternate family remains the PTX 128x128 hot-band branch. It is materially different from both tail cleanup and peeled gating, and it still has prior near-parity evidence, but round 10 does not rank it first because the accepted 1181247 base already matches PTX on shared-memory footprint at 22016 B and the latest regression did not originate from an obvious hot-band collapse. PTX should therefore stay as the fallback recovery family only if the bounded restored-base work on the tail and peeled handoff stalls.",
+      "expected_bottleneck": "Dominant 128x128 hot-band control flow and export-scratch behavior rather than the residual or tail kernels.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:107-142",
+        "src/kernels/bf16_gemm_v1.cu:930-1068",
+        "src/kernels/bf16_gemm_v1.cu:1957-2060",
+        "src/kernels/bf16_gemm_v1.cu:2090-2129"
+      ],
+      "risk": "Moderate to high. This reopens the dominant kernel family even though the restored 1181247 surface is already the accepted best, so it is easier to destabilize the main path than to secure a clean net gain.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.422464 ms 1181247 baseline",
+        "128x128 hot-band kernel gpu__time_duration.sum",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active for the hot-band kernel",
+        "launch__registers_per_thread for the hot-band kernel",
+        "launch__shared_mem_per_block_allocated.sum for the hot-band kernel",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the hot-band kernel",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the hot-band kernel"
+      ],
+      "stop_condition": "Stop if the reopened PTX branch cannot beat the restored 1181247 baseline in a like-for-like run or if it regresses the dominant hot-band kernel."
+    }
+  ],
+  "notes": "Round 10/50 diagnosis for regressed run 20260420_190726_bf16_gemm_v1_cc89c17 while the implementation surface has already been restored to the accepted 1181247 base. Human-review reflection is explicit here: state/human_review.md contains queue state only and no new user-provided idea bullets, so this round makes the family mapping directly from the measured evidence. Rejected for this round: promoting the peeled single-stage residual family as the new default, because cc89c17 regressed to 25.152928 ms despite improving the peeled kernel in the NCU capture. Accepted as the primary family: tail-only cleanup on the restored 1181247 surface, because the 64x96 tail remains the highest-stall bounded outlier in the latest measured profile and does not require reopening the regressed default family. Deferred but still valid: a gated re-test of the peeled single-stage export family and the alternate PTX 128x128 hot-band control branch. Also rejected for ranking this round: the stale broad fixed-main autotune sweep from round 18 and the older 256x128 auxiliary branch, because neither outranks the restored-base tail cleanup after the cc89c17 regression."
 }
