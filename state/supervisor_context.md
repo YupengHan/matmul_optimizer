@@ -39,7 +39,7 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 - auto-select frontier: `no`
 - context compression cadence: every `5` completed rounds
 - last context compression checkpoint: after `10` completed rounds
-- next context compression checkpoint: after `10` completed rounds
+- next context compression checkpoint: after `15` completed rounds
 - keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop
 
 ## Notes

@@ -150,7 +150,7 @@ def next_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
     completed = int(round_loop.get('completed_rounds', 0) or 0)
     interval = context_compression_interval()
     if completed > 0 and completed % interval == 0:
-        checkpoint = completed
+        checkpoint = completed + interval
     else:
         checkpoint = ((completed // interval) + 1) * interval
     if checkpoint > total:
