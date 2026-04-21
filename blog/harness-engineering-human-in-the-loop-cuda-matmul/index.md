@@ -253,7 +253,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the repo, which now spans **305 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
+The tree below is regenerated from the latest tracked round history in the repo, which now spans **311 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
 > **Data quality note:** the resumed loop interval labeled **round 37/100 through round 100/100** was later identified as a buggy execution path. Those rounds were driven by an invalid supervisor/helper path rather than the intended deep-reasoning `node_b` + real implementation `node_c` workflow. They remain in raw history for auditability, but **future historical optimization evaluation, scorer fitting, search-policy learning, or any other retrospective performance analysis must exclude this interval** instead of treating it as valid optimization evidence.
 
