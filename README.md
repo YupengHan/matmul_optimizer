@@ -305,7 +305,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in the repo, which now spans `251` recorded measurement rounds, so it reflects the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
+The tree asset below is regenerated from the latest tracked round history in the repo, which now spans `256` recorded measurement rounds, so it reflects the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
