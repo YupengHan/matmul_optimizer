@@ -1,21 +1,59 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Keep 3-CTA Residency And Amortize Barriers With Two-K Stages",
+  "candidate_id": "diagnosis_20260421_013125:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "aggressive::keep_three_cta_residency_and_amortize_barriers_with_two_k_stages",
+  "subfamily_id": "aggressive::keep_three_cta_residency_and_amortize_barriers_with_two_k_stages::route_default_hot_band_to_128x128x32_kernel",
+  "action_fingerprint": "keep_grouped_rows4_and_three_cta_budget_then_route_default_hot_band_to_128x128x32_kernel",
+  "selection_priority": 2.905,
+  "base_run_id": "20260421_013042_bf16_gemm_v1_bb69e9b",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T01:33:35-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_013125",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Keep 3-CTA Residency And Amortize Barriers With Two-K Stages",
+    "family_id": "aggressive::keep_three_cta_residency_and_amortize_barriers_with_two_k_stages",
+    "subfamily_id": "aggressive::keep_three_cta_residency_and_amortize_barriers_with_two_k_stages::route_default_hot_band_to_128x128x32_kernel",
+    "action_fingerprint": "keep_grouped_rows4_and_three_cta_budget_then_route_default_hot_band_to_128x128x32_kernel",
+    "mode": "explore",
+    "hypothesis": "Round 29 proved that the occupancy-first idea was directionally correct even though the end-to-end runtime regressed. The hot-band PTX branch dropped from 200 to 168 registers per thread, moved occupancy_limit_registers from 2 to 3, raised achieved warps from 16.59% to 24.77%, and collapsed long-scoreboard stall from 7.34% to 1.69%. The regression came from a new synchronization wall instead: barrier stall jumped from 5.19% to 10.97% and the hot-band kernel slowed to about 33.76 us. The cleanest next move is therefore not to undo the occupancy gain, but to keep the grouped_rows=4 and 3-CTA residency budget while routing the default hot-band launch onto the existing 128x128x32 two-K-stage kernel so each steady-state barrier protects two K tiles instead of one.",
+    "expected_bottleneck": "Synchronization and stage handoff overhead after the residency wall has been partially relaxed.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1685-1841",
+      "src/kernels/bf16_gemm_v1.cu:1955-2060",
+      "src/kernels/bf16_gemm_v1.cu:2090-2137"
+    ],
+    "risk": "Moderate. This is still inside the same occupancy-first branch and should preserve correctness semantics more cleanly than reopening 256x128 ownership work, but it can easily give back the register win if the two-K-stage kernel compiles much fatter than expected.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime with a >0.15 ms improvement threshold over the current 25.911183 ms run",
+      "hot-band launch__registers_per_thread",
+      "hot-band launch__occupancy_limit_registers",
+      "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
+      "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "hot-band gpu__time_duration.sum"
+    ],
+    "search_score_v1": 2.76,
+    "score_breakdown": {
+      "policy_id": "manual_round30_barrier_amortization_v1",
+      "headroom_score": 1.45,
+      "evidence_score": 0.95,
+      "implementation_bonus": 0.4,
+      "risk_penalty": -0.04,
+      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+    },
+    "predicted_gain_ms": 1.0,
+    "predicted_fail_risk": 0.42,
+    "ranking_notes": [
+      "This is the only branch in the repo that currently carries direct evidence of improved occupancy on the 128x128 hot band without correctness loss.",
+      "The latest measurement did not falsify the occupancy thesis; it isolated the next cost center as barrier/handoff.",
+      "The existing 128x128x32 kernel provides a bounded way to test barrier amortization without inventing a brand-new kernel family from scratch."
+    ],
+    "stop_condition": "Stop this follow-on family if it loses the occupancy gain from round 29 or if barrier stall stays near 10% with no runtime recovery; sub-0.10 ms movements should still be treated as noise.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
