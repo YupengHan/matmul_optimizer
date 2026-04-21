@@ -1,18 +1,145 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_075421",
+  "status": "completed",
+  "created_at": "2026-04-21T07:54:21-07:00",
   "source_run_id": "20260421_075335_bf16_gemm_v1_894a38d",
   "source_run_dir": "runs/20260421_075335_bf16_gemm_v1_894a38d",
   "source_summary_json": "runs/20260421_075335_bf16_gemm_v1_894a38d/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_075421:dir_01",
+  "family_audit": [
+    "Treat round 36 as a partial-signal result, not a hard failure. Runtime missed the accepted base by only 0.016528 ms, while barrier stall improved from 5.42% to 5.27% and long-scoreboard improved from 7.17% to 7.07%.",
+    "Keep the exact future-tile-base hoist sub-variant separate from the broader scheduler-seam family: that tiny control-path cleanup by itself was too small to win outright, but it improved the right counters enough to justify one more bounded handoff retime.",
+    "Promote steady-state barrier / handoff retime to rank 1 because it is the narrowest next move that directly extends the positive barrier-and-scoreboard signal from round 36 without reopening export-scratch growth.",
+    "Keep restore in the set as the low-risk fallback in case the next scheduler-seam sub-variant regresses materially instead of staying inside the current near-flat envelope.",
+    "Keep the 256x128 low-register transplant as the high-ceiling branch, but not ahead of the active PTX seam family while the live PTX branch is still showing incremental signal."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Steady-state Barrier / Handoff Retime",
+      "family_id": "legacy::steady_state_barrier_handoff_retime",
+      "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
+      "action_fingerprint": "retime_ptx_wait_group_and_future_refill_order_on_restored_anchor",
+      "mode": "exploit",
+      "hypothesis": "Round 36 showed the kind of near-flat but structurally useful signal that is worth following once more on the live PTX anchor: the new control-path cleanup missed the accepted base by only 0.016528 ms, but both barrier and long-scoreboard moved in the right direction. That means the family is probably not exhausted yet; it likely needs one more scheduler-seam nudge that acts more directly on the handoff between `cp_async_wait_group_0`, `__syncthreads()`, and the future-tile refill order. The cleanest next sub-variant is to retime that steady-state seam without changing launch bounds, tile shape, grouped traversal, or export scratch shape.",
+      "expected_bottleneck": "Residual wait-group and barrier cadence in the PTX hot-band steady-state loop, especially the seam between finishing the current MMA stage and refilling the reused stage buffer for the future tile.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2042-2053",
+        "src/kernels/bf16_gemm_v1.cu:2024-2043",
+        "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      ],
+      "risk": "Moderate. This is still a bounded scheduler retime on the live hot path, but it can easily trade barrier against scoreboard without producing an end-to-end gain.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus 24.164272 ms and 24.175471 ms",
+        "hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.18,
+      "score_breakdown": {
+        "policy_id": "manual_round37_follow_partial_signal_v1",
+        "rank_score": 1.86,
+        "partial_signal_bonus": 0.28,
+        "active_surface_bonus": 0.14,
+        "risk_penalty": -0.1,
+        "formula": "rank_score + partial_signal_bonus + active_surface_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.31,
+      "ranking_notes": [
+        "This is the narrowest next move that directly follows the positive barrier-and-scoreboard movement from round 36.",
+        "It ranks above restore because the latest result stayed close enough to the base that one more seam-level probe is justified."
+      ],
+      "stop_condition": "Stop if the next retime materially regresses runtime or merely trades barrier for another stall class without preserving the round-36 counter gains."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
+      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
+      "mode": "restore",
+      "hypothesis": "The current live branch is only slightly off the accepted base, but the loop should still keep a clean recovery path ranked near the top because the explored scheduler-seam sub-variants are narrow and can flip from near-flat to clearly negative in one step. If the next barrier / handoff retime loses the current positive signal, restoring the exact 489574e PTX anchor is still the correct way to reset the comparison surface.",
+      "expected_bottleneck": "Known register-limited plateau on the accepted PTX hot-band surface, used here as a clean recovery anchor if the scheduler-seam follow-up loses signal.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955-2060",
+        "src/kernels/bf16_gemm_v1.cu:2090-2137"
+      ],
+      "risk": "Low. This is the clean recovery path.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the current 24.191999 ms run",
+        "hot-band gpu__time_duration.sum",
+        "hot-band launch__registers_per_thread",
+        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.03,
+      "score_breakdown": {
+        "policy_id": "manual_round37_follow_partial_signal_v1",
+        "recovery_score": 1.55,
+        "safety_bonus": 0.35,
+        "proximity_penalty": -0.02,
+        "risk_penalty": -0.05,
+        "formula": "recovery_score + safety_bonus + proximity_penalty + risk_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.05,
+      "ranking_notes": [
+        "Keep restore ranked high because the loop is still operating on a slightly regressed live surface.",
+        "It drops below dir_01 only because round 36 produced enough positive counter movement to justify one more bounded seam-level attempt first."
+      ],
+      "stop_condition": "Use this immediately if the next scheduler-seam attempt breaks the near-flat envelope and returns the branch to a clear measured loss."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
+      "mode": "explore",
+      "hypothesis": "The 256x128 family remains the largest visible occupancy swing in repo history, so it should stay alive in the queue even while the live PTX branch keeps producing small scheduler-level signals. It stays third because the current PTX branch is close enough to the accepted base that one more bounded live-branch probe is more defensible than another broad correctness-risky geometry jump.",
+      "expected_bottleneck": "Register footprint and synchronization strategy on the 256x128 hot-band path, plus correctness-sensitive writer ownership.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:539-693",
+        "src/kernels/bf16_gemm_v1.cu:903-995"
+      ],
+      "risk": "High. This remains the broadest and most correctness-sensitive active family.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases",
+        "hot-band launch__registers_per_thread",
+        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 1.96,
+      "score_breakdown": {
+        "policy_id": "manual_round37_follow_partial_signal_v1",
+        "headroom_score": 1.82,
+        "evidence_score": 0.26,
+        "implementation_bonus": 0.03,
+        "risk_penalty": -0.15,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 1.3,
+      "predicted_fail_risk": 0.72,
+      "ranking_notes": [
+        "Keep this family alive because it still offers the biggest theoretical occupancy upside.",
+        "It stays below the live PTX seam family because the current branch still shows incremental signal close to the accepted base."
+      ],
+      "stop_condition": "Stop immediately on correctness failure or on another 28-30 ms class regression without a decisive occupancy breakthrough."
+    }
+  ],
+  "notes": "Round 37 explicitly chooses exploration over reflex recovery. The latest PTX control-path cleanup did not win, but it moved barrier and long-scoreboard in the right direction while staying within 0.02 ms of the restored base. That is exactly the kind of partial signal that justifies one more tightly bounded scheduler-seam retime before the loop falls back to restore or jumps to the broader 256x128 family."
 }
