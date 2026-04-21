@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `e6fdb8b21ac8bff36d581073faf117875347f3ea`
-- plateau counter: `7`
-- round loop: `round 1/1`
-- rounds remaining: `1`
-- notes: `Node C build succeeded for round 1/1. Node A will now measure the new code path.`
+- latest measured commit: `bb3fc522e8e54b6da3644845bce77f2182f5f41c`
+- plateau counter: `8`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Node A completed the final planned round. Review the results before starting another loop.`
 
 ## Latest measured custom run
 
-- run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
-- run dir: `runs/20260420_200110_bf16_gemm_v1_e6fdb8b`
+- run id: `20260420_205720_bf16_gemm_v1_bb3fc52`
+- run dir: `runs/20260420_205720_bf16_gemm_v1_bb3fc52`
 - correctness: `PASS`
-- median runtime: `25.325055 ms`
-- TFLOP/s: `28.707516 TFLOP/s`
+- median runtime: `25.381776 ms`
+- TFLOP/s: `28.643363 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_200135`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 16/50 human-review audit: `state/human_review.md` still contributes only the approval/selection gate and the exactly-one-direction rule, with no extra user-authored idea family to prioritize. Accepted as the primary family for this round: bounded in-family tuning on the active one-K `128x128` hot-band path, because the current kernel source already matches the recorded best-custom `1181247` source in `src/kernels/bf16_gemm_v1.cu`, and the latest NCU evidence says only the dominant hot-band kernel is slightly behind that best reference (`32,917,184 ns` now versus `32,868,864 ns` on `1181247`, with `7.73%` versus `7.49%` long-scoreboard and `13.02%` versus `12.84%` DRAM). Deferred fallback families: the PTX one-K `128x128` control branch and the existing `256x128` pivot hot-band branch, both kept as single-direction A/B paths that still satisfy the human-review gate. Rejected as the primary family for this round: reopening the two-K `128x128x32` stage-deepening path, because the latest recovery came directly from removing it; also rejected again as a primary move is the stale sweep-backed full-band `64x384` family from `state/autotune_round18_main_tiles.md`, because direct node_a evidence on the restored surface already showed that reopening it regressed badly to `34.016768 ms`.`
-- dir_01: Retune The Active One-K 128x128 Hot-Band Copy Cadence | bottleneck: A narrow hot-band feed-latency and shared-stage handoff gap inside the active one-K `128x128` kernel, not the peeled `64x384` residual rows or the `64x96` tail.
-- dir_02: Reopen The PTX One-K 128x128 Hot-Band Control Branch | bottleneck: Hot-band inner-loop control and accumulate/export behavior in the standard one-K `128x128` branch, addressed by the PTX control path rather than by changing CTA geometry.
-- dir_03: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: Hot-band CTA geometry and block-count overhead in the current four-warp `128x128` path, rather than a pure copy-cadence issue.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

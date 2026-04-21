@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
-- run dir: `runs/20260420_200110_bf16_gemm_v1_e6fdb8b`
-- kernel tag: `bf16_gemm_v1_e6fdb8b`
-- round label: `round 15/50`
+- run id: `20260420_205720_bf16_gemm_v1_bb3fc52`
+- run dir: `runs/20260420_205720_bf16_gemm_v1_bb3fc52`
+- kernel tag: `bf16_gemm_v1_bb3fc52`
+- round label: `round 1/1`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.325055 ms`
-- p10 runtime: `25.068883 ms`
-- p90 runtime: `27.136300 ms`
-- TFLOP/s: `28.707516 TFLOP/s`
-- previous run id: `20260420_194440_bf16_gemm_v1_cb070a7`
-- runtime delta vs previous measured run: `-6.472289 ms`
-- TFLOP/s delta vs previous measured run: `+5.843360 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.381776 ms`
+- p10 runtime: `24.892698 ms`
+- p90 runtime: `26.327552 ms`
+- TFLOP/s: `28.643363 TFLOP/s`
+- previous run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
+- runtime delta vs previous measured run: `+0.056721 ms`
+- TFLOP/s delta vs previous measured run: `-0.064153 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-Lock The Single-K 128x128 Hot-Band Default`
+- implemented direction name: `Retune The Active One-K 128x128 Hot-Band Copy Cadence`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_200110_bf16_gemm_v1_e6fdb8b/summary.json`
-- measured commit: `e6fdb8b21ac8bff36d581073faf117875347f3ea`
+- raw summary json: `runs/20260420_205720_bf16_gemm_v1_bb3fc52/summary.json`
+- measured commit: `bb3fc522e8e54b6da3644845bce77f2182f5f41c`
 - new best custom: `no`
-- generated at: `2026-04-20T20:01:18-07:00`
+- generated at: `2026-04-20T20:57:27-07:00`
