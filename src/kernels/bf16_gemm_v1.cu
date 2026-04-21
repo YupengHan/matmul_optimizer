@@ -77,6 +77,12 @@ using TensorCoreTile320 = TensorCoreTileConfig<10>;
 using TensorCoreTile384 = TensorCoreTileConfig<12>;
 using TensorCoreTile480 = TensorCoreTileConfig<15>;
 
+// The fixed 64x96 tail is isolated from the hot band, so it can trade the
+// generic two-stage epilogue scratch for a smaller single-stage export buffer.
+struct FixedTailTile96SingleStageExport : TensorCoreTile96 {
+  static constexpr int kCSharedStageCount = 1;
+};
+
 struct FixedHotBandTile256x128 {
   static constexpr int kWarpTilesM = kTensorWarpTilesM;
   static constexpr int kWarpTilesN = kTensorWarpTilesN;
@@ -2098,7 +2104,7 @@ bool launch_bf16_gemm_v1(
         return false;
       }
 
-      launch_tensor_core_region<TensorCoreTile96>(
+      launch_tensor_core_region<FixedTailTile96SingleStageExport>(
           a,
           b + kFixedHotBandN,
           c + kFixedHotBandN,
