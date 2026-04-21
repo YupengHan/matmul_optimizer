@@ -5,15 +5,20 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore the accepted PTX hot-band anchor after the failed live-state trim`
+- candidate id: `diagnosis_20260421_114106:dir_01`
+- base run id: `20260421_113859_bf16_gemm_v1_6668d21`
+- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
+- planned action fingerprint: `restore_exact_f768e80_ptx_anchor_after_6668d21_loss`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_114106`
 - round loop: `round 4/100`
+- hypothesis: `The round-3 PTX live-state trim changed the wrong part of the recovered winner: despite a 2-register drop, active warps stayed flat and runtime exploded. Restoring the exact accepted PTX surface should recover the 24.293 ms anchor and re-establish a clean base for the next exploit.`
+- expected bottleneck: `Known register-limited plateau on the accepted 128x128 PTX surface; this direction is a recovery step, not a new bottleneck attack.`
+- code locations: `src/kernels/bf16_gemm_v1.cu, restore source commit: f768e80d950fa4cd036ea003b32af972278df540`
+- risk: `low`
+- metrics to re-check: `median runtime, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 - latest run id: `20260421_113859_bf16_gemm_v1_6668d21`
 - latest runtime: `46.366718 ms`
 - latest NCU analysis: `runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json`
@@ -21,11 +26,7 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 ## Relevant hotspots
 
 - `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `198.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `13.49` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
 - `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.63` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `27.75` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.11` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
 
 ## Relevant bottleneck evidence
 
@@ -47,7 +48,9 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Restore the implementation surface from measured commit f768e80d950fa4cd036ea003b32af972278df540.`
+- `Discard the round-3 scope-narrowing edit rather than layering another exploit on top of a loss surface.`
+- `Keep the current workflow/workload support files on HEAD while only restoring compiled implementation code.`
 
 ## Delta vs previous run
 
@@ -94,4 +97,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
