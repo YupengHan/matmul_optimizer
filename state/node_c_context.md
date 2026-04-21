@@ -94,5 +94,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `CMakeLists.txt`
 - `src/kernels/bf16_gemm_v1.cu`
