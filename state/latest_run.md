@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_013416_bf16_gemm_v1_17032e6`
-- run dir: `runs/20260421_013416_bf16_gemm_v1_17032e6`
-- kernel tag: `bf16_gemm_v1_17032e6`
-- round label: `round 30/100`
+- run id: `20260421_013804_bf16_gemm_v1_b8a113b`
+- run dir: `runs/20260421_013804_bf16_gemm_v1_b8a113b`
+- kernel tag: `bf16_gemm_v1_b8a113b`
+- round label: `round 31/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `28.200448 ms`
-- p10 runtime: `28.180247 ms`
-- p90 runtime: `29.470516 ms`
-- TFLOP/s: `25.780421 TFLOP/s`
-- previous run id: `20260421_013042_bf16_gemm_v1_bb69e9b`
-- runtime delta vs previous measured run: `+2.289265 ms`
-- TFLOP/s delta vs previous measured run: `-2.277712 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.168880 ms`
+- p10 runtime: `24.144690 ms`
+- p90 runtime: `24.208169 ms`
+- TFLOP/s: `30.080808 TFLOP/s`
+- previous run id: `20260421_013416_bf16_gemm_v1_17032e6`
+- runtime delta vs previous measured run: `-4.031569 ms`
+- TFLOP/s delta vs previous measured run: `+4.300387 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep 3-CTA Residency And Amortize Barriers With Two-K Stages`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_013416_bf16_gemm_v1_17032e6/summary.json`
-- measured commit: `17032e6cabd475782c1528c2900f3c4239f3b45d`
+- raw summary json: `runs/20260421_013804_bf16_gemm_v1_b8a113b/summary.json`
+- measured commit: `b8a113b50abd16e7da505f5c59a1ea8be4abc749`
 - new best custom: `no`
-- generated at: `2026-04-21T01:34:23-07:00`
+- generated at: `2026-04-21T01:38:10-07:00`

@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `17032e6cabd475782c1528c2900f3c4239f3b45d`
-- plateau counter: `18`
-- round loop: `round 31/100`
-- rounds remaining: `70`
-- notes: `Node C build succeeded for round 31/100. Node A will now measure the new code path.`
+- latest measured commit: `b8a113b50abd16e7da505f5c59a1ea8be4abc749`
+- plateau counter: `19`
+- round loop: `round 32/100`
+- rounds remaining: `69`
+- notes: `Node A completed round 31/100. Run node_b to continue round 32/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_013416_bf16_gemm_v1_17032e6`
-- run dir: `runs/20260421_013416_bf16_gemm_v1_17032e6`
+- run id: `20260421_013804_bf16_gemm_v1_b8a113b`
+- run dir: `runs/20260421_013804_bf16_gemm_v1_b8a113b`
 - correctness: `PASS`
-- median runtime: `28.200448 ms`
-- TFLOP/s: `25.780421 TFLOP/s`
+- median runtime: `24.168880 ms`
+- TFLOP/s: `30.080808 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_013500`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 31 is a recovery diagnosis after two informative but clearly negative aggressive probes. The round-29 launch-bounds probe reduced the hot-band register budget from 200 to 168, raised occupancy_limit_registers from 2 to 3, and increased active warps to 24.77%, but barrier stall jumped to 10.97%. The round-30 128x128x32 follow-on kept 168 registers but raised shared memory per block to 43,008 B, which collapsed active warps back to 16.58% and regressed the hot-band kernel to 38.09 us. The search should therefore restore the exact PTX anchor now, then reuse the lessons from these two rounds to choose the next aggressive branch from a clean base.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Known register-limited plateau on the accepted 128x128 PTX surface, used here as a recovery anchor rather than a discovery move.
-- dir_02: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint and synchronization strategy in the 256x128 hot-band path, plus correctness-sensitive output ownership.
-- dir_03: Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup | bottleneck: Barrier cadence inside the single-K 128x128 PTX microkernel while preserving the lower shared-memory footprint.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
