@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Retune Hot-Band CTA Traversal On The 128x128 PTX Grid`
-- candidate id: `diagnosis_20260420_221111:dir_01`
-- base run id: `20260420_221009_bf16_gemm_v1_68c21ac`
-- primary family id: `legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid`
-- planned action fingerprint: `cb77d05553cb3c86`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260420_221111`
-- round loop: `round 4/20`
-- hypothesis: `Round 3/20 recovered from the 256x128 loss and set a new best at 24.177664 ms, but the hot-band PTX kernel's NCU signature barely moved relative to the previous PTX base: kernel time remained about 32.687 ms and register count stayed at 200/thread. That suggests the unroll tweak was only a small perturbation rather than a structural feed breakthrough. The best next move is therefore a cheap orthogonal traversal/locality test on the proven PTX base. The current branch still launches a 60x50 hot-band grid while only two 4-warp CTAs can stay resident per SM, so a grouped-row or serpentine traversal remap is the best low-risk probe of inter-CTA locality.`
-- expected bottleneck: `Inter-CTA locality and traversal efficiency on the current 128x128 PTX hot-band grid under low occupancy.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:149-157, src/kernels/bf16_gemm_v1.cu:1981-1997, src/kernels/bf16_gemm_v1.cu:2071-2137`
-- risk: `Low to moderate. The surface is small and reversible, but previous CTA-order experiments have had mixed evidence, so the upside is bounded.`
-- metrics to re-check: `end-to-end median runtime versus the 24.177664 ms base, hot-band gpu__time_duration.sum, hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed, hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed, hot-band sm__warps_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 5/20`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail

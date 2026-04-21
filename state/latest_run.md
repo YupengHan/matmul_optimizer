@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_221009_bf16_gemm_v1_68c21ac`
-- run dir: `runs/20260420_221009_bf16_gemm_v1_68c21ac`
-- kernel tag: `bf16_gemm_v1_68c21ac`
-- round label: `round 3/20`
+- run id: `20260420_221336_bf16_gemm_v1_8eb3db3`
+- run dir: `runs/20260420_221336_bf16_gemm_v1_8eb3db3`
+- kernel tag: `bf16_gemm_v1_8eb3db3`
+- round label: `round 4/20`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.177664 ms`
-- p10 runtime: `24.167213 ms`
-- p90 runtime: `25.286246 ms`
-- TFLOP/s: `30.069879 TFLOP/s`
-- previous run id: `20260420_220628_bf16_gemm_v1_676f10d`
-- runtime delta vs previous measured run: `-6.109184 ms`
-- TFLOP/s delta vs previous measured run: `+6.065419 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `24.519168 ms`
+- p10 runtime: `24.501178 ms`
+- p90 runtime: `25.404313 ms`
+- TFLOP/s: `29.651064 TFLOP/s`
+- previous run id: `20260420_221009_bf16_gemm_v1_68c21ac`
+- runtime delta vs previous measured run: `+0.341504 ms`
+- TFLOP/s delta vs previous measured run: `-0.418815 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune The Active PTX One-K 128x128 Hot-Band Control Path`
+- implemented direction name: `Retune Hot-Band CTA Traversal On The 128x128 PTX Grid`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_221009_bf16_gemm_v1_68c21ac/summary.json`
-- measured commit: `68c21acd26439775c646252dbb0e52d247ea9f47`
-- new best custom: `yes`
-- generated at: `2026-04-20T22:10:15-07:00`
+- raw summary json: `runs/20260420_221336_bf16_gemm_v1_8eb3db3/summary.json`
+- measured commit: `8eb3db3a5d67ccd595b8098ceae78ef28ec0a8b6`
+- new best custom: `no`
+- generated at: `2026-04-20T22:13:42-07:00`

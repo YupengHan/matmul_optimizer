@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `3`
-- remaining rounds: `17`
-- current round label: `round 4/20`
+- completed rounds: `4`
+- remaining rounds: `16`
+- current round label: `round 5/20`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_221009_bf16_gemm_v1_68c21ac`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 4/20. Node A will measure the result next.`
+- notes: `Completed round 4/20. Continue with node_b for round 5/20. Accepted base: 20260420_221009_bf16_gemm_v1_68c21ac at 24.177664 ms.`
 
 ## Last completed round
 
-- round: `3/20`
+- round: `4/20`
 - direction: `dir_01`
-- direction name: `Retune The Active PTX One-K 128x128 Hot-Band Control Path`
-- verdict: `improved`
-- runtime delta: `-6.109184 ms`
-- TFLOP/s delta: `+6.065419 TFLOP/s`
-- run dir: `runs/20260420_221009_bf16_gemm_v1_68c21ac`
-- ncu rep path: `runs/20260420_221009_bf16_gemm_v1_68c21ac/ncu_profile.ncu-rep`
+- direction name: `Retune Hot-Band CTA Traversal On The 128x128 PTX Grid`
+- verdict: `regressed`
+- runtime delta: `+0.341504 ms`
+- TFLOP/s delta: `-0.418815 TFLOP/s`
+- run dir: `runs/20260420_221336_bf16_gemm_v1_8eb3db3`
+- ncu rep path: `runs/20260420_221336_bf16_gemm_v1_8eb3db3/ncu_profile.ncu-rep`
