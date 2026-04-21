@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_074540_bf16_gemm_v1_0bd16be`
-- run dir: `runs/20260421_074540_bf16_gemm_v1_0bd16be`
-- kernel tag: `bf16_gemm_v1_0bd16be`
-- round label: `round 34/100`
+- run id: `20260421_074828_bf16_gemm_v1_f07f873`
+- run dir: `runs/20260421_074828_bf16_gemm_v1_f07f873`
+- kernel tag: `bf16_gemm_v1_f07f873`
+- round label: `round 35/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.339969 ms`
-- p10 runtime: `24.126668 ms`
-- p90 runtime: `25.211260 ms`
-- TFLOP/s: `29.869366 TFLOP/s`
-- previous run id: `20260421_014255_bf16_gemm_v1_a16425e`
-- runtime delta vs previous measured run: `+0.168961 ms`
-- TFLOP/s delta vs previous measured run: `-0.208793 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.175471 ms`
+- p10 runtime: `24.162304 ms`
+- p90 runtime: `25.302652 ms`
+- TFLOP/s: `30.072606 TFLOP/s`
+- previous run id: `20260421_074540_bf16_gemm_v1_0bd16be`
+- runtime delta vs previous measured run: `-0.164497 ms`
+- TFLOP/s delta vs previous measured run: `+0.203240 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX Microkernel Barriers On The Restored 128x128 Anchor`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_074540_bf16_gemm_v1_0bd16be/summary.json`
-- measured commit: `0bd16bee053d0ce6cc862e8dfeef452d34c35bad`
+- raw summary json: `runs/20260421_074828_bf16_gemm_v1_f07f873/summary.json`
+- measured commit: `f07f87369857b40b150667abd9157c5a2408062f`
 - new best custom: `no`
-- generated at: `2026-04-21T07:45:47-07:00`
+- generated at: `2026-04-21T07:48:34-07:00`

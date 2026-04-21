@@ -1,146 +1,18 @@
 {
-  "diagnosis_id": "diagnosis_20260421_074640",
-  "status": "completed",
-  "created_at": "2026-04-21T07:46:40-07:00",
-  "source_run_id": "20260421_074540_bf16_gemm_v1_0bd16be",
-  "source_run_dir": "runs/20260421_074540_bf16_gemm_v1_0bd16be",
-  "source_summary_json": "runs/20260421_074540_bf16_gemm_v1_0bd16be/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260421_074828_bf16_gemm_v1_f07f873",
+  "source_run_dir": "runs/20260421_074828_bf16_gemm_v1_f07f873",
+  "source_summary_json": "runs/20260421_074828_bf16_gemm_v1_f07f873/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260421_074640:dir_01",
-  "family_audit": [
-    "Close the exact pair-scratch PTX export sub-variant from round 34. It kept correctness but regressed from 24.171008 ms to 24.339969 ms while the counters barely moved, which means halving the export-side sync count alone is not enough to beat the anchor.",
-    "Treat the current live surface as a measured loss again. The loop should return to the accepted PTX base before spending another implementation round on a different family.",
-    "Keep the broader active-PTX control-path exploit family open because the hot-band kernel still runs at 200 registers per thread, only 16.60% active warps, and 7.08% long-scoreboard stall on the regressed measurement.",
-    "Keep the 256x128 low-register transplant in the queue as the highest-ceiling but highest-risk family; it should not be preferred while the current live surface is off the accepted base.",
-    "Do not immediately replay another export-scratch or launch-bounds-only 128x128 sub-variant on top of the current regressed state."
-  ],
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-      "mode": "restore",
-      "hypothesis": "Round 34 spent one bounded budget unit on a PTX-local export-scratch change and got a clear answer: correctness stayed intact, long-scoreboard dipped slightly from 7.23% to 7.08%, but barrier stall nudged up from 5.49% to 5.54% and end-to-end runtime regressed from 24.171008 ms to 24.339969 ms. That is not a promising live surface to continue exploiting. The correct next move is to restore the exact 489574e PTX anchor so the loop returns to the accepted 24.164272 ms base before it chooses a different aggressive family.",
-      "expected_bottleneck": "Known register-limited plateau on the accepted PTX hot-band surface, used here as a recovery anchor after a measured loss.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134-143",
-        "src/kernels/bf16_gemm_v1.cu:1004-1052",
-        "src/kernels/bf16_gemm_v1.cu:1955-2060"
-      ],
-      "risk": "Low. This is the clean recovery path.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the current 24.339969 ms run",
-        "hot-band gpu__time_duration.sum",
-        "hot-band launch__registers_per_thread",
-        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
-        "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "search_score_v1": 2.63,
-      "score_breakdown": {
-        "policy_id": "manual_round35_recover_after_export_trim_v1",
-        "recovery_score": 1.48,
-        "evidence_score": 1.08,
-        "implementation_bonus": 0.2,
-        "risk_penalty": -0.13,
-        "formula": "recovery_score + evidence_score + implementation_bonus + risk_penalty"
-      },
-      "predicted_gain_ms": 0.18,
-      "predicted_fail_risk": 0.05,
-      "ranking_notes": [
-        "The current live surface is a measured loss, so recovery should rank first again.",
-        "Do not interpret the restored result as a new win; it is only the clean comparison anchor for the next branch."
-      ],
-      "stop_condition": "Treat a restored 24.16-24.18 ms result as recovery only and move immediately to a different structural family in the following round."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
-      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-      "action_fingerprint": "retune_active_ptx_one_k_control_export_path_on_restored_anchor",
-      "mode": "exploit",
-      "hypothesis": "Round 34 falsified one specific PTX-local barrier/export sub-variant, not the whole active-PTX family. The restored anchor still leaves the hot-band kernel at 200 registers per thread, only about 16.6% active warps, and just over 7% long-scoreboard stall. That means a bounded same-surface control-path exploit remains coherent once the base is restored, but it should shift away from the failed pair-scratch export idea and target other consume-order or live-range pressure in the accepted one-K PTX branch.",
-      "expected_bottleneck": "Residual PTX hot-band control-path overhead and live-range pressure on the restored one-K 128x128 surface, excluding the already-measured pair-scratch export sub-variant.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:718-802",
-        "src/kernels/bf16_gemm_v1.cu:1955-2060",
-        "src/kernels/bf16_gemm_v1.cu:2090-2137"
-      ],
-      "risk": "Moderate. This stays on the winning family, but PTX control-path edits remain correctness-sensitive and the easy export-sync sub-variant already lost.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the restored 24.16 ms anchor",
-        "hot-band gpu__time_duration.sum",
-        "hot-band launch__registers_per_thread",
-        "hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "search_score_v1": 2.04,
-      "score_breakdown": {
-        "policy_id": "manual_round35_recover_after_export_trim_v1",
-        "rank_score": 1.8,
-        "frontier_alignment_bonus": 0.2,
-        "active_surface_bonus": 0.16,
-        "risk_penalty": -0.12,
-        "formula": "rank_score + frontier_alignment_bonus + active_surface_bonus + risk_penalty"
-      },
-      "predicted_gain_ms": 0.1,
-      "predicted_fail_risk": 0.34,
-      "ranking_notes": [
-        "Keep one bounded same-surface exploit family alive because the anchor still has obvious control-path inefficiency.",
-        "Rank it below restore because the current live surface is already a measured loss and the easiest export-side variant has just been ruled out."
-      ],
-      "stop_condition": "Stop if the next PTX-local edit simply replays the pair-scratch export idea or fails to move runtime or long-scoreboard stall on top of the restored anchor."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
-      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
-      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
-      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
-      "mode": "explore",
-      "hypothesis": "The 256x128 family is still the only live family in repo history that ever hinted at low-30% active warps, so it remains worth carrying in the queue. It stays third because the current loop position should first recover to the accepted base, and because the 256x128 path is broader and more correctness-sensitive than either same-surface PTX follow-up.",
-      "expected_bottleneck": "Register footprint and synchronization strategy on the 256x128 hot-band path, plus correctness-sensitive writer ownership.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1580-1676",
-        "src/kernels/bf16_gemm_v1.cu:539-693",
-        "src/kernels/bf16_gemm_v1.cu:903-995"
-      ],
-      "risk": "High. This remains the broadest and most correctness-sensitive active family.",
-      "metrics_to_recheck": [
-        "correctness on all 3 dataset cases",
-        "hot-band launch__registers_per_thread",
-        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
-        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "hot-band gpu__time_duration.sum"
-      ],
-      "search_score_v1": 1.9,
-      "score_breakdown": {
-        "policy_id": "manual_round35_recover_after_export_trim_v1",
-        "headroom_score": 1.8,
-        "evidence_score": 0.22,
-        "implementation_bonus": 0.03,
-        "risk_penalty": -0.15,
-        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-      },
-      "predicted_gain_ms": 1.3,
-      "predicted_fail_risk": 0.72,
-      "ranking_notes": [
-        "Keep this family in the live queue because it still carries the biggest occupancy ceiling.",
-        "Rank it below the PTX follow-ups because recovery and a bounded same-surface exploit are both cleaner next steps from the current measured loss."
-      ],
-      "stop_condition": "Stop immediately on correctness failure or on another 28-30 ms class regression without a decisive occupancy breakthrough."
-    }
-  ],
-  "notes": "Round 35 is a textbook recovery diagnosis. The pair-scratch PTX export batching change from round 34 kept correctness and even shaved a little long-scoreboard stall, but it did not improve the machine state enough to win end-to-end; runtime regressed by 0.168961 ms and barrier stall ticked upward instead. That is enough evidence to close this exact sub-variant and recover to the accepted PTX base before exploring again."
+  "selected_direction_id": null,
+  "selected_candidate_id": null,
+  "family_audit": [],
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -1,64 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-  "candidate_id": "diagnosis_20260421_074640:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-  "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-  "selection_priority": 2.8675,
-  "base_run_id": "20260421_074540_bf16_gemm_v1_0bd16be",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T07:47:52-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_074640",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-    "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-    "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-    "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-    "mode": "restore",
-    "hypothesis": "Round 34 spent one bounded budget unit on a PTX-local export-scratch change and got a clear answer: correctness stayed intact, long-scoreboard dipped slightly from 7.23% to 7.08%, but barrier stall nudged up from 5.49% to 5.54% and end-to-end runtime regressed from 24.171008 ms to 24.339969 ms. That is not a promising live surface to continue exploiting. The correct next move is to restore the exact 489574e PTX anchor so the loop returns to the accepted 24.164272 ms base before it chooses a different aggressive family.",
-    "expected_bottleneck": "Known register-limited plateau on the accepted PTX hot-band surface, used here as a recovery anchor after a measured loss.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:134-143",
-      "src/kernels/bf16_gemm_v1.cu:1004-1052",
-      "src/kernels/bf16_gemm_v1.cu:1955-2060"
-    ],
-    "risk": "Low. This is the clean recovery path.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime versus the current 24.339969 ms run",
-      "hot-band gpu__time_duration.sum",
-      "hot-band launch__registers_per_thread",
-      "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
-      "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 2.63,
-    "score_breakdown": {
-      "policy_id": "manual_round35_recover_after_export_trim_v1",
-      "recovery_score": 1.48,
-      "evidence_score": 1.08,
-      "implementation_bonus": 0.2,
-      "risk_penalty": -0.13,
-      "formula": "recovery_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.18,
-    "predicted_fail_risk": 0.05,
-    "ranking_notes": [
-      "The current live surface is a measured loss, so recovery should rank first again.",
-      "Do not interpret the restored result as a new win; it is only the clean comparison anchor for the next branch."
-    ],
-    "stop_condition": "Treat a restored 24.16-24.18 ms result as recovery only and move immediately to a different structural family in the following round.",
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

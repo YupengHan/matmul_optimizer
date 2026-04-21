@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `0bd16bee053d0ce6cc862e8dfeef452d34c35bad`
-- plateau counter: `22`
-- round loop: `round 35/100`
-- rounds remaining: `66`
-- notes: `Node C build succeeded for round 35/100. Node A will now measure the new code path.`
+- latest measured commit: `f07f87369857b40b150667abd9157c5a2408062f`
+- plateau counter: `23`
+- round loop: `round 36/100`
+- rounds remaining: `65`
+- notes: `Node A completed round 35/100. Run node_b to continue round 36/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_074540_bf16_gemm_v1_0bd16be`
-- run dir: `runs/20260421_074540_bf16_gemm_v1_0bd16be`
+- run id: `20260421_074828_bf16_gemm_v1_f07f873`
+- run dir: `runs/20260421_074828_bf16_gemm_v1_f07f873`
 - correctness: `PASS`
-- median runtime: `24.339969 ms`
-- TFLOP/s: `29.869366 TFLOP/s`
+- median runtime: `24.175471 ms`
+- TFLOP/s: `30.072606 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_074640`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 35 is a textbook recovery diagnosis. The pair-scratch PTX export batching change from round 34 kept correctness and even shaved a little long-scoreboard stall, but it did not improve the machine state enough to win end-to-end; runtime regressed by 0.168961 ms and barrier stall ticked upward instead. That is enough evidence to close this exact sub-variant and recover to the accepted PTX base before exploring again.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Known register-limited plateau on the accepted PTX hot-band surface, used here as a recovery anchor after a measured loss.
-- dir_02: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX hot-band control-path overhead and live-range pressure on the restored one-K 128x128 surface, excluding the already-measured pair-scratch export sub-variant.
-- dir_03: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint and synchronization strategy on the 256x128 hot-band path, plus correctness-sensitive writer ownership.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

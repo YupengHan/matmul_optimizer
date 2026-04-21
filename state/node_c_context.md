@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- candidate id: `diagnosis_20260421_074640:dir_01`
-- base run id: `20260421_074540_bf16_gemm_v1_0bd16be`
-- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
-- planned action fingerprint: `restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_074640`
-- round loop: `round 35/100`
-- hypothesis: `Round 34 spent one bounded budget unit on a PTX-local export-scratch change and got a clear answer: correctness stayed intact, long-scoreboard dipped slightly from 7.23% to 7.08%, but barrier stall nudged up from 5.49% to 5.54% and end-to-end runtime regressed from 24.171008 ms to 24.339969 ms. That is not a promising live surface to continue exploiting. The correct next move is to restore the exact 489574e PTX anchor so the loop returns to the accepted 24.164272 ms base before it chooses a different aggressive family.`
-- expected bottleneck: `Known register-limited plateau on the accepted PTX hot-band surface, used here as a recovery anchor after a measured loss.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:134-143, src/kernels/bf16_gemm_v1.cu:1004-1052, src/kernels/bf16_gemm_v1.cu:1955-2060`
-- risk: `Low. This is the clean recovery path.`
-- metrics to re-check: `end-to-end median runtime versus the current 24.339969 ms run, hot-band gpu__time_duration.sum, hot-band launch__registers_per_thread, hot-band sm__warps_active.avg.pct_of_peak_sustained_active, hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 36/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
