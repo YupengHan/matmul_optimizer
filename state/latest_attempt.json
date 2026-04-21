@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "auto_diagnosis_round_047:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "auto_diagnosis_round_047:dir_01",
   "source_diagnosis_id": "auto_diagnosis_round_047",
   "base_run_id": "20260421_083912_bf16_gemm_v1_280dbc5",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
   "mode": "exploit",
-  "commit": null,
-  "commit_short": null,
+  "commit": "cf4c90d469edb55c83612434bdde99610cc42a65",
+  "commit_short": "cf4c90d",
   "subject": "node_c: round 47/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T08:39:19-07:00",
@@ -37,8 +37,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "cf4c90d469edb55c83612434bdde99610cc42a65",
+    "commit_short": "cf4c90d",
     "subject": "node_c: round 47/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
     "build_status": "PASS",
     "failure_mode": null,
@@ -60,16 +60,29 @@
     "deletions": 3
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260421_083922_bf16_gemm_v1_cf4c90d",
+    "measurement_commit": "cf4c90d469edb55c83612434bdde99610cc42a65",
+    "runtime_ms": 24.44032001,
+    "runtime_delta_ms": 0.04063986999999969,
+    "tflops": 29.74672268,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.34",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.83",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.13",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.48",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.02",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.60",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.20",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.12",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.20",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.61",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "flat",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_083922_bf16_gemm_v1_cf4c90d for candidate auto_diagnosis_round_047:dir_01; transition_label=PASS_FLAT.",
+  "transition_label": "PASS_FLAT"
 }
