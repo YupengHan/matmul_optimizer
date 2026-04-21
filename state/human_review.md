@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 40/100` with `61` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 41/100` with `60` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_082315`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 40 restores the accepted PTX anchor first, then keeps the 256x128 pivot and grouped-rows=8 consumer-ordering surfaces live for the post-checkpoint queue.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Source drift away from the accepted PTX hot-band steady state after a measured-loss reopen, not DRAM saturation and not an immediate need for another same-family micro-retime.
-- dir_02: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Structural latency hiding and register/shared-memory amortization on the hot band, not another tiny PTX-local ordering tweak.
-- dir_03: Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering | bottleneck: Grouped-row traversal and consumer-order locality in the PTX hot-band path, not the already-closed wait/commit-window retime family.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

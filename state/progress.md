@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `2267a72bf3f325b7e4a3d2055eb54cdfb3326d6d`
-- plateau counter: `27`
-- round loop: `round 40/100`
-- rounds remaining: `61`
-- notes: `Node C build succeeded for round 40/100. Node A will now measure the new code path.`
+- latest measured commit: `c2190a99f9933c10afbc772d325b1873689314a6`
+- plateau counter: `28`
+- round loop: `round 41/100`
+- rounds remaining: `60`
+- notes: `Node A completed round 40/100. Run node_b to continue round 41/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_082034_bf16_gemm_v1_2267a72`
-- run dir: `runs/20260421_082034_bf16_gemm_v1_2267a72`
+- run id: `20260421_082405_bf16_gemm_v1_c2190a9`
+- run dir: `runs/20260421_082405_bf16_gemm_v1_c2190a9`
 - correctness: `PASS`
-- median runtime: `24.206848 ms`
-- TFLOP/s: `30.033626 TFLOP/s`
+- median runtime: `24.180737 ms`
+- TFLOP/s: `30.066058 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_082315`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 40 restores the accepted PTX anchor first, then keeps the 256x128 pivot and grouped-rows=8 consumer-ordering surfaces live for the post-checkpoint queue.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Source drift away from the accepted PTX hot-band steady state after a measured-loss reopen, not DRAM saturation and not an immediate need for another same-family micro-retime.
-- dir_02: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Structural latency hiding and register/shared-memory amortization on the hot band, not another tiny PTX-local ordering tweak.
-- dir_03: Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering | bottleneck: Grouped-row traversal and consumer-order locality in the PTX hot-band path, not the already-closed wait/commit-window retime family.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
