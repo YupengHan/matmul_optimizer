@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-21T08:24:11-07:00",
+  "updated_at": "2026-04-21T08:38:31-07:00",
   "families": {
     "legacy::retune_the_active_one_k_128x128_hot_band_copy_cadence": {
       "family_id": "legacy::retune_the_active_one_k_128x128_hot_band_copy_cadence",
@@ -159,16 +159,16 @@
       "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
       "wins": 0,
       "flats": 0,
-      "losses": 2,
+      "losses": 3,
       "fails": 0,
       "last_transition_label": "PASS_LOSS",
       "freeze_status": "closed_negative",
       "best_runtime_ms": 24.51711941,
       "best_run_id": "20260421_012143_bf16_gemm_v1_803e749",
-      "last_result_run_id": "20260421_012143_bf16_gemm_v1_803e749",
-      "last_result_runtime_ms": 24.51711941,
-      "last_candidate_id": "diagnosis_20260421_012002:dir_01",
-      "last_attempt_id": "diagnosis_20260421_012002:dir_01",
+      "last_result_run_id": "20260421_083825_bf16_gemm_v1_97c626c",
+      "last_result_runtime_ms": 24.53555202,
+      "last_candidate_id": "auto_diagnosis_round_041:dir_01",
+      "last_attempt_id": "auto_diagnosis_round_041:dir_01",
       "last_registers_per_thread": null,
       "last_shared_mem_per_block_allocated": null
     },
@@ -276,6 +276,6 @@
     }
   },
   "notes": "Family-level attempt memory is empty until search transitions are recorded.",
-  "last_result_run_id": "20260421_082405_bf16_gemm_v1_c2190a9",
-  "last_transition_label": "PASS_FLAT"
+  "last_result_run_id": "20260421_083825_bf16_gemm_v1_97c626c",
+  "last_transition_label": "PASS_LOSS"
 }
