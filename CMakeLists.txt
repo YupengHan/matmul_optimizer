@@ -49,7 +49,6 @@ add_executable(custom_runner
 configure_runner_target(custom_runner)
 
 option(ENABLE_CUTLASS_RUNNER "Build the CUTLASS baseline runner target" OFF)
-option(ENABLE_CUBLAS_RUNNER "Build the cuBLAS baseline runner target" OFF)
 set(CUTLASS_ROOT "" CACHE PATH "Path to a local CUTLASS checkout")
 set(CUTLASS_URL "https://codeload.github.com/NVIDIA/cutlass/tar.gz/refs/tags/v3.5.1")
 set(CUTLASS_URL_HASH "SHA256=20b7247cda2d257cbf8ba59ba3ca40a9211c4da61a9c9913e32b33a2c5883a36")
@@ -87,14 +86,4 @@ if(ENABLE_CUTLASS_RUNNER)
     $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
     $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>
   )
-endif()
-
-if(ENABLE_CUBLAS_RUNNER)
-  add_executable(cublas_runner
-    src/runner/cublas_main.cu
-  )
-
-  configure_runner_target(cublas_runner)
-
-  target_link_libraries(cublas_runner PRIVATE CUDA::cublas CUDA::cublasLt)
 endif()
