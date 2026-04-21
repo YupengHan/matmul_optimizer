@@ -11,7 +11,17 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:08:50-07:00",
   "source_diagnosis_id": "diagnosis_20260421_000721",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "ptx_future_tile_k_hoist_in_refill_path",
+  "semantic_delta_tags": [
+    "ptx_control_path",
+    "future_tile_k_hoist",
+    "refill_address_simplification"
+  ],
+  "secondary_family_ids": [],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:2041-2053"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
@@ -55,5 +65,5 @@
     "stop_condition": "Stop if the next control-path tweak replays any already-measured prologue, issue-grouping, or handoff sub-variant, or if it remains runtime-flat on the restored PTX surface.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
