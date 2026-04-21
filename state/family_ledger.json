@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-04-20T19:17:51-07:00",
+  "families": {},
+  "notes": "Family-level attempt memory is empty until search transitions are recorded."
+}

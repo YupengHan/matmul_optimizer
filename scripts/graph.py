@@ -11,13 +11,21 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import eval_kernel
+from search_policy import (
+    classify_transition,
+    fallback_search_score_v1,
+    make_action_fingerprint,
+    normalize_risk_text_to_level,
+)
 from state_lib import (
     ACTIVE_DIRECTION_PATH,
     BENCHMARK_STATE_PATH,
     DIAGNOSIS_HISTORY_PATH,
     DOCS_DIR,
+    FAMILY_LEDGER_PATH,
     GRAPH_STATE_PATH,
     LATEST_DIAGNOSIS_PATH,
+    LATEST_ATTEMPT_PATH,
     LATEST_NCU_SUMMARY_PATH,
     LATEST_RUN_PATH,
     REPO_ROOT,
@@ -25,6 +33,10 @@ from state_lib import (
     ROUND_LOOP_STATE_PATH,
     RUN_REGISTRY_PATH,
     RUNS_DIR,
+    SEARCH_CLOSED_PATH,
+    SEARCH_CANDIDATES_PATH,
+    SEARCH_FRONTIER_PATH,
+    SEARCH_STATE_PATH,
     STATE_DIR,
     SUPERVISOR_TASK_PATH,
     append_jsonl,
@@ -36,11 +48,16 @@ from state_lib import (
     ensure_machine_state,
     load_active_direction,
     load_benchmark_state,
+    load_family_ledger,
     load_graph_state,
     load_latest_diagnosis,
+    load_latest_attempt,
     load_latest_ncu_summary,
     load_latest_run,
     load_round_loop_state,
+    load_run_registry,
+    load_search_frontier,
+    load_search_state,
     load_supervisor_task,
     now_local_iso,
     ordered_direction_ids,
@@ -467,6 +484,71 @@ def compute_gap(benchmark_state: Dict[str, Any]) -> tuple[Optional[float], Optio
     return absolute, ratio
 
 
+def parse_priority(value: Any) -> Optional[float]:
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def frontier_sort_key(candidate: Dict[str, Any]) -> tuple[float, int, str, str]:
+    priority = parse_priority(candidate.get('priority'))
+    rank_bias = 0 if candidate.get('recommended') else 1
+    return (
+        -(priority if priority is not None else float('-inf')),
+        rank_bias,
+        str(candidate.get('direction_id') or ''),
+        str(candidate.get('candidate_id') or ''),
+    )
+
+
+def candidate_invalid_reason(candidate: Dict[str, Any], diagnosis: Dict[str, Any]) -> Optional[str]:
+    if candidate.get('status') != 'open':
+        return 'not_open'
+    if not str(candidate.get('candidate_id') or '').strip():
+        return 'missing_candidate_id'
+    if not str(candidate.get('direction_id') or '').strip():
+        return 'missing_direction_id'
+    if not str(candidate.get('action_fingerprint') or '').strip():
+        return 'missing_action_fingerprint'
+    if parse_priority(candidate.get('priority')) is None:
+        return 'non_numeric_priority'
+    if direction_lookup(diagnosis, candidate.get('direction_id') or '') is None:
+        return 'unknown_direction'
+    return None
+
+
+def frontier_open_candidates(frontier: Dict[str, Any]) -> List[Dict[str, Any]]:
+    candidates = [candidate for candidate in frontier.get('candidates', []) if candidate.get('status') == 'open']
+    return sorted(candidates, key=frontier_sort_key)
+
+
+def selectable_frontier_candidates(frontier: Dict[str, Any], diagnosis: Dict[str, Any]) -> List[Dict[str, Any]]:
+    seen_fingerprints = {
+        str(candidate.get('action_fingerprint'))
+        for candidate in frontier.get('candidates', [])
+        if candidate.get('status') == 'selected' and str(candidate.get('action_fingerprint') or '').strip()
+    }
+    selected: List[Dict[str, Any]] = []
+    for candidate in frontier_open_candidates(frontier):
+        reason = candidate_invalid_reason(candidate, diagnosis)
+        fingerprint = str(candidate.get('action_fingerprint') or '').strip()
+        if reason is not None:
+            continue
+        if fingerprint in seen_fingerprints:
+            continue
+        selected.append(candidate)
+        seen_fingerprints.add(fingerprint)
+    return selected
+
+
+def best_frontier_candidate(frontier: Dict[str, Any], diagnosis: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    candidates = selectable_frontier_candidates(frontier, diagnosis)
+    return candidates[0] if candidates else None
+
+
 def direction_summary_line(direction: Dict[str, Any]) -> str:
     name = direction.get('name') or 'PENDING'
     bottleneck = direction.get('expected_bottleneck') or 'PENDING'
@@ -589,6 +671,7 @@ def render_rounds_md(round_loop: Dict[str, Any]) -> str:
     lines.append(f"- remaining rounds: `{round_loop.get('remaining_rounds', 0)}`")
     lines.append(f"- current round label: `{round_label(round_loop)}`")
     lines.append(f"- auto use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
+    lines.append(f"- auto select frontier: `{'yes' if round_loop.get('auto_select_frontier') else 'no'}`")
     lines.append(f"- accepted base run id: `{round_loop.get('accepted_base_run_id', 'N/A')}`")
     lines.append(f"- accepted base measured commit: `{round_loop.get('accepted_base_measured_commit', 'N/A')}`")
     lines.append(f"- accepted base runtime: `{fmt_runtime(round_loop.get('accepted_base_runtime_ms'))}`")
@@ -717,6 +800,7 @@ def render_human_review_md(
     lines.append('## Direction approval policy')
     lines.append('')
     lines.append('- explicit approval: `python scripts/graph.py approve --direction dir_02`')
+    lines.append('- select the top frontier candidate: `python scripts/graph.py select-next`')
     lines.append('- continue with recommended direction: `python scripts/graph.py use-recommended-direction`')
     lines.append('- node_c should implement exactly one selected direction')
     lines.append('')
@@ -785,13 +869,25 @@ def render_node_b_context(
 
         - write exactly 3 directions
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
+        - keep top-level `family_audit` as a list, even if empty
+        - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
         - each direction must include:
+          - `family_id`
+          - `subfamily_id`
+          - `action_fingerprint`
+          - `mode`
           - `hypothesis`
           - `expected_bottleneck`
           - `code_locations`
           - `risk`
           - `metrics_to_recheck`
+          - `search_score_v1`
+          - `score_breakdown`
+          - `predicted_gain_ms`
+          - `predicted_fail_risk`
+          - `ranking_notes`
         - set `recommended_direction_id`
+        - every direction is also treated as a search candidate, so keep numeric score fields and prose notes auditable
         - after editing the diagnosis file, run `python scripts/graph.py node_b --finalize`
 
         ## Current source snapshot
@@ -823,6 +919,10 @@ def render_node_c_context(
     lines.append('')
     lines.append(f"- direction id: `{active_direction.get('direction_id', 'N/A')}`")
     lines.append(f"- direction name: `{direction_name or 'N/A'}`")
+    lines.append(f"- candidate id: `{active_direction.get('candidate_id', 'N/A')}`")
+    lines.append(f"- base run id: `{active_direction.get('base_run_id', 'N/A')}`")
+    lines.append(f"- primary family id: `{active_direction.get('family_id', direction.get('family_id') if direction else 'N/A')}`")
+    lines.append(f"- planned action fingerprint: `{active_direction.get('action_fingerprint', direction.get('action_fingerprint') if direction else 'N/A')}`")
     lines.append(f"- selection mode: `{active_direction.get('selection_mode', 'N/A')}`")
     lines.append(f"- source diagnosis id: `{active_direction.get('source_diagnosis_id', 'N/A')}`")
     lines.append(f"- round loop: `{round_label(round_loop)}`")
@@ -841,6 +941,14 @@ def render_node_c_context(
     lines.append('- `CMakeLists.txt` only if the build path genuinely needs it')
     lines.append('- `scripts/graph.py` or `scripts/sweep_fixed_main_tiles.py` only when the direction requires minimal workflow glue')
     lines.append('')
+    lines.append('## Implementation notes')
+    lines.append('')
+    lines.append('- implement exactly one selected direction')
+    lines.append('- stay within the primary family by default')
+    lines.append('- if the implementation clearly crosses into another family, update `state/active_direction.json` and record `secondary_family_ids` before finalize')
+    lines.append('- if the implementation semantically drifts from the planned action, update `implemented_action_fingerprint`, `semantic_delta_tags`, or `actual_code_regions` in `state/active_direction.json` before finalize')
+    lines.append('- build failure is still recorded as a structured `state/latest_attempt.json` entry with `build_status=FAIL`')
+    lines.append('')
     lines.append('## Required commands')
     lines.append('')
     lines.append('- edit code for one direction only')
@@ -850,7 +958,7 @@ def render_node_c_context(
     lines.append('## Dirty working tree snapshot before node_c finalize')
     lines.append('')
     if not active_direction.get('direction_id'):
-        lines.append('- no active direction selected yet; select one before using the dirty-path guardrail')
+        lines.append('- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail')
     elif not dirty_paths:
         lines.append('- no tracked dirty paths at prepare time')
     else:
@@ -866,6 +974,8 @@ def compute_supervisor_task(
     round_loop: Dict[str, Any],
 ) -> Dict[str, Any]:
     current_node = graph_state.get('current_node', 'node_a')
+    search_frontier = load_search_frontier()
+    has_frontier_candidate = best_frontier_candidate(search_frontier, diagnosis) is not None
     task = {
         'supervisor_role': 'main_codex_agent',
         'dispatch_node': current_node,
@@ -875,6 +985,7 @@ def compute_supervisor_task(
         'round_loop_active': bool(round_loop.get('active')),
         'rounds_remaining': int(round_loop.get('remaining_rounds', 0)),
         'auto_use_recommended': bool(round_loop.get('auto_use_recommended')),
+        'auto_select_frontier': bool(round_loop.get('auto_select_frontier')),
         'requires_gpu_access': False,
         'prepare_command': None,
         'selection_command': None,
@@ -914,7 +1025,11 @@ def compute_supervisor_task(
     if current_node == 'node_c':
         selection_command = None
         if not active_direction.get('direction_id'):
-            if diagnosis.get('recommended_direction_id') and round_loop.get('auto_use_recommended'):
+            if round_loop.get('active') and round_loop.get('auto_select_frontier') and has_frontier_candidate:
+                selection_command = 'python scripts/graph.py select-next'
+            elif diagnosis.get('recommended_direction_id') and (
+                round_loop.get('auto_use_recommended') or round_loop.get('auto_select_frontier')
+            ):
                 selection_command = 'python scripts/graph.py use-recommended-direction'
             else:
                 selection_command = 'python scripts/graph.py approve --direction dir_0X'
@@ -954,6 +1069,7 @@ def render_supervisor_context(
     lines.append(f"- round label: `{supervisor_task.get('round_label', 'single-run')}`")
     lines.append(f"- round loop active: `{'yes' if supervisor_task.get('round_loop_active') else 'no'}`")
     lines.append(f"- rounds remaining: `{supervisor_task.get('rounds_remaining', 0)}`")
+    lines.append(f"- auto-select frontier: `{'yes' if supervisor_task.get('auto_select_frontier') else 'no'}`")
     lines.append(f"- latest run id: `{latest_run.get('run_id', 'N/A')}`")
     lines.append(f"- latest runtime: `{fmt_runtime(latest_run.get('median_runtime_ms'))}`")
     lines.append(f"- recommended direction: `{diagnosis.get('recommended_direction_id', 'N/A')}`")
@@ -990,6 +1106,7 @@ def render_supervisor_context(
     if round_loop.get('active'):
         lines.append(f"- active loop: `{round_label(round_loop)}` with `{round_loop.get('remaining_rounds', 0)}` rounds remaining")
         lines.append(f"- auto-use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
+        lines.append(f"- auto-select frontier: `{'yes' if round_loop.get('auto_select_frontier') else 'no'}`")
         lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
     else:
         lines.append('- no multi-round loop is active')
@@ -1087,7 +1204,7 @@ def refresh_node_c_context() -> None:
     )
 
 
-def start_round_loop(count: int, *, auto_use_recommended: bool) -> Dict[str, Any]:
+def start_round_loop(count: int, *, auto_use_recommended: bool, auto_select_frontier: bool) -> Dict[str, Any]:
     latest_run = load_latest_run()
     round_loop = default_round_loop_state()
     round_loop.update(
@@ -1100,6 +1217,7 @@ def start_round_loop(count: int, *, auto_use_recommended: bool) -> Dict[str, Any
             'next_round_index': 1,
             'current_round_index': None,
             'auto_use_recommended': auto_use_recommended,
+            'auto_select_frontier': auto_select_frontier,
             'started_at': now_local_iso(),
             'completed_at': None,
             'last_completed_round': None,
@@ -1108,7 +1226,11 @@ def start_round_loop(count: int, *, auto_use_recommended: bool) -> Dict[str, Any
             'accepted_base_runtime_ms': latest_run.get('median_runtime_ms'),
             'notes': (
                 f'Started a {count}-round loop. '
-                + ('Recommended directions will auto-select.' if auto_use_recommended else 'Direction approval remains manual.')
+                + (
+                    'Frontier top candidates will auto-select, with fallback to the current recommended direction.'
+                    if auto_select_frontier
+                    else ('Recommended directions will auto-select.' if auto_use_recommended else 'Direction approval remains manual.')
+                )
             ),
         }
     )
@@ -1347,11 +1469,17 @@ def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = No
     paths: List[Path | str] = [
         GRAPH_STATE_PATH,
         SUPERVISOR_TASK_PATH,
+        SEARCH_STATE_PATH,
+        SEARCH_FRONTIER_PATH,
+        SEARCH_CLOSED_PATH,
+        FAMILY_LEDGER_PATH,
+        SEARCH_CANDIDATES_PATH,
         LATEST_RUN_PATH,
         LATEST_RUN_MD_PATH,
         LATEST_NCU_SUMMARY_PATH,
         LATEST_NCU_SUMMARY_MD_PATH,
         LATEST_DIAGNOSIS_PATH,
+        LATEST_ATTEMPT_PATH,
         ACTIVE_DIRECTION_PATH,
         BENCHMARK_STATE_PATH,
         ROUND_LOOP_STATE_PATH,
@@ -1380,26 +1508,439 @@ def existing_node_c_support_paths() -> List[Path]:
     return extra_paths
 
 
-def update_failure_state(node_name: str, message: str) -> None:
-    graph_state = load_graph_state()
-    graph_state['current_node'] = node_name
-    graph_state['status'] = f'{node_name}_failed'
-    graph_state['notes'] = message
-    write_json(GRAPH_STATE_PATH, graph_state)
-    round_loop = load_round_loop_state()
-    if round_loop.get('active'):
-        round_loop['status'] = f'paused_on_{node_name}_failure'
-        round_loop['notes'] = f'Paused {round_label(round_loop)} because {node_name} failed: {message}'
-        write_json(ROUND_LOOP_STATE_PATH, round_loop)
-    refresh_all_views()
+def node_c_attempt_surface_paths() -> List[Path]:
+    paths: List[Path] = [
+        REPO_ROOT / 'src' / 'kernels',
+        REPO_ROOT / 'src' / 'runner' / 'main.cpp',
+        REPO_ROOT / 'include',
+        REPO_ROOT / 'CMakeLists.txt',
+        REPO_ROOT / 'scripts' / 'graph.py',
+    ]
+    if SWEEP_FIXED_MAIN_TILES_PATH.exists():
+        paths.append(SWEEP_FIXED_MAIN_TILES_PATH)
+    return paths
 
 
-def run_restore_implementation(args: argparse.Namespace) -> int:
-    ensure_machine_state()
-    source_commit = args.source_commit.strip()
-    if not source_commit:
-        raise RuntimeError('restore-implementation requires --source-commit <sha>')
+def parse_numstat_output(text: str) -> Dict[str, int]:
+    summary = {
+        'files_changed': 0,
+        'insertions': 0,
+        'deletions': 0,
+    }
+    for line in text.splitlines():
+        parts = line.split('\t', 2)
+        if len(parts) != 3:
+            continue
+        added, deleted, _path = parts
+        summary['files_changed'] += 1
+        summary['insertions'] += int(added) if added.isdigit() else 0
+        summary['deletions'] += int(deleted) if deleted.isdigit() else 0
+    return summary
 
+
+def diff_name_only_against_head(scope_paths: Sequence[Path | str]) -> List[str]:
+    rels = relative_paths(scope_paths)
+    proc = run_command(['git', 'diff', '--name-only', 'HEAD', '--', *rels], capture=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or 'failed to collect node_c changed paths')
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def diff_stats_against_head(scope_paths: Sequence[Path | str]) -> Dict[str, int]:
+    rels = relative_paths(scope_paths)
+    proc = run_command(['git', 'diff', '--numstat', 'HEAD', '--', *rels], capture=True)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or 'failed to collect node_c diff stats')
+    return parse_numstat_output(proc.stdout)
+
+
+def normalize_string_list(values: Any) -> List[str]:
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+def derive_semantic_delta_tags(actual_code_regions: Sequence[str], build_status: str) -> List[str]:
+    tags: List[str] = ['single_direction_attempt']
+    for rel_path in actual_code_regions:
+        if rel_path.startswith('src/kernels/'):
+            tags.append('kernel_code')
+        elif rel_path == 'src/runner/main.cpp':
+            tags.append('runner_glue')
+        elif rel_path.startswith('include/'):
+            tags.append('interface_glue')
+        elif rel_path == 'CMakeLists.txt':
+            tags.append('build_glue')
+        elif rel_path.startswith('scripts/'):
+            tags.append('workflow_glue')
+    if build_status == 'FAIL':
+        tags.append('build_failed')
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for tag in tags:
+        if tag not in seen:
+            seen.add(tag)
+            ordered.append(tag)
+    return ordered
+
+
+def build_latest_attempt_payload(
+    active_direction: Dict[str, Any],
+    *,
+    build_status: str,
+    failure_mode: Optional[str],
+    diff_stats: Dict[str, int],
+    actual_code_regions: List[str],
+    commit_sha: Optional[str] = None,
+    commit_subject: Optional[str] = None,
+) -> Dict[str, Any]:
+    summary = active_direction.get('summary') or {}
+    planned_action_fingerprint = active_direction.get('action_fingerprint') or summary.get('action_fingerprint')
+    secondary_family_ids = normalize_string_list(active_direction.get('secondary_family_ids'))
+    explicit_regions = normalize_string_list(active_direction.get('actual_code_regions'))
+    if explicit_regions:
+        actual_code_regions = explicit_regions
+    semantic_delta_tags = normalize_string_list(active_direction.get('semantic_delta_tags'))
+    if not semantic_delta_tags:
+        semantic_delta_tags = derive_semantic_delta_tags(actual_code_regions, build_status)
+    implemented_action_fingerprint = (
+        active_direction.get('implemented_action_fingerprint')
+        or planned_action_fingerprint
+    )
+    return {
+        'schema_version': 1,
+        'attempt_id': active_direction.get('candidate_id') or f"attempt_{timestamp_tag()}",
+        'status': 'build_passed_pending_measurement' if build_status == 'PASS' else 'build_failed',
+        'candidate_id': active_direction.get('candidate_id'),
+        'source_diagnosis_id': active_direction.get('source_diagnosis_id'),
+        'base_run_id': active_direction.get('base_run_id'),
+        'family_id': active_direction.get('family_id') or summary.get('family_id'),
+        'subfamily_id': active_direction.get('subfamily_id') or summary.get('subfamily_id'),
+        'direction_id': active_direction.get('direction_id'),
+        'direction_name': active_direction.get('name') or summary.get('name'),
+        'mode': summary.get('mode'),
+        'commit': commit_sha,
+        'commit_short': commit_sha[:7] if commit_sha else None,
+        'subject': commit_subject,
+        'selection_mode': active_direction.get('selection_mode'),
+        'selected_at': active_direction.get('selected_at'),
+        'selected_from_frontier_id': active_direction.get('selected_from_frontier_id'),
+        'source_run_id': active_direction.get('base_run_id'),
+        'selection_score': active_direction.get('selection_priority'),
+        'planned_action_fingerprint': planned_action_fingerprint,
+        'implemented_action_fingerprint': implemented_action_fingerprint,
+        'score_breakdown': summary.get('score_breakdown', {}),
+        'semantic_delta_tags': semantic_delta_tags,
+        'secondary_family_ids': secondary_family_ids,
+        'actual_code_regions': actual_code_regions,
+        'implementation': {
+            'commit': commit_sha,
+            'commit_short': commit_sha[:7] if commit_sha else None,
+            'subject': commit_subject,
+            'build_status': build_status,
+            'failure_mode': failure_mode,
+            'build_log_path': repo_rel(NODE_C_BUILD_LOG_PATH),
+            'touched_files': actual_code_regions,
+            'diff_stats': diff_stats,
+        },
+        'build_status': build_status,
+        'failure_mode': failure_mode,
+        'diff_stats': diff_stats,
+        'measurement': {
+            'run_id': None,
+            'measurement_commit': None,
+            'runtime_ms': None,
+            'runtime_delta_ms': None,
+            'tflops': None,
+            'correctness': None,
+            'headline_metrics': {},
+            'headline_metric_deltas_vs_previous_run': {},
+        },
+        'transition_class': None,
+        'close_reason': None,
+        'notes': (
+            'Build passed. Node A must measure this implementation next.'
+            if build_status == 'PASS'
+            else f'Build failed during node_c finalize with failure_mode={failure_mode}.'
+        ),
+    }
+
+
+def commit_subject_from_message(message: str) -> Optional[str]:
+    for line in message.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return None
+
+
+def write_latest_attempt_payload(payload: Dict[str, Any]) -> None:
+    write_json(LATEST_ATTEMPT_PATH, payload)
+    search_state = load_search_state()
+    search_state['latest_attempt_id'] = payload.get('attempt_id')
+    search_state['active_candidate_id'] = payload.get('candidate_id')
+    search_state['last_transition_type'] = 'node_c_finalize'
+    search_state['notes'] = (
+        f"Latest implementation edge recorded for {payload.get('candidate_id') or payload.get('direction_id') or 'unknown_candidate'}."
+    )
+    write_json(SEARCH_STATE_PATH, search_state)
+
+
+def headline_metric_deltas(
+    previous_metrics: Dict[str, Any],
+    current_metrics: Dict[str, Any],
+) -> Dict[str, float]:
+    deltas: Dict[str, float] = {}
+    for key, value in current_metrics.items():
+        prev_value = previous_metrics.get(key)
+        if isinstance(value, (int, float)) and isinstance(prev_value, (int, float)):
+            deltas[key] = float(value) - float(prev_value)
+    return deltas
+
+
+def family_ledger_entry_defaults(family_id: str) -> Dict[str, Any]:
+    return {
+        'family_id': family_id,
+        'wins': 0,
+        'flats': 0,
+        'losses': 0,
+        'fails': 0,
+        'last_transition_label': None,
+        'freeze_status': 'open',
+        'best_runtime_ms': None,
+        'best_run_id': None,
+        'last_result_run_id': None,
+        'last_result_runtime_ms': None,
+        'last_candidate_id': None,
+        'last_attempt_id': None,
+        'last_registers_per_thread': None,
+        'last_shared_mem_per_block_allocated': None,
+    }
+
+
+def transition_bucket_from_label(transition_label: Optional[str]) -> Optional[str]:
+    if transition_label == 'PASS_WIN':
+        return 'wins'
+    if transition_label == 'PASS_FLAT':
+        return 'flats'
+    if transition_label in ('PASS_LOSS', 'DIAG_POS_RUNTIME_NEG'):
+        return 'losses'
+    if transition_label in ('BUILD_FAIL', 'CORRECTNESS_FAIL'):
+        return 'fails'
+    return None
+
+
+def freeze_status_from_transition_label(transition_label: Optional[str]) -> str:
+    if transition_label == 'PASS_WIN':
+        return 'open'
+    if transition_label == 'PASS_FLAT':
+        return 'frozen'
+    if transition_label in ('PASS_LOSS', 'DIAG_POS_RUNTIME_NEG', 'BUILD_FAIL', 'CORRECTNESS_FAIL'):
+        return 'closed_negative'
+    return 'open'
+
+
+def attempt_matches_current_measurement(
+    latest_attempt: Dict[str, Any],
+    active_direction_before: Dict[str, Any],
+) -> bool:
+    if active_direction_before.get('status') != 'implemented_pending_measurement':
+        return False
+    if (latest_attempt.get('build_status') or '').upper() != 'PASS':
+        return False
+    attempt_candidate_id = latest_attempt.get('candidate_id')
+    active_candidate_id = active_direction_before.get('candidate_id')
+    if attempt_candidate_id and active_candidate_id:
+        return attempt_candidate_id == active_candidate_id
+    return latest_attempt.get('direction_id') == active_direction_before.get('direction_id')
+
+
+def initialize_exact_base_if_missing(
+    search_state: Dict[str, Any],
+    previous_run: Dict[str, Any],
+) -> None:
+    if search_state.get('exact_base_run_id'):
+        return
+    seed_run_id = search_state.get('accepted_base_run_id') or previous_run.get('run_id')
+    seed_runtime_ms = search_state.get('accepted_base_runtime_ms') or previous_run.get('median_runtime_ms')
+    seed_commit = search_state.get('accepted_base_measured_commit') or previous_run.get('measured_commit')
+    if seed_run_id:
+        search_state['exact_base_run_id'] = seed_run_id
+        search_state['exact_base_runtime_ms'] = seed_runtime_ms
+        search_state['exact_base_measured_commit'] = seed_commit
+
+
+def sync_best_known_run(search_state: Dict[str, Any], benchmark_state: Dict[str, Any]) -> None:
+    best_known = benchmark_state.get('best_custom') or {}
+    search_state['best_known_run_id'] = best_known.get('run_id')
+    search_state['best_known_measured_commit'] = best_known.get('measured_commit')
+    search_state['best_known_runtime_ms'] = best_known.get('median_runtime_ms')
+
+
+def record_measurement_into_search_memory(
+    previous_run: Dict[str, Any],
+    previous_ncu: Dict[str, Any],
+    latest_run: Dict[str, Any],
+    latest_ncu: Dict[str, Any],
+    benchmark_state: Dict[str, Any],
+    active_direction_before: Dict[str, Any],
+) -> None:
+    latest_attempt = load_latest_attempt()
+    matched_attempt = attempt_matches_current_measurement(latest_attempt, active_direction_before)
+    resource_snapshot = {
+        'registers_per_thread': latest_ncu.get('registers_per_thread'),
+        'shared_mem_per_block_allocated': latest_ncu.get('shared_mem_per_block_allocated'),
+    }
+    search_state = load_search_state()
+    initialize_exact_base_if_missing(search_state, previous_run)
+    sync_best_known_run(search_state, benchmark_state)
+    if not search_state.get('exact_base_run_id') and latest_run.get('run_id'):
+        search_state['exact_base_run_id'] = latest_run.get('run_id')
+        search_state['exact_base_measured_commit'] = latest_run.get('measured_commit')
+        search_state['exact_base_runtime_ms'] = latest_run.get('median_runtime_ms')
+    search_state['last_result_run_id'] = latest_run.get('run_id')
+    search_state['last_result_measured_commit'] = latest_run.get('measured_commit')
+    search_state['last_result_runtime_ms'] = latest_run.get('median_runtime_ms')
+    search_state['last_result_correctness_passed'] = latest_run.get('correctness_passed')
+    search_state['last_result_registers_per_thread'] = resource_snapshot['registers_per_thread']
+    search_state['last_result_shared_mem_per_block_allocated'] = resource_snapshot['shared_mem_per_block_allocated']
+    if not matched_attempt:
+        search_state['status'] = 'measured_base_recorded'
+        search_state['last_transition_type'] = 'node_a_measurement'
+        search_state['notes'] = (
+            f"Node A recorded measured run {latest_run.get('run_id')} without a matching active implementation attempt."
+        )
+        write_json(SEARCH_STATE_PATH, search_state)
+        return
+
+    direction_summary = active_direction_before.get('summary') or {}
+    transition = classify_transition(
+        previous_run.get('median_runtime_ms'),
+        latest_run.get('median_runtime_ms'),
+        latest_run.get('correctness_passed'),
+        build_status=latest_attempt.get('build_status'),
+        predicted_gain_ms=direction_summary.get('predicted_gain_ms'),
+        enable_diag_pos_runtime_neg=False,
+    )
+    transition_label = transition.get('transition_label')
+    runtime_delta_ms = transition.get('runtime_delta_ms')
+    latest_attempt['status'] = 'measured'
+    latest_attempt['measurement'] = {
+        'run_id': latest_run.get('run_id'),
+        'measurement_commit': latest_run.get('measured_commit'),
+        'runtime_ms': latest_run.get('median_runtime_ms'),
+        'runtime_delta_ms': runtime_delta_ms,
+        'tflops': latest_run.get('tflops'),
+        'correctness': latest_run.get('correctness_passed'),
+        'headline_metrics': latest_ncu.get('headline_metrics') or {},
+        'headline_metric_deltas_vs_previous_run': headline_metric_deltas(
+            previous_ncu.get('headline_metrics') or {},
+            latest_ncu.get('headline_metrics') or {},
+        ),
+    }
+    latest_attempt['transition_label'] = transition_label
+    latest_attempt['transition_class'] = transition.get('transition_class')
+    latest_attempt['close_reason'] = 'measured_by_node_a'
+    latest_attempt['notes'] = (
+        f"Node A measured {latest_run.get('run_id')} for candidate {latest_attempt.get('candidate_id') or latest_attempt.get('direction_id')}; "
+        f"transition_label={transition_label}."
+    )
+    write_json(LATEST_ATTEMPT_PATH, latest_attempt)
+
+    if transition_label == 'PASS_WIN':
+        search_state['accepted_base_run_id'] = latest_run.get('run_id')
+        search_state['accepted_base_measured_commit'] = latest_run.get('measured_commit')
+        search_state['accepted_base_runtime_ms'] = latest_run.get('median_runtime_ms')
+        search_state['exact_base_run_id'] = latest_run.get('run_id')
+        search_state['exact_base_measured_commit'] = latest_run.get('measured_commit')
+        search_state['exact_base_runtime_ms'] = latest_run.get('median_runtime_ms')
+    search_state['status'] = 'measured_transition_recorded'
+    search_state['active_candidate_id'] = None
+    search_state['latest_attempt_id'] = latest_attempt.get('attempt_id')
+    search_state['last_transition_type'] = 'node_a_measurement'
+    search_state['last_transition_label'] = transition_label
+    search_state['notes'] = (
+        f"Node A recorded transition_label={transition_label} for candidate {latest_attempt.get('candidate_id') or latest_attempt.get('direction_id')}."
+    )
+    write_json(SEARCH_STATE_PATH, search_state)
+
+    family_id = latest_attempt.get('family_id') or active_direction_before.get('family_id')
+    if family_id:
+        family_ledger = load_family_ledger()
+        family_ledger['updated_at'] = now_local_iso()
+        family_ledger['last_result_run_id'] = latest_run.get('run_id')
+        family_ledger['last_transition_label'] = transition_label
+        families = family_ledger.setdefault('families', {})
+        family_entry = dict(family_ledger_entry_defaults(family_id))
+        family_entry.update(families.get(family_id, {}))
+        bucket = transition_bucket_from_label(transition_label)
+        if bucket:
+            family_entry[bucket] = int(family_entry.get(bucket, 0)) + 1
+        family_entry['last_transition_label'] = transition_label
+        family_entry['freeze_status'] = freeze_status_from_transition_label(transition_label)
+        family_entry['last_result_run_id'] = latest_run.get('run_id')
+        family_entry['last_result_runtime_ms'] = latest_run.get('median_runtime_ms')
+        family_entry['last_candidate_id'] = latest_attempt.get('candidate_id')
+        family_entry['last_attempt_id'] = latest_attempt.get('attempt_id')
+        family_entry['last_registers_per_thread'] = resource_snapshot['registers_per_thread']
+        family_entry['last_shared_mem_per_block_allocated'] = resource_snapshot['shared_mem_per_block_allocated']
+        current_runtime_ms = latest_run.get('median_runtime_ms')
+        best_runtime_ms = family_entry.get('best_runtime_ms')
+        if latest_run.get('correctness_passed') and current_runtime_ms is not None and (
+            best_runtime_ms is None or float(current_runtime_ms) < float(best_runtime_ms)
+        ):
+            family_entry['best_runtime_ms'] = current_runtime_ms
+            family_entry['best_run_id'] = latest_run.get('run_id')
+        families[family_id] = family_entry
+        write_json(FAMILY_LEDGER_PATH, family_ledger)
+
+    append_jsonl(
+        SEARCH_CLOSED_PATH,
+        {
+            'closed_at': now_local_iso(),
+            'attempt_id': latest_attempt.get('attempt_id'),
+            'candidate_id': latest_attempt.get('candidate_id'),
+            'source_diagnosis_id': latest_attempt.get('source_diagnosis_id'),
+            'base_run_id': latest_attempt.get('base_run_id'),
+            'family_id': latest_attempt.get('family_id'),
+            'subfamily_id': latest_attempt.get('subfamily_id'),
+            'transition_label': transition_label,
+            'transition_class': transition.get('transition_class'),
+            'result_run_id': latest_run.get('run_id'),
+            'result_runtime_ms': latest_run.get('median_runtime_ms'),
+            'runtime_delta_ms': runtime_delta_ms,
+            'correctness_passed': latest_run.get('correctness_passed'),
+            'selection_score': latest_attempt.get('selection_score'),
+            'planned_action_fingerprint': latest_attempt.get('planned_action_fingerprint'),
+            'implemented_action_fingerprint': latest_attempt.get('implemented_action_fingerprint'),
+            'registers_per_thread': resource_snapshot['registers_per_thread'],
+            'shared_mem_per_block_allocated': resource_snapshot['shared_mem_per_block_allocated'],
+            'close_reason': 'measured_by_node_a',
+        },
+    )
+
+
+def restore_result_summary(
+    source_commit: str,
+    *,
+    changed_paths: Sequence[Path],
+    commit_sha: Optional[str],
+    reason: Optional[str],
+) -> Dict[str, Any]:
+    return {
+        'source_commit': source_commit,
+        'changed_paths': [repo_rel(path) or str(path) for path in changed_paths],
+        'commit_sha': commit_sha,
+        'reason': reason,
+    }
+
+
+def perform_restore_implementation(
+    source_commit: str,
+    *,
+    reason: Optional[str],
+    skip_commit: bool,
+) -> Dict[str, Any]:
     tracked_non_state = [
         path for path in tracked_dirty_paths()
         if not path.startswith('state/')
@@ -1419,19 +1960,224 @@ def run_restore_implementation(args: argparse.Namespace) -> int:
 
     if not changed_paths:
         print_step(f'implementation surface already matches {source_commit}')
-        return 0
+        return restore_result_summary(
+            source_commit,
+            changed_paths=changed_paths,
+            commit_sha=None,
+            reason=reason,
+        )
 
-    if not args.skip_commit:
-        commit_paths(
+    commit_sha: Optional[str] = None
+    if not skip_commit:
+        commit_sha = commit_paths(
             changed_paths,
             infra_restore_commit_message(
                 source_commit,
-                args.reason or 're-measure or continue the next round from the restored baseline',
+                reason or 're-measure or continue the next round from the restored baseline',
             ),
         )
 
     print_step(
         f'restored {len(changed_paths)} implementation path(s) from {source_commit}'
+    )
+    return restore_result_summary(
+        source_commit,
+        changed_paths=changed_paths,
+        commit_sha=commit_sha,
+        reason=reason,
+    )
+
+
+def resolve_run_id_to_restore_target(run_id: str) -> Dict[str, Any]:
+    latest_run = load_latest_run()
+    if latest_run.get('run_id') == run_id and latest_run.get('measured_commit'):
+        return {
+            'run_id': run_id,
+            'source_commit': latest_run.get('measured_commit'),
+            'runtime_ms': latest_run.get('median_runtime_ms'),
+            'commit_field': 'measured_commit',
+        }
+
+    for entry in reversed(load_run_registry()):
+        if entry.get('run_id') != run_id:
+            continue
+        source_commit = entry.get('measured_commit') or entry.get('source_commit')
+        if source_commit:
+            return {
+                'run_id': run_id,
+                'source_commit': source_commit,
+                'runtime_ms': entry.get('median_runtime_ms'),
+                'commit_field': 'measured_commit' if entry.get('measured_commit') else 'source_commit',
+            }
+
+    search_state = load_search_state()
+    search_run_fields = (
+        ('exact_base_run_id', 'exact_base_measured_commit', 'exact_base_runtime_ms'),
+        ('accepted_base_run_id', 'accepted_base_measured_commit', 'accepted_base_runtime_ms'),
+        ('best_known_run_id', 'best_known_measured_commit', 'best_known_runtime_ms'),
+    )
+    for run_field, commit_field, runtime_field in search_run_fields:
+        if search_state.get(run_field) == run_id and search_state.get(commit_field):
+            return {
+                'run_id': run_id,
+                'source_commit': search_state.get(commit_field),
+                'runtime_ms': search_state.get(runtime_field),
+                'commit_field': commit_field,
+            }
+
+    raise RuntimeError(f'could not resolve run_id {run_id} to a measured/source commit')
+
+
+def record_restore_base_action(
+    run_id: str,
+    source_commit: str,
+    runtime_ms: Optional[float],
+    restore_result: Dict[str, Any],
+) -> None:
+    changed_files = list(restore_result.get('changed_paths', []))
+    commit_sha = restore_result.get('commit_sha')
+    commit_subject = (
+        git_output(['show', '-s', '--format=%s', commit_sha])
+        if commit_sha
+        else None
+    )
+    diff_stats = {
+        'files_changed': len(changed_files),
+        'insertions': 0,
+        'deletions': 0,
+    }
+    latest_attempt = {
+        'schema_version': 1,
+        'attempt_id': f'restore_base:{run_id}:{timestamp_tag()}',
+        'status': 'restore_completed',
+        'candidate_id': f'restore_base:{run_id}',
+        'source_diagnosis_id': None,
+        'base_run_id': run_id,
+        'family_id': 'restore_base',
+        'subfamily_id': 'restore_base.exact',
+        'direction_id': 'restore_base',
+        'direction_name': f'Restore implementation surface from {run_id}',
+        'mode': 'restore',
+        'commit': commit_sha,
+        'commit_short': commit_sha[:7] if commit_sha else None,
+        'subject': commit_subject,
+        'selection_mode': 'restore',
+        'selected_at': now_local_iso(),
+        'selected_from_frontier_id': None,
+        'source_run_id': run_id,
+        'selection_score': None,
+        'planned_action_fingerprint': f'restore_base:{source_commit}',
+        'implemented_action_fingerprint': f'restore_base:{source_commit}',
+        'score_breakdown': {},
+        'semantic_delta_tags': ['restore_base'],
+        'secondary_family_ids': [],
+        'actual_code_regions': changed_files,
+        'implementation': {
+            'commit': commit_sha,
+            'commit_short': commit_sha[:7] if commit_sha else None,
+            'subject': commit_subject,
+            'build_status': None,
+            'failure_mode': None,
+            'build_log_path': None,
+            'touched_files': changed_files,
+            'diff_stats': diff_stats,
+        },
+        'build_status': None,
+        'failure_mode': None,
+        'diff_stats': diff_stats,
+        'measurement': {
+            'run_id': None,
+            'measurement_commit': source_commit,
+            'runtime_ms': runtime_ms,
+            'runtime_delta_ms': None,
+            'tflops': None,
+            'correctness': None,
+            'headline_metrics': {},
+            'headline_metric_deltas_vs_previous_run': {},
+        },
+        'transition_label': None,
+        'transition_class': None,
+        'close_reason': 'restore_base',
+        'notes': f'Restored implementation surface from run_id={run_id} using {source_commit}.',
+    }
+    write_json(LATEST_ATTEMPT_PATH, latest_attempt)
+
+    search_state = load_search_state()
+    search_state['status'] = 'restore_base_completed'
+    search_state['exact_base_run_id'] = run_id
+    search_state['exact_base_measured_commit'] = source_commit
+    search_state['exact_base_runtime_ms'] = runtime_ms
+    search_state['latest_attempt_id'] = latest_attempt.get('attempt_id')
+    search_state['active_candidate_id'] = None
+    search_state['last_transition_type'] = 'restore_base'
+    search_state['last_restore_run_id'] = run_id
+    search_state['last_restore_source_commit'] = source_commit
+    search_state['last_restore_at'] = latest_attempt.get('selected_at')
+    search_state['last_restore_reason'] = restore_result.get('reason')
+    search_state['notes'] = f"Restored exact base from run_id={run_id} ({source_commit})."
+    write_json(SEARCH_STATE_PATH, search_state)
+
+    graph_state = load_graph_state()
+    graph_state['notes'] = f"Restore-base reset the implementation surface to run_id={run_id}."
+    write_json(GRAPH_STATE_PATH, graph_state)
+
+
+def update_failure_state(node_name: str, message: str) -> None:
+    graph_state = load_graph_state()
+    graph_state['current_node'] = node_name
+    graph_state['status'] = f'{node_name}_failed'
+    graph_state['notes'] = message
+    write_json(GRAPH_STATE_PATH, graph_state)
+    round_loop = load_round_loop_state()
+    if round_loop.get('active'):
+        round_loop['status'] = f'paused_on_{node_name}_failure'
+        round_loop['notes'] = f'Paused {round_label(round_loop)} because {node_name} failed: {message}'
+        write_json(ROUND_LOOP_STATE_PATH, round_loop)
+    refresh_all_views()
+
+
+def run_restore_implementation(args: argparse.Namespace) -> int:
+    ensure_machine_state()
+    source_commit = args.source_commit.strip()
+    if not source_commit:
+        raise RuntimeError('restore-implementation requires --source-commit <sha>')
+    perform_restore_implementation(
+        source_commit,
+        reason=args.reason,
+        skip_commit=args.skip_commit,
+    )
+    return 0
+
+
+def run_restore_base(args: argparse.Namespace) -> int:
+    ensure_machine_state()
+    run_id = args.run_id.strip()
+    if not run_id:
+        raise RuntimeError('restore-base requires --run-id <run_id>')
+
+    target = resolve_run_id_to_restore_target(run_id)
+    restore_result = perform_restore_implementation(
+        target['source_commit'],
+        reason=args.reason or f'restore exact base from measured run {run_id}',
+        skip_commit=True,
+    )
+    record_restore_base_action(
+        run_id,
+        target['source_commit'],
+        target.get('runtime_ms'),
+        restore_result,
+    )
+    refresh_all_views()
+    if not args.skip_commit:
+        commit_paths(
+            node_state_paths_for_commit(restore_result.get('changed_paths', [])),
+            infra_restore_commit_message(
+                target['source_commit'],
+                args.reason or f'restore exact base from measured run {run_id}',
+            ),
+        )
+    print_step(
+        f"restore-base resolved run_id={run_id} via {target.get('commit_field')}={target.get('source_commit')}"
     )
     return 0
 
@@ -1441,6 +2187,7 @@ def run_node_a(args: argparse.Namespace) -> int:
     ensure_machine_state()
     graph_state = load_graph_state()
     previous_run = load_latest_run()
+    previous_ncu = load_latest_ncu_summary()
     active_direction_before = load_active_direction()
     round_loop = load_round_loop_state()
     graph_state['current_kernel_path'] = graph_state.get('current_kernel_path') or current_kernel_path()
@@ -1510,6 +2257,14 @@ def run_node_a(args: argparse.Namespace) -> int:
         graph_state['plateau_counter'] = 0
     else:
         graph_state['plateau_counter'] = int(graph_state.get('plateau_counter', 0)) + 1
+    record_measurement_into_search_memory(
+        previous_run,
+        previous_ncu,
+        latest_run,
+        latest_ncu,
+        benchmark_state,
+        active_direction_before,
+    )
     write_json(BENCHMARK_STATE_PATH, benchmark_state)
     write_json(LATEST_RUN_PATH, latest_run)
     write_json(LATEST_NCU_SUMMARY_PATH, latest_ncu)
@@ -1603,45 +2358,262 @@ def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) 
     diagnosis['source_summary_json'] = latest_run.get('raw_summary_json')
     diagnosis['source_ncu_summary_json'] = repo_rel(LATEST_NCU_SUMMARY_PATH)
     diagnosis['current_kernel_path'] = graph_state.get('current_kernel_path', current_kernel_path())
+    diagnosis['selected_direction_id'] = None
+    diagnosis['family_audit'] = []
     diagnosis['directions'] = [
         {
             'direction_id': 'dir_01',
             'rank': 1,
             'name': '',
+            'family_id': '',
+            'subfamily_id': '',
+            'action_fingerprint': '',
+            'mode': 'exploit',
             'hypothesis': '',
             'expected_bottleneck': '',
             'code_locations': [],
             'risk': '',
             'metrics_to_recheck': [],
+            'search_score_v1': None,
+            'score_breakdown': {},
+            'predicted_gain_ms': None,
+            'predicted_fail_risk': None,
+            'ranking_notes': [],
             'stop_condition': '',
         },
         {
             'direction_id': 'dir_02',
             'rank': 2,
             'name': '',
+            'family_id': '',
+            'subfamily_id': '',
+            'action_fingerprint': '',
+            'mode': 'exploit',
             'hypothesis': '',
             'expected_bottleneck': '',
             'code_locations': [],
             'risk': '',
             'metrics_to_recheck': [],
+            'search_score_v1': None,
+            'score_breakdown': {},
+            'predicted_gain_ms': None,
+            'predicted_fail_risk': None,
+            'ranking_notes': [],
             'stop_condition': '',
         },
         {
             'direction_id': 'dir_03',
             'rank': 3,
             'name': '',
+            'family_id': '',
+            'subfamily_id': '',
+            'action_fingerprint': '',
+            'mode': 'exploit',
             'hypothesis': '',
             'expected_bottleneck': '',
             'code_locations': [],
             'risk': '',
             'metrics_to_recheck': [],
+            'search_score_v1': None,
+            'score_breakdown': {},
+            'predicted_gain_ms': None,
+            'predicted_fail_risk': None,
+            'ranking_notes': [],
             'stop_condition': '',
         },
     ]
     return diagnosis
 
 
+def score_breakdown_v1(rank: int, recommended: bool, risk_text: str | None) -> Dict[str, Any]:
+    risk_level = normalize_risk_text_to_level(risk_text)
+    risk_penalty = {
+        0: 0.0,
+        1: 0.4,
+        2: 0.9,
+        3: 1.2,
+    }[risk_level]
+    return {
+        'policy_id': 'heuristic_v1_fallback',
+        'rank_score': 4 - int(rank),
+        'recommended_bonus': 0.25 if recommended else 0.0,
+        'risk_level': risk_level,
+        'risk_penalty': risk_penalty,
+        'formula': 'rank_score + recommended_bonus - risk_penalty',
+    }
+
+
+def legacy_direction_slug(direction: Dict[str, Any]) -> str:
+    seed = str(direction.get('name') or direction.get('direction_id') or 'legacy_direction').strip().lower()
+    pieces: List[str] = []
+    last_was_sep = False
+    for char in seed:
+        if char.isalnum():
+            pieces.append(char)
+            last_was_sep = False
+            continue
+        if not last_was_sep:
+            pieces.append('_')
+            last_was_sep = True
+    slug = ''.join(pieces).strip('_')
+    return slug or str(direction.get('direction_id') or 'legacy_direction')
+
+
+def legacy_direction_mode(direction: Dict[str, Any]) -> str:
+    name_text = str(direction.get('name') or '').lower()
+    text = ' '.join(
+        str(direction.get(key) or '').lower()
+        for key in ('hypothesis', 'expected_bottleneck', 'stop_condition')
+    )
+    if any(keyword in name_text for keyword in ('restore base', 'rollback', 'revert', 'restore')):
+        return 'restore'
+    if any(keyword in name_text for keyword in ('retune', 'tune', 'tighten', 'trim', 'cadence', 'hot-band default', 're-lock', 'relock')):
+        return 'exploit'
+    if any(keyword in name_text for keyword in ('reopen', 'promote', 'explore', 'pivot', 'switch')):
+        return 'explore'
+    if any(keyword in text for keyword in ('rollback', 'revert', 'restore base')):
+        return 'restore'
+    return 'exploit'
+
+
+def legacy_predicted_gain_ms(rank: int | None) -> float:
+    return {
+        1: 0.35,
+        2: 0.2,
+        3: 0.1,
+    }.get(int(rank or 0), 0.05)
+
+
+def legacy_predicted_fail_risk(risk_text: str | None) -> float:
+    return {
+        0: 0.15,
+        1: 0.35,
+        2: 0.6,
+        3: 0.8,
+    }[normalize_risk_text_to_level(risk_text)]
+
+
+def legacy_ranking_notes(direction: Dict[str, Any], recommended: bool) -> List[str]:
+    notes = direction.get('ranking_notes')
+    if isinstance(notes, list):
+        normalized = [str(note).strip() for note in notes if str(note).strip()]
+    else:
+        normalized = []
+    if normalized:
+        return normalized
+    if recommended:
+        return [
+            'legacy diagnosis payload was backfilled into the search schema; keep the recommended direction as the deterministic fallback top candidate'
+        ]
+    return [
+        'legacy diagnosis payload was backfilled into the search schema; keep this candidate as a lower-priority alternative until newer search-native scoring exists'
+    ]
+
+
+def canonical_accepted_base_anchor(
+    search_state: Dict[str, Any],
+    latest_run: Dict[str, Any],
+) -> Dict[str, Any]:
+    round_loop = load_round_loop_state()
+    benchmark_state = load_benchmark_state()
+    best_custom = benchmark_state.get('best_custom') or {}
+    return {
+        'run_id': (
+            search_state.get('accepted_base_run_id')
+            or round_loop.get('accepted_base_run_id')
+            or best_custom.get('run_id')
+            or latest_run.get('run_id')
+        ),
+        'measured_commit': (
+            search_state.get('accepted_base_measured_commit')
+            or round_loop.get('accepted_base_measured_commit')
+            or best_custom.get('measured_commit')
+            or latest_run.get('measured_commit')
+        ),
+        'runtime_ms': (
+            search_state.get('accepted_base_runtime_ms')
+            or round_loop.get('accepted_base_runtime_ms')
+            or best_custom.get('median_runtime_ms')
+            or latest_run.get('median_runtime_ms')
+        ),
+    }
+
+
+def normalize_direction_for_finalize(direction: Dict[str, Any], recommended_direction_id: str | None) -> Dict[str, Any]:
+    normalized = dict(direction)
+    direction_id = normalized.get('direction_id')
+    recommended = direction_id == recommended_direction_id
+    slug = legacy_direction_slug(normalized)
+    if not isinstance(normalized.get('name'), str) or not normalized.get('name', '').strip():
+        normalized['name'] = str(direction_id or 'legacy_direction')
+    if not isinstance(normalized.get('family_id'), str) or not normalized.get('family_id', '').strip():
+        normalized['family_id'] = f'legacy::{slug}'
+    if not isinstance(normalized.get('subfamily_id'), str) or not normalized.get('subfamily_id', '').strip():
+        normalized['subfamily_id'] = normalized.get('family_id')
+    if (
+        normalized.get('mode') not in {'exploit', 'explore', 'restore'}
+        or str(normalized.get('family_id') or '').startswith('legacy::')
+    ):
+        normalized['mode'] = legacy_direction_mode(normalized)
+    for key in ('hypothesis', 'expected_bottleneck', 'risk', 'stop_condition'):
+        if not isinstance(normalized.get(key), str) or not normalized.get(key, '').strip():
+            normalized[key] = f'Legacy diagnosis backfill required for {direction_id} field={key}.'
+    code_locations = normalized.get('code_locations')
+    if not isinstance(code_locations, list):
+        code_locations = []
+    normalized['code_locations'] = [str(item).strip() for item in code_locations if str(item).strip()]
+    if not normalized['code_locations']:
+        normalized['code_locations'] = [current_kernel_path()]
+    metrics = normalized.get('metrics_to_recheck')
+    if not isinstance(metrics, list):
+        metrics = []
+    normalized['metrics_to_recheck'] = [str(item).strip() for item in metrics if str(item).strip()]
+    if not normalized['metrics_to_recheck']:
+        normalized['metrics_to_recheck'] = ['end-to-end median runtime']
+    if not isinstance(normalized.get('action_fingerprint'), str) or not normalized.get('action_fingerprint', '').strip():
+        normalized['action_fingerprint'] = make_action_fingerprint(normalized)
+    if normalized.get('search_score_v1') is None:
+        normalized['search_score_v1'] = fallback_search_score_v1(
+            normalized.get('rank', 99),
+            recommended,
+            normalized.get('risk'),
+        )
+    if not isinstance(normalized.get('score_breakdown'), dict) or not normalized.get('score_breakdown'):
+        normalized['score_breakdown'] = score_breakdown_v1(
+            normalized.get('rank', 99),
+            recommended,
+            normalized.get('risk'),
+        )
+    if normalized.get('predicted_gain_ms') is None:
+        normalized['predicted_gain_ms'] = legacy_predicted_gain_ms(normalized.get('rank'))
+    if normalized.get('predicted_fail_risk') is None:
+        normalized['predicted_fail_risk'] = legacy_predicted_fail_risk(normalized.get('risk'))
+    normalized['ranking_notes'] = legacy_ranking_notes(normalized, recommended)
+    return normalized
+
+
+def normalize_diagnosis_for_finalize(diagnosis: Dict[str, Any]) -> Dict[str, Any]:
+    normalized = dict(diagnosis)
+    if not isinstance(normalized.get('family_audit'), list):
+        normalized['family_audit'] = []
+    if not normalized.get('recommended_direction_id'):
+        directions = normalized.get('directions', [])
+        if directions:
+            normalized['recommended_direction_id'] = directions[0].get('direction_id')
+    normalized.setdefault('selected_direction_id', None)
+    normalized['directions'] = [
+        normalize_direction_for_finalize(direction, normalized.get('recommended_direction_id'))
+        for direction in normalized.get('directions', [])
+    ]
+    return normalized
+
+
 def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
+    diagnosis_id = diagnosis.get('diagnosis_id')
+    if not isinstance(diagnosis_id, str) or not diagnosis_id.strip():
+        raise RuntimeError('node_b diagnosis requires a non-empty diagnosis_id')
+    if not isinstance(diagnosis.get('family_audit'), list):
+        raise RuntimeError('node_b diagnosis requires family_audit to be a list')
     directions = diagnosis.get('directions', [])
     if len(directions) != 3:
         raise RuntimeError('node_b requires exactly 3 directions')
@@ -1653,20 +2625,177 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
         if direction_id in seen_ids:
             raise RuntimeError(f'duplicate direction id: {direction_id}')
         seen_ids.add(direction_id)
-        for key in ('name', 'hypothesis', 'expected_bottleneck', 'risk', 'stop_condition'):
+        for key in (
+            'name',
+            'family_id',
+            'subfamily_id',
+            'mode',
+            'hypothesis',
+            'expected_bottleneck',
+            'risk',
+            'stop_condition',
+        ):
             value = direction.get(key)
             if not isinstance(value, str) or not value.strip():
                 raise RuntimeError(f'{direction_id} is missing non-empty field: {key}')
+        if direction.get('mode') not in {'exploit', 'explore', 'restore'}:
+            raise RuntimeError(f"{direction_id} mode must be one of: exploit, explore, restore")
+        fingerprint = direction.get('action_fingerprint')
+        if not isinstance(fingerprint, str) or not fingerprint.strip():
+            raise RuntimeError(f'{direction_id} requires a non-empty action_fingerprint')
         code_locations = direction.get('code_locations')
         if not isinstance(code_locations, list) or not code_locations or not all(isinstance(item, str) and item.strip() for item in code_locations):
             raise RuntimeError(f'{direction_id} needs a non-empty code_locations list')
         metrics = direction.get('metrics_to_recheck')
         if not isinstance(metrics, list) or not metrics or not all(isinstance(item, str) and item.strip() for item in metrics):
             raise RuntimeError(f'{direction_id} needs a non-empty metrics_to_recheck list')
+        if direction.get('search_score_v1') is None:
+            raise RuntimeError(f'{direction_id} requires search_score_v1')
+        try:
+            float(direction.get('search_score_v1'))
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f'{direction_id} search_score_v1 must be numeric') from exc
+        score_breakdown = direction.get('score_breakdown')
+        if not isinstance(score_breakdown, dict) or not score_breakdown:
+            raise RuntimeError(f'{direction_id} requires a non-empty score_breakdown object')
+        if direction.get('predicted_gain_ms') is None:
+            raise RuntimeError(f'{direction_id} requires predicted_gain_ms')
+        try:
+            float(direction.get('predicted_gain_ms'))
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f'{direction_id} predicted_gain_ms must be numeric') from exc
+        if direction.get('predicted_fail_risk') is None:
+            raise RuntimeError(f'{direction_id} requires predicted_fail_risk')
+        try:
+            float(direction.get('predicted_fail_risk'))
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f'{direction_id} predicted_fail_risk must be numeric') from exc
+        ranking_notes = direction.get('ranking_notes')
+        if not isinstance(ranking_notes, list) or not all(isinstance(item, str) and item.strip() for item in ranking_notes):
+            raise RuntimeError(f'{direction_id} requires ranking_notes as a non-empty string list')
 
     recommended = diagnosis.get('recommended_direction_id')
     if recommended not in seen_ids:
         raise RuntimeError('recommended_direction_id must reference one of the three directions')
+    selected = diagnosis.get('selected_direction_id')
+    if selected is not None and selected not in seen_ids:
+        raise RuntimeError('selected_direction_id must be null or reference one of the three directions')
+
+
+def diagnosis_candidate_id(diagnosis_id: str, direction_id: str) -> str:
+    return f'{diagnosis_id}:{direction_id}'
+
+
+def candidate_record_from_direction(
+    diagnosis: Dict[str, Any],
+    latest_run: Dict[str, Any],
+    direction: Dict[str, Any],
+) -> Dict[str, Any]:
+    direction_id = direction.get('direction_id', 'dir_xx')
+    candidate_id = diagnosis_candidate_id(diagnosis.get('diagnosis_id', 'diagnosis_unknown'), direction_id)
+    recommended = direction_id == diagnosis.get('recommended_direction_id')
+    return {
+        'candidate_id': candidate_id,
+        'source_diagnosis_id': diagnosis.get('diagnosis_id'),
+        'base_run_id': latest_run.get('run_id'),
+        'base_measured_commit': latest_run.get('measured_commit'),
+        'direction_id': direction_id,
+        'direction_name': direction.get('name'),
+        'family_id': direction.get('family_id'),
+        'subfamily_id': direction.get('subfamily_id'),
+        'action_fingerprint': direction.get('action_fingerprint'),
+        'rank_in_diagnosis': direction.get('rank'),
+        'recommended': recommended,
+        'mode': direction.get('mode'),
+        'priority': float(direction.get('search_score_v1')),
+        'search_score_v1': float(direction.get('search_score_v1')),
+        'score_breakdown': direction.get('score_breakdown'),
+        'predicted_gain_ms': float(direction.get('predicted_gain_ms')),
+        'predicted_fail_risk': float(direction.get('predicted_fail_risk')),
+        'ranking_notes': direction.get('ranking_notes'),
+        'hypothesis': direction.get('hypothesis'),
+        'expected_bottleneck': direction.get('expected_bottleneck'),
+        'code_locations': direction.get('code_locations'),
+        'risk': direction.get('risk'),
+        'metrics_to_recheck': direction.get('metrics_to_recheck'),
+        'stop_condition': direction.get('stop_condition'),
+        'status': 'open',
+    }
+
+
+def frontier_record_from_candidate(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        'candidate_id': candidate.get('candidate_id'),
+        'source_diagnosis_id': candidate.get('source_diagnosis_id'),
+        'base_run_id': candidate.get('base_run_id'),
+        'family_id': candidate.get('family_id'),
+        'subfamily_id': candidate.get('subfamily_id'),
+        'action_fingerprint': candidate.get('action_fingerprint'),
+        'priority': candidate.get('priority'),
+        'status': 'open',
+        'direction_id': candidate.get('direction_id'),
+        'direction_name': candidate.get('direction_name'),
+        'mode': candidate.get('mode'),
+        'recommended': candidate.get('recommended'),
+        'ranking_notes': candidate.get('ranking_notes'),
+    }
+
+
+def write_search_candidates_and_frontier(diagnosis: Dict[str, Any], latest_run: Dict[str, Any]) -> None:
+    candidate_set_id = f"candidate_set:{diagnosis.get('diagnosis_id')}"
+    candidates = [
+        candidate_record_from_direction(diagnosis, latest_run, direction)
+        for direction in diagnosis.get('directions', [])
+    ]
+    recommended_candidate = next(
+        (candidate for candidate in candidates if candidate.get('direction_id') == diagnosis.get('recommended_direction_id')),
+        None,
+    )
+    search_candidates = {
+        'schema_version': 1,
+        'candidate_set_id': candidate_set_id,
+        'source_run_id': latest_run.get('run_id'),
+        'source_diagnosis_id': diagnosis.get('diagnosis_id'),
+        'generated_at': now_local_iso(),
+        'recommended_direction_id': diagnosis.get('recommended_direction_id'),
+        'recommended_candidate_id': recommended_candidate.get('candidate_id') if recommended_candidate else None,
+        'candidates': candidates,
+        'notes': 'Projected exactly three node_b directions into normalized search candidates.',
+    }
+    write_json(SEARCH_CANDIDATES_PATH, search_candidates)
+
+    frontier_id = f"frontier:{diagnosis.get('diagnosis_id')}"
+    search_frontier = {
+        'schema_version': 1,
+        'frontier_id': frontier_id,
+        'status': 'ready',
+        'source_run_id': latest_run.get('run_id'),
+        'source_measured_commit': latest_run.get('measured_commit'),
+        'source_diagnosis_id': diagnosis.get('diagnosis_id'),
+        'candidate_set_id': candidate_set_id,
+        'generated_at': now_local_iso(),
+        'selection_policy_id': 'heuristic_v1_fallback',
+        'selected_candidate_id': None,
+        'selection_reason': None,
+        'selection_summary': None,
+        'candidates': [frontier_record_from_candidate(candidate) for candidate in candidates],
+        'notes': 'All three node_b directions were enqueued as open candidates. No frontier selection is performed here.',
+    }
+    write_json(SEARCH_FRONTIER_PATH, search_frontier)
+
+    search_state = load_search_state()
+    accepted_anchor = canonical_accepted_base_anchor(search_state, latest_run)
+    search_state['status'] = 'frontier_ready'
+    search_state['accepted_base_run_id'] = accepted_anchor.get('run_id')
+    search_state['accepted_base_measured_commit'] = accepted_anchor.get('measured_commit')
+    search_state['accepted_base_runtime_ms'] = accepted_anchor.get('runtime_ms')
+    search_state['active_frontier_id'] = frontier_id
+    search_state['active_candidate_set_id'] = candidate_set_id
+    search_state['active_candidate_id'] = None
+    search_state['last_transition_type'] = 'candidate_emission'
+    search_state['search_iteration'] = int(search_state.get('search_iteration', 0)) + 1
+    search_state['notes'] = 'Latest node_b finalize projected exactly three open candidates into the frontier.'
+    write_json(SEARCH_STATE_PATH, search_state)
 
 
 def run_node_b(args: argparse.Namespace) -> int:
@@ -1678,7 +2807,7 @@ def run_node_b(args: argparse.Namespace) -> int:
     graph_state = load_graph_state()
     round_loop = load_round_loop_state()
     if args.finalize:
-        diagnosis = load_json_file(REPO_ROOT / args.diagnosis_file)
+        diagnosis = normalize_diagnosis_for_finalize(load_json_file(REPO_ROOT / args.diagnosis_file))
         validate_diagnosis(diagnosis)
         diagnosis['status'] = 'completed'
         diagnosis['created_at'] = diagnosis.get('created_at') or now_local_iso()
@@ -1688,6 +2817,7 @@ def run_node_b(args: argparse.Namespace) -> int:
         diagnosis['source_ncu_summary_json'] = diagnosis.get('source_ncu_summary_json') or repo_rel(LATEST_NCU_SUMMARY_PATH)
         diagnosis['current_kernel_path'] = diagnosis.get('current_kernel_path') or graph_state.get('current_kernel_path', current_kernel_path())
         write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
+        write_search_candidates_and_frontier(diagnosis, latest_run)
 
         graph_state['current_node'] = 'node_c'
         graph_state['previous_node'] = 'node_b'
@@ -1701,13 +2831,25 @@ def run_node_b(args: argparse.Namespace) -> int:
             DIAGNOSIS_HISTORY_PATH,
             diagnosis_history_entry(diagnosis, latest_run, round_loop),
         )
-        if round_loop.get('active') and round_loop.get('auto_use_recommended'):
+        if round_loop.get('active') and round_loop.get('auto_select_frontier'):
+            try:
+                select_next_candidate()
+            except RuntimeError as exc:
+                if str(exc) != 'no selectable frontier candidate is available':
+                    raise
+                recommended = diagnosis.get('recommended_direction_id')
+                if recommended:
+                    select_direction(recommended, 'recommended')
+            round_loop = load_round_loop_state()
+        elif round_loop.get('active') and round_loop.get('auto_use_recommended'):
             select_direction(diagnosis.get('recommended_direction_id'), 'recommended')
             round_loop = load_round_loop_state()
         refresh_all_views()
         if not args.skip_commit:
             commit_paths(node_state_paths_for_commit(), node_b_commit_message(diagnosis, latest_run, round_loop))
-        if round_loop.get('active') and round_loop.get('auto_use_recommended'):
+        if round_loop.get('active') and round_loop.get('auto_select_frontier'):
+            print_step('node_b finalized; auto-selected the next frontier candidate for node_c')
+        elif round_loop.get('active') and round_loop.get('auto_use_recommended'):
             print_step('node_b finalized; auto-selected the recommended direction for node_c')
         else:
             print_step('node_b finalized; next node is node_c')
@@ -1742,9 +2884,23 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
     if direction is None:
         raise RuntimeError(f'unknown direction id: {direction_id}')
 
+    matching_candidate = None
+    search_frontier = load_search_frontier()
+    for candidate in search_frontier.get('candidates', []):
+        if candidate.get('direction_id') == direction_id:
+            matching_candidate = candidate
+            break
+
     active = {
         'direction_id': direction_id,
         'name': direction.get('name'),
+        'candidate_id': matching_candidate.get('candidate_id') if matching_candidate else None,
+        'selected_from_frontier_id': search_frontier.get('frontier_id') if matching_candidate else None,
+        'family_id': matching_candidate.get('family_id') if matching_candidate else direction.get('family_id'),
+        'subfamily_id': matching_candidate.get('subfamily_id') if matching_candidate else direction.get('subfamily_id'),
+        'action_fingerprint': matching_candidate.get('action_fingerprint') if matching_candidate else direction.get('action_fingerprint'),
+        'selection_priority': matching_candidate.get('priority') if matching_candidate else direction.get('search_score_v1'),
+        'base_run_id': matching_candidate.get('base_run_id') if matching_candidate else None,
         'selection_mode': selection_mode,
         'selected_at': now_local_iso(),
         'source_diagnosis_id': diagnosis.get('diagnosis_id'),
@@ -1756,7 +2912,33 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
 
     if selection_mode in ('approved', 'human_idea'):
         diagnosis['approved_direction_id'] = direction_id
+    diagnosis['selected_direction_id'] = direction_id
     write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
+
+    if matching_candidate:
+        for candidate in search_frontier.get('candidates', []):
+            if candidate.get('candidate_id') == matching_candidate.get('candidate_id'):
+                candidate['status'] = 'selected'
+        search_frontier['selected_candidate_id'] = matching_candidate.get('candidate_id')
+        search_frontier['selection_reason'] = (
+            'frontier_top_open_candidate'
+            if selection_mode == 'frontier'
+            else f'selected_via_{selection_mode}'
+        )
+        search_frontier['selection_summary'] = (
+            f"Selected {matching_candidate.get('candidate_id')} -> {direction_id} via mode={selection_mode}."
+        )
+        write_json(SEARCH_FRONTIER_PATH, search_frontier)
+
+        search_state = load_search_state()
+        search_state['active_candidate_id'] = matching_candidate.get('candidate_id')
+        search_state['last_selected_candidate_id'] = matching_candidate.get('candidate_id')
+        search_state['last_selected_direction_id'] = direction_id
+        search_state['last_selected_selection_mode'] = selection_mode
+        search_state['last_selected_at'] = active.get('selected_at')
+        search_state['status'] = 'candidate_selected'
+        search_state['notes'] = f"Selected frontier candidate {matching_candidate.get('candidate_id')} for node_c."
+        write_json(SEARCH_STATE_PATH, search_state)
 
     round_loop = mark_round_started_if_needed(load_round_loop_state())
     graph_state = load_graph_state()
@@ -1775,6 +2957,117 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
     return 0
 
 
+def select_next_candidate() -> int:
+    ensure_machine_state()
+    active_direction = load_active_direction()
+    if active_direction.get('direction_id'):
+        raise RuntimeError('active_direction is already set; clear or finish the current selection before using select-next')
+
+    diagnosis = load_latest_diagnosis()
+    if diagnosis.get('status') != 'completed':
+        raise RuntimeError('node_b must be finalized before selecting from the frontier')
+
+    frontier = load_search_frontier()
+    candidates = frontier.get('candidates', [])
+    if not candidates:
+        raise RuntimeError('search frontier is empty; finalize node_b first')
+
+    changed = False
+    seen_fingerprints = {
+        str(candidate.get('action_fingerprint'))
+        for candidate in candidates
+        if candidate.get('status') == 'selected' and str(candidate.get('action_fingerprint') or '').strip()
+    }
+
+    chosen: Optional[Dict[str, Any]] = None
+    for candidate in frontier_open_candidates(frontier):
+        reason = candidate_invalid_reason(candidate, diagnosis)
+        fingerprint = str(candidate.get('action_fingerprint') or '').strip()
+        if reason is not None:
+            candidate['status'] = 'invalid'
+            candidate['invalid_reason'] = reason
+            changed = True
+            continue
+        if fingerprint in seen_fingerprints:
+            candidate['status'] = 'duplicate'
+            candidate['invalid_reason'] = 'duplicate_action_fingerprint'
+            changed = True
+            continue
+        chosen = candidate
+        break
+
+    if chosen is None:
+        if changed:
+            write_json(SEARCH_FRONTIER_PATH, frontier)
+        raise RuntimeError('no selectable frontier candidate is available')
+
+    if changed:
+        write_json(SEARCH_FRONTIER_PATH, frontier)
+    return select_direction(chosen.get('direction_id'), 'frontier')
+
+
+def run_search_status(_: argparse.Namespace) -> int:
+    ensure_machine_state()
+    search_state = load_search_state()
+    frontier = load_search_frontier()
+    diagnosis = load_latest_diagnosis()
+    benchmark_state = load_benchmark_state()
+    active_direction = load_active_direction()
+
+    open_candidates = frontier_open_candidates(frontier)
+    best_candidate = best_frontier_candidate(frontier, diagnosis)
+    best_known = benchmark_state.get('best_custom') or {}
+
+    print(f"search_status={search_state.get('status')}")
+    print(f"frontier_id={frontier.get('frontier_id')}")
+    print(f"frontier_open_count={len(open_candidates)}")
+    print(f"best_candidate_id={best_candidate.get('candidate_id') if best_candidate else None}")
+    print(f"best_candidate_direction_id={best_candidate.get('direction_id') if best_candidate else None}")
+    print(f"best_candidate_priority={best_candidate.get('priority') if best_candidate else None}")
+    print(
+        f"last_selected_candidate_id={search_state.get('last_selected_candidate_id') or active_direction.get('candidate_id')}"
+    )
+    print(
+        f"last_selected_selection_mode={search_state.get('last_selected_selection_mode') or active_direction.get('selection_mode')}"
+    )
+    print(f"accepted_base_run_id={search_state.get('accepted_base_run_id')}")
+    print(f"accepted_base_measured_commit={search_state.get('accepted_base_measured_commit')}")
+    print(f"accepted_base_runtime_ms={search_state.get('accepted_base_runtime_ms')}")
+    print(f"best_known_run_id={best_known.get('run_id')}")
+    print(f"best_known_measured_commit={best_known.get('measured_commit')}")
+    print(f"best_known_runtime_ms={best_known.get('median_runtime_ms')}")
+    return 0
+
+
+def run_frontier(args: argparse.Namespace) -> int:
+    ensure_machine_state()
+    frontier = load_search_frontier()
+    diagnosis = load_latest_diagnosis()
+    candidates = frontier_open_candidates(frontier)
+    print(f"frontier_id={frontier.get('frontier_id')}")
+    print(f"status={frontier.get('status')}")
+    print(f"open_count={len(candidates)}")
+    print(f"selected_candidate_id={frontier.get('selected_candidate_id')}")
+    limit = max(args.top, 0)
+    for idx, candidate in enumerate(candidates[:limit], start=1):
+        reason = candidate_invalid_reason(candidate, diagnosis)
+        selectable = 'yes' if reason is None else 'no'
+        print(
+            f"{idx:02d} candidate_id={candidate.get('candidate_id')} "
+            f"direction_id={candidate.get('direction_id')} "
+            f"priority={candidate.get('priority')} "
+            f"family_id={candidate.get('family_id')} "
+            f"subfamily_id={candidate.get('subfamily_id')} "
+            f"status={candidate.get('status')} "
+            f"selectable={selectable}"
+        )
+    return 0
+
+
+def run_select_next(_: argparse.Namespace) -> int:
+    return select_next_candidate()
+
+
 def run_node_c(args: argparse.Namespace) -> int:
     ensure_machine_state()
     graph_state = load_graph_state()
@@ -1782,7 +3075,7 @@ def run_node_c(args: argparse.Namespace) -> int:
     active_direction = load_active_direction()
     round_loop = load_round_loop_state()
     if not active_direction.get('direction_id'):
-        raise RuntimeError('node_c requires an active direction; use approve or use-recommended-direction first')
+        raise RuntimeError('node_c requires an active direction; use select-next, approve, or use-recommended-direction first')
 
     direction = direction_lookup(diagnosis, active_direction.get('direction_id'))
     if direction is None:
@@ -1807,8 +3100,32 @@ def run_node_c(args: argparse.Namespace) -> int:
         print(f'build log path: {repo_rel(NODE_C_BUILD_LOG_PATH)}')
         return 0
 
+    attempt_scope_paths = node_c_attempt_surface_paths()
+    commit_message = node_c_commit_message(active_direction, direction, round_loop)
+    commit_subject = commit_subject_from_message(commit_message)
     build_ok = maybe_run_build(runner_path, force=args.force_build, log_path=NODE_C_BUILD_LOG_PATH)
+    actual_code_regions = diff_name_only_against_head(attempt_scope_paths)
+    diff_stats = diff_stats_against_head(attempt_scope_paths)
+    if not active_direction.get('actual_code_regions'):
+        active_direction['actual_code_regions'] = actual_code_regions
+    if not active_direction.get('semantic_delta_tags'):
+        active_direction['semantic_delta_tags'] = derive_semantic_delta_tags(
+            actual_code_regions,
+            'PASS' if build_ok else 'FAIL',
+        )
+    if not active_direction.get('implemented_action_fingerprint'):
+        active_direction['implemented_action_fingerprint'] = active_direction.get('action_fingerprint')
     if not build_ok:
+        latest_attempt = build_latest_attempt_payload(
+            active_direction,
+            build_status='FAIL',
+            failure_mode='build_failed',
+            diff_stats=diff_stats,
+            actual_code_regions=actual_code_regions,
+            commit_sha=None,
+            commit_subject=commit_subject,
+        )
+        write_latest_attempt_payload(latest_attempt)
         graph_state['current_node'] = 'node_c'
         graph_state['previous_node'] = 'node_b'
         graph_state['status'] = 'node_c_build_failed'
@@ -1827,6 +3144,16 @@ def run_node_c(args: argparse.Namespace) -> int:
     active_direction['status'] = 'implemented_pending_measurement'
     active_direction['notes'] = 'Build passed. Node A must measure this implementation next.'
     write_json(ACTIVE_DIRECTION_PATH, active_direction)
+    latest_attempt = build_latest_attempt_payload(
+        active_direction,
+        build_status='PASS',
+        failure_mode=None,
+        diff_stats=diff_stats,
+        actual_code_regions=actual_code_regions,
+        commit_sha=None,
+        commit_subject=commit_subject,
+    )
+    write_latest_attempt_payload(latest_attempt)
     if round_loop.get('active'):
         round_loop['status'] = 'awaiting_measurement'
         round_loop['notes'] = f'Build passed for {round_label(round_loop)}. Node A will measure the result next.'
@@ -1851,8 +3178,20 @@ def run_node_c(args: argparse.Namespace) -> int:
             *existing_node_c_support_paths(),
         ]
     )
+    commit_sha: Optional[str] = None
     if not args.skip_commit:
-        commit_paths(commit_list, node_c_commit_message(active_direction, direction, round_loop))
+        commit_sha = commit_paths(commit_list, commit_message)
+        if commit_sha:
+            latest_attempt = build_latest_attempt_payload(
+                active_direction,
+                build_status='PASS',
+                failure_mode=None,
+                diff_stats=diff_stats,
+                actual_code_regions=actual_code_regions,
+                commit_sha=commit_sha,
+                commit_subject=git_output(['show', '-s', '--format=%s', commit_sha]),
+            )
+            write_latest_attempt_payload(latest_attempt)
 
     if args.no_auto_node_a:
         print_step('node_c finalized without auto-running node_a')
@@ -1894,6 +3233,7 @@ def run_status(_: argparse.Namespace) -> int:
     print(f"recommended_direction_id={diagnosis.get('recommended_direction_id')}")
     print(f"approved_direction_id={diagnosis.get('approved_direction_id')}")
     print(f"active_direction_id={active_direction.get('direction_id')}")
+    print(f"active_candidate_id={active_direction.get('candidate_id')}")
     print(f"round_loop_active={round_loop.get('active')}")
     print(f"round_loop_label={round_label(round_loop)}")
     print(f"rounds_remaining={round_loop.get('remaining_rounds')}")
@@ -1919,6 +3259,7 @@ def run_supervisor(_: argparse.Namespace) -> int:
     print(f"round_label={supervisor_task.get('round_label')}")
     print(f"round_loop_active={supervisor_task.get('round_loop_active')}")
     print(f"rounds_remaining={supervisor_task.get('rounds_remaining')}")
+    print(f"auto_select_frontier={supervisor_task.get('auto_select_frontier')}")
     print(f"notes={supervisor_task.get('notes')}")
     return 0
 
@@ -1935,6 +3276,7 @@ def run_rounds(args: argparse.Namespace) -> int:
         print(f"remaining_rounds={round_loop.get('remaining_rounds')}")
         print(f"round_label={round_label(round_loop)}")
         print(f"auto_use_recommended={round_loop.get('auto_use_recommended')}")
+        print(f"auto_select_frontier={round_loop.get('auto_select_frontier')}")
         print(f"notes={round_loop.get('notes')}")
         return 0
 
@@ -1963,7 +3305,11 @@ def run_rounds(args: argparse.Namespace) -> int:
     if current.get('active') and not args.restart:
         raise RuntimeError('a round loop is already active; use --restart to replace it or --stop to end it')
 
-    start_round_loop(args.count, auto_use_recommended=args.auto_use_recommended)
+    start_round_loop(
+        args.count,
+        auto_use_recommended=args.auto_use_recommended,
+        auto_select_frontier=args.auto_select_frontier,
+    )
     graph_state = load_graph_state()
     graph_state['notes'] = (
         f"Multi-round loop armed for {args.count} rounds. Continue with {graph_state.get('current_node', 'node_a')}."
@@ -1972,7 +3318,12 @@ def run_rounds(args: argparse.Namespace) -> int:
     refresh_all_views()
     print_step(
         f"started a {args.count}-round loop"
-        + (' with auto-use-recommended enabled' if args.auto_use_recommended else '')
+        + (' with auto-select-frontier enabled' if args.auto_select_frontier else '')
+        + (
+            ' with auto-use-recommended enabled'
+            if args.auto_use_recommended and not args.auto_select_frontier
+            else ''
+        )
     )
     return 0
 
@@ -1986,11 +3337,22 @@ def run_cycle(args: argparse.Namespace) -> int:
         return run_node_b(argparse.Namespace(finalize=False, refresh_template=False, diagnosis_file=LATEST_DIAGNOSIS_PATH, skip_commit=False))
     if current_node == 'node_c':
         active_direction = load_active_direction()
-        if not active_direction.get('direction_id') and round_loop.get('active') and round_loop.get('auto_use_recommended'):
-            diagnosis = load_latest_diagnosis()
-            recommended = diagnosis.get('recommended_direction_id')
-            if recommended:
-                select_direction(recommended, 'recommended')
+        if not active_direction.get('direction_id') and round_loop.get('active'):
+            if round_loop.get('auto_select_frontier'):
+                try:
+                    select_next_candidate()
+                except RuntimeError as exc:
+                    if str(exc) != 'no selectable frontier candidate is available':
+                        raise
+                    diagnosis = load_latest_diagnosis()
+                    recommended = diagnosis.get('recommended_direction_id')
+                    if recommended:
+                        select_direction(recommended, 'recommended')
+            elif round_loop.get('auto_use_recommended'):
+                diagnosis = load_latest_diagnosis()
+                recommended = diagnosis.get('recommended_direction_id')
+                if recommended:
+                    select_direction(recommended, 'recommended')
         return run_node_c(argparse.Namespace(finalize=False, force_build=False, skip_commit=False, no_auto_node_a=False, dry_run=False))
     raise RuntimeError(f'unknown current node: {current_node}')
 
@@ -2001,6 +3363,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     supervisor = subparsers.add_parser('supervisor', help='Refresh and print the current main-agent dispatch task')
     supervisor.set_defaults(func=run_supervisor)
+
+    search_status = subparsers.add_parser('search-status', help='Print the current heuristic-search scaffold status')
+    search_status.set_defaults(func=run_search_status)
+
+    frontier = subparsers.add_parser('frontier', help='Inspect the current frontier')
+    frontier.add_argument('--top', type=int, default=5)
+    frontier.set_defaults(func=run_frontier)
+
+    select_next = subparsers.add_parser('select-next', help='Select the highest-priority open frontier candidate for node_c')
+    select_next.set_defaults(func=run_select_next)
 
     node_a = subparsers.add_parser('node_a', help='Run the script-first evaluation node')
     node_a.add_argument('--runner', default='build/custom_runner')
@@ -2048,12 +3420,22 @@ def build_parser() -> argparse.ArgumentParser:
     restore.add_argument('--skip-commit', action='store_true')
     restore.set_defaults(func=run_restore_implementation)
 
+    restore_base = subparsers.add_parser(
+        'restore-base',
+        help='Resolve a measured run_id to a restore commit, restore the implementation surface, and record it as a search action',
+    )
+    restore_base.add_argument('--run-id', required=True)
+    restore_base.add_argument('--reason', default=None)
+    restore_base.add_argument('--skip-commit', action='store_true')
+    restore_base.set_defaults(func=run_restore_base)
+
     status = subparsers.add_parser('status', help='Print the current graph state')
     status.set_defaults(func=run_status)
 
     rounds = subparsers.add_parser('rounds', help='Manage a multi-round node_b -> node_c -> node_a loop budget')
     rounds.add_argument('--count', type=int, default=None)
     rounds.add_argument('--auto-use-recommended', action='store_true')
+    rounds.add_argument('--auto-select-frontier', action='store_true')
     rounds.add_argument('--restart', action='store_true')
     rounds.add_argument('--status', action='store_true')
     rounds.add_argument('--stop', action='store_true')

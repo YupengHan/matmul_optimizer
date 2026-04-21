@@ -27,18 +27,30 @@
 
         - write exactly 3 directions
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
+        - keep top-level `family_audit` as a list, even if empty
+        - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
         - each direction must include:
+          - `family_id`
+          - `subfamily_id`
+          - `action_fingerprint`
+          - `mode`
           - `hypothesis`
           - `expected_bottleneck`
           - `code_locations`
           - `risk`
           - `metrics_to_recheck`
+          - `search_score_v1`
+          - `score_breakdown`
+          - `predicted_gain_ms`
+          - `predicted_fail_risk`
+          - `ranking_notes`
         - set `recommended_direction_id`
+        - every direction is also treated as a search candidate, so keep numeric score fields and prose notes auditable
         - after editing the diagnosis file, run `python scripts/graph.py node_b --finalize`
 
         ## Current source snapshot
 
-        - round loop: `single-run`
+        - round loop: `round 1/1`
         - rounds remaining after this one: `0`
         - latest run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
         - median runtime: `25.325055 ms`

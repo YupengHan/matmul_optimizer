@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `node_c_context_ready`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `e6fdb8b21ac8bff36d581073faf117875347f3ea`
 - plateau counter: `7`
-- round loop: `single-run`
-- rounds remaining: `35`
-- notes: `Round loop stopped by user request. Hold the repo at this paused point and do not continue node_c or any further rounds before the heuristic-search migration work is done.`
+- round loop: `round 1/1`
+- rounds remaining: `1`
+- notes: `Node C build succeeded for round 1/1. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -41,8 +41,8 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 - direction id: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 

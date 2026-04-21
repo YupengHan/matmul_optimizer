@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "status": "candidate_selected",
+  "search_mode": "heuristic_mvp",
+  "search_iteration": 4,
+  "accepted_base_run_id": "20260420_185423_bf16_gemm_v1_1181247",
+  "accepted_base_measured_commit": "1181247a12bfd0978dd155838558142b6386710e",
+  "accepted_base_runtime_ms": 24.42246437,
+  "active_frontier_id": "frontier:diagnosis_20260420_200135",
+  "active_candidate_set_id": "candidate_set:diagnosis_20260420_200135",
+  "active_candidate_id": "diagnosis_20260420_200135:dir_01",
+  "latest_attempt_id": "diagnosis_20260420_200135:dir_01",
+  "last_transition_type": "node_c_finalize",
+  "selection_policy": {
+    "policy_id": "heuristic_v1_fallback",
+    "allow_restore_base": true,
+    "max_open_candidates": 3
+  },
+  "frontier_json": "state/search_frontier.json",
+  "candidates_json": "state/search_candidates.json",
+  "closed_jsonl": "state/search_closed.jsonl",
+  "family_ledger_json": "state/family_ledger.json",
+  "latest_attempt_json": "state/latest_attempt.json",
+  "notes": "Latest implementation edge recorded for diagnosis_20260420_200135:dir_01.",
+  "last_selected_candidate_id": "diagnosis_20260420_200135:dir_01",
+  "last_selected_direction_id": "dir_01",
+  "last_selected_selection_mode": "recommended",
+  "last_selected_at": "2026-04-20T20:49:03-07:00"
+}

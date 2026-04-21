@@ -2,13 +2,14 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `node_c_context_ready`
-- round loop: `single-run` with `35` rounds remaining
+- next node: `node_a`
+- status: `ready_for_node_a`
+- round loop: `round 1/1` with `1` rounds remaining
 
 ## Direction approval policy
 
 - explicit approval: `python scripts/graph.py approve --direction dir_02`
+- select the top frontier candidate: `python scripts/graph.py select-next`
 - continue with recommended direction: `python scripts/graph.py use-recommended-direction`
 - node_c should implement exactly one selected direction
 
@@ -27,5 +28,5 @@
 
 - selected direction: `dir_01`
 - selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one direction.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`

@@ -6,9 +6,13 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 - direction id: `dir_01`
 - direction name: `Retune The Active One-K 128x128 Hot-Band Copy Cadence`
+- candidate id: `diagnosis_20260420_200135:dir_01`
+- base run id: `20260420_200110_bf16_gemm_v1_e6fdb8b`
+- primary family id: `legacy::retune_the_active_one_k_128x128_hot_band_copy_cadence`
+- planned action fingerprint: `37742f1ef8641e8b`
 - selection mode: `recommended`
 - source diagnosis id: `diagnosis_20260420_200135`
-- round loop: `single-run`
+- round loop: `round 1/1`
 - hypothesis: `Round 16/50 still has no extra user-authored idea family in `state/human_review.md` beyond the approval gate and the exactly-one-direction rule, so the next move should follow the latest measured evidence as narrowly as possible. The current source surface already matches the recorded best-custom kernel source in `src/kernels/bf16_gemm_v1.cu` (no kernel diff between `1181247` and `e6fdb8b`), and the latest NCU capture shows the dominant `128x128` hot-band kernel is the only branch that is even slightly behind that best reference: hot-band time is `32,917,184 ns` now versus `32,868,864 ns` on `1181247`, while the peeled and tail kernels are not slower in the current capture. The remaining gap is narrow and still looks like feed/shared-stage friction inside the active one-K loop (`7.73%` long-scoreboard now versus `7.49%` on `1181247`, `13.02%` DRAM versus `12.84%`, with `196` regs/thread and only `16.64%` active warps), so the best next move is a bounded retune of the current K16 copy/wait cadence and B-stage handoff instead of another family pivot.`
 - expected bottleneck: `A narrow hot-band feed-latency and shared-stage handoff gap inside the active one-K `128x128` kernel, not the peeled `64x384` residual rows or the `64x96` tail.`
 - code locations: `src/kernels/bf16_gemm_v1.cu:1071-1102, src/kernels/bf16_gemm_v1.cu:1844-1947, src/kernels/bf16_gemm_v1.cu:2090-2138`
@@ -23,6 +27,14 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 - `CMakeLists.txt` only if the build path genuinely needs it
 - `scripts/graph.py` or `scripts/sweep_fixed_main_tiles.py` only when the direction requires minimal workflow glue
 
+## Implementation notes
+
+- implement exactly one selected direction
+- stay within the primary family by default
+- if the implementation clearly crosses into another family, update `state/active_direction.json` and record `secondary_family_ids` before finalize
+- if the implementation semantically drifts from the planned action, update `implemented_action_fingerprint`, `semantic_delta_tags`, or `actual_code_regions` in `state/active_direction.json` before finalize
+- build failure is still recorded as a structured `state/latest_attempt.json` entry with `build_status=FAIL`
+
 ## Required commands
 
 - edit code for one direction only
@@ -31,4 +43,5 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `scripts/graph.py`
+- `src/kernels/bf16_gemm_v1.cu`
