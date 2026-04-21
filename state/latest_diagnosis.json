@@ -1,17 +1,177 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_215833",
+  "status": "completed",
+  "created_at": "2026-04-20T21:58:33-07:00",
   "source_run_id": "20260420_205720_bf16_gemm_v1_bb3fc52",
   "source_run_dir": "runs/20260420_205720_bf16_gemm_v1_bb3fc52",
   "source_summary_json": "runs/20260420_205720_bf16_gemm_v1_bb3fc52/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "auto-analysis",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260420_215833:dir_01",
+  "family_audit": [
+    {
+      "family_id": "legacy::retune_the_active_one_k_128x128_hot_band_copy_cadence",
+      "decision": "defer",
+      "reason": "The just-measured implementation of this family regressed from 25.325055 ms to 25.381776 ms, so the next round should not spend another immediate budget unit on the same one-K cadence retune."
+    },
+    {
+      "family_id": "legacy::reopen_the_ptx_one_k_128x128_hot_band_control_branch",
+      "decision": "accept_primary",
+      "reason": "It keeps the current 128x128 geometry but swaps the hot-band control/export path, and the prior PTX run was already competitive at 25.379312 ms."
+    },
+    {
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "decision": "defer_as_fallback",
+      "reason": "The in-tree pivot kernel is still the cleanest geometry test if the 4-warp 128x128 path has hit its limit, but it is a larger family change than the PTX branch."
+    },
+    {
+      "family_id": "legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid",
+      "decision": "defer_as_low_risk_alt",
+      "reason": "A light CTA traversal remap is still worth keeping as a cheap locality probe because the hot band runs at only two resident 4-warp CTAs per SM."
+    },
+    {
+      "family_id": "legacy::reopen_the_two_k_128x128x32_stage_deepening_path",
+      "decision": "reject_this_round",
+      "reason": "The latest recovery came from moving away from the stage-deepening path, and the current 5.75% barrier stall does not justify reopening it before cheaper orthogonal branches."
+    },
+    {
+      "family_id": "legacy::reopen_the_full_band_64x384_sweep_path",
+      "decision": "reject_this_round",
+      "reason": "Direct node_a evidence already showed that reopening the stale sweep-backed full-band 64x384 family regressed badly on the restored surface."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Reopen The PTX One-K 128x128 Hot-Band Control Branch",
+      "family_id": "legacy::reopen_the_ptx_one_k_128x128_hot_band_control_branch",
+      "subfamily_id": "legacy::reopen_the_ptx_one_k_128x128_hot_band_control_branch",
+      "action_fingerprint": "ad14e3d0308af403",
+      "mode": "explore",
+      "hypothesis": "Round 1/20 already spent the first budget unit on a bounded retune of the active one-K 128x128 copy cadence, and node_a measured that branch slightly slower at 25.381776 ms versus the 25.325055 ms accepted base. The dominant hot-band kernel still owns about 32.918752 ms of device time with 196 registers per thread, only 16.65% active warps, 47.93% tensor-pipe activity, 7.60% long-scoreboard stall, and 5.75% barrier stall. The PTX one-K control branch keeps the same grouped-row 128x128 grid and hot-band split, but swaps the inner accumulate/export control path. That makes it the cleanest orthogonal next test because a prior PTX measurement already landed at 25.379312 ms, close enough that a small control-path win could be real on this surface.",
+      "expected_bottleneck": "Hot-band inner-loop control and export overhead in the standard one-K 128x128 path, rather than the peeled 64x384 residual rows or the 64x96 tail.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:796-1068",
+        "src/kernels/bf16_gemm_v1.cu:1957-2061",
+        "src/kernels/bf16_gemm_v1.cu:2071-2137"
+      ],
+      "risk": "Moderate to high. The PTX WMMA path is correctness-sensitive, but it is already present in-tree and the implementation surface should stay small because node_c only needs to route the default hot-band launch onto the existing branch.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the current 25.381776 ms run and the prior PTX 25.379312 ms run",
+        "hot-band gpu__time_duration.sum",
+        "hot-band launch__registers_per_thread",
+        "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.6,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v1",
+        "rank_score": 3.0,
+        "recommended_bonus": 0.25,
+        "risk_penalty": 0.65,
+        "evidence_bonus": 0.0,
+        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
+      },
+      "predicted_gain_ms": 0.12,
+      "predicted_fail_risk": 0.45,
+      "ranking_notes": [
+        "The immediately preceding copy-cadence retune already regressed, so another in-family retune should not stay ranked first.",
+        "This branch is orthogonal while still preserving the current 128x128 geometry and split.",
+        "The prior PTX measurement was already near the current control run, which makes a quick A/B round plausible."
+      ],
+      "stop_condition": "Stop if the PTX one-K branch does not beat the current 25.381776 ms run cleanly or if it regresses correctness/build despite staying on the same hot-band geometry."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "action_fingerprint": "538fb586502fa3b4",
+      "mode": "explore",
+      "hypothesis": "If the current 4-warp 128x128 branch has saturated its control path, the next structurally different branch should test geometry, not another wait-order micro-tweak. The dominant kernel is still register-limited to two resident CTAs with only 16.65% active warps, and it launches a 60x50 grid over the first 6400 x 7680 hot-band rows. The in-tree 256x128 pivot family restores an 8-warp CTA while halving the pivot-band CTA count, so it is the cleanest way to test whether CTA geometry and block-count overhead are now the limiting factor on the hot band.",
+      "expected_bottleneck": "CTA geometry and block-count overhead on the hot-band region, rather than a pure one-K copy-cadence problem.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:80-105",
+        "src/kernels/bf16_gemm_v1.cu:1581-1677",
+        "src/kernels/bf16_gemm_v1.cu:2071-2137"
+      ],
+      "risk": "Moderate. The kernel already exists, but routing the default path onto it changes the hot-band family more materially than the PTX branch and could trade lower CTA count for a worse live set.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "hot-band kernel name and grid size in ncu_details.csv",
+        "hot-band launch__registers_per_thread",
+        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 1.85,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v1",
+        "rank_score": 2.0,
+        "recommended_bonus": 0.0,
+        "risk_penalty": 0.4,
+        "evidence_bonus": 0.25,
+        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
+      },
+      "predicted_gain_ms": 0.1,
+      "predicted_fail_risk": 0.35,
+      "ranking_notes": [
+        "This is the clearest geometry pivot still sitting in-tree and ready to route.",
+        "It is ranked below the PTX branch because the implementation surface and behavior change are both larger.",
+        "If the PTX path stays flat, this becomes the next serious family to try."
+      ],
+      "stop_condition": "Stop if the 256x128 pivot branch cannot beat the current one-K 128x128 control run or if its larger CTA shape lowers active warps without improving hot-band time."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune Hot-Band CTA Traversal On The 128x128 Grid",
+      "family_id": "legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid",
+      "subfamily_id": "legacy::retune_hot_band_grouped_cta_traversal_on_the_128x128_grid",
+      "action_fingerprint": "cb77d05553cb3c86",
+      "mode": "exploit",
+      "hypothesis": "The current default hot-band branch already remaps physical CTAs into grouped logical tiles, but it still launches a large 60x50 grid while only two 4-warp CTAs can reside at once. In that low-occupancy regime, a lighter grouped-row or serpentine traversal on the 128x128 grid may recover a small amount of inter-CTA B-tile locality without changing the math kernel, registers, or shared-memory footprint. This is a cheap locality probe that stays orthogonal to both the PTX control branch and the 256x128 geometry branch.",
+      "expected_bottleneck": "Inter-CTA locality and block traversal efficiency on the hot-band grid under register-limited low occupancy.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:149-157",
+        "src/kernels/bf16_gemm_v1.cu:1714-1728",
+        "src/kernels/bf16_gemm_v1.cu:1868-1884",
+        "src/kernels/bf16_gemm_v1.cu:1981-1997"
+      ],
+      "risk": "Low to moderate. The change surface is small, but previous heavier CTA-order experiments on other hot-band families were not strong wins, so this stays as a lower-priority branch.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "hot-band gpu__time_duration.sum",
+        "hot-band lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "hot-band dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 1.15,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v1",
+        "rank_score": 1.0,
+        "recommended_bonus": 0.0,
+        "risk_penalty": 0.2,
+        "evidence_bonus": 0.35,
+        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
+      },
+      "predicted_gain_ms": 0.05,
+      "predicted_fail_risk": 0.25,
+      "ranking_notes": [
+        "This branch is intentionally cheap and reversible.",
+        "It stays below the PTX and 256x128 candidates because prior CTA-order ideas have had mixed evidence.",
+        "Keep it alive as the small-surface fallback if both larger hot-band branches stall."
+      ],
+      "stop_condition": "Stop if CTA traversal changes leave hot-band time and L2-facing counters flat after one round; do not spend repeated rounds on launch-order tuning."
+    }
+  ],
+  "notes": "Round 1/20 human-review audit: `state/human_review.md` still contributes only the approval gate and the exactly-one-direction rule, with no extra user-authored family to prioritize. The just-measured round spent its budget on an in-family retune of the active one-K 128x128 copy cadence, and node_a measured that branch slightly slower at 25.381776 ms than the 25.325055 ms accepted base. That is enough evidence to step away from the same immediate family for the next round. Accepted as the primary family for this diagnosis is the PTX one-K 128x128 control branch, because it preserves the current hot-band geometry and split while testing a different control/export path that already produced a nearby 25.379312 ms run. Deferred fallback families are the existing 256x128 pivot hot-band kernel and a light grouped-CTA traversal retune on the current 128x128 grid. Rejected for this round are reopening the two-K 128x128x32 stage-deepening path and the stale full-band 64x384 sweep-backed route."
 }
