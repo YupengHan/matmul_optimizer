@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `31`
-- remaining rounds: `69`
-- current round label: `round 32/100`
+- completed rounds: `32`
+- remaining rounds: `68`
+- current round label: `round 33/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 32/100. Node A will measure the result next.`
+- notes: `Completed round 32/100. Continue with node_b for round 33/100. Accepted base: 20260420_235922_bf16_gemm_v1_489574e at 24.164272 ms.`
 
 ## Last completed round
 
-- round: `31/100`
+- round: `32/100`
 - direction: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- verdict: `improved`
-- runtime delta: `-4.031569 ms`
-- TFLOP/s delta: `+4.300387 TFLOP/s`
-- run dir: `runs/20260421_013804_bf16_gemm_v1_b8a113b`
-- ncu rep path: `runs/20260421_013804_bf16_gemm_v1_b8a113b/ncu_profile.ncu-rep`
+- direction name: `Force 3-CTA Residency On The Non-PTX 128x128 Sibling`
+- verdict: `regressed`
+- runtime delta: `+2.229328 ms`
+- TFLOP/s delta: `-2.540324 TFLOP/s`
+- run dir: `runs/20260421_014052_bf16_gemm_v1_7296bf2`
+- ncu rep path: `runs/20260421_014052_bf16_gemm_v1_7296bf2/ncu_profile.ncu-rep`
