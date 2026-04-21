@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe`
-- candidate id: `diagnosis_20260421_110945:dir_01`
-- base run id: `20260421_110929_bf16_gemm_v1_342b1c5`
-- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
-- planned action fingerprint: `restore_best_measured_ptx_surface_after_failed_256x128_probe`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_110945`
-- round loop: `round 2/100`
-- hypothesis: `The 256x128 pivot probe achieved the intended register drop but still ran at 30.168576 ms because barrier and short-scoreboard stalls dominated. The correct next step is to restore the accepted PTX hot-band surface immediately so the loop can continue from a sane baseline instead of iterating on a +5.98 ms regression.`
-- expected bottleneck: `Recovery to the known PTX plateau before any further latency-hiding or barrier experiment is attempted`
-- code locations: `src/kernels/bf16_gemm_v1.cu:685 (compact 256x128-only B-fragment helper), src/kernels/bf16_gemm_v1.cu:1668 (256x128 compact accumulate call site), src/kernels/bf16_gemm_v1.cu:2130 (fixed hot-band dispatch route)`
-- risk: `Low. This is a bounded recovery revert back to the accepted PTX surface, not a new optimization hypothesis.`
-- metrics to re-check: `median runtime, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 3/100`
 
 ## Allowed edit surface
 
@@ -43,5 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `scripts/graph.py`
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail

@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_110929_bf16_gemm_v1_342b1c5`
-- run dir: `runs/20260421_110929_bf16_gemm_v1_342b1c5`
-- kernel tag: `bf16_gemm_v1_342b1c5`
-- round label: `round 1/100`
+- run id: `20260421_111322_bf16_gemm_v1_f768e80`
+- run dir: `runs/20260421_111322_bf16_gemm_v1_f768e80`
+- kernel tag: `bf16_gemm_v1_f768e80`
+- round label: `round 2/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.168576 ms`
-- p10 runtime: `30.119527 ms`
-- p90 runtime: `31.098159 ms`
-- TFLOP/s: `24.098566 TFLOP/s`
-- previous run id: `20260421_105134_bf16_gemm_v1_8dcab81`
-- runtime delta vs previous measured run: `+5.981616 ms`
-- TFLOP/s delta vs previous measured run: `-5.959755 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.293376 ms`
+- p10 runtime: `24.177357 ms`
+- p90 runtime: `25.265440 ms`
+- TFLOP/s: `29.926653 TFLOP/s`
+- previous run id: `20260421_110929_bf16_gemm_v1_342b1c5`
+- runtime delta vs previous measured run: `-5.875200 ms`
+- TFLOP/s delta vs previous measured run: `+5.828087 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Transplant low-register half-panel staging into the correctness-safe 256x128 pivot`
+- implemented direction name: `Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_110929_bf16_gemm_v1_342b1c5/summary.json`
-- measured commit: `342b1c5e41fb67ca4f7d1bc26a811a491ec7c3cf`
+- raw summary json: `runs/20260421_111322_bf16_gemm_v1_f768e80/summary.json`
+- measured commit: `f768e80d950fa4cd036ea003b32af972278df540`
 - new best custom: `no`
-- generated at: `2026-04-21T11:09:37-07:00`
+- generated at: `2026-04-21T11:13:29-07:00`

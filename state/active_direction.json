@@ -1,130 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe",
-  "candidate_id": "diagnosis_20260421_110945:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-  "action_fingerprint": "restore_best_measured_ptx_surface_after_failed_256x128_probe",
-  "selection_priority": 2.955,
-  "base_run_id": "20260421_110929_bf16_gemm_v1_342b1c5",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T11:12:43-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_110945",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Restore the accepted PTX hot-band anchor and discard the failed 256x128 probe",
-    "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-    "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-    "action_fingerprint": "restore_best_measured_ptx_surface_after_failed_256x128_probe",
-    "mode": "restore",
-    "hypothesis": "The 256x128 pivot probe achieved the intended register drop but still ran at 30.168576 ms because barrier and short-scoreboard stalls dominated. The correct next step is to restore the accepted PTX hot-band surface immediately so the loop can continue from a sane baseline instead of iterating on a +5.98 ms regression.",
-    "expected_bottleneck": "Recovery to the known PTX plateau before any further latency-hiding or barrier experiment is attempted",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:685 (compact 256x128-only B-fragment helper)",
-      "src/kernels/bf16_gemm_v1.cu:1668 (256x128 compact accumulate call site)",
-      "src/kernels/bf16_gemm_v1.cu:2130 (fixed hot-band dispatch route)"
-    ],
-    "risk": "Low. This is a bounded recovery revert back to the accepted PTX surface, not a new optimization hypothesis.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-    ],
-    "search_score_v1": 2.72,
-    "score_breakdown": {
-      "policy_id": "rich_ncu_recovery_v1",
-      "recovery_bonus": 1.45,
-      "measured_regression_bonus": 0.95,
-      "low_fail_risk_bonus": 0.2,
-      "formula": "recovery_bonus + measured_regression_bonus + low_fail_risk_bonus + baseline_family_credit"
-    },
-    "predicted_gain_ms": 5.7,
-    "predicted_fail_risk": 0.06,
-    "ranking_notes": [
-      "This is recommended because the current surface is too far off the accepted base to support another meaningful experiment.",
-      "The rich NCU deltas make the restore argument stronger, not weaker: registers improved but throughput and barrier behavior regressed badly.",
-      "Treat the restored PTX surface as a recovery checkpoint, not as a new win."
-    ],
-    "stop_condition": "Stop if the change starts widening beyond a bounded restore or if it fails to return the hot band to the accepted PTX dispatch path.",
-    "evidence_refs": [
-      "state/node_b_context.md",
-      "state/latest_run.md",
-      "state/latest_ncu_summary.md",
-      "runs/20260421_110929_bf16_gemm_v1_342b1c5/ncu_analysis.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics",
-        "metric_name": "Registers Per Thread",
-        "metric_value": 167.0,
-        "importance_score": 172.0,
-        "explanation": "Registers improved, but the probe still regressed overall throughput."
-      },
-      {
-        "hotspot_id": "stall::barrier",
-        "scope_type": "stall",
-        "scope_name": "barrier",
-        "location": "256x128 steady-state handoff",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "metric_value": 8.32,
-        "importance_score": 8.32,
-        "explanation": "Barrier stalls became the dominant issue on the probed surface."
-      },
-      {
-        "hotspot_id": "stall::short_scoreboard",
-        "scope_type": "stall",
-        "scope_name": "short_scoreboard",
-        "location": "256x128 shared / fragment handoff",
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "metric_value": 6.77,
-        "importance_score": 6.77,
-        "explanation": "Short-scoreboard stalls rose sharply versus the accepted PTX baseline."
-      }
-    ],
-    "expected_local_changes": [
-      "Route the hot band back to the accepted PTX 128x128 microkernel.",
-      "Remove or park the compact 256x128 probe path from the active dispatch.",
-      "Keep the recovery diff narrow enough that the next round can remeasure a clean baseline."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "median_runtime_ms",
-        "current_value": 30.16857624,
-        "guardrail": "strictly_decreasing",
-        "reason": "The current probe is materially regressed and must recover before forward search resumes."
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "current_value": 8.32,
-        "guardrail": "non_increasing",
-        "reason": "Barrier stalls jumped on the failed probe and should come back down after recovery."
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "current_value": 6.77,
-        "guardrail": "non_increasing",
-        "reason": "Short-scoreboard stalls are part of the current local failure mode."
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "scripts/graph.py",
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "workflow_glue",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "restore_best_measured_ptx_surface_after_failed_256x128_probe"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
