@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
-- candidate id: `diagnosis_20260421_000721:dir_01`
-- base run id: `20260421_000626_bf16_gemm_v1_7f84649`
-- primary family id: `legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path`
-- planned action fingerprint: `8e91e546243f09ff`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_000721`
-- round loop: `round 15/100`
-- hypothesis: `Round 14 restored the PTX winner after the round-13 handoff miss and confirmed that the regression was a one-variant failure rather than wider source drift: the current source now matches the best-known `489574e` kernel file exactly and runtime recovered from 24.48483181 ms back to 24.17859173 ms. That also means several families should be filtered out again for this round: the restore family is absorbed on the current source, the export-cleanup family is already baked into this PTX surface, and the A-then-B handoff variant is now a measured negative. With those filters applied, the strongest remaining live family is the active PTX control path. The branch still runs at only 16.62% active warps with non-trivial barrier and long-scoreboard cost, so one more bounded control-path exploit remains the best next move as long as it does not replay the already-tested B-first prologue, issue-grouping, or A-then-B handoff sub-variants.`
-- expected bottleneck: `Residual control-path and consume-order overhead inside the active PTX hot-band microkernel after the absorbed restore/export cleanup and the rejected handoff variant are removed from consideration.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:718-802, src/kernels/bf16_gemm_v1.cu:1954-2053, src/kernels/bf16_gemm_v1.cu:2110-2117`
-- risk: `Moderate. The family is still the best active-branch lever, but prior sub-variants have mixed evidence, so another attempt must stay narrowly distinct from the already-closed control-order and handoff changes.`
-- metrics to re-check: `end-to-end median runtime versus the 24.178592 ms accepted base and the 24.164272 ms best-known run, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, launch__occupancy_limit_registers, hot-band gpu__time_duration.sum`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 16/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
