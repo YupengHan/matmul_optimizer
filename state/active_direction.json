@@ -11,7 +11,16 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:03:54-07:00",
   "source_diagnosis_id": "diagnosis_20260421_010129",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
+  "semantic_delta_tags": [
+    "historical_surface_restore",
+    "ptx_best_surface",
+    "baseline_recovery"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
@@ -54,5 +63,5 @@
     "stop_condition": "Stop once the exact PTX best surface is restored or if a remeasurement shows it no longer reproduces the prior 24.16-24.18 ms band.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
