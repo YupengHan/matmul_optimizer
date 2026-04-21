@@ -1,18 +1,149 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_222244",
+  "status": "completed",
+  "created_at": "2026-04-20T22:22:44-07:00",
   "source_run_id": "20260420_221336_bf16_gemm_v1_8eb3db3",
   "source_run_dir": "runs/20260420_221336_bf16_gemm_v1_8eb3db3",
   "source_summary_json": "runs/20260420_221336_bf16_gemm_v1_8eb3db3/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260420_222244:dir_01",
+  "family_audit": [
+    "accepted_primary: active PTX hot-band control/register surface on the 128x128 microkernel",
+    "accepted_secondary: register-pressure reduction via PTX helper flattening",
+    "accepted_restore: historical PTX grouping-window restore to widen live family coverage",
+    "deferred: grouped CTA traversal/locality on the PTX grid after the round-4 PASS_LOSS regression",
+    "rejected_primary: the 256x128 pivot promotion family remains negative for this loop"
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "mode": "exploit",
+      "hypothesis": "The grouped-CTA traversal retune just lost 0.341504 ms versus the 24.177664 ms accepted PTX base, which is a strong signal that CTA ordering is not the next high-leverage knob on this branch. The active kernel is still the PTX 128x128 hot-band microkernel at 200 registers per thread with only 16.60% active warps and 48.36% tensor-pipe activity, while DRAM remains low at 9.73%. The next best move is therefore to stay on the winning PTX branch and retune the inner control/export surface that actually governs issue efficiency: copy/consume order, helper lifetime, and export sequencing inside the live microkernel, not another grid-traversal experiment.",
+      "expected_bottleneck": "Residual PTX hot-band control-path overhead and live-range pressure inside the current 128x128 microkernel, not global bandwidth or another CTA-ordering miss.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:719-860",
+        "src/kernels/bf16_gemm_v1.cu:1010-1075",
+        "src/kernels/bf16_gemm_v1.cu:1957-2061"
+      ],
+      "risk": "Moderate. This stays on the best measured family and touches the actual hot path, but PTX control-surface tweaks can still collapse into noise or silently grow live ranges if the scope is not bounded.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.177664 ms base",
+        "hot-band gpu__time_duration.sum",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.35,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v5",
+        "rank_score": 3.0,
+        "recommended_bonus": 0.25,
+        "regression_recovery_bonus": 0.2,
+        "risk_penalty": 1.1,
+        "formula": "rank_score + recommended_bonus + regression_recovery_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.05,
+      "predicted_fail_risk": 0.25,
+      "ranking_notes": [
+        "Round 4 already falsified grouped-CTA traversal as the primary next family on top of the current PTX winner.",
+        "This is the most coherent path that keeps the best-performing branch alive while targeting the still register-limited hot kernel.",
+        "It remains ahead of the historical restores because it attacks the live branch directly instead of rolling back to an older near-best state."
+      ],
+      "stop_condition": "Stop if another bounded PTX-local pass also leaves register count, active warps, and hot-band time effectively unchanged or loses cleanly against the 24.177664 ms base.",
+      "action_fingerprint": "df8f5978fe0c5afd"
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure",
+      "family_id": "legacy::flatten_ptx_hot_band_compute_helpers_to_reduce_register_pressure",
+      "subfamily_id": "legacy::flatten_ptx_hot_band_compute_helpers_to_reduce_register_pressure",
+      "mode": "exploit",
+      "hypothesis": "The live PTX branch is still pinned at 200 registers per thread and only 2 resident CTAs per SM, so occupancy and latency hiding remain constrained even when the traversal mapping changes. A historically promising family at 24.696832 ms was to flatten the PTX hot-band accumulate/helper surface so ptxas can shorten live ranges, remove unnecessary helper abstraction, and maybe recover a few warps of residency without touching macro geometry. That makes register-pressure reduction the strongest non-restore secondary family now that the traversal probe has failed.",
+      "expected_bottleneck": "Register-limited occupancy and weak latency hiding driven by helper structure and live-range expansion in the PTX hot-band compute path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:719-855",
+        "src/kernels/bf16_gemm_v1.cu:1144-1210",
+        "src/kernels/bf16_gemm_v1.cu:1911-1946"
+      ],
+      "risk": "Medium. The change is still local to the PTX microkernel, but helper flattening can easily become a no-op if the generated code and live ranges do not actually change.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "end-to-end median runtime versus the 24.177664 ms base"
+      ],
+      "search_score_v1": 1.95,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v5",
+        "rank_score": 2.0,
+        "historical_evidence_bonus": 0.2,
+        "orthogonality_bonus": 0.15,
+        "risk_penalty": 0.4,
+        "formula": "rank_score + historical_evidence_bonus + orthogonality_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.04,
+      "predicted_fail_risk": 0.35,
+      "ranking_notes": [
+        "The register-limited signature stayed intact through the traversal regression, so this family remains well-supported by the current profile.",
+        "It is ranked below dir_01 because the direct control-path exploit is on the exact best branch today.",
+        "The historical rehydration keeps this family live even though it was displaced by the recent policy change."
+      ],
+      "stop_condition": "Stop if register count does not move down materially or if occupancy remains stuck at the same ceiling after one bounded helper-flattening pass.",
+      "action_fingerprint": "8b3ccf7075a2138c"
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "mode": "restore",
+      "hypothesis": "The just-measured grouped_rows=8 traversal retune lost, but the round-history search still contains a historically near-best PTX grouping-window restore at 24.444416 ms that was measured on a stronger accepted surface than the current ad-hoc traversal probe. Keeping that older locality restore alive is useful because it widens family coverage after the policy update and preserves a clean A/B fallback if the live PTX exploit path becomes noisy. This is not the primary bet, but it is the best restore-style candidate still close enough to the current best to deserve a live slot.",
+      "expected_bottleneck": "Inter-CTA locality and launch-order mapping on the accepted PTX surface, but only as a historical restore fallback rather than the primary bottleneck attack.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1957-1979",
+        "src/kernels/bf16_gemm_v1.cu:2097-2104"
+      ],
+      "risk": "Low to medium. This is a restore family with prior measured evidence, but it still reopens a locality axis that the latest round just weakened.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.177664 ms base and the historical 24.444416 ms restore run",
+        "hot-band gpu__time_duration.sum",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 1.6,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v5",
+        "rank_score": 1.0,
+        "historical_close_to_best_bonus": 0.45,
+        "family_coverage_bonus": 0.35,
+        "latest_evidence_penalty": 0.2,
+        "formula": "rank_score + historical_close_to_best_bonus + family_coverage_bonus - latest_evidence_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.2,
+      "ranking_notes": [
+        "This is intentionally a restore/fallback family, not the recommended move, because the fresh grouped traversal probe just lost.",
+        "It stays ranked because the historical run is still close to the best measured PTX base and the user explicitly asked to repopulate live search families from round_history.",
+        "If the direct PTX exploit and register-pressure branch both stall, this family keeps a credible older locality window available for selection."
+      ],
+      "stop_condition": "Stop if the restored grouping window still cannot recover to its historical near-best behavior or if it behaves like the latest traversal probe with no meaningful locality signal.",
+      "action_fingerprint": "a7c65441ef18e509"
+    }
+  ],
+  "notes": "Round 5/20 audit: round 4's grouped-CTA traversal probe regressed from 24.177664 ms to 24.519168 ms, while the active PTX hot-band kernel still shows the same basic signature: 200 registers/thread, register-limited occupancy at 2 CTAs per SM, only 16.60% active warps, 48.36% tensor-pipe activity, and very low DRAM pressure. That rejects CTA traversal/locality as the primary family for the next round and puts the focus back on the PTX microkernel's control-path and live-range pressure. Because the recent search-policy update thinned the live queue, the ranking also pulls in two historically strong families from round_history: a register-pressure/helper-flattening branch and a restore of the best measured PTX grouping window. The 256x128 pivot family stays deferred after its earlier loss."
 }
