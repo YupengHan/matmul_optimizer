@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore accepted grouped_rows=8 hot-band consumer ordering`
-- candidate id: `diagnosis_20260421_002857:dir_01`
-- base run id: `20260421_002817_bf16_gemm_v1_a471728`
-- primary family id: `legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering`
-- planned action fingerprint: `restore_grouped_rows_8_ptx_consumer_ordering_surface`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_002857`
-- round loop: `round 18/100`
-- hypothesis: `Round 17 restored the PTX winner surface and pulled runtime back from 24.19086361 ms to 24.17296028 ms, with counters returning close to the prior PTX band: active warps rebounded to 16.63%, long-scoreboard tightened to 7.13%, and tensor activity rose to 48.41%. That means the restore family is absorbed again and the loop should stop spending rounds on re-anchoring. The best next move is now the strongest alternate PTX family kept alive from round_history: the grouped_rows=8 consumer-ordering surface. It preserves the PTX hot-band microkernel while materially changing CTA grouping and consumer locality, which makes it the cleanest next attempt to move beyond the current 24.17 plateau without reopening the already mixed control-path family first.`
-- expected bottleneck: `Grouped-row traversal and consumer-order locality on the PTX hot-band microkernel, not the already-restored prologue/refill seam on the grouped_rows=4 winner surface.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:153-156, src/kernels/bf16_gemm_v1.cu:1979-1993, src/kernels/bf16_gemm_v1.cu:2110-2117`
-- risk: `Moderate. This is an alternate PTX surface rather than the current default, but it is still the highest-confidence live family once restore is absorbed again.`
-- metrics to re-check: `end-to-end median runtime versus the 24.172960 ms restored run and the 24.164272 ms best-known run, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, dram__throughput.avg.pct_of_peak_sustained_elapsed, correctness pass rate across all 3 cases`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 19/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
