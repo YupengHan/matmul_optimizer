@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- candidate id: `diagnosis_20260421_002435:dir_01`
+- base run id: `20260421_002405_bf16_gemm_v1_95723fb`
+- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
+- planned action fingerprint: `restore_ptx_surface_from_wait_and_hoist_drift`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_002435`
 - round loop: `round 17/100`
+- hypothesis: `Round 16 turned the current PTX control branch back into a net negative. The implementation changed only one new hot-band seam, but a source diff versus the best measured PTX commit `489574e` now shows two bounded drifts on the PTX winner surface: the round-15 future_tile_k hoist and the round-16 prologue wait retime. The latest run regressed from 24.17100811 ms to 24.19086361 ms even though barrier dipped slightly from 5.21% to 5.16%, because long-scoreboard widened back from 7.08% to 7.16% and the end-to-end result moved away from both the 24.17859173 ms accepted base and the 24.16427231 ms best-known run. The next move should therefore be to restore the best measured PTX surface before spending more rounds on alternate families.`
+- expected bottleneck: `Source drift away from the proven PTX winner surface, specifically the prologue wait window and refill-address hot-band seam, not a need for another fresh PTX control experiment on top of the regressed variant.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:2014-2022, src/kernels/bf16_gemm_v1.cu:2042-2054, src/kernels/bf16_gemm_v1.cu:2110-2117`
+- risk: `Low to moderate. This is a small, auditable restore onto the best measured PTX surface rather than a new speculative optimization.`
+- metrics to re-check: `end-to-end median runtime versus the 24.190864 ms current run, the 24.178592 ms accepted base, and the 24.164272 ms best-known run, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, hot-band gpu__time_duration.sum, correctness pass rate across all 3 cases`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

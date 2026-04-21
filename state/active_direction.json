@@ -1,21 +1,59 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+  "candidate_id": "diagnosis_20260421_002435:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+  "action_fingerprint": "restore_ptx_surface_from_wait_and_hoist_drift",
+  "selection_priority": 2.5,
+  "base_run_id": "20260421_002405_bf16_gemm_v1_95723fb",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T00:27:28-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_002435",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+    "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+    "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+    "action_fingerprint": "restore_ptx_surface_from_wait_and_hoist_drift",
+    "mode": "restore",
+    "hypothesis": "Round 16 turned the current PTX control branch back into a net negative. The implementation changed only one new hot-band seam, but a source diff versus the best measured PTX commit `489574e` now shows two bounded drifts on the PTX winner surface: the round-15 future_tile_k hoist and the round-16 prologue wait retime. The latest run regressed from 24.17100811 ms to 24.19086361 ms even though barrier dipped slightly from 5.21% to 5.16%, because long-scoreboard widened back from 7.08% to 7.16% and the end-to-end result moved away from both the 24.17859173 ms accepted base and the 24.16427231 ms best-known run. The next move should therefore be to restore the best measured PTX surface before spending more rounds on alternate families.",
+    "expected_bottleneck": "Source drift away from the proven PTX winner surface, specifically the prologue wait window and refill-address hot-band seam, not a need for another fresh PTX control experiment on top of the regressed variant.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:2014-2022",
+      "src/kernels/bf16_gemm_v1.cu:2042-2054",
+      "src/kernels/bf16_gemm_v1.cu:2110-2117"
+    ],
+    "risk": "Low to moderate. This is a small, auditable restore onto the best measured PTX surface rather than a new speculative optimization.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime versus the 24.190864 ms current run, the 24.178592 ms accepted base, and the 24.164272 ms best-known run",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "hot-band gpu__time_duration.sum",
+      "correctness pass rate across all 3 cases"
+    ],
+    "search_score_v1": 2.3,
+    "score_breakdown": {
+      "policy_id": "manual_round100_node_b_v17",
+      "rank_score": 2.0,
+      "measured_regression_recovery_bonus": 0.35,
+      "surface_reanchor_bonus": 0.2,
+      "implementation_certainty_bonus": 0.1,
+      "risk_penalty": 0.35,
+      "formula": "rank_score + measured_regression_recovery_bonus + surface_reanchor_bonus + implementation_certainty_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.02,
+    "predicted_fail_risk": 0.2,
+    "ranking_notes": [
+      "This ranks first because the current source is a clearly isolated negative drift away from the PTX winner surface rather than a promising new branch.",
+      "The restore is small, auditable, and immediately re-anchors future comparisons after the failed wait-window retime.",
+      "It also preserves optionality, because grouped_rows=8 and 256x128 families can still be explored from a known-good surface afterward."
+    ],
+    "stop_condition": "Stop if the source already matches the best PTX surface exactly or if the restore fails to recover a cleaner runtime signature on re-measurement.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
