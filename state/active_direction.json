@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T18:18:01-07:00",
   "source_diagnosis_id": "diagnosis_20260420_181421",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -29,5 +29,5 @@
     ],
     "stop_condition": "Stop if registers stay at 200 or higher, occupancy does not improve, or tensor activity falls while runtime still fails to beat the restored 24.44441605 ms base."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
