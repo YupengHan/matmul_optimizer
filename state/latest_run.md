@@ -21,6 +21,7 @@
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
 - raw summary json: `runs/20260421_111322_bf16_gemm_v1_f768e80/summary.json`
+- ncu analysis path: `N/A`
 - measured commit: `f768e80d950fa4cd036ea003b32af972278df540`
 - new best custom: `no`
 - generated at: `2026-04-21T11:13:29-07:00`
