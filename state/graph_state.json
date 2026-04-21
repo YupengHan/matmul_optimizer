@@ -1,7 +1,7 @@
 {
-  "current_node": "node_c",
-  "previous_node": "node_b",
-  "status": "ready_for_node_c",
+  "current_node": "node_a",
+  "previous_node": "node_c",
+  "status": "ready_for_node_a",
   "latest_run_dir": "runs/20260421_084309_bf16_gemm_v1_185443a",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
@@ -10,5 +10,5 @@
   "recommended_direction_id": "dir_01",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "plateau_counter": 48,
-  "notes": "Node C is ready to implement auto_diagnosis_round_061:dir_01 via recommended selection for round 61/100."
+  "notes": "Node C build succeeded for round 61/100. Node A will now measure the new code path."
 }
