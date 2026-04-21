@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T22:09:10-07:00",
   "source_diagnosis_id": "diagnosis_20260420_220747",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Retune The Active PTX One-K 128x128 Hot-Band Control Path",
@@ -54,5 +54,13 @@
     "stop_condition": "Stop if one PTX-local retune cannot improve hot-band time or if it raises register pressure without recovering runtime.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "2ad5f5278d8d4a4c"
 }
