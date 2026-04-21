@@ -1976,28 +1976,30 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     return;
   }
 
-  const int hot_band_tiles_m =
-      kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM;
-  const int hot_band_tiles_n =
-      kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN;
-  const int physical_pid = blockIdx.y * hot_band_tiles_n + blockIdx.x;
-  const int pids_per_group = kFixedHotBandPtxGroupedRows * hot_band_tiles_n;
-  const int group_id = physical_pid / pids_per_group;
-  const int first_block_y = group_id * kFixedHotBandPtxGroupedRows;
-  const int group_size_y =
-      (first_block_y + kFixedHotBandPtxGroupedRows <= hot_band_tiles_m)
-          ? kFixedHotBandPtxGroupedRows
-          : (hot_band_tiles_m - first_block_y);
-  const int pid_in_group = physical_pid % pids_per_group;
-  const int logical_block_y = first_block_y + (pid_in_group % group_size_y);
-  const int logical_block_x = pid_in_group / group_size_y;
+  int block_row = 0;
+  int block_col = 0;
+  {
+    const int hot_band_tiles_m =
+        kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM;
+    const int hot_band_tiles_n =
+        kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN;
+    const int physical_pid = blockIdx.y * hot_band_tiles_n + blockIdx.x;
+    const int pids_per_group = kFixedHotBandPtxGroupedRows * hot_band_tiles_n;
+    const int group_id = physical_pid / pids_per_group;
+    const int first_block_y = group_id * kFixedHotBandPtxGroupedRows;
+    const int group_size_y =
+        (first_block_y + kFixedHotBandPtxGroupedRows <= hot_band_tiles_m)
+            ? kFixedHotBandPtxGroupedRows
+            : (hot_band_tiles_m - first_block_y);
+    const int pid_in_group = physical_pid % pids_per_group;
+    const int logical_block_y = first_block_y + (pid_in_group % group_size_y);
+    const int logical_block_x = pid_in_group / group_size_y;
 
-  const int block_row = logical_block_y * FixedHotBandTile128x128::kTensorBlockM;
-  const int block_col = logical_block_x * FixedHotBandTile128x128::kTensorBlockN;
+    block_row = logical_block_y * FixedHotBandTile128x128::kTensorBlockM;
+    block_col = logical_block_x * FixedHotBandTile128x128::kTensorBlockN;
+  }
   const int warp_tile_m = warp_id / FixedHotBandTile128x128::kWarpTilesN;
   const int warp_tile_n = warp_id % FixedHotBandTile128x128::kWarpTilesN;
-  const int row = block_row + warp_tile_m * FixedHotBandTile128x128::kWarpTileM;
-  const int col = block_col + warp_tile_n * FixedHotBandTile128x128::kWarpTileN;
 
   PtxWmmaAccTileSet64x64 acc_tiles;
   ptx_wmma_fill_zero_tile_set(acc_tiles);
@@ -2024,23 +2026,23 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
-    const int next_tile_idx = tile_idx + 1;
-    const int future_tile_idx = tile_idx + 2;
+    {
+      const __nv_bfloat16* a_tile =
+          a_shared[curr_stage] +
+          warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+      const __nv_bfloat16* b_tile =
+          b_shared[curr_stage] +
+          b_shared_col_from_logical<FixedHotBandTile128x128>(
+              warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<FixedHotBandTile128x128>(
-            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+      ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
+          acc_tiles, a_tile, b_tile);
+    }
 
-    ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
-        acc_tiles, a_tile, b_tile);
-
-    if (next_tile_idx < FixedKTiles) {
+    if (tile_idx + 1 < FixedKTiles) {
       cp_async_wait_group_0();
       __syncthreads();
+      const int future_tile_idx = tile_idx + 2;
       if (future_tile_idx < FixedKTiles) {
         stage_b_shared_tile_async<FixedHotBandTile128x128>(
             b_shared[curr_stage],
@@ -2055,6 +2057,8 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     }
   }
 
+  const int row = block_row + warp_tile_m * FixedHotBandTile128x128::kWarpTileM;
+  const int col = block_col + warp_tile_n * FixedHotBandTile128x128::kWarpTileN;
   __nv_bfloat16* c_tile_base = c + row * kFixedBenchmarkN + col;
   ptx_wmma_store_tile_pairs_64x64_ptx_microkernel(
       acc_tiles, c_shared, c_tile_base, warp_id, lane_id);
