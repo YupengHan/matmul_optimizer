@@ -8,9 +8,9 @@
   "candidate_set_id": "candidate_set:diagnosis_20260420_222929",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": "diagnosis_20260420_222929:dir_01",
-  "selection_reason": "selected_via_recommended",
-  "selection_summary": "Selected diagnosis_20260420_222929:dir_01 -> dir_01 via mode=recommended.",
+  "selected_candidate_id": "diagnosis_20260420_222929:dir_03",
+  "selection_reason": "selected_via_approved",
+  "selection_summary": "Selected diagnosis_20260420_222929:dir_03 -> dir_03 via mode=approved.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -1614,7 +1614,7 @@
       "last_result_runtime_ms": 24.5350399,
       "last_runtime_delta_ms": 0.015872000000001663,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-20T22:30:55-07:00",
+      "last_closed_at": "2026-04-20T22:33:57-07:00",
       "last_closed_search_iteration": 10,
       "last_reopened_search_iteration": 10,
       "reopened_at": "2026-04-20T22:30:55-07:00",
@@ -1944,12 +1944,12 @@
         "sm__warps_active.avg.pct_of_peak_sustained_active"
       ],
       "stop_condition": "Stop if the restore cannot recover near its historical behavior or if locality metrics stay flat enough to make the family redundant.",
-      "status": "open",
+      "status": "selected",
       "source_search_iteration": 10,
-      "selection_count": 0,
+      "selection_count": 1,
       "reopen_count": 0,
-      "last_selected_at": null,
-      "last_selected_selection_mode": null,
+      "last_selected_at": "2026-04-20T22:33:57-07:00",
+      "last_selected_selection_mode": "approved",
       "last_transition_label": null,
       "last_transition_class": null,
       "last_result_run_id": null,
@@ -1968,7 +1968,7 @@
     }
   ],
   "notes": "Persistent frontier tracks 29 historical candidates; 12 family representatives are currently active for selection.",
-  "updated_at": "2026-04-20T22:30:55-07:00",
+  "updated_at": "2026-04-20T22:33:57-07:00",
   "family_representative_count": 12,
   "reopened_candidate_ids": []
 }

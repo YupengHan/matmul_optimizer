@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `round_in_progress`
-- total rounds: `20`
+- status: `awaiting_measurement`
+- total rounds: `100`
 - completed rounds: `5`
-- remaining rounds: `15`
-- current round label: `round 6/20`
+- remaining rounds: `95`
+- current round label: `round 6/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_221009_bf16_gemm_v1_68c21ac`
@@ -14,11 +14,11 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Executing round 6/20.`
+- notes: `Build passed for round 6/100. Node A will measure the result next.`
 
 ## Last completed round
 
-- round: `5/20`
+- round: `5/100`
 - direction: `dir_01`
 - direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
 - verdict: `regressed`

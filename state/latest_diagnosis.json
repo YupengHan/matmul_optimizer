@@ -9,9 +9,9 @@
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "recommended_direction_id": "dir_01",
-  "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260420_222929:dir_01",
+  "approved_direction_id": "dir_03",
+  "selected_direction_id": "dir_03",
+  "selected_candidate_id": "diagnosis_20260420_222929:dir_03",
   "family_audit": [
     "accepted_primary: register-pressure reduction on the active PTX hot-band microkernel",
     "accepted_secondary: PTX export-surface cleanup that stays on the live branch",

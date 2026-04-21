@@ -1,9 +1,9 @@
 {
   "active": true,
-  "status": "round_in_progress",
-  "total_rounds": 20,
+  "status": "awaiting_measurement",
+  "total_rounds": 100,
   "completed_rounds": 5,
-  "remaining_rounds": 15,
+  "remaining_rounds": 95,
   "next_round_index": 6,
   "current_round_index": 6,
   "auto_use_recommended": true,
@@ -13,7 +13,7 @@
   "last_completed_round": {
     "recorded_at": "2026-04-20T22:28:52-07:00",
     "round_index": 5,
-    "total_rounds": 20,
+    "total_rounds": 100,
     "direction_id": "dir_01",
     "direction_name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
     "selection_mode": "recommended",
@@ -36,5 +36,5 @@
   "accepted_base_measured_commit": "68c21acd26439775c646252dbb0e52d247ea9f47",
   "accepted_base_runtime_ms": 24.1776638,
   "history_path": "state/round_history.jsonl",
-  "notes": "Executing round 6/20."
+  "notes": "Build passed for round 6/100. Node A will measure the result next."
 }

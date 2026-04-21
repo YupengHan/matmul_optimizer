@@ -4,20 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure`
-- candidate id: `diagnosis_20260420_222929:dir_01`
+- direction id: `dir_03`
+- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- candidate id: `diagnosis_20260420_222929:dir_03`
 - base run id: `20260420_222846_bf16_gemm_v1_8ba4496`
-- primary family id: `legacy::flatten_ptx_hot_band_compute_helpers_to_reduce_register_pressure`
-- planned action fingerprint: `00ef6081291d54f2`
-- selection mode: `recommended`
+- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
+- planned action fingerprint: `3587455924361acf`
+- selection mode: `approved`
 - source diagnosis id: `diagnosis_20260420_222929`
-- round loop: `round 6/20`
-- hypothesis: `The round-5 control-path tweak effectively held runtime flat while leaving the same occupancy-limited signature in place: the hot PTX kernel still reports only 16.49% active warps and the same register-limited CTA ceiling. That makes register pressure the most coherent next family. The historically rehydrated helper-flattening branch already showed a 24.696832 ms run, and the current profile still supports its thesis that the PTX helper structure is keeping too much live state around the active 128x128 hot-band path.`
-- expected bottleneck: `Register-limited occupancy and weak latency hiding caused by helper-induced live ranges in the PTX hot-band compute path.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:719-855, src/kernels/bf16_gemm_v1.cu:1144-1210, src/kernels/bf16_gemm_v1.cu:1911-1946`
-- risk: `Medium. Helper flattening is still bounded to the active PTX branch, but it can devolve into a no-op if ptxas keeps the same live ranges and scheduling.`
-- metrics to re-check: `launch__registers_per_thread, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, end-to-end median runtime versus the 24.177664 ms accepted base`
+- round loop: `round 6/100`
+- hypothesis: `The current loop should keep one restore-style family active instead of repeatedly tunneling on the latest PTX-local micro-tunes. The best historical grouping-window restore still measured 24.444416 ms, close enough to the accepted base to remain meaningful, and it gives the search an auditable locality fallback if both the helper-flattening and export-cleanup families stall.`
+- expected bottleneck: `Inter-CTA locality and launch-order mapping on the accepted PTX surface, but explicitly as a restore fallback rather than the primary next attack.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:156, src/kernels/bf16_gemm_v1.cu:1957-1979, src/kernels/bf16_gemm_v1.cu:2097-2104`
+- risk: `Low to medium. The family has historical evidence, but the latest fresh grouped traversal probe also makes it a weaker primary bet than the two PTX-local cleanup families.`
+- metrics to re-check: `end-to-end median runtime versus the 24.177664 ms base and the historical 24.444416 ms restore run, hot-band gpu__time_duration.sum, lts__throughput.avg.pct_of_peak_sustained_elapsed, sm__warps_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -43,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `src/kernels/bf16_gemm_v1.cu`
