@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T16:02:13-07:00",
   "source_diagnosis_id": "diagnosis_20260421_160019",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
@@ -86,5 +86,13 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax"
 }

@@ -1,30 +1,30 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_155620:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_155620:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_155620",
-  "base_run_id": "20260421_155533_bf16_gemm_v1_83acaae4",
-  "family_id": "shared_memory::trim_grouped_row_non_ptx_export_scratch_to_single_stage",
-  "subfamily_id": "shared_memory::trim_grouped_row_non_ptx_export_scratch_to_single_stage::keep_three_cta_probe_surface",
+  "attempt_id": "diagnosis_20260421_160019:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_160019:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_160019",
+  "base_run_id": "20260421_160001_bf16_gemm_v1_d7576a6e",
+  "family_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime",
+  "subfamily_id": "sync_pipeline::non_ptx_hotband_barrier_handoff_retime::future_tile_refill_order",
   "direction_id": "dir_01",
-  "direction_name": "Trim The Grouped-Row 128x128 Sibling Export Scratch To Single Stage",
+  "direction_name": "Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
   "mode": "explore",
-  "commit": "d7576a6e1833a4cb5fc914851ee6b2512930cb04",
-  "commit_short": "d7576a6",
-  "subject": "node_c: round 8/10 implement dir_01 Trim The Grouped-Row 128x128 Sibling Export Scratch To Single Stage",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 9/10 implement dir_01 Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:59:10-07:00",
+  "selected_at": "2026-04-21T16:02:13-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_155533_bf16_gemm_v1_83acaae4",
-  "selection_score": 1.075,
-  "planned_action_fingerprint": "keep_non_ptx_three_cta_surface_but_restore_ptx_style_single_stage_export_scratch",
-  "implemented_action_fingerprint": "keep_non_ptx_three_cta_surface_but_restore_ptx_style_single_stage_export_scratch",
+  "source_run_id": "20260421_160001_bf16_gemm_v1_d7576a6e",
+  "selection_score": 1.0425,
+  "planned_action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax",
+  "implemented_action_fingerprint": "keep_non_ptx_three_cta_surface_and_swap_future_tile_refill_order_to_reduce_barrier_tax",
   "score_breakdown": {
-    "policy_id": "manual_round08_deconfound_three_cta_v1",
-    "headroom_score": 0.31,
-    "evidence_score": 0.29,
-    "implementation_bonus": 0.36,
+    "policy_id": "manual_round09_last_nonptx_salvage_v1",
+    "headroom_score": 0.22,
+    "evidence_score": 0.31,
+    "implementation_bonus": 0.41,
     "risk_penalty": -0.05,
     "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
   },
@@ -37,9 +37,9 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "d7576a6e1833a4cb5fc914851ee6b2512930cb04",
-    "commit_short": "d7576a6",
-    "subject": "node_c: round 8/10 implement dir_01 Trim The Grouped-Row 128x128 Sibling Export Scratch To Single Stage",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 9/10 implement dir_01 Retime The Non-PTX 3-CTA Barrier/Handoff Seam",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
@@ -48,146 +48,31 @@
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 41,
-      "deletions": 39
+      "insertions": 4,
+      "deletions": 4
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 41,
-    "deletions": 39
+    "insertions": 4,
+    "deletions": 4
   },
   "measurement": {
-    "run_id": "20260421_160001_bf16_gemm_v1_d7576a6e",
-    "measurement_commit": "d7576a6e1833a4cb5fc914851ee6b2512930cb04",
-    "runtime_ms": 26.73048019,
-    "runtime_delta_ms": 0.18942451000000204,
-    "tflops": 27.19814296,
-    "correctness": true,
-    "ncu_analysis_path": "runs/20260421_160001_bf16_gemm_v1_d7576a6e/ncu_analysis.json",
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 46.89,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 46.79,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 47.39,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 21.61,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 31.18,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 24.72,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 11.23,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 1.94,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 4.71,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 1.98,
-      "launch__occupancy_limit_registers": 3.0
-    },
-    "headline_metric_deltas_vs_previous_run": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 0.060000000000002274,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 0.060000000000002274,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": -0.03999999999999915,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 0.0799999999999983,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 0.03999999999999915,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 0.0,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": -0.08000000000000007,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 0.010000000000000009,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 0.08999999999999986,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": -0.08000000000000007,
-      "launch__occupancy_limit_registers": 0.0
-    },
-    "structured_bottleneck_deltas": [
-      {
-        "stall_group": "short_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "previous": 4.62,
-        "current": 4.71,
-        "delta": 0.08999999999999986,
-        "trend": "regressed"
-      },
-      {
-        "stall_group": "barrier",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "previous": 11.31,
-        "current": 11.23,
-        "delta": -0.08000000000000007,
-        "trend": "improved"
-      },
-      {
-        "stall_group": "mio_throttle",
-        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "previous": 2.06,
-        "current": 1.98,
-        "delta": -0.08000000000000007,
-        "trend": "improved"
-      },
-      {
-        "stall_group": "long_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "previous": 1.93,
-        "current": 1.94,
-        "delta": 0.010000000000000009,
-        "trend": "regressed"
-      }
-    ],
-    "top_hotspot_deltas": [
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "DRAM Throughput",
-        "previous": 20.45,
-        "current": 21.37,
-        "delta": 0.9200000000000017,
-        "trend": "improved",
-        "importance_score": 84.55,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "Compute (SM) Throughput",
-        "previous": 46.73,
-        "current": 46.78,
-        "delta": 0.05000000000000426,
-        "trend": "improved",
-        "importance_score": 58.27,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l1_tex_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L1/TEX Cache Throughput",
-        "previous": 47.48,
-        "current": 47.53,
-        "delta": 0.05000000000000426,
-        "trend": "improved",
-        "importance_score": 57.52,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l2_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L2 Cache Throughput",
-        "previous": 31.15,
-        "current": 31.19,
-        "delta": 0.0400000000000027,
-        "trend": "improved",
-        "importance_score": 73.85,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.",
-        "bucket": "improved"
-      }
-    ]
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "ncu_analysis_path": null,
+    "headline_metrics": {},
+    "headline_metric_deltas_vs_previous_run": {},
+    "structured_bottleneck_deltas": [],
+    "top_hotspot_deltas": []
   },
-  "transition_class": "regressed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_160001_bf16_gemm_v1_d7576a6e for candidate diagnosis_20260421_155620:dir_01; transition_label=PASS_LOSS.",
-  "transition_label": "PASS_LOSS"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
