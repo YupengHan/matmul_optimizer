@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_093739:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_093739:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_093739",
   "base_run_id": "20260421_084952_bf16_gemm_v1_8b1af08",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
   "mode": "exploit",
-  "commit": null,
-  "commit_short": null,
+  "commit": "0b38abd3a13d0f518bfffb3849dbd8ef150686da",
+  "commit_short": "0b38abd",
   "subject": "node_c: single-run implement dir_01 Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T09:41:16-07:00",
@@ -37,8 +37,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "0b38abd3a13d0f518bfffb3849dbd8ef150686da",
+    "commit_short": "0b38abd",
     "subject": "node_c: single-run implement dir_01 Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
     "build_status": "PASS",
     "failure_mode": null,
@@ -60,16 +60,29 @@
     "deletions": 26
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260421_094231_bf16_gemm_v1_0b38abd",
+    "measurement_commit": "0b38abd3a13d0f518bfffb3849dbd8ef150686da",
+    "runtime_ms": 45.97401619,
+    "runtime_delta_ms": 21.54691219,
+    "tflops": 15.81370265,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.41",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.83",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.13",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "14.49",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "29.21",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.63",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.68",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.11",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.19",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.69",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "regressed",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_094231_bf16_gemm_v1_0b38abd for candidate diagnosis_20260421_093739:dir_01; transition_label=PASS_LOSS.",
+  "transition_label": "PASS_LOSS"
 }

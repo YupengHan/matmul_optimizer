@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `8b1af08daa22015817d74711dfdc12ec910d69a6`
-- plateau counter: `88`
+- latest measured commit: `0b38abd3a13d0f518bfffb3849dbd8ef150686da`
+- plateau counter: `89`
 - round loop: `single-run`
 - rounds remaining: `0`
-- notes: `Node C build succeeded. Node A will now measure the new code path.`
+- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
 
 ## Latest measured custom run
 
-- run id: `20260421_084952_bf16_gemm_v1_8b1af08`
-- run dir: `runs/20260421_084952_bf16_gemm_v1_8b1af08`
+- run id: `20260421_094231_bf16_gemm_v1_0b38abd`
+- run dir: `runs/20260421_094231_bf16_gemm_v1_0b38abd`
 - correctness: `PASS`
-- median runtime: `24.427104 ms`
-- TFLOP/s: `29.762817 TFLOP/s`
+- median runtime: `45.974016 ms`
+- TFLOP/s: `15.813703 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_093739`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `The current kernel already matches the best historical PTX grouping surface at the source level, so this diagnosis avoids another replay cycle and focuses on real low-risk control-path tightening in the active 128x128 hot-band kernels.`
-- dir_01: Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop | bottleneck: Warp-local shared-pointer arithmetic and loop-carried control overhead in the 128x128 hot-band steady state are stealing issue slots from tensor work.
-- dir_02: Trim PTX 64x64 Export Address Math In The Hot-Band Epilogue | bottleneck: PTX export-side address generation in the 64x64 writer is adding integer/control overhead after the MMA loop.
-- dir_03: Retime The 128x128 PTX Wait-Group And Consumer Barrier Handoff | bottleneck: The PTX 128x128 steady state may be overserializing cp.async wait-group completion and CTA-wide consumer handoff.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
