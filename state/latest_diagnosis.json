@@ -1,83 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_195219",
-  "status": "completed",
-  "created_at": "2026-04-20T19:52:19-07:00",
-  "source_run_id": "20260420_194440_bf16_gemm_v1_cb070a7",
-  "source_run_dir": "runs/20260420_194440_bf16_gemm_v1_cb070a7",
-  "source_summary_json": "runs/20260420_194440_bf16_gemm_v1_cb070a7/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_200110_bf16_gemm_v1_e6fdb8b",
+  "source_run_dir": "runs/20260420_200110_bf16_gemm_v1_e6fdb8b",
+  "source_summary_json": "runs/20260420_200110_bf16_gemm_v1_e6fdb8b/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Re-Lock The Single-K 128x128 Hot-Band Default",
-      "hypothesis": "Round 15/50 has no extra user-authored idea family in `state/human_review.md` beyond the approval gate and the requirement that node_c implement exactly one direction, so the best next move is a single-family rollback of the just-measured negative. The latest run `20260420_194440_bf16_gemm_v1_cb070a7` regressed from `25.504256 ms` to `31.797344 ms` after promoting `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel`, and the dominant hot-band kernel now carries `212` regs/thread, `43,008` B shared/block, register/shared occupancy caps of `2/2`, `10.06%` barrier stall, and `10.27%`/`5.03%` L1 bank read/write pressure while tensor activity sits at only `39.88%`. That points to two-K stage depth and its extra shared/export lifetime as the primary regression source, so the highest-upside low-risk fix is to make the default fixed-shape path use the prior single-K `128x128` hot-band kernel again.",
-      "expected_bottleneck": "Register-limited occupancy plus shared-memory/barrier pressure inside the two-K `128x128x32` hot-band kernel, not the residual `64x384` rows or the `64x96` tail.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1687-1840",
-        "src/kernels/bf16_gemm_v1.cu:1842-1947",
-        "src/kernels/bf16_gemm_v1.cu:2090-2138"
-      ],
-      "risk": "Low to moderate. The single-K `128x128` branch is already in-tree and was the immediate predecessor to this regression, but rolling back stage depth may only recover the `25.504256 ms` surface rather than the older `24.422464 ms` accepted best if another drift remains.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the current `31.797344 ms`, the prior `25.504256 ms`, and the accepted `24.422464 ms`",
-        "hot-band `launch__registers_per_thread`",
-        "hot-band `launch__shared_mem_per_block_allocated`",
-        "hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`",
-        "hot-band `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
-        "hot-band `l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed` and `l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed`"
-      ],
-      "stop_condition": "Stop if reverting to the single-K `128x128` default does not recover close to the previous `25.504256 ms` result or if the hot-band kernel still stays near `212` regs/thread and `43,008` B shared/block after the swap."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Swap The Default To The 128x128 PTX One-K Microkernel",
-      "hypothesis": "Because `state/human_review.md` currently asks only for one approved direction at a time, keep this as a clean alternative rather than mixing it with the rollback. The current regression says the extra K32 stage is harmful, but it does not reject the whole `128x128` family. The existing PTX one-K microkernel already measured `25.379312 ms` on run `20260420_191909_bf16_gemm_v1_00b6a0a`, which is materially better than the current `31.797344 ms` and slightly better than the later recovered standard one-K run. Promoting that path would preserve the accepted grouped-row `128x128` geometry while removing the two-K stage footprint and reusing the lighter single-scratch PTX export path.",
-      "expected_bottleneck": "Hot-band export/store overhead and stage lifetime inside the current default branch, addressed by the PTX one-K microkernel rather than by deeper staging.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:134-147",
-        "src/kernels/bf16_gemm_v1.cu:1010-1067",
-        "src/kernels/bf16_gemm_v1.cu:1955-2067",
-        "src/kernels/bf16_gemm_v1.cu:2090-2138"
-      ],
-      "risk": "Moderate to high. The PTX WMMA path is correctness-sensitive, and prior evidence says it is competitive but not obviously the long-term best path, so this is a bounded fallback rather than the default recommendation.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the current `31.797344 ms` and the prior PTX `25.379312 ms` run",
-        "hot-band `launch__registers_per_thread`",
-        "hot-band `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
-        "hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`",
-        "hot-band `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`",
-        "hot-band `l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed` and `l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed`"
-      ],
-      "stop_condition": "Stop if the PTX one-K path cannot beat the current regression cleanly or if it still trails the rolled-back standard one-K `128x128` branch after the first measurement."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
-      "hypothesis": "With no extra human idea family queued in `state/human_review.md`, this stays as a third single-family fallback that preserves the fixed-shape pivot-band idea without reusing the already negative full-band `64x384` default. The current `128x128x32` branch launches `3000` hot-band CTAs across the first `6400 x 7680` region with only four warps per CTA, while the in-tree `256x128` pivot kernel would cut that hot-band CTA count in half and restore an eight-warp CTA structure. If the real issue is not just two-K staging but also the narrow CTA geometry and its extra block-level overhead, the `256x128` pivot path is the cleanest existing alternative to test next.",
-      "expected_bottleneck": "Hot-band tile hierarchy and CTA-count overhead in the current `128x128x32` split, rather than deeper pipeline cadence alone.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:81-105",
-        "src/kernels/bf16_gemm_v1.cu:1580-1683",
-        "src/kernels/bf16_gemm_v1.cu:2090-2138"
-      ],
-      "risk": "Moderate. The `256x128` kernel already exists, but it has not been the accepted default recently, and a larger pivot CTA could still lose if its own accumulator/export live set becomes the next limiter.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "hot-band kernel name and grid size in `ncu_metrics.csv` to confirm the CTA-count reduction",
-        "hot-band `launch__registers_per_thread` and `launch__shared_mem_per_block_allocated`",
-        "hot-band `sm__warps_active.avg.pct_of_peak_sustained_active`",
-        "hot-band `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`",
-        "hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`"
-      ],
-      "stop_condition": "Stop if the `256x128` pivot path cannot beat the rolled-back one-K `128x128` branch or if it turns the hot-band kernel back into a wider memory-heavy family."
-    }
-  ],
-  "notes": "Round 15/50 human-review audit: `state/human_review.md` currently contributes only the approval/selection gate and the exactly-one-direction rule, with no extra user-authored idea family queued. Accepted for this round: a single-family rollback away from the newly measured `128x128x32` hot-band staging path, because run `20260420_194440_bf16_gemm_v1_cb070a7` regressed from `25.504256 ms` to `31.797344 ms` and its dominant hot-band kernel rose to `212` regs/thread, `43,008` B shared/block, `10.06%` barrier stall, and `10.27%`/`5.03%` L1 bank read/write pressure while tensor activity fell to `39.88%`. Deferred: the older sweep-backed full-band `64x384` family from `state/autotune_round18_main_tiles.md`; it is still useful background, but direct node_a evidence already showed that reopening it on the restored surface regressed to `34.016768 ms`, so it is not the next move. Rejected as the primary family: any further deepening of the `128x128` stage pipeline, because the current two-K version is already the measured negative. Secondary fallback families kept open for approval are the one-K PTX `128x128` path and the existing `256x128` pivot hot-band path, each isolated as a single node_c change to respect the human-review gate."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
