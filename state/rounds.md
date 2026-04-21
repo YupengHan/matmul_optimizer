@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `35`
-- remaining rounds: `65`
-- current round label: `round 36/100`
+- completed rounds: `36`
+- remaining rounds: `64`
+- current round label: `round 37/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 36/100. Node A will measure the result next.`
+- notes: `Completed round 36/100. Continue with node_b for round 37/100. Accepted base: 20260420_235922_bf16_gemm_v1_489574e at 24.164272 ms.`
 
 ## Last completed round
 
-- round: `35/100`
+- round: `36/100`
 - direction: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- verdict: `improved`
-- runtime delta: `-0.164497 ms`
-- TFLOP/s delta: `+0.203240 TFLOP/s`
-- run dir: `runs/20260421_074828_bf16_gemm_v1_f07f873`
-- ncu rep path: `runs/20260421_074828_bf16_gemm_v1_f07f873/ncu_profile.ncu-rep`
+- direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
+- verdict: `regressed`
+- runtime delta: `+0.016528 ms`
+- TFLOP/s delta: `-0.020546 TFLOP/s`
+- run dir: `runs/20260421_075335_bf16_gemm_v1_894a38d`
+- ncu rep path: `runs/20260421_075335_bf16_gemm_v1_894a38d/ncu_profile.ncu-rep`

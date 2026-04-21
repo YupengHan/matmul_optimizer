@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `f07f87369857b40b150667abd9157c5a2408062f`
-- plateau counter: `23`
-- round loop: `round 36/100`
-- rounds remaining: `65`
-- notes: `Node C build succeeded for round 36/100. Node A will now measure the new code path.`
+- latest measured commit: `894a38d5136472c4d63ae862d55459e4f8b35374`
+- plateau counter: `24`
+- round loop: `round 37/100`
+- rounds remaining: `64`
+- notes: `Node A completed round 36/100. Run node_b to continue round 37/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_074828_bf16_gemm_v1_f07f873`
-- run dir: `runs/20260421_074828_bf16_gemm_v1_f07f873`
+- run id: `20260421_075335_bf16_gemm_v1_894a38d`
+- run dir: `runs/20260421_075335_bf16_gemm_v1_894a38d`
 - correctness: `PASS`
-- median runtime: `24.175471 ms`
-- TFLOP/s: `30.072606 TFLOP/s`
+- median runtime: `24.191999 ms`
+- TFLOP/s: `30.052060 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_075055`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 36 should not waste another slot on restore. The loop is already back on a clean PTX anchor, and the latest measurement at 24.175471 ms is close enough to the accepted 24.164272 ms baseline to resume real exploration. The ranking therefore moves back to live, unabsorbed families on the accepted surface: a bounded PTX control-path exploit first, the broader 256x128 low-register branch second, and a narrower steady-state handoff retime third.`
-- dir_01: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX hot-band control-path overhead and live-range pressure on the accepted one-K 128x128 branch.
-- dir_02: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint and synchronization strategy on the 256x128 hot-band path, plus correctness-sensitive writer ownership.
-- dir_03: Steady-state Barrier / Handoff Retime | bottleneck: Residual wait-group and barrier cadence in the active PTX hot-band steady-state loop, especially the handoff between MMA issue completion and future-tile refill.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
