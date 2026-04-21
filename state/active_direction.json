@@ -1,21 +1,91 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Collapse PTX Wait-Group Handoff Without Extra Export Scratch",
+  "candidate_id": "diagnosis_20260421_160315:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+  "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance",
+  "action_fingerprint": "restore_ptx_anchor_and_collapse_wait_group_order_without_stagecount_growth",
+  "selection_priority": 1.015,
+  "base_run_id": "20260421_160237_bf16_gemm_v1_404e8c44",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T16:05:13-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_160315",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Collapse PTX Wait-Group Handoff Without Extra Export Scratch",
+    "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+    "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance",
+    "action_fingerprint": "restore_ptx_anchor_and_collapse_wait_group_order_without_stagecount_growth",
+    "mode": "explore",
+    "hypothesis": "The final credible near-base move is to restore the PTX 128x128 anchor and target the wait-group / refill seam directly while keeping export scratch at the single-stage footprint. The PTX anchor is still much closer to the accepted base than the non-PTX 3-CTA family, and it keeps the final round focused on synchronization quality rather than another broad family rewrite.",
+    "expected_bottleneck": "Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra export-scratch growth.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:1983-2062",
+      "src/kernels/bf16_gemm_v1.cu:2139-2147"
+    ],
+    "risk": "Moderate. This restores a closer-to-base family and applies one narrow retime, which is safer than reopening a broad 256x128 rewrite for the last round.",
+    "metrics_to_recheck": [
+      "correctness on all 3 dataset cases before trusting runtime",
+      "median runtime versus the 24.195072 ms accepted base",
+      "launch__shared_mem_per_block_allocated",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "gpu__time_duration.sum"
+    ],
+    "search_score_v1": 0.87,
+    "score_breakdown": {
+      "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+      "headroom_score": 0.24,
+      "evidence_score": 0.28,
+      "implementation_bonus": 0.39,
+      "risk_penalty": -0.04,
+      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+    },
+    "predicted_gain_ms": 0.14,
+    "predicted_fail_risk": 0.42,
+    "ranking_notes": [
+      "This is the best last-round use of effort because it stays near the accepted base and still tests a meaningful unresolved synchronization seam.",
+      "It also avoids reintroducing the extra export scratch growth that already cost round 6."
+    ],
+    "stop_condition": "Stop if the restored PTX path still cannot beat the accepted base without any scratch growth or barrier reduction.",
+    "evidence_refs": [
+      "state/latest_ncu_summary.md",
+      "runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.md",
+      "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "section",
+        "scope_name": "Launch Statistics",
+        "location": "Launch Statistics"
+      },
+      {
+        "scope_type": "section",
+        "scope_name": "GPU Speed Of Light Throughput",
+        "location": "GPU Speed Of Light Throughput"
+      }
+    ],
+    "expected_local_changes": [
+      "Restore the PTX 128x128 anchor launch path.",
+      "Collapse the wait-group and refill seam without growing export scratch again."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "correctness",
+        "guardrail": "must_pass"
+      },
+      {
+        "metric_name": "launch__shared_mem_per_block_allocated",
+        "guardrail": "non_increasing"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "guardrail": "non_increasing"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }

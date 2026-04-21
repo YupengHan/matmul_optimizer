@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `404e8c4448f47b60c80ebe2bd49a351d12b73535`
 - plateau counter: `14`
 - round loop: `round 10/10`
 - rounds remaining: `1`
-- notes: `Node A completed round 9/10. Run node_b to continue round 10/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_160315:dir_01 via recommended selection for round 10/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_160315`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human guidance review for round 10: the 256x128 branch remains the strategic high-ceiling family, but the accepted-base family already produced enough evidence that the final round is better spent on one last bounded near-base PTX synchronization probe. The non-PTX 3-CTA family is now sufficiently tested and should be treated as closed after this loop.`
+- dir_01: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra export-scratch growth.
+- dir_02: Reopen The 256x128 Half-Panel Register-Reuse Branch | bottleneck: Register reuse, compact B staging, and half-panel export mapping on the 256x128 pivot branch.
+- dir_03: Restore The Accepted Base If The Final Probe Fails | bottleneck: None. This is a state-restoration fallback, not a new performance hypothesis.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

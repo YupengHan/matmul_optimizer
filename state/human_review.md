@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 10/10` with `1` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_160315`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Human guidance review for round 10: the 256x128 branch remains the strategic high-ceiling family, but the accepted-base family already produced enough evidence that the final round is better spent on one last bounded near-base PTX synchronization probe. The non-PTX 3-CTA family is now sufficiently tested and should be treated as closed after this loop.`
+- dir_01: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra export-scratch growth.
+- dir_02: Reopen The 256x128 Half-Panel Register-Reuse Branch | bottleneck: Register reuse, compact B staging, and half-panel export mapping on the 256x128 pivot branch.
+- dir_03: Restore The Accepted Base If The Final Probe Fails | bottleneck: None. This is a state-restoration fallback, not a new performance hypothesis.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 

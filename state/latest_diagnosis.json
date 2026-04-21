@@ -1,22 +1,248 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_160315",
+  "status": "completed",
+  "created_at": "2026-04-21T16:03:15-07:00",
   "source_run_id": "20260421_160237_bf16_gemm_v1_404e8c44",
   "source_run_dir": "runs/20260421_160237_bf16_gemm_v1_404e8c44",
   "source_summary_json": "runs/20260421_160237_bf16_gemm_v1_404e8c44/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "The live run context for `20260421_160237_bf16_gemm_v1_404e8c44` at 25.996288 ms closes the non-PTX 3-CTA salvage family. Across rounds 7 through 9, the loop already measured all three key variants on that branch: the raw 3-CTA occupancy probe, the single-stage export-scratch deconfound, and the barrier/handoff retime. Those three samples converged on the same answer: the family can reach 168 regs/thread and about 24.7% active warps, but barrier remains in the 10-11% band and runtime stays materially slower than the 24.195072 ms accepted base. That is enough evidence to stop spending the final round there. For round 10, the best remaining bounded move is to step back to the closer PTX anchor and try one last wait-group-collapse retime without reintroducing the extra export scratch growth from round 6. Keep the 256x128 half-panel family in second place as the highest-ceiling branch for future work, but use the final loop slot on the tighter near-base family so the run ends with one more credible measurement rather than a broad rewrite.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_160237_bf16_gemm_v1_404e8c44/summary.json",
+    "runs/20260421_160237_bf16_gemm_v1_404e8c44/ncu_analysis.md",
+    "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+    "master:state/diagnosis_history.jsonl"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_160315:dir_01",
+  "family_audit": [
+    "Tiling: keep 64x64 warp tiling accepted and keep the 256x128 family alive for future work, but do not spend the final loop slot on a broad 256x128 rewrite after the accepted-base family already produced several actionable measurements.",
+    "Coalescing Access: defer. The near-base families are not blocked on a clear coalescing miss.",
+    "Data Reuse: accept as present baseline behavior. The last few rounds were decided by synchronization and control-path tax, not by missing reuse.",
+    "Async Copy: accept strongly. The final-round move still directly addresses wait-group handling around the existing async copy path.",
+    "Bank Conflict: defer. Barrier and wait-group cadence remain the more important observed tax.",
+    "L2 Cache: defer. Current near-base runs already recovered cache and memory throughput enough that it is not the final-round priority.",
+    "Register Reuse: accept, but close the non-PTX 3-CTA salvage family. The loop already reached the intended low-register/high-occupancy machine state and still did not beat the accepted base.",
+    "Pg2s: accept. The final move is still about staged-pipeline control, not about replacing the pipeline.",
+    "Ps2r: accept. The PTX fallback continues to represent this guidance with the least remaining implementation surface.",
+    "Stage: accept, but keep shared/export scratch non-increasing in the final round.",
+    "Promote the PTX wait-group-collapse family to rank 1 because the non-PTX 3-CTA branch is now sufficiently measured and the PTX anchor is still the closest recoverable alternate surface.",
+    "Keep the 256x128 half-panel family at rank 2 as the best future high-ceiling branch once the loop exits this 10-round window.",
+    "Use a final accepted-base restore fallback at rank 3 so the loop can always end on a known-good surface if needed."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Collapse PTX Wait-Group Handoff Without Extra Export Scratch",
+      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance",
+      "action_fingerprint": "restore_ptx_anchor_and_collapse_wait_group_order_without_stagecount_growth",
+      "mode": "explore",
+      "hypothesis": "The final credible near-base move is to restore the PTX 128x128 anchor and target the wait-group / refill seam directly while keeping export scratch at the single-stage footprint. The PTX anchor is still much closer to the accepted base than the non-PTX 3-CTA family, and it keeps the final round focused on synchronization quality rather than another broad family rewrite.",
+      "expected_bottleneck": "Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra export-scratch growth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1983-2062",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Moderate. This restores a closer-to-base family and applies one narrow retime, which is safer than reopening a broad 256x128 rewrite for the last round.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__shared_mem_per_block_allocated",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.87,
+      "score_breakdown": {
+        "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+        "headroom_score": 0.24,
+        "evidence_score": 0.28,
+        "implementation_bonus": 0.39,
+        "risk_penalty": -0.04,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.14,
+      "predicted_fail_risk": 0.42,
+      "ranking_notes": [
+        "This is the best last-round use of effort because it stays near the accepted base and still tests a meaningful unresolved synchronization seam.",
+        "It also avoids reintroducing the extra export scratch growth that already cost round 6."
+      ],
+      "stop_condition": "Stop if the restored PTX path still cannot beat the accepted base without any scratch growth or barrier reduction.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the PTX 128x128 anchor launch path.",
+        "Collapse the wait-group and refill seam without growing export scratch again."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Reopen The 256x128 Half-Panel Register-Reuse Branch",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::repair_half_panel_export_mapping_and_compact_b_staging",
+      "action_fingerprint": "restore_256x128_pivot_and_repair_half_panel_export_mapping_plus_compact_b_staging",
+      "mode": "explore",
+      "hypothesis": "The 256x128 half-panel family is still the highest-ceiling branch in the repo and the one most aligned with the user's explicit tiling guidance. If the loop were not constrained to one final round, this would be the next broad branch to reopen after closing the non-PTX 3-CTA family. It stays second because the implementation surface is much broader than the final-round PTX fallback.",
+      "expected_bottleneck": "Register reuse, compact B staging, and half-panel export mapping on the 256x128 pivot branch.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:23-345",
+        "src/kernels/bf16_gemm_v1.cu:622-699",
+        "src/kernels/bf16_gemm_v1.cu:1507-1676"
+      ],
+      "risk": "High. This is a broad structural rewrite and not the best fit for the very last round of the active loop.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "search_score_v1": 0.62,
+      "score_breakdown": {
+        "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+        "headroom_score": 0.38,
+        "evidence_score": 0.07,
+        "implementation_bonus": 0.24,
+        "risk_penalty": -0.07,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.78,
+      "predicted_fail_risk": 0.78,
+      "ranking_notes": [
+        "Keep this family alive because it remains the best future high-ceiling branch once the 10-round loop ends.",
+        "Do not spend the final round on it because the code surface is too broad relative to the tighter PTX fallback."
+      ],
+      "stop_condition": "Stop immediately on correctness failure or another 28-30 ms regression without a decisive occupancy breakthrough.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_160237_bf16_gemm_v1_404e8c44/ncu_analysis.md",
+        "state/human_guidance.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the correctness-safe 256x128 writer-ownership path.",
+        "Repair half-panel export mapping and compact B staging end to end."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore The Accepted Base If The Final Probe Fails",
+      "family_id": "restore_base::accepted_non_ptx_128x128_anchor",
+      "subfamily_id": "restore_base::accepted_non_ptx_128x128_anchor::24f31aab_surface",
+      "action_fingerprint": "restore_current_loop_accepted_base_surface_without_new_probe",
+      "mode": "exploit",
+      "hypothesis": "This is not a search direction for upside; it is the clean fallback if the final PTX probe fails before the loop closes. The loop already knows the accepted base at 24.195072 ms. This candidate exists so the family audit stays honest about where the current measured winner actually is.",
+      "expected_bottleneck": "None. This is a state-restoration fallback, not a new performance hypothesis.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1869-1981",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Low. This is a restore-only fallback.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the accepted base"
+      ],
+      "search_score_v1": 0.31,
+      "score_breakdown": {
+        "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+        "headroom_score": 0.0,
+        "evidence_score": 0.21,
+        "implementation_bonus": 0.12,
+        "risk_penalty": -0.02,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.0,
+      "predicted_fail_risk": 0.08,
+      "ranking_notes": [
+        "Keep this explicit so the final-round ranking stays anchored to the loop's current measured winner.",
+        "Do not auto-select it because it is only a fallback, not a new search direction."
+      ],
+      "stop_condition": "Stop after the final loop round regardless; this candidate only exists as a bookkeeping fallback.",
+      "evidence_refs": [
+        "state/round_loop_state.json",
+        "state/latest_run.md"
+      ],
+      "target_hotspots": [],
+      "expected_local_changes": [
+        "Restore the accepted non-PTX 128x128 anchor surface if needed."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        }
+      ]
+    }
+  ],
+  "notes": "Human guidance review for round 10: the 256x128 branch remains the strategic high-ceiling family, but the accepted-base family already produced enough evidence that the final round is better spent on one last bounded near-base PTX synchronization probe. The non-PTX 3-CTA family is now sufficiently tested and should be treated as closed after this loop."
 }

@@ -2,17 +2,17 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_160001_bf16_gemm_v1_d7576a6e",
-  "source_measured_commit": "d7576a6e1833a4cb5fc914851ee6b2512930cb04",
-  "source_diagnosis_id": "diagnosis_20260421_160019",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_160019",
+  "source_run_id": "20260421_160237_bf16_gemm_v1_404e8c44",
+  "source_measured_commit": "404e8c4448f47b60c80ebe2bd49a351d12b73535",
+  "source_diagnosis_id": "diagnosis_20260421_160315",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_160315",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T16:02:48-07:00",
+  "updated_at": "2026-04-21T16:05:13-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_160019:dir_01 closed via pass_win after selection.",
-  "family_representative_count": 11,
+  "selected_candidate_id": "diagnosis_20260421_160315:dir_01",
+  "selection_reason": "selected_via_recommended",
+  "selection_summary": "Selected diagnosis_20260421_160315:dir_01 -> dir_01 via mode=recommended.",
+  "family_representative_count": 12,
   "reopened_candidate_ids": [],
   "candidates": [
     {
@@ -2849,7 +2849,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.6225,
+      "family_representative_score": 0.5925,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -3467,7 +3467,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.725,
+      "family_representative_score": 0.695,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -3664,8 +3664,8 @@
       "last_result_runtime_ms": 25.9962883,
       "last_runtime_delta_ms": -0.7341918900000017,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T16:02:48-07:00",
-      "last_closed_search_iteration": 13,
+      "last_closed_at": "2026-04-21T16:05:13-07:00",
+      "last_closed_search_iteration": 14,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -3755,7 +3755,7 @@
           "guardrail": "non_increasing"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 13,
       "selection_count": 0,
       "reopen_count": 0,
@@ -3771,9 +3771,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 0.7225,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     },
@@ -3876,7 +3876,288 @@
       "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_160315:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_160315",
+      "base_run_id": "20260421_160237_bf16_gemm_v1_404e8c44",
+      "base_measured_commit": "404e8c4448f47b60c80ebe2bd49a351d12b73535",
+      "base_runtime_ms": 25.9962883,
+      "direction_id": "dir_01",
+      "direction_name": "Collapse PTX Wait-Group Handoff Without Extra Export Scratch",
+      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance",
+      "action_fingerprint": "restore_ptx_anchor_and_collapse_wait_group_order_without_stagecount_growth",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "explore",
+      "priority": 0.87,
+      "search_score_v1": 0.87,
+      "score_breakdown": {
+        "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+        "headroom_score": 0.24,
+        "evidence_score": 0.28,
+        "implementation_bonus": 0.39,
+        "risk_penalty": -0.04,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.14,
+      "predicted_fail_risk": 0.42,
+      "ranking_notes": [
+        "This is the best last-round use of effort because it stays near the accepted base and still tests a meaningful unresolved synchronization seam.",
+        "It also avoids reintroducing the extra export scratch growth that already cost round 6."
+      ],
+      "hypothesis": "The final credible near-base move is to restore the PTX 128x128 anchor and target the wait-group / refill seam directly while keeping export scratch at the single-stage footprint. The PTX anchor is still much closer to the accepted base than the non-PTX 3-CTA family, and it keeps the final round focused on synchronization quality rather than another broad family rewrite.",
+      "expected_bottleneck": "Wait-group release, barrier cadence, and refill ordering on the PTX 128x128 anchor without extra export-scratch growth.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1983-2062",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Moderate. This restores a closer-to-base family and applies one narrow retime, which is safer than reopening a broad 256x128 rewrite for the last round.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__shared_mem_per_block_allocated",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "stop_condition": "Stop if the restored PTX path still cannot beat the accepted base without any scratch growth or barrier reduction.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the PTX 128x128 anchor launch path.",
+        "Collapse the wait-group and refill seam without growing export scratch again."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 14,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T16:05:13-07:00",
+      "last_selected_selection_mode": "recommended",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 1.015,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_160315:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_160315",
+      "base_run_id": "20260421_160237_bf16_gemm_v1_404e8c44",
+      "base_measured_commit": "404e8c4448f47b60c80ebe2bd49a351d12b73535",
+      "base_runtime_ms": 25.9962883,
+      "direction_id": "dir_02",
+      "direction_name": "Reopen The 256x128 Half-Panel Register-Reuse Branch",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::repair_half_panel_export_mapping_and_compact_b_staging",
+      "action_fingerprint": "restore_256x128_pivot_and_repair_half_panel_export_mapping_plus_compact_b_staging",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.62,
+      "search_score_v1": 0.62,
+      "score_breakdown": {
+        "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+        "headroom_score": 0.38,
+        "evidence_score": 0.07,
+        "implementation_bonus": 0.24,
+        "risk_penalty": -0.07,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.78,
+      "predicted_fail_risk": 0.78,
+      "ranking_notes": [
+        "Keep this family alive because it remains the best future high-ceiling branch once the 10-round loop ends.",
+        "Do not spend the final round on it because the code surface is too broad relative to the tighter PTX fallback."
+      ],
+      "hypothesis": "The 256x128 half-panel family is still the highest-ceiling branch in the repo and the one most aligned with the user's explicit tiling guidance. If the loop were not constrained to one final round, this would be the next broad branch to reopen after closing the non-PTX 3-CTA family. It stays second because the implementation surface is much broader than the final-round PTX fallback.",
+      "expected_bottleneck": "Register reuse, compact B staging, and half-panel export mapping on the 256x128 pivot branch.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:23-345",
+        "src/kernels/bf16_gemm_v1.cu:622-699",
+        "src/kernels/bf16_gemm_v1.cu:1507-1676"
+      ],
+      "risk": "High. This is a broad structural rewrite and not the best fit for the very last round of the active loop.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the 24.195072 ms accepted base",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "gpu__time_duration.sum"
+      ],
+      "stop_condition": "Stop immediately on correctness failure or another 28-30 ms regression without a decisive occupancy breakthrough.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_160237_bf16_gemm_v1_404e8c44/ncu_analysis.md",
+        "state/human_guidance.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the correctness-safe 256x128 writer-ownership path.",
+        "Repair half-panel export mapping and compact B staging end to end."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 14,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_160315:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_160315",
+      "base_run_id": "20260421_160237_bf16_gemm_v1_404e8c44",
+      "base_measured_commit": "404e8c4448f47b60c80ebe2bd49a351d12b73535",
+      "base_runtime_ms": 25.9962883,
+      "direction_id": "dir_03",
+      "direction_name": "Restore The Accepted Base If The Final Probe Fails",
+      "family_id": "restore_base::accepted_non_ptx_128x128_anchor",
+      "subfamily_id": "restore_base::accepted_non_ptx_128x128_anchor::24f31aab_surface",
+      "action_fingerprint": "restore_current_loop_accepted_base_surface_without_new_probe",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "exploit",
+      "priority": 0.31,
+      "search_score_v1": 0.31,
+      "score_breakdown": {
+        "policy_id": "manual_round10_finish_with_near_base_probe_v1",
+        "headroom_score": 0.0,
+        "evidence_score": 0.21,
+        "implementation_bonus": 0.12,
+        "risk_penalty": -0.02,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.0,
+      "predicted_fail_risk": 0.08,
+      "ranking_notes": [
+        "Keep this explicit so the final-round ranking stays anchored to the loop's current measured winner.",
+        "Do not auto-select it because it is only a fallback, not a new search direction."
+      ],
+      "hypothesis": "This is not a search direction for upside; it is the clean fallback if the final PTX probe fails before the loop closes. The loop already knows the accepted base at 24.195072 ms. This candidate exists so the family audit stays honest about where the current measured winner actually is.",
+      "expected_bottleneck": "None. This is a state-restoration fallback, not a new performance hypothesis.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1869-1981",
+        "src/kernels/bf16_gemm_v1.cu:2139-2147"
+      ],
+      "risk": "Low. This is a restore-only fallback.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime versus the accepted base"
+      ],
+      "stop_condition": "Stop after the final loop round regardless; this candidate only exists as a bookkeeping fallback.",
+      "evidence_refs": [
+        "state/round_loop_state.json",
+        "state/latest_run.md"
+      ],
+      "target_hotspots": [],
+      "expected_local_changes": [
+        "Restore the accepted non-PTX 128x128 anchor surface if needed."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 14,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 0.44,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 40 historical candidates; 11 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 43 historical candidates; 12 family representatives are currently active for selection."
 }
