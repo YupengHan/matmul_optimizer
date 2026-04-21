@@ -1,7 +1,7 @@
 {
   "current_node": "node_b",
   "previous_node": "node_a",
-  "status": "ready_for_node_b",
+  "status": "paused_on_explicit_user_redirect",
   "latest_run_dir": "runs/20260421_124420_bf16_gemm_v1_fc400df",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
@@ -10,5 +10,5 @@
   "recommended_direction_id": null,
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "plateau_counter": 102,
-  "notes": "Node A completed round 10/100. Run node_b to continue round 11/100."
+  "notes": "Paused on explicit user redirect after round 10/100. Resume from node_b for round 11/100 by filling state/latest_diagnosis.json for run 20260421_124420_bf16_gemm_v1_fc400df, then run node_b --finalize."
 }

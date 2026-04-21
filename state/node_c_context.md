@@ -13,7 +13,7 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 - planned action fingerprint: `None`
 - selection mode: `None`
 - source diagnosis id: `None`
-- round loop: `round 11/100`
+- round loop: `single-run`
 - latest run id: `20260421_124420_bf16_gemm_v1_fc400df`
 - latest runtime: `45.920258 ms`
 - latest NCU analysis: `runs/20260421_124420_bf16_gemm_v1_fc400df/ncu_analysis.json`

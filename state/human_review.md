@@ -3,8 +3,8 @@
 ## Current workflow gate
 
 - next node: `node_b`
-- status: `ready_for_node_b`
-- round loop: `round 11/100` with `90` rounds remaining
+- status: `paused_on_explicit_user_redirect`
+- round loop: `single-run` with `90` rounds remaining
 
 ## Direction approval policy
 
@@ -15,12 +15,14 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
+- diagnosis id: `diagnosis_20260421_125336`
+- diagnosis status: `awaiting_codex`
 - recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Paused on explicit user redirect after node_b context prep. Resume by filling exactly three directions for run 20260421_124420_bf16_gemm_v1_fc400df, then run node_b --finalize. Frontier was led by diagnosis_20260421_013125:dir_02 (restore exact 489574e surface), while the low-register writer family remains strategically important.`
+- dir_01: PENDING | bottleneck: PENDING
+- dir_02: PENDING | bottleneck: PENDING
+- dir_03: PENDING | bottleneck: PENDING
 
 ## Active direction
 

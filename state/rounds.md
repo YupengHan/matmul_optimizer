@@ -1,11 +1,11 @@
 # Round loop
 
-- active: `yes`
-- status: `running`
+- active: `no`
+- status: `paused_on_explicit_user_redirect`
 - total rounds: `100`
 - completed rounds: `10`
 - remaining rounds: `90`
-- current round label: `round 11/100`
+- current round label: `single-run`
 - selection strategy: `frontier_every_5_rounds_else_recommended_v1`
 - effective selection mode this round: `frontier`
 - auto use recommended: `no`
@@ -16,7 +16,7 @@
 - started at: `2026-04-21T11:05:50-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Completed round 10/100. Continue with node_b for round 11/100. Accepted base: 20260421_105134_bf16_gemm_v1_8dcab81 at 24.186960 ms.`
+- notes: `Paused on explicit user redirect after round 10/100. Resume from node_b for round 11/100 on latest run 20260421_124420_bf16_gemm_v1_fc400df. Accepted base remains 20260421_105134_bf16_gemm_v1_8dcab81 at 24.186960 ms, and the selection strategy remains frontier_every_5_rounds_else_recommended_v1.`
 
 ## Last completed round
 

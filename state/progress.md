@@ -8,13 +8,13 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 - next node: `node_b`
 - previous node: `node_a`
-- status: `ready_for_node_b`
+- status: `paused_on_explicit_user_redirect`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `fc400df814258c9927aa72a78b213b2e9325787f`
 - plateau counter: `102`
-- round loop: `round 11/100`
+- round loop: `single-run`
 - rounds remaining: `90`
-- notes: `Node A completed round 10/100. Run node_b to continue round 11/100.`
+- notes: `Paused on explicit user redirect after round 10/100. Resume from node_b for round 11/100 by filling state/latest_diagnosis.json for run 20260421_124420_bf16_gemm_v1_fc400df, then run node_b --finalize.`
 
 ## Latest measured custom run
 
@@ -28,12 +28,14 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
+- diagnosis status: `awaiting_codex`
+- diagnosis id: `diagnosis_20260421_125336`
 - recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Paused on explicit user redirect after node_b context prep. Resume by filling exactly three directions for run 20260421_124420_bf16_gemm_v1_fc400df, then run node_b --finalize. Frontier was led by diagnosis_20260421_013125:dir_02 (restore exact 489574e surface), while the low-register writer family remains strategically important.`
+- dir_01: PENDING | bottleneck: PENDING
+- dir_02: PENDING | bottleneck: PENDING
+- dir_03: PENDING | bottleneck: PENDING
 
 ## Active implementation direction
 
