@@ -313,6 +313,24 @@ At the moment, the official benchmark snapshot in the repo is:
 - local CUTLASS baseline: `25.917889 ms`
 - result: `1.753536 ms` faster than CUTLASS, or `6.765700%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
 
+## Major Workflow Updates
+
+- [x] Checkpoint - Apr 20, 2026: next-direction search moved to a persistent family-representative frontier (`ce7a092`, with supporting migration in `51c80ca`)
+
+  The current exploration format is no longer "pick only from the latest 3 ideas." `node_b` still emits exactly 3 fresh directions into `state/search_candidates.json`, but those directions are merged into a persistent `state/search_frontier.json` instead of replacing it. Each idea family exposes at most one active representative at a time, sibling candidates are parked inside the same family, and `select-next` competes only across those active representatives. Older candidates can reopen only under bounded near-miss rules, so the loop can revisit promising historical work without turning selection into a full rescore over every past attempt. In practice this is a heuristic, candidate-centric, A*-like frontier rather than a full A* implementation; the detailed policy lives in [docs/search_policy.md](docs/search_policy.md).
+
+- [x] Checkpoint - Apr 20, 2026: multi-round loops now force a context-compression checkpoint every 5 completed rounds (`d815ad9`)
+
+  Long-running rounds were starting to accumulate stale state and occasionally get stuck in overly long context. The supervisor now refreshes `state/supervisor_context.md` every 5 completed rounds, records the current dispatch node, accepted base, and active candidate, and then immediately continues the loop. The checkpoint is explicitly a continue point, not a natural stopping point.
+
+- [x] Checkpoint - Apr 20, 2026: optimization history now has a machine-readable heuristic dataset (`8049817`, refreshed in `51c80ca`)
+
+  `heuristic_dataset/` exports diagnosis options, implementation attempts, profiler effects, and measured outcomes into JSONL snapshots. That makes the search history usable as data instead of only prose, and it sets up later work on frontier ranking, reopen rules, and learned search behavior.
+
+- [ ] TODO - next search-policy layer
+
+  Use the accumulated heuristic dataset to test RL-style improvements on top of the current A*-like family frontier: learn better family priors, reopen budgets, and exploration-vs-exploitation scheduling instead of relying only on hand-set heuristics.
+
 ## Document Map
 
 This README is intentionally public-facing now. The workflow-specific and Codex-specific operating details live in narrower docs:
