@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_182305_bf16_gemm_v1_e003c0e`
-- run dir: `runs/20260420_182305_bf16_gemm_v1_e003c0e`
-- kernel tag: `bf16_gemm_v1_e003c0e`
-- round label: `round 4/50`
+- run id: `20260420_183102_bf16_gemm_v1_29a10ec`
+- run dir: `runs/20260420_183102_bf16_gemm_v1_29a10ec`
+- kernel tag: `bf16_gemm_v1_29a10ec`
+- round label: `round 5/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.529856 ms`
-- p10 runtime: `25.117318 ms`
-- p90 runtime: `26.622335 ms`
-- TFLOP/s: `28.477224 TFLOP/s`
-- previous run id: `20260420_181354_bf16_gemm_v1_e1c12b7`
-- runtime delta vs previous measured run: `+0.014848 ms`
-- TFLOP/s delta vs previous measured run: `-0.016572 TFLOP/s`
+- median runtime: `25.665024 ms`
+- p10 runtime: `25.256551 ms`
+- p90 runtime: `26.772496 ms`
+- TFLOP/s: `28.327245 TFLOP/s`
+- previous run id: `20260420_182305_bf16_gemm_v1_e003c0e`
+- runtime delta vs previous measured run: `+0.135168 ms`
+- TFLOP/s delta vs previous measured run: `-0.149979 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX Accumulator And Export Live Range On The Restored Grouped-Rows-4 Base`
+- implemented direction name: `Specialize The 452-Tile PTX Hot-Band Loop On The Restored Grouped-Rows-4 Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_182305_bf16_gemm_v1_e003c0e/summary.json`
-- measured commit: `e003c0ee2beed63523bd178b79458b6a5422ae44`
+- raw summary json: `runs/20260420_183102_bf16_gemm_v1_29a10ec/summary.json`
+- measured commit: `29a10ec11c08f9648a277030c3340013f3eb8492`
 - new best custom: `no`
-- generated at: `2026-04-20T18:23:13-07:00`
+- generated at: `2026-04-20T18:31:10-07:00`
