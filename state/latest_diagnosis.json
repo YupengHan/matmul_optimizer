@@ -1,18 +1,146 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_222929",
+  "status": "completed",
+  "created_at": "2026-04-20T22:29:29-07:00",
   "source_run_id": "20260420_222846_bf16_gemm_v1_8ba4496",
   "source_run_dir": "runs/20260420_222846_bf16_gemm_v1_8ba4496",
   "source_summary_json": "runs/20260420_222846_bf16_gemm_v1_8ba4496/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260420_222929:dir_01",
+  "family_audit": [
+    "accepted_primary: register-pressure reduction on the active PTX hot-band microkernel",
+    "accepted_secondary: PTX export-surface cleanup that stays on the live branch",
+    "accepted_restore: historical PTX grouping-window restore kept live as a fallback family",
+    "deferred: another near-neighbor PTX copy-order/control tweak after the round-5 PASS_FLAT result",
+    "rejected_primary: the 256x128 pivot family remains negative for this loop"
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure",
+      "family_id": "legacy::flatten_ptx_hot_band_compute_helpers_to_reduce_register_pressure",
+      "subfamily_id": "legacy::flatten_ptx_hot_band_compute_helpers_to_reduce_register_pressure",
+      "mode": "exploit",
+      "hypothesis": "The round-5 control-path tweak effectively held runtime flat while leaving the same occupancy-limited signature in place: the hot PTX kernel still reports only 16.49% active warps and the same register-limited CTA ceiling. That makes register pressure the most coherent next family. The historically rehydrated helper-flattening branch already showed a 24.696832 ms run, and the current profile still supports its thesis that the PTX helper structure is keeping too much live state around the active 128x128 hot-band path.",
+      "expected_bottleneck": "Register-limited occupancy and weak latency hiding caused by helper-induced live ranges in the PTX hot-band compute path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:719-855",
+        "src/kernels/bf16_gemm_v1.cu:1144-1210",
+        "src/kernels/bf16_gemm_v1.cu:1911-1946"
+      ],
+      "risk": "Medium. Helper flattening is still bounded to the active PTX branch, but it can devolve into a no-op if ptxas keeps the same live ranges and scheduling.",
+      "metrics_to_recheck": [
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "end-to-end median runtime versus the 24.177664 ms accepted base"
+      ],
+      "search_score_v1": 2.25,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v6",
+        "rank_score": 3.0,
+        "live_frontier_alignment_bonus": 0.2,
+        "stalled_copy_order_penalty": 0.45,
+        "risk_penalty": 0.5,
+        "formula": "rank_score + live_frontier_alignment_bonus - stalled_copy_order_penalty - risk_penalty"
+      },
+      "predicted_gain_ms": 0.04,
+      "predicted_fail_risk": 0.3,
+      "ranking_notes": [
+        "The latest flat result specifically weakens copy-order retunes and strengthens the case for attacking the unchanged register ceiling directly.",
+        "This family is already the highest-ranked rehydrated representative in the live frontier after the still-open PTX control family.",
+        "It is ranked first because it is the most defensible next move that still stays on the active PTX branch."
+      ],
+      "stop_condition": "Stop if register count and active-warps remain pinned after one bounded helper-flattening pass, or if runtime still behaves like noise around the current flat plateau.",
+      "action_fingerprint": "00ef6081291d54f2"
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Apply Only A Minimal PTX Export Address Cleanup",
+      "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+      "subfamily_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+      "mode": "exploit",
+      "hypothesis": "If the helper-lifetime thesis is still too broad, the next lower-risk active-branch move is to keep the PTX hot-band compute path intact and simplify only the export address/control surface. The current run still did not improve barrier or scoreboard behavior, so a smaller export-side cleanup is a credible fallback that stays on the same hot branch while reducing pointer and scratch-management overhead around the final store path.",
+      "expected_bottleneck": "PTX export-side address/control overhead and scratch management after MMA, rather than another feed-order or traversal issue.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:925-947",
+        "src/kernels/bf16_gemm_v1.cu:1008-1065",
+        "src/kernels/bf16_gemm_v1.cu:2044-2047"
+      ],
+      "risk": "Low to medium. This is one of the safest remaining PTX-local families, but its upside is smaller than dir_01 because it touches only the export surface.",
+      "metrics_to_recheck": [
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "end-to-end median runtime versus the 24.177664 ms accepted base"
+      ],
+      "search_score_v1": 1.9,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v6",
+        "rank_score": 2.0,
+        "bounded_scope_bonus": 0.2,
+        "historical_rehydration_bonus": 0.1,
+        "risk_penalty": 0.4,
+        "formula": "rank_score + bounded_scope_bonus + historical_rehydration_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.2,
+      "ranking_notes": [
+        "This keeps one lower-risk PTX-local path alive after the copy-order retune failed to move the main counters.",
+        "It is ranked behind dir_01 because export cleanup alone is less likely to relieve the unchanged occupancy ceiling.",
+        "The family was explicitly rehydrated from round_history to keep an auditable active-branch fallback in the queue."
+      ],
+      "stop_condition": "Stop if export cleanup leaves barrier, short-scoreboard, and register pressure effectively unchanged after one bounded pass.",
+      "action_fingerprint": "89669438f1b25121"
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "mode": "restore",
+      "hypothesis": "The current loop should keep one restore-style family active instead of repeatedly tunneling on the latest PTX-local micro-tunes. The best historical grouping-window restore still measured 24.444416 ms, close enough to the accepted base to remain meaningful, and it gives the search an auditable locality fallback if both the helper-flattening and export-cleanup families stall.",
+      "expected_bottleneck": "Inter-CTA locality and launch-order mapping on the accepted PTX surface, but explicitly as a restore fallback rather than the primary next attack.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1957-1979",
+        "src/kernels/bf16_gemm_v1.cu:2097-2104"
+      ],
+      "risk": "Low to medium. The family has historical evidence, but the latest fresh grouped traversal probe also makes it a weaker primary bet than the two PTX-local cleanup families.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.177664 ms base and the historical 24.444416 ms restore run",
+        "hot-band gpu__time_duration.sum",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 1.7,
+      "score_breakdown": {
+        "policy_id": "manual_round20_node_b_v6",
+        "rank_score": 1.0,
+        "historical_close_to_best_bonus": 0.45,
+        "family_coverage_bonus": 0.35,
+        "latest_locality_penalty": 0.1,
+        "formula": "rank_score + historical_close_to_best_bonus + family_coverage_bonus - latest_locality_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.2,
+      "ranking_notes": [
+        "This is intentionally a restore fallback so the live queue keeps one near-best historical locality family active.",
+        "It is ranked below the PTX-local cleanup ideas because the latest fresh locality probe came back flat-to-negative.",
+        "The user explicitly asked for round-history-driven queue recovery, and this family is one of the strongest recovered candidates."
+      ],
+      "stop_condition": "Stop if the restore cannot recover near its historical behavior or if locality metrics stay flat enough to make the family redundant.",
+      "action_fingerprint": "3587455924361acf"
+    }
+  ],
+  "notes": "Round 6/20 audit: the round-5 B-first prologue staging tweak measured 24.535040 ms, only 0.015872 ms slower than the previous run, but it moved the wrong counters: active warps slipped from 16.60% to 16.49%, barrier rose from 5.18% to 5.33%, and long-scoreboard rose from 7.28% to 7.50% while registers stayed pinned at the same occupancy ceiling. That is strong evidence that another copy-order micro-tune is not the best immediate use of budget. The diagnosis therefore promotes the rehydrated register-pressure family to rank 1, keeps a narrower PTX export cleanup as the active-branch fallback, and preserves one historical PTX grouping-window restore as the restore-style fallback family. This uses the live queue expansion from round_history instead of letting the loop collapse back to only one or two families."
 }
