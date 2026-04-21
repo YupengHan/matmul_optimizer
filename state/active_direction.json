@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:29:41-07:00",
   "source_diagnosis_id": "diagnosis_20260421_012211",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Force 3-CTA Residency On The PTX 128x128 Hot Band",
@@ -54,5 +54,13 @@
     "stop_condition": "Stop this family quickly if launch__registers_per_thread stays above about 190 or launch__occupancy_limit_registers remains 2 with no material runtime gain; improvements smaller than 0.10 ms should be treated as flat noise, not a real win.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a_then_force_hot_band_launch_bounds_3"
 }
