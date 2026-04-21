@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_084629_bf16_gemm_v1_7dd4dc2`
-- run dir: `runs/20260421_084629_bf16_gemm_v1_7dd4dc2`
-- kernel tag: `bf16_gemm_v1_7dd4dc2`
-- round label: `round 80/100`
+- run id: `20260421_084643_bf16_gemm_v1_51bdc04`
+- run dir: `runs/20260421_084643_bf16_gemm_v1_51bdc04`
+- kernel tag: `bf16_gemm_v1_51bdc04`
+- round label: `round 81/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.656384 ms`
-- p10 runtime: `24.425472 ms`
-- p90 runtime: `25.581671 ms`
-- TFLOP/s: `29.486051 TFLOP/s`
-- previous run id: `20260421_084620_bf16_gemm_v1_1369f89`
-- runtime delta vs previous measured run: `+0.032256 ms`
-- TFLOP/s delta vs previous measured run: `-0.038625 TFLOP/s`
+- median runtime: `24.943105 ms`
+- p10 runtime: `24.741879 ms`
+- p90 runtime: `25.907910 ms`
+- TFLOP/s: `29.147110 TFLOP/s`
+- previous run id: `20260421_084629_bf16_gemm_v1_7dd4dc2`
+- runtime delta vs previous measured run: `+0.286720 ms`
+- TFLOP/s delta vs previous measured run: `-0.338941 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- implemented direction name: `Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_084629_bf16_gemm_v1_7dd4dc2/summary.json`
-- measured commit: `7dd4dc21b8c95b15cfe86e8633e8084b6c42de09`
+- raw summary json: `runs/20260421_084643_bf16_gemm_v1_51bdc04/summary.json`
+- measured commit: `51bdc044b098b1d42bd99cf1cf88e8d019d406f1`
 - new best custom: `no`
-- generated at: `2026-04-21T08:46:36-07:00`
+- generated at: `2026-04-21T08:46:49-07:00`
