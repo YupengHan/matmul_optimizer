@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_114147_bf16_gemm_v1_4784c8d`
-- run dir: `runs/20260421_114147_bf16_gemm_v1_4784c8d`
-- kernel tag: `bf16_gemm_v1_4784c8d`
-- round label: `round 4/100`
+- run id: `20260421_114455_bf16_gemm_v1_aaf076e`
+- run dir: `runs/20260421_114455_bf16_gemm_v1_aaf076e`
+- kernel tag: `bf16_gemm_v1_aaf076e`
+- round label: `round 5/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.509056 ms`
-- p10 runtime: `45.974630 ms`
-- p90 runtime: `56.286004 ms`
-- TFLOP/s: `15.631782 TFLOP/s`
-- previous run id: `20260421_113859_bf16_gemm_v1_6668d21`
-- runtime delta vs previous measured run: `+0.142338 ms`
-- TFLOP/s delta vs previous measured run: `-0.047987 TFLOP/s`
+- median runtime: `46.532095 ms`
+- p10 runtime: `46.045230 ms`
+- p90 runtime: `55.963955 ms`
+- TFLOP/s: `15.624042 TFLOP/s`
+- previous run id: `20260421_114147_bf16_gemm_v1_4784c8d`
+- runtime delta vs previous measured run: `+0.023039 ms`
+- TFLOP/s delta vs previous measured run: `-0.007740 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore the accepted PTX hot-band anchor after the failed live-state trim`
+- implemented direction name: `Re-anchor on the best measured PTX surface under the current workload`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_114147_bf16_gemm_v1_4784c8d/summary.json`
-- ncu analysis path: `runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.json`
-- measured commit: `4784c8dad3001272fc9bd5ac33581f8a9bde6129`
+- raw summary json: `runs/20260421_114455_bf16_gemm_v1_aaf076e/summary.json`
+- ncu analysis path: `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_analysis.json`
+- measured commit: `aaf076e228985145a4fa9736167899e6c710d1be`
 - new best custom: `no`
-- generated at: `2026-04-21T11:41:58-07:00`
+- generated at: `2026-04-21T11:45:05-07:00`

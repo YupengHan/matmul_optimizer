@@ -1,133 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Re-anchor on the best measured PTX surface under the current workload",
-  "candidate_id": "diagnosis_20260421_114422:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::reanchor_the_current_workload_ptx_surface",
-  "subfamily_id": "legacy::reanchor_the_current_workload_ptx_surface::exact_6668d21_surface",
-  "action_fingerprint": "restore_exact_6668d21_as_current_workload_anchor",
-  "selection_priority": 2.85,
-  "base_run_id": "20260421_114147_bf16_gemm_v1_4784c8d",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T11:44:25-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_114422",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Re-anchor on the best measured PTX surface under the current workload",
-    "family_id": "legacy::reanchor_the_current_workload_ptx_surface",
-    "subfamily_id": "legacy::reanchor_the_current_workload_ptx_surface::exact_6668d21_surface",
-    "action_fingerprint": "restore_exact_6668d21_as_current_workload_anchor",
-    "mode": "exploit",
-    "hypothesis": "The current workload has drifted enough that the old historical accepted base is no longer a valid recovery target. Restoring the slightly faster 20260421_113859_bf16_gemm_v1_6668d21 PTX variant should establish a sane current-workload anchor before more exploits are layered on top.",
-    "expected_bottleneck": "Current-workload re-anchoring step; establishes the local PTX baseline before the next bounded barrier exploit.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu",
-      "restore source commit: 6668d2193f6619c3de1cc6000711a62fc1f0fcd8"
-    ],
-    "risk": "low",
-    "metrics_to_recheck": [
-      "median runtime",
-      "launch__occupancy_limit_registers",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-    ],
-    "search_score_v1": 2.62,
-    "score_breakdown": {
-      "local_anchor_value": 1.1,
-      "measured_evidence": 0.95,
-      "implementation_scope": 0.9,
-      "reason": "Fastest path to a valid current-workload base after the historical restore failed to recover."
-    },
-    "predicted_gain_ms": 0.14,
-    "predicted_fail_risk": 0.08,
-    "ranking_notes": [
-      "This is not a search breakthrough; it is a workload-aware re-anchor.",
-      "The last two measured PTX variants differ by only 0.14 ms, but only one should serve as the next local base.",
-      "Use this to reset the loop onto the best current-workload surface before barrier tuning."
-    ],
-    "stop_condition": "Stop if the restored current-workload anchor does not reproduce within noise of the prior 46.3667 ms measurement.",
-    "evidence_refs": [
-      "state/node_b_context.md",
-      "state/latest_run.md",
-      "state/latest_ncu_summary.md",
-      "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.md",
-      "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.json",
-      "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json",
-      "docs/heuristics.md",
-      "state/current_focus.md",
-      "state/human_review.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics",
-        "metric_name": "Registers Per Thread",
-        "metric_value": 200.0,
-        "metric_unit": "register/thread",
-        "importance_score": 205.0,
-        "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
-        "section_name": "Launch Statistics",
-        "source_row_index": 14
-      },
-      {
-        "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy",
-        "metric_name": "Achieved Occupancy",
-        "metric_value": 16.62,
-        "metric_unit": "%",
-        "importance_score": 88.38,
-        "explanation": "Occupancy is carrying metric Achieved Occupancy.",
-        "section_name": "Occupancy",
-        "source_row_index": 29
-      }
-    ],
-    "expected_local_changes": [
-      "Restore the implementation surface from measured commit 6668d2193f6619c3de1cc6000711a62fc1f0fcd8.",
-      "Treat this as current-workload anchoring, not as a regression recovery toward the stale 24 ms history.",
-      "Preserve workflow/workload support files on HEAD while only restoring compiled implementation code."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "current_value": 48.39,
-        "guardrail": "non_decreasing",
-        "reason": "Tensor activity is part of the active bottleneck picture and should not drop after the next code edit."
-      },
-      {
-        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "current_value": 16.63,
-        "guardrail": "non_decreasing",
-        "reason": "Latency-hiding is already weak; active warps should not regress."
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "current_value": 6.95,
-        "guardrail": "non_increasing",
-        "reason": "long scoreboard stalls are consuming 6.95% of active warp issue slots."
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "current_value": 5.57,
-        "guardrail": "non_increasing",
-        "reason": "barrier stalls are consuming 5.57% of active warp issue slots."
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "implemented_action_fingerprint": "restore_exact_6668d21_as_current_workload_anchor",
-  "semantic_delta_tags": [
-    "kernel_code",
-    "restore_exact_base",
-    "current_workload_anchor"
-  ],
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ]
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
