@@ -1928,14 +1928,14 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
       __syncthreads();
       if (future_tile_idx < FixedKTiles) {
         const int future_tile_k = future_tile_idx * kWmmaK;
-        stage_a_shared_tile_async<FixedHotBandTile128x128>(
-            a_shared[curr_stage],
-            a_block + future_tile_k,
-            kFixedBenchmarkK);
         stage_b_shared_tile_async<FixedHotBandTile128x128>(
             b_shared[curr_stage],
             b_block + future_tile_k * kFixedBenchmarkN,
             kFixedBenchmarkN);
+        stage_a_shared_tile_async<FixedHotBandTile128x128>(
+            a_shared[curr_stage],
+            a_block + future_tile_k,
+            kFixedBenchmarkK);
         cp_async_commit_group();
       }
     }
@@ -2042,14 +2042,13 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
       cp_async_wait_group_0();
       __syncthreads();
       if (future_tile_idx < FixedKTiles) {
-        const int future_tile_k = future_tile_idx * kWmmaK;
         stage_b_shared_tile_async<FixedHotBandTile128x128>(
             b_shared[curr_stage],
-            b_block + future_tile_k * kFixedBenchmarkN,
+            b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
             kFixedBenchmarkN);
         stage_a_shared_tile_async<FixedHotBandTile128x128>(
             a_shared[curr_stage],
-            a_block + future_tile_k,
+            a_block + future_tile_idx * kWmmaK,
             kFixedBenchmarkK);
         cp_async_commit_group();
       }
