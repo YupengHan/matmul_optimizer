@@ -1,142 +1,18 @@
 {
-  "diagnosis_id": "diagnosis_20260421_082719",
-  "status": "completed",
-  "created_at": "2026-04-21T08:27:19-07:00",
-  "source_run_id": "20260421_075613_bf16_gemm_v1_ba8c2d7",
-  "source_run_dir": "runs/20260421_075613_bf16_gemm_v1_ba8c2d7",
-  "source_summary_json": "runs/20260421_075613_bf16_gemm_v1_ba8c2d7/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260421_081904_bf16_gemm_v1_d327dee",
+  "source_run_dir": "runs/20260421_081904_bf16_gemm_v1_d327dee",
+  "source_summary_json": "runs/20260421_081904_bf16_gemm_v1_d327dee/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260421_082719:dir_01",
+  "selected_direction_id": null,
+  "selected_candidate_id": null,
   "family_audit": [],
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-      "mode": "restore",
-      "hypothesis": "Round 37 only clawed back a few microseconds from round 36 and still finished above the accepted `489574e` anchor at 24.18427181 ms versus 24.16427231 ms. The live PTX hot-band kernel remains the runtime owner, but the measured source has drifted off the best-known surface by a pair of small scheduler-path edits that did not convert into a real win. The highest-value move now is to restore the exact accepted PTX surface on the current tree, re-measure it on the current harness state, and re-open the tighter exploit families only from that clean anchor instead of stacking more tweaks on top of a regressed branch.",
-      "expected_bottleneck": "Source drift away from the accepted PTX hot-band steady state, not DRAM saturation and not another immediate structural pivot.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-156",
-        "src/kernels/bf16_gemm_v1.cu:2000-2060",
-        "src/kernels/bf16_gemm_v1.cu:2107-2128"
-      ],
-      "risk": "Low. The exact restore surface is already buildable and previously measured as the current accepted best, so this is primarily a search reset rather than a novel correctness risk.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus 24.18427181 ms and the accepted 24.16427231 ms anchor",
-        "hot-band gpu__time_duration.sum",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "search_score_v1": 2.22,
-      "score_breakdown": {
-        "policy_id": "manual_round38_node_b_v1",
-        "rank_score": 2.0,
-        "recommended_bonus": 0.25,
-        "risk_penalty": 0.08,
-        "evidence_bonus": 0.05,
-        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-      },
-      "predicted_gain_ms": 0.015,
-      "predicted_fail_risk": 0.08,
-      "ranking_notes": [
-        "The current branch is measurably slower than the accepted best and has not produced a clean scheduler win after two consecutive micro-retimes.",
-        "Restoring the exact `489574e` surface is the fastest way to recover the measurement anchor before reopening narrower exploit families.",
-        "The restore family is still open in the frontier and remains the highest-confidence next dispatch when the active surface drifts."
-      ],
-      "stop_condition": "Stop if the exact restore does not recover the prior plateau cleanly or if the restored source unexpectedly fails build/correctness on the current tree."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
-      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-      "action_fingerprint": "ptx_wait_commit_window_retime_without_replaying_closed_variants",
-      "mode": "exploit",
-      "hypothesis": "If the restore anchor is recovered, the next bounded reopen should target the remaining PTX control-path seam that is still open in the frontier: the prologue wait/commit window around the first two staged K tiles. Historical evidence says that exact branch landed near 24.17100811 ms and never became a hard failure; that makes it the best near-anchor exploit once the current drift is removed.",
-      "expected_bottleneck": "Residual cp.async wait-group timing and inner-loop control cadence in the PTX 128x128 hot-band microkernel after the restore anchor is back in place.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:2008-2022",
-        "src/kernels/bf16_gemm_v1.cu:2042-2054",
-        "src/kernels/bf16_gemm_v1.cu:2110-2117"
-      ],
-      "risk": "Moderate. The PTX path is correctness-sensitive, and this family has already shown only marginal upside, so another reopen should stay bounded to one scheduler-facing change.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the restored anchor",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__registers_per_thread"
-      ],
-      "search_score_v1": 2.05,
-      "score_breakdown": {
-        "policy_id": "manual_round38_node_b_v1",
-        "rank_score": 1.95,
-        "recommended_bonus": 0.0,
-        "risk_penalty": 0.15,
-        "evidence_bonus": 0.25,
-        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-      },
-      "predicted_gain_ms": 0.008,
-      "predicted_fail_risk": 0.2,
-      "ranking_notes": [
-        "This family is still open in the frontier and already has near-best historical evidence on the same PTX surface.",
-        "It stays ranked behind restore because the current source is already off the accepted anchor and should not stack more drift first.",
-        "If restore recovers the anchor, this is the cleanest next A/B to keep the loop moving."
-      ],
-      "stop_condition": "Stop if the reopen does not beat the restored anchor or if it replays a previously closed negative subvariant instead of a genuinely fresh wait/commit-window retime."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
-      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
-      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
-      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
-      "mode": "explore",
-      "hypothesis": "The PTX hot-band path is still capped around 48% tensor activity and 16.6% active warps, so the structural 256x128 pivot remains the strongest non-local branch in the live frontier. The family is still too regressed to rank above the restore and near-anchor PTX reopen, but it should stay in the top three because it is the cleanest in-tree geometry change with real upside if the narrow PTX loop keeps stalling.",
-      "expected_bottleneck": "Structural latency hiding and register/shared-memory amortization on the hot band, not one more tiny PTX-local ordering tweak.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1580-1670",
-        "src/kernels/bf16_gemm_v1.cu:2107-2128",
-        "src/kernels/bf16_gemm_v1.cu:2130-2135"
-      ],
-      "risk": "High. This branch changes the dominant hot-band geometry and has historically carried larger regression risk than the PTX-local families.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "hot-band gpu__time_duration.sum",
-        "launch__registers_per_thread",
-        "launch__shared_mem_per_block_allocated",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
-      ],
-      "search_score_v1": 1.98,
-      "score_breakdown": {
-        "policy_id": "manual_round38_node_b_v1",
-        "rank_score": 1.85,
-        "recommended_bonus": 0.0,
-        "risk_penalty": 0.25,
-        "evidence_bonus": 0.38,
-        "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-      },
-      "predicted_gain_ms": 0.35,
-      "predicted_fail_risk": 0.45,
-      "ranking_notes": [
-        "The geometry pivot still represents the best available structural upside if the PTX microkernel remains trapped in hundredths-of-a-millisecond changes.",
-        "It stays ranked third because the current branch should first recover the accepted anchor and finish one tighter PTX A/B before spending another round on a high-risk pivot.",
-        "Keep this family live so the loop can escalate again once the narrow PTX surface has been re-grounded."
-      ],
-      "stop_condition": "Stop if the 256x128 pivot still lands in the high-regression regime or if it requires broader writer-ownership surgery than the bounded transplant plan allows."
-    }
-  ],
-  "notes": "Round 38 uses restore-first ranking to recover the accepted PTX anchor before reopening the next PTX control-path retime or the structural 256x128 pivot."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
