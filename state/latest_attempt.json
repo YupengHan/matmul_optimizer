@@ -1,52 +1,52 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260420_235953:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260420_235953:dir_01",
-  "source_diagnosis_id": "diagnosis_20260420_235953",
-  "base_run_id": "20260420_235922_bf16_gemm_v1_489574e",
-  "family_id": "legacy::steady_state_barrier_handoff_retime",
-  "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
+  "attempt_id": "diagnosis_20260421_000409:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_000409:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_000409",
+  "base_run_id": "20260421_000316_bf16_gemm_v1_c643816",
+  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
   "direction_id": "dir_01",
-  "direction_name": "Steady-state Barrier / Handoff Retime",
-  "mode": "exploit",
-  "commit": "c643816563a8d5805f32896c9b0a041d34d27425",
-  "commit_short": "c643816",
-  "subject": "node_c: round 13/100 implement dir_01 Steady-state Barrier / Handoff Retime",
+  "direction_name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+  "mode": "restore",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 14/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T00:02:42-07:00",
+  "selected_at": "2026-04-21T00:05:47-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260420_235922_bf16_gemm_v1_489574e",
-  "selection_score": 2.525,
-  "planned_action_fingerprint": "8f8b5eca1122e2da",
-  "implemented_action_fingerprint": "retime_future_tile_refill_to_a_then_b",
+  "source_run_id": "20260421_000316_bf16_gemm_v1_c643816",
+  "selection_score": 2.77,
+  "planned_action_fingerprint": "26b22d7f05ca7ff6",
+  "implemented_action_fingerprint": "restore_best_ptx_handoff_b_then_a",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v13",
+    "policy_id": "manual_round100_node_b_v14",
     "rank_score": 2.0,
-    "active_surface_bonus": 0.3,
-    "previous_measurement_invalidated_bonus": 0.25,
-    "absorbed_family_filter_bonus": 0.1,
-    "risk_penalty": 0.3,
-    "formula": "rank_score + active_surface_bonus + previous_measurement_invalidated_bonus + absorbed_family_filter_bonus - risk_penalty"
+    "single_hunk_restore_bonus": 0.35,
+    "measured_regression_recovery_bonus": 0.45,
+    "best_surface_bonus": 0.25,
+    "risk_penalty": 0.5,
+    "formula": "rank_score + single_hunk_restore_bonus + measured_regression_recovery_bonus + best_surface_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
-    "ptx_handoff_retime",
+    "restore_ptx_best_surface",
     "future_tile_refill_order",
-    "a_then_b_refill"
+    "b_then_a_refill"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2041-2053"
+    "src/kernels/bf16_gemm_v1.cu:2042-2053"
   ],
   "implementation": {
-    "commit": "c643816563a8d5805f32896c9b0a041d34d27425",
-    "commit_short": "c643816",
-    "subject": "node_c: round 13/100 implement dir_01 Steady-state Barrier / Handoff Retime",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 14/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:2041-2053"
+      "src/kernels/bf16_gemm_v1.cu:2042-2053"
     ],
     "diff_stats": {
       "files_changed": 1,
@@ -62,29 +62,16 @@
     "deletions": 4
   },
   "measurement": {
-    "run_id": "20260421_000316_bf16_gemm_v1_c643816",
-    "measurement_commit": "c643816563a8d5805f32896c9b0a041d34d27425",
-    "runtime_ms": 24.48483181,
-    "runtime_delta_ms": 0.3205594999999981,
-    "tflops": 29.69264512,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.37",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.90",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.24",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.50",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.60",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.59",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "6.29",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "5.51",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "1.86",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.98",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "regressed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_000316_bf16_gemm_v1_c643816 for candidate diagnosis_20260420_235953:dir_01; transition_label=PASS_LOSS.",
-  "transition_label": "PASS_LOSS"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

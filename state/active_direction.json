@@ -11,7 +11,17 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:05:47-07:00",
   "source_diagnosis_id": "diagnosis_20260421_000409",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "restore_best_ptx_handoff_b_then_a",
+  "semantic_delta_tags": [
+    "restore_ptx_best_surface",
+    "future_tile_refill_order",
+    "b_then_a_refill"
+  ],
+  "secondary_family_ids": [],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:2042-2053"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
@@ -54,5 +64,5 @@
     "stop_condition": "Stop if restoring the best-known PTX handoff order fails to recover near the 24.164272 ms band, because that would imply the current state drift is wider than the visible one-hunk delta.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
