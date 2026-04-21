@@ -204,7 +204,7 @@ Recommended checklist:
 
 ## Likely Future Extensions
 
-- richer family priors from `heuristic_dataset`
+- richer family priors from accumulated branch-local history
 - explicit family-level cooldowns
 - separate reopen budgets for exploit vs explore families
 - global top-k family cap beyond the current one-representative-per-family rule

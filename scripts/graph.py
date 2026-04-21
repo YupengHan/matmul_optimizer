@@ -45,8 +45,16 @@ from state_lib import (
     append_jsonl,
     current_kernel_path,
     default_active_direction,
+    default_family_ledger,
+    default_graph_state,
+    default_latest_attempt,
+    default_latest_ncu_summary,
     default_latest_diagnosis,
+    default_latest_run,
     default_round_loop_state,
+    default_search_candidates,
+    default_search_frontier,
+    default_search_state,
     direction_lookup,
     ensure_machine_state,
     load_active_direction,
@@ -99,6 +107,12 @@ RESTORE_IMPLEMENTATION_PATHS = [
     REPO_ROOT / 'src' / 'runner' / 'main.cpp',
     REPO_ROOT / 'include',
     REPO_ROOT / 'CMakeLists.txt',
+]
+
+REBOOTSTRAP_IMPLEMENTATION_PATHS = [
+    REPO_ROOT / 'src' / 'kernels',
+    REPO_ROOT / 'src' / 'runner' / 'main.cpp',
+    REPO_ROOT / 'include',
 ]
 
 
@@ -646,13 +660,85 @@ def update_best_custom(benchmark_state: Dict[str, Any], latest_run: Dict[str, An
 def compute_gap(benchmark_state: Dict[str, Any]) -> tuple[Optional[float], Optional[float]]:
     cutlass = benchmark_state.get('cutlass_baseline') or {}
     custom = benchmark_state.get('best_custom') or {}
-    cutlass_runtime = cutlass.get('median_runtime_ms')
-    custom_runtime = custom.get('median_runtime_ms')
-    if cutlass_runtime is None or custom_runtime is None:
+    return compute_gap_from_entries(custom, cutlass)
+
+
+def compute_gap_from_entries(
+    custom_entry: Dict[str, Any],
+    baseline_entry: Dict[str, Any],
+) -> tuple[Optional[float], Optional[float]]:
+    custom_runtime = custom_entry.get('median_runtime_ms')
+    baseline_runtime = baseline_entry.get('median_runtime_ms')
+    if baseline_runtime is None or custom_runtime is None:
         return None, None
-    absolute = float(custom_runtime) - float(cutlass_runtime)
-    ratio = float(custom_runtime) / float(cutlass_runtime) if float(cutlass_runtime) else None
+    absolute = float(custom_runtime) - float(baseline_runtime)
+    ratio = float(custom_runtime) / float(baseline_runtime) if float(baseline_runtime) else None
     return absolute, ratio
+
+
+def format_runtime_ratio_text(runtime_ratio: float, baseline_label: str) -> str:
+    relation = 'faster' if runtime_ratio < 1.0 else 'slower' if runtime_ratio > 1.0 else 'matched'
+    return f"`{runtime_ratio:.6f}x` of {baseline_label} runtime ({relation})"
+
+
+def default_goal_summary() -> str:
+    return 'Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1`.'
+
+
+def project_goal_summary(search_state: Dict[str, Any]) -> str:
+    summary = str(search_state.get('goal_summary') or '').strip()
+    return summary or default_goal_summary()
+
+
+def format_project_goal_details(search_state: Dict[str, Any]) -> list[str]:
+    details: list[str] = []
+    target_runtime = parse_priority(search_state.get('target_runtime_ms'))
+    target_competitor = str(search_state.get('target_competitor') or '').strip()
+    if target_runtime is not None:
+        details.append(f"target runtime: `<= {target_runtime:.3f} ms`")
+    if target_competitor:
+        details.append(f"comparison target: `{target_competitor}`")
+    baseline_run_id = search_state.get('bootstrap_baseline_run_id')
+    baseline_runtime = parse_priority(search_state.get('bootstrap_baseline_runtime_ms'))
+    baseline_commit = search_state.get('bootstrap_baseline_measured_commit')
+    if baseline_run_id or baseline_commit or baseline_runtime is not None:
+        details.append(
+            "rebootstrap source: "
+            + f"`{baseline_run_id or 'N/A'}`"
+            + (
+                f", commit `{baseline_commit}`"
+                if baseline_commit
+                else ''
+            )
+            + (
+                f", historical runtime `{fmt_runtime(baseline_runtime)}`"
+                if baseline_runtime is not None
+                else ''
+            )
+        )
+    return details
+
+
+def build_rebootstrap_goal_summary(
+    *,
+    goal_summary: Optional[str],
+    goal_runtime_ms: Optional[float],
+    goal_competitor: Optional[str],
+) -> str:
+    if goal_summary and goal_summary.strip():
+        return goal_summary.strip()
+    runtime = parse_priority(goal_runtime_ms)
+    competitor = str(goal_competitor or '').strip()
+    if competitor and runtime is not None:
+        return (
+            f"Beat {competitor} and drive the fixed-shape BF16 GEMM "
+            f"`fixed_bf16_gemm_v1` to `<= {runtime:.3f} ms`."
+        )
+    if competitor:
+        return f"Beat {competitor} on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1`."
+    if runtime is not None:
+        return f"Drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= {runtime:.3f} ms`."
+    return default_goal_summary()
 
 
 def parse_priority(value: Any) -> Optional[float]:
@@ -1574,50 +1660,61 @@ def render_latest_ncu_md(ncu_summary: Dict[str, Any]) -> str:
     return '\n'.join(lines) + '\n'
 
 
+def render_baseline_entry_md(lines: List[str], title: str, entry: Dict[str, Any]) -> None:
+    lines.append(title)
+    lines.append('')
+    if not entry:
+        lines.append('- status: NOT RECORDED')
+        return
+    lines.append('- status: RECORDED')
+    lines.append(f"- kernel tag: `{entry.get('kernel_tag', 'N/A')}`")
+    lines.append(f"- runtime: `{fmt_runtime(entry.get('median_runtime_ms'))}`")
+    lines.append(f"- TFLOP/s: `{fmt_tflops(entry.get('tflops'))}`")
+    lines.append(f"- correctness: `{'PASS' if entry.get('correctness_passed') else 'FAIL'}`")
+    lines.append(f"- run dir: `{entry.get('run_dir', 'N/A')}`")
+    lines.append(f"- summary json: `{entry.get('summary_json', 'N/A')}`")
+    if entry.get('ncu_summary_json'):
+        lines.append(f"- ncu summary json: `{entry.get('ncu_summary_json', 'N/A')}`")
+    if entry.get('ncu_analysis_json'):
+        lines.append(f"- ncu analysis json: `{entry.get('ncu_analysis_json', 'N/A')}`")
+    if entry.get('ncu_analysis_md'):
+        lines.append(f"- ncu analysis md: `{entry.get('ncu_analysis_md', 'N/A')}`")
+    if entry.get('ncu_rep_path'):
+        lines.append(f"- ncu rep path: `{entry.get('ncu_rep_path', 'N/A')}`")
+    if entry.get('measured_commit'):
+        lines.append(f"- measured commit: `{entry.get('measured_commit', 'N/A')}`")
+
+
 def render_benchmark_baselines_md(benchmark_state: Dict[str, Any]) -> str:
     cutlass = benchmark_state.get('cutlass_baseline') or {}
+    cublas = benchmark_state.get('cublas_baseline') or {}
     custom = benchmark_state.get('best_custom') or {}
     absolute_gap, runtime_ratio = compute_gap(benchmark_state)
+    cublas_gap, cublas_ratio = compute_gap_from_entries(custom, cublas)
 
     lines = ['# Benchmark baselines', '', '## Official benchmark', '']
     lines.append(f"- dataset: `{benchmark_state.get('dataset_id', 'fixed_bf16_gemm_v1')}`")
     lines.append(f"- metric of record: `{benchmark_state.get('metric_of_record', 'median_runtime_ms')}`")
     lines.append('- correctness must pass before a performance result is accepted')
     lines.append('')
-    lines.append('## CUTLASS baseline')
+    render_baseline_entry_md(lines, '## CUTLASS baseline', cutlass)
     lines.append('')
-    if not cutlass:
-        lines.append('- status: NOT RECORDED')
-    else:
-        lines.append(f"- status: RECORDED")
-        lines.append(f"- kernel tag: `{cutlass.get('kernel_tag', 'N/A')}`")
-        lines.append(f"- runtime: `{fmt_runtime(cutlass.get('median_runtime_ms'))}`")
-        lines.append(f"- TFLOP/s: `{fmt_tflops(cutlass.get('tflops'))}`")
-        lines.append(f"- correctness: `{'PASS' if cutlass.get('correctness_passed') else 'FAIL'}`")
-        lines.append(f"- run dir: `{cutlass.get('run_dir', 'N/A')}`")
-        lines.append(f"- summary json: `{cutlass.get('summary_json', 'N/A')}`")
+    render_baseline_entry_md(lines, '## cuBLAS baseline', cublas)
     lines.append('')
-    lines.append('## Best custom kernel')
-    lines.append('')
-    if not custom:
-        lines.append('- status: NOT RECORDED')
-    else:
-        lines.append('- status: RECORDED')
-        lines.append(f"- kernel tag: `{custom.get('kernel_tag', 'N/A')}`")
-        lines.append(f"- runtime: `{fmt_runtime(custom.get('median_runtime_ms'))}`")
-        lines.append(f"- TFLOP/s: `{fmt_tflops(custom.get('tflops'))}`")
-        lines.append(f"- correctness: `{'PASS' if custom.get('correctness_passed') else 'FAIL'}`")
-        lines.append(f"- run dir: `{custom.get('run_dir', 'N/A')}`")
-        lines.append(f"- summary json: `{custom.get('summary_json', 'N/A')}`")
-        lines.append(f"- measured commit: `{custom.get('measured_commit', 'N/A')}`")
+    render_baseline_entry_md(lines, '## Best custom kernel', custom)
     lines.append('')
     lines.append('## Gap')
     lines.append('')
     if absolute_gap is None or runtime_ratio is None:
-        lines.append('- gap: NOT AVAILABLE YET')
+        lines.append('- gap vs CUTLASS: NOT AVAILABLE YET')
     else:
-        lines.append(f"- absolute runtime gap: `{absolute_gap:.6f} ms`")
-        lines.append(f"- runtime ratio: `{runtime_ratio:.6f}x` slower than CUTLASS")
+        lines.append(f"- absolute runtime gap vs CUTLASS: `{absolute_gap:.6f} ms`")
+        lines.append(f"- runtime ratio vs CUTLASS: {format_runtime_ratio_text(runtime_ratio, 'CUTLASS')}")
+    if cublas_gap is None or cublas_ratio is None:
+        lines.append('- gap vs cuBLAS: NOT AVAILABLE YET')
+    else:
+        lines.append(f"- absolute runtime gap vs cuBLAS: `{cublas_gap:.6f} ms`")
+        lines.append(f"- runtime ratio vs cuBLAS: {format_runtime_ratio_text(cublas_ratio, 'cuBLAS')}")
     return '\n'.join(lines) + '\n'
 
 
@@ -1662,12 +1759,17 @@ def render_progress_md(
     diagnosis: Dict[str, Any],
     active_direction: Dict[str, Any],
     benchmark_state: Dict[str, Any],
+    search_state: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
     cutlass = benchmark_state.get('cutlass_baseline') or {}
+    cublas = benchmark_state.get('cublas_baseline') or {}
     absolute_gap, runtime_ratio = compute_gap(benchmark_state)
+    cublas_gap, cublas_ratio = compute_gap_from_entries(benchmark_state.get('best_custom') or {}, cublas)
     lines = ['# Progress', '', '## Objective', '']
-    lines.append('Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1`.')
+    lines.append(project_goal_summary(search_state))
+    for detail in format_project_goal_details(search_state):
+        lines.append(f'- {detail}')
     lines.append('')
     lines.append('## Workflow state')
     lines.append('')
@@ -1717,9 +1819,14 @@ def render_progress_md(
     lines.append('')
     lines.append(f"- CUTLASS median runtime: `{fmt_runtime(cutlass.get('median_runtime_ms'))}`")
     if absolute_gap is not None and runtime_ratio is not None:
-        lines.append(f"- current best custom gap: `{absolute_gap:.6f} ms`, `{runtime_ratio:.6f}x` slower than CUTLASS")
+        lines.append(f"- current best custom gap: `{absolute_gap:.6f} ms`, {format_runtime_ratio_text(runtime_ratio, 'CUTLASS')}")
     else:
         lines.append('- current best custom gap: `N/A`')
+    lines.append(f"- cuBLAS median runtime: `{fmt_runtime(cublas.get('median_runtime_ms'))}`")
+    if cublas_gap is not None and cublas_ratio is not None:
+        lines.append(f"- current best custom gap vs cuBLAS: `{cublas_gap:.6f} ms`, {format_runtime_ratio_text(cublas_ratio, 'cuBLAS')}")
+    else:
+        lines.append('- current best custom gap vs cuBLAS: `N/A`')
     return '\n'.join(lines) + '\n'
 
 
@@ -1728,9 +1835,11 @@ def render_current_focus_md(
     latest_run: Dict[str, Any],
     diagnosis: Dict[str, Any],
     active_direction: Dict[str, Any],
+    search_state: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
     lines = ['# Current focus', '']
+    lines.append(f"- branch goal: `{project_goal_summary(search_state)}`")
     lines.append(f"- next node: `{graph_state.get('current_node', 'node_a')}`")
     lines.append(f"- status: `{graph_state.get('status', 'unknown')}`")
     lines.append(f"- latest run id: `{latest_run.get('run_id', 'N/A')}`")
@@ -1790,10 +1899,19 @@ def render_node_b_context(
     latest_run: Dict[str, Any],
     ncu_summary: Dict[str, Any],
     diagnosis: Dict[str, Any],
+    benchmark_state: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
     analysis_json_path = latest_run.get('ncu_analysis_path') or ncu_summary.get('analysis_path')
     analysis_md_path = sibling_repo_path(analysis_json_path, suffix='.md')
+    cublas_baseline = benchmark_state.get('cublas_baseline') or {}
+    cublas_ref_paths = [
+        cublas_baseline.get('ncu_analysis_md'),
+        cublas_baseline.get('ncu_analysis_json'),
+        cublas_baseline.get('ncu_summary_json'),
+        cublas_baseline.get('ncu_rep_path'),
+    ]
+    cublas_ref_paths = [path for path in cublas_ref_paths if path]
     autotune_paths = sorted(
         path for path in STATE_DIR.glob('autotune_*_main_tiles.*')
         if path.suffix in {'.json', '.md'}
@@ -1802,6 +1920,7 @@ def render_node_b_context(
     if autotune_paths:
         formatted = '\n'.join(f'- `{repo_rel(path)}`' for path in autotune_paths)
         autotune_lines = f'\n{formatted}\n'
+    cublas_lines = '\n'.join(f'- `{path}`' for path in cublas_ref_paths) if cublas_ref_paths else '- no cuBLAS baseline artifacts are recorded yet'
     return textwrap.dedent(
         f'''\
         # Node B context
@@ -1829,6 +1948,12 @@ def render_node_b_context(
         - `{ncu_summary.get('raw_csv_path', 'N/A')}`
         - `{ncu_summary.get('raw_rep_path', 'N/A')}`
 {autotune_lines if autotune_lines else ''}
+
+        ## Optional cuBLAS reference
+
+        If the latest custom run does not suggest a clear next move, inspect the cuBLAS reference artifacts below to see how much hardware utilization the vendor library reaches on the same data.
+
+{cublas_lines}
 
         Use the structured summary first:
         - `bottleneck_classes` tells you which bottleneck family is currently dominant
@@ -2078,7 +2203,7 @@ def compute_supervisor_task(
             'Use the matmul-doc-sync skill or an equivalent narrow doc-refresh pass to update '
             '`README.md`, `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`, '
             'and the rendered optimization tree, then commit only those doc/image files and run '
-            '`git push origin master`.'
+            '`git push origin HEAD`.'
         ),
         'watchdog_timeout_minutes': supervisor_watchdog_timeout_minutes(),
         'watchdog_status': 'idle',
@@ -2262,13 +2387,14 @@ def refresh_human_state() -> None:
     diagnosis = load_latest_diagnosis()
     active_direction = load_active_direction()
     benchmark_state = load_benchmark_state()
+    search_state = load_search_state()
     round_loop = load_round_loop_state()
     write_text(LATEST_RUN_MD_PATH, render_latest_run_md(latest_run))
     write_text(LATEST_NCU_SUMMARY_MD_PATH, render_latest_ncu_md(latest_ncu))
     write_text(BENCHMARK_BASELINES_MD_PATH, render_benchmark_baselines_md(benchmark_state))
     write_text(ROUNDS_MD_PATH, render_rounds_md(round_loop))
-    write_text(PROGRESS_MD_PATH, render_progress_md(graph_state, latest_run, diagnosis, active_direction, benchmark_state, round_loop))
-    write_text(CURRENT_FOCUS_MD_PATH, render_current_focus_md(graph_state, latest_run, diagnosis, active_direction, round_loop))
+    write_text(PROGRESS_MD_PATH, render_progress_md(graph_state, latest_run, diagnosis, active_direction, benchmark_state, search_state, round_loop))
+    write_text(CURRENT_FOCUS_MD_PATH, render_current_focus_md(graph_state, latest_run, diagnosis, active_direction, search_state, round_loop))
     write_text(HUMAN_REVIEW_MD_PATH, render_human_review_md(graph_state, diagnosis, active_direction, round_loop))
 
 
@@ -2301,6 +2427,7 @@ def refresh_node_b_context() -> None:
             load_latest_run(),
             load_latest_ncu_summary(),
             load_latest_diagnosis(),
+            load_benchmark_state(),
             load_round_loop_state(),
         ),
     )
@@ -3449,6 +3576,16 @@ def resolve_run_id_to_restore_target(run_id: str) -> Dict[str, Any]:
             'commit_field': 'measured_commit',
         }
 
+    benchmark_state = load_benchmark_state()
+    best_custom = benchmark_state.get('best_custom') or {}
+    if best_custom.get('run_id') == run_id and best_custom.get('measured_commit'):
+        return {
+            'run_id': run_id,
+            'source_commit': best_custom.get('measured_commit'),
+            'runtime_ms': best_custom.get('median_runtime_ms'),
+            'commit_field': 'measured_commit',
+        }
+
     for entry in reversed(load_run_registry()):
         if entry.get('run_id') != run_id:
             continue
@@ -3632,6 +3769,122 @@ def run_restore_base(args: argparse.Namespace) -> int:
         )
     print_step(
         f"restore-base resolved run_id={run_id} via {target.get('commit_field')}={target.get('source_commit')}"
+    )
+    return 0
+
+
+def run_rebootstrap(args: argparse.Namespace) -> int:
+    ensure_machine_state()
+    baseline_run_id = args.baseline_run_id.strip()
+    if not baseline_run_id:
+        raise RuntimeError('rebootstrap requires --baseline-run-id <run_id>')
+
+    target = resolve_run_id_to_restore_target(baseline_run_id)
+    changed_paths = restore_paths_from_commit(target['source_commit'], REBOOTSTRAP_IMPLEMENTATION_PATHS)
+
+    goal_summary = build_rebootstrap_goal_summary(
+        goal_summary=args.goal_summary,
+        goal_runtime_ms=args.goal_runtime_ms,
+        goal_competitor=args.goal_competitor,
+    )
+
+    write_text(RUN_REGISTRY_PATH, '')
+    write_text(ROUND_HISTORY_PATH, '')
+    write_text(DIAGNOSIS_HISTORY_PATH, '')
+    write_text(SEARCH_CLOSED_PATH, '')
+
+    latest_run = default_latest_run()
+    latest_ncu = default_latest_ncu_summary()
+    diagnosis = default_latest_diagnosis()
+    diagnosis['current_kernel_path'] = current_kernel_path()
+    diagnosis['notes'] = (
+        f"Branch rebootstrap restored implementation source from {baseline_run_id}. "
+        'Run node_a first to capture a fresh branch-local baseline before node_b.'
+    )
+    active_direction = default_active_direction()
+    active_direction['notes'] = (
+        'No direction selected yet. The branch was rebootstrapped to a clean measurement-first state.'
+    )
+
+    round_loop = default_round_loop_state()
+    round_loop.update(
+        {
+            'accepted_base_run_id': baseline_run_id,
+            'accepted_base_measured_commit': target.get('source_commit'),
+            'accepted_base_runtime_ms': target.get('runtime_ms'),
+            'notes': (
+                f"No multi-round loop is active. Historical restore anchor is {baseline_run_id}; "
+                'run node_a to establish a fresh branch-local baseline before arming a new loop.'
+            ),
+        }
+    )
+
+    graph_state = default_graph_state()
+    graph_state.update(
+        {
+            'current_node': 'node_a',
+            'previous_node': None,
+            'status': 'ready_for_node_a',
+            'latest_run_dir': None,
+            'latest_commit': None,
+            'approved_direction_id': None,
+            'recommended_direction_id': None,
+            'current_kernel_path': current_kernel_path(),
+            'plateau_counter': 0,
+            'notes': (
+                f"Implementation surface restored from historical baseline {baseline_run_id} "
+                f"({target.get('source_commit')}). Run node_a to capture a fresh branch-local baseline."
+            ),
+        }
+    )
+
+    search_state = default_search_state()
+    search_state.update(
+        {
+            'status': 'ready_for_branch_baseline',
+            'goal_summary': goal_summary,
+            'target_runtime_ms': parse_priority(args.goal_runtime_ms),
+            'target_competitor': str(args.goal_competitor or '').strip() or None,
+            'bootstrap_baseline_run_id': baseline_run_id,
+            'bootstrap_baseline_measured_commit': target.get('source_commit'),
+            'bootstrap_baseline_runtime_ms': target.get('runtime_ms'),
+            'bootstrap_started_at': now_local_iso(),
+            'accepted_base_run_id': baseline_run_id,
+            'accepted_base_measured_commit': target.get('source_commit'),
+            'accepted_base_runtime_ms': target.get('runtime_ms'),
+            'best_known_run_id': baseline_run_id,
+            'best_known_measured_commit': target.get('source_commit'),
+            'best_known_runtime_ms': target.get('runtime_ms'),
+            'exact_base_run_id': baseline_run_id,
+            'exact_base_measured_commit': target.get('source_commit'),
+            'exact_base_runtime_ms': target.get('runtime_ms'),
+            'notes': (
+                f"Branch rebootstrap complete from run_id={baseline_run_id}. "
+                'The live search frontier/history was cleared; run node_a next.'
+            ),
+        }
+    )
+
+    benchmark_state = load_benchmark_state()
+    benchmark_state['updated_at'] = now_local_iso()
+
+    write_json(LATEST_RUN_PATH, latest_run)
+    write_json(LATEST_NCU_SUMMARY_PATH, latest_ncu)
+    write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
+    write_json(ACTIVE_DIRECTION_PATH, active_direction)
+    write_json(GRAPH_STATE_PATH, graph_state)
+    write_json(ROUND_LOOP_STATE_PATH, round_loop)
+    write_json(SEARCH_STATE_PATH, search_state)
+    write_json(SEARCH_FRONTIER_PATH, default_search_frontier())
+    write_json(FAMILY_LEDGER_PATH, default_family_ledger())
+    write_json(SEARCH_CANDIDATES_PATH, default_search_candidates())
+    write_json(LATEST_ATTEMPT_PATH, default_latest_attempt())
+    write_json(BENCHMARK_STATE_PATH, benchmark_state)
+
+    refresh_all_views()
+    print_step(
+        f"rebootstrapped branch from {baseline_run_id} using {target.get('source_commit')}; "
+        f"cleared live search history and restored {len(changed_paths)} implementation file(s)"
     )
     return 0
 
@@ -5223,6 +5476,16 @@ def build_parser() -> argparse.ArgumentParser:
     restore_base.add_argument('--reason', default=None)
     restore_base.add_argument('--skip-commit', action='store_true')
     restore_base.set_defaults(func=run_restore_base)
+
+    rebootstrap = subparsers.add_parser(
+        'rebootstrap',
+        help='Restore a measured implementation baseline and clear live workflow history for a fresh branch restart',
+    )
+    rebootstrap.add_argument('--baseline-run-id', required=True)
+    rebootstrap.add_argument('--goal-runtime-ms', type=float, default=None)
+    rebootstrap.add_argument('--goal-competitor', default=None)
+    rebootstrap.add_argument('--goal-summary', default=None)
+    rebootstrap.set_defaults(func=run_rebootstrap)
 
     status = subparsers.add_parser('status', help='Print the current graph state')
     status.set_defaults(func=run_status)

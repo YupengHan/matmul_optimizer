@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_114455_bf16_gemm_v1_aaf076e`
-- run dir: `runs/20260421_114455_bf16_gemm_v1_aaf076e`
-- kernel tag: `bf16_gemm_v1_aaf076e`
-- round label: `round 5/100`
-- runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
+- run id: `20260421_133418_bf16_gemm_v1_c859cd06`
+- run dir: `runs/20260421_133418_bf16_gemm_v1_c859cd06`
+- kernel tag: `bf16_gemm_v1_c859cd06`
+- round label: `single-run`
+- runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.532095 ms`
-- p10 runtime: `46.045230 ms`
-- p90 runtime: `55.963955 ms`
-- TFLOP/s: `15.624042 TFLOP/s`
-- previous run id: `20260421_114147_bf16_gemm_v1_4784c8d`
-- runtime delta vs previous measured run: `+0.023039 ms`
-- TFLOP/s delta vs previous measured run: `-0.007740 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Re-anchor on the best measured PTX surface under the current workload`
-- implemented selection mode: `recommended`
+- median runtime: `24.407552 ms`
+- p10 runtime: `24.234701 ms`
+- p90 runtime: `25.280390 ms`
+- TFLOP/s: `29.786659 TFLOP/s`
+- previous run id: `None`
+- runtime delta vs previous measured run: `N/A`
+- TFLOP/s delta vs previous measured run: `N/A`
+- perf verdict: `unknown`
+- implemented direction id: `None`
+- implemented direction name: `None`
+- implemented selection mode: `None`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_114455_bf16_gemm_v1_aaf076e/summary.json`
-- ncu analysis path: `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_analysis.json`
-- measured commit: `aaf076e228985145a4fa9736167899e6c710d1be`
+- raw summary json: `runs/20260421_133418_bf16_gemm_v1_c859cd06/summary.json`
+- ncu analysis path: `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.json`
+- measured commit: `c859cd06456e600a76778265983f0cd6da925481`
 - new best custom: `no`
-- generated at: `2026-04-21T11:45:05-07:00`
+- generated at: `2026-04-21T13:34:30-07:00`

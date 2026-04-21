@@ -8,24 +8,33 @@
         - `state/node_b_context.md`
         - `state/latest_run.md`
         - `state/latest_ncu_summary.md`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_analysis.md`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_analysis.json`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.json`
         - `docs/heuristics.md`
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
         - `src/kernels/bf16_gemm_v1.cu`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/summary.json`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_details_page.csv`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_source.csv`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_import_raw.csv`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_details.csv`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_metrics.csv`
-        - `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_profile.ncu-rep`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/summary.json`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_details_page.csv`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_source.csv`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_import_raw.csv`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_details.csv`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_metrics.csv`
+        - `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_profile.ncu-rep`
 
 - `state/autotune_round18_main_tiles.json`
 - `state/autotune_round18_main_tiles.md`
 
+
+        ## Optional cuBLAS reference
+
+        If the latest custom run does not suggest a clear next move, inspect the cuBLAS reference artifacts below to see how much hardware utilization the vendor library reaches on the same data.
+
+- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md`
+- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.json`
+- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_summary.json`
+- `runs/20260421_133046_cublas_ref_v4_lt_best/ncu_profile.ncu-rep`
 
         Use the structured summary first:
         - `bottleneck_classes` tells you which bottleneck family is currently dominant
@@ -74,12 +83,12 @@
 
         ## Current source snapshot
 
-        - round loop: `round 6/100`
-        - rounds remaining after this one: `94`
-        - latest run id: `20260421_114455_bf16_gemm_v1_aaf076e`
-        - median runtime: `46.532095 ms`
-        - TFLOP/s: `15.624042 TFLOP/s`
-        - measured commit: `aaf076e228985145a4fa9736167899e6c710d1be`
+        - round loop: `single-run`
+        - rounds remaining after this one: `0`
+        - latest run id: `20260421_133418_bf16_gemm_v1_c859cd06`
+        - median runtime: `24.407552 ms`
+        - TFLOP/s: `29.786659 TFLOP/s`
+        - measured commit: `c859cd06456e600a76778265983f0cd6da925481`
         - existing diagnosis status: `pending_generation`
         - top bottleneck class: `occupancy_latency_hiding_issue`
         - top finding: `Launch Statistics is carrying metric Registers Per Thread.`

@@ -2,7 +2,8 @@
 
 This repository is a local, Codex-oriented workflow for one fixed benchmark:
 
-- target: beat the local CUTLASS baseline on `fixed_bf16_gemm_v1`
+- historical recorded baseline: beat the local CUTLASS baseline on `fixed_bf16_gemm_v1`
+- refactor-branch target: remeasure from the restored best custom source, then drive toward `<= 18.0 ms` and beat cuBLAS on the same benchmark
 - shape: `m=6464, n=7776, k=7232`
 - dtype: BF16 inputs, FP32 accumulation, BF16 output reference
 - execution-critical path: script-first
@@ -34,6 +35,7 @@ python scripts/graph.py search-status
 python scripts/graph.py frontier --top N
 python scripts/graph.py select-next
 python scripts/graph.py restore-base --run-id <run_id>
+python scripts/graph.py rebootstrap --baseline-run-id <run_id> --goal-runtime-ms 18 --goal-competitor cuBLAS
 python scripts/graph.py cycle
 python scripts/graph.py rounds --status
 python scripts/graph.py rounds --count N --auto-use-recommended
@@ -54,6 +56,14 @@ CUTLASS side-path build and baseline run:
 cmake -S . -B build -DENABLE_CUTLASS_RUNNER=ON -DCUTLASS_ROOT=/path/to/cutlass
 cmake --build build -j 4 --target cutlass_runner
 python scripts/run_cutlass_baseline.py --runner ./build/cutlass_runner --kernel-tag cutlass_ref_v1
+```
+
+cuBLAS side-path build and baseline run:
+
+```bash
+cmake -S . -B build -DENABLE_CUBLAS_RUNNER=ON
+cmake --build build -j 4 --target cublas_runner
+python scripts/run_cublas_baseline.py --runner ./build/cublas_runner --kernel-tag cublas_ref_v1
 ```
 
 `python scripts/graph.py cycle` reads `state/graph_state.json` and either runs the script-first node or prepares the next Codex handoff context.
@@ -120,7 +130,7 @@ Supervisor checkpoint rule:
    - update `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`
    - refresh the rendered optimization tree image
    - commit only the doc/image files touched by that display refresh
-   - run `git push origin master` after the checkpoint doc/image commit so the current loop state is published remotely
+   - run `git push origin HEAD` after the checkpoint doc/image commit so the current branch state is published remotely
 3. the checkpoint must refresh `state/supervisor_context.md` with the latest dispatch state, active round, accepted base, current selected direction or candidate, display-refresh checkpoint state, and watchdog state
 4. the checkpoint is a continue point, not a stop point
 5. after the checkpoint, the main agent must immediately re-read `state/supervisor_task.json` and keep dispatching unless one of the no-stop-rule stop conditions is met
@@ -190,7 +200,7 @@ When the user says `开始运行N圈`:
    - performance delta
    - profile paths
 9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
-10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, run `git push origin master`, and then continue the loop without treating that checkpoint as a completion point
+10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, run `git push origin HEAD`, and then continue the loop without treating that checkpoint as a completion point
 11. if the loop is still active, and `state/supervisor_task.json` later reports a 10-minute watchdog stall without reaching the target round count, issue the continue instruction and keep dispatching
 12. once the loop is armed, treat every `ready_for_node_*` state as a continue point until the round budget is exhausted or the user explicitly redirects the conversation
 13. any resident supervisor or external helper may keep dispatch alive, but it must not replace the actual `node_b` reasoning work or the actual `node_c` implementation work

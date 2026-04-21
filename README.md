@@ -8,6 +8,7 @@ This repo is the working harness behind a narrow CUDA optimization experiment:
 - one RTX 3070 Laptop GPU
 - one custom kernel path
 - one local CUTLASS baseline
+- one local cuBLAS reference path
 - one human-in-the-loop optimization loop
 
 The goal is not to solve general matmul. The goal is to see how far a single engineer can push a shape-specialized kernel, locally, with strong profiling, short iteration loops, and LLM assistance used inside a disciplined harness.
@@ -19,17 +20,19 @@ The goal is not to solve general matmul. The goal is to see how far a single eng
 - dtype: BF16 inputs, FP32 accumulation, BF16 output reference
 - current official best custom runtime: `24.164272 ms`
 - current local CUTLASS baseline: `25.917889 ms`
+- current local cuBLAS baseline: `~22.18 ms` on this machine
 - current gap vs CUTLASS: `-1.753616 ms`, with custom at `0.932340x` the CUTLASS runtime / `6.766049%` faster than CUTLASS
+- refactor-branch goal: restore the best measured custom source as the clean branch baseline, then drive toward `<= 18.0 ms` and beat cuBLAS on the same workload
 - execution model: local and script-first, with Codex used for diagnosis and implementation
 - runtime dependencies: no OpenAI API key, cloud service, or LangGraph runtime required
 
 The authoritative benchmark snapshot lives in [state/benchmark_baselines.md](state/benchmark_baselines.md). The exact workload definition lives in [docs/benchmark_spec.md](docs/benchmark_spec.md).
+The current cuBLAS reference is a cuBLASLt path on the same fixed dataset. The best observed run on this branch is `22.176255 ms`; the latest full baseline refresh with NCU handoff is `22.289920 ms`.
 
 ## Current Operator Entry
 
 For local operator work, start from the lightweight state entrypoints instead of reconstructing context from the whole repo:
 
-- [state/migration_handoff.md](state/migration_handoff.md)
 - [state/current_focus.md](state/current_focus.md)
 - [state/progress.md](state/progress.md)
 - [state/supervisor_task.json](state/supervisor_task.json)
@@ -59,6 +62,12 @@ python scripts/graph.py supervisor
 python scripts/graph.py node_a
 ```
 
+Rebootstrap a fresh refactor/search branch from the best measured custom source:
+
+```bash
+python scripts/graph.py rebootstrap --baseline-run-id 20260420_235922_bf16_gemm_v1_489574e --goal-runtime-ms 18 --goal-competitor cuBLAS
+```
+
 Build and measure the optional CUTLASS side-path baseline:
 
 ```bash
@@ -67,13 +76,20 @@ cmake --build build -j 4 --target cutlass_runner
 python scripts/run_cutlass_baseline.py --runner ./build/cutlass_runner --kernel-tag cutlass_ref_v1
 ```
 
+Build and measure the optional cuBLAS side-path baseline:
+
+```bash
+cmake -S . -B build -DENABLE_CUBLAS_RUNNER=ON
+cmake --build build -j 4 --target cublas_runner
+python scripts/run_cublas_baseline.py --runner ./build/cublas_runner --kernel-tag cublas_ref_v1
+```
+
 If you are operating this repo through Codex or another local agent, the workflow guide now lives outside this README:
 
 - [AGENTS.md](AGENTS.md)
 - [docs/codex_workflow.md](docs/codex_workflow.md)
 - [docs/supervisor_protocol.md](docs/supervisor_protocol.md)
 - [state/README.md](state/README.md)
-- [heuristic_dataset/README.md](heuristic_dataset/README.md) for the structured optimization-history dataset that will support heuristic or A*-style search over future tuning directions
 
 ## Why I Built It
 
@@ -323,13 +339,9 @@ At the moment, the official benchmark snapshot in the repo is:
 
   Long-running rounds were starting to accumulate stale state and occasionally get stuck in overly long context. The supervisor now refreshes `state/supervisor_context.md` every 5 completed rounds, records the current dispatch node, accepted base, and active candidate, and then immediately continues the loop. The checkpoint is explicitly a continue point, not a natural stopping point.
 
-- [x] Checkpoint - Apr 20, 2026: optimization history now has a machine-readable heuristic dataset (`8049817`, refreshed in `51c80ca`)
+- [x] Checkpoint - Apr 21, 2026: refactor branches can now rebootstrap from a measured custom source and track cuBLAS as a first-class reference
 
-  `heuristic_dataset/` exports diagnosis options, implementation attempts, profiler effects, and measured outcomes into JSONL snapshots. That makes the search history usable as data instead of only prose, and it sets up later work on frontier ranking, reopen rules, and learned search behavior.
-
-- [ ] TODO - next search-policy layer
-
-  Use the accumulated heuristic dataset to test RL-style improvements on top of the current A*-like family frontier: learn better family priors, reopen budgets, and exploration-vs-exploitation scheduling instead of relying only on hand-set heuristics.
+  The workflow now has a branch-safe `rebootstrap` path that restores only the implementation surface from a measured run, clears the live frontier/history, and keeps the richer NCU handoff intact. The same dataset can now also be benchmarked through a local cuBLASLt-backed runner, and the best observed local vendor baseline on this machine is now about `22.18 ms`. That baseline can feed node_b when the custom profile stops suggesting obvious next moves.
 
 - [ ] TODO - make workflow state transitions deterministic scripts instead of agent judgments
 

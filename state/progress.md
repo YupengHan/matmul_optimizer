@@ -2,7 +2,10 @@
 
 ## Objective
 
-Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1`.
+Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.000 ms`.
+- target runtime: `<= 18.000 ms`
+- comparison target: `cuBLAS`
+- rebootstrap source: `20260420_235922_bf16_gemm_v1_489574e`, commit `489574ed5013268dbb79c634450d9a60155a294a`, historical runtime `24.164272 ms`
 
 ## Workflow state
 
@@ -10,19 +13,19 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - previous node: `node_a`
 - status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `aaf076e228985145a4fa9736167899e6c710d1be`
-- plateau counter: `97`
-- round loop: `round 6/100`
-- rounds remaining: `95`
-- notes: `Node A completed round 5/100. Run node_b to continue round 6/100.`
+- latest measured commit: `c859cd06456e600a76778265983f0cd6da925481`
+- plateau counter: `1`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
 
 ## Latest measured custom run
 
-- run id: `20260421_114455_bf16_gemm_v1_aaf076e`
-- run dir: `runs/20260421_114455_bf16_gemm_v1_aaf076e`
+- run id: `20260421_133418_bf16_gemm_v1_c859cd06`
+- run dir: `runs/20260421_133418_bf16_gemm_v1_c859cd06`
 - correctness: `PASS`
-- median runtime: `46.532095 ms`
-- TFLOP/s: `15.624042 TFLOP/s`
+- median runtime: `24.407552 ms`
+- TFLOP/s: `29.786659 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
@@ -45,4 +48,6 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 ## Benchmark snapshot
 
 - CUTLASS median runtime: `25.917889 ms`
-- current best custom gap: `-1.753616 ms`, `0.932340x` slower than CUTLASS
+- current best custom gap: `-1.753616 ms`, `0.932340x` of CUTLASS runtime (faster)
+- cuBLAS median runtime: `22.289920 ms`
+- current best custom gap vs cuBLAS: `1.874352 ms`, `1.084090x` of cuBLAS runtime (slower)

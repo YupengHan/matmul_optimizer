@@ -184,6 +184,7 @@ Contains:
 Machine-readable baseline registry for:
 
 - CUTLASS baseline
+- cuBLAS baseline
 - best custom run
 
 ## `run_registry.jsonl`

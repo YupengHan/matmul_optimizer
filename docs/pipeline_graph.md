@@ -122,11 +122,11 @@ Guardrails:
 - no automatic merge
 - no performance claim before node_a re-measures
 
-## Side node: `run_cutlass_baseline`
+## Side nodes: `run_cutlass_baseline` and `run_cublas_baseline`
 
 Responsibilities:
 
-- measure the CUTLASS reference path on the same dataset
+- measure the CUTLASS or cuBLAS reference path on the same dataset
 - refresh the benchmark target
 - update benchmark state and human-readable baseline notes
 

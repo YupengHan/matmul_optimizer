@@ -13,6 +13,7 @@ When reading a run:
 2. select three directions from different families,
 3. rank them by expected upside vs implementation risk,
 4. avoid proposing three variants of the same idea.
+5. if the latest custom run does not reveal a strong next move, compare it against the recorded cuBLAS NCU profile on the same data and use the hardware-utilization delta as a reference ceiling.
 
 ## Fixed-shape mindset
 

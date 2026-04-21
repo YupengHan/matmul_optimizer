@@ -33,6 +33,7 @@ Read these in order:
 7. `state/human_review.md`
 8. current kernel source
 9. raw run files referenced from `state/node_b_context.md`
+10. optional cuBLAS reference artifacts from `state/node_b_context.md` when the latest custom profile does not imply a clear next move
 
 The supervisor should also read:
 
@@ -94,6 +95,8 @@ The top-level `family_audit` field should remain a list and should summarize whi
 - `state/latest_run.md`
 - `state/latest_ncu_summary.md`
 - `state/human_review.md`
+
+If cuBLAS reference artifacts are used as the fallback ceiling, include those concrete cuBLAS paths in `evidence_refs` too.
 
 ## Direction quality bar
 

@@ -35,6 +35,12 @@ python scripts/graph.py status
 python scripts/graph.py supervisor
 ```
 
+Rebootstrap a fresh refactor/search branch from a measured implementation baseline:
+
+```bash
+python scripts/graph.py rebootstrap --baseline-run-id 20260420_235922_bf16_gemm_v1_489574e --goal-runtime-ms 18 --goal-competitor cuBLAS
+```
+
 Run the measurement node directly:
 
 ```bash
@@ -75,6 +81,14 @@ Optional CUTLASS side-path:
 cmake -S . -B build -DENABLE_CUTLASS_RUNNER=ON -DCUTLASS_ROOT=/path/to/cutlass
 cmake --build build -j 4 --target cutlass_runner
 python scripts/run_cutlass_baseline.py --runner ./build/cutlass_runner --kernel-tag cutlass_ref_v1
+```
+
+Optional cuBLAS side-path:
+
+```bash
+cmake -S . -B build -DENABLE_CUBLAS_RUNNER=ON
+cmake --build build -j 4 --target cublas_runner
+python scripts/run_cublas_baseline.py --runner ./build/cublas_runner --kernel-tag cublas_ref_v1
 ```
 
 ## Execution Model
@@ -125,5 +139,4 @@ The most important files during active operation are:
 - [docs/benchmark_spec.md](benchmark_spec.md): fixed benchmark definition
 - [docs/commit_convention.md](commit_convention.md): commit structure for `node_a`, `node_b`, and `node_c`
 - [docs/heuristics.md](heuristics.md): diagnosis heuristics for node_b
-- [docs/search_refactor_plan.md](search_refactor_plan.md): phased plan for evolving the current loop into a structured heuristic-search workflow
 - [state/README.md](../state/README.md): update rules for the state layer

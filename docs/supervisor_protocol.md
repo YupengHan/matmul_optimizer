@@ -124,7 +124,7 @@ Operational consequences:
   - `blog/harness-engineering-human-in-the-loop-cuda-matmul/matmul_optimization_tree_pretty.png`
 - use the `matmul-doc-sync` skill or an equivalent narrow doc-refresh pass
 - commit only the doc/image files touched by that display refresh
-- run `git push origin master` after the checkpoint doc/image commit so the current loop state is published remotely
+- run `git push origin HEAD` after the checkpoint doc/image commit so the current branch state is published remotely
 - treat the checkpoint as a continue state, not a natural summary or stop point
 - after refreshing the checkpoint, re-read `state/supervisor_task.json` and keep
   dispatching unless a real stop condition is present
