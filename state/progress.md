@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `f198bbbac12d7c8ca3363403eb929e2abfb04b43`
 - plateau counter: `7`
 - round loop: `round 20/100`
 - rounds remaining: `81`
-- notes: `Node A completed round 19/100. Run node_b to continue round 20/100.`
+- notes: `Node C is ready to implement diagnosis_20260421_003535:dir_01 via recommended selection for round 20/100.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_003535`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 20 applies the user's new strategy directly: treat sub-0.1 ms effects as noise and push the diagnosis toward more aggressive, profile-driven structural moves. The top set therefore drops the current PTX-local micro families and prioritizes 256x128 and sibling-surface branches with larger theoretical upside.`
+- dir_01: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: Structural latency hiding and control amortization on the hot band due to undersized effective work per scheduling decision, not just one more PTX microkernel handoff seam.
+- dir_02: Port grouped-row traversal into the non-PTX 128x128 sibling | bottleneck: Surface-level control and locality inefficiency on the current PTX hot-band path rather than one more within-surface handoff detail.
+- dir_03: Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule | bottleneck: K-loop scheduling and latency hiding on the broader 256x128 hot-band regime rather than PTX-local handoff or export sequencing.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

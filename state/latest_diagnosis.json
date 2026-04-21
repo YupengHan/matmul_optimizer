@@ -1,18 +1,179 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_003535",
+  "status": "completed",
+  "created_at": "2026-04-21T00:35:35-07:00",
   "source_run_id": "20260421_003431_bf16_gemm_v1_f198bbb",
   "source_run_dir": "runs/20260421_003431_bf16_gemm_v1_f198bbb",
   "source_summary_json": "runs/20260421_003431_bf16_gemm_v1_f198bbb/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_003535:dir_01",
+  "family_audit": [
+    {
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "status": "rejected_this_round",
+      "reason": "Per the new human guidance, sub-0.1 ms improvements are noise unless repeated with strong counter evidence. The active PTX control family only produced one tiny flat-positive result before turning negative, so it should not stay top-ranked."
+    },
+    {
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "status": "rejected_this_round",
+      "reason": "The current source is already re-anchored on the PTX winner surface, so another restore is absorbed and does not meet the new requirement for more aggressive follow-ons."
+    },
+    {
+      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "status": "rejected_this_round",
+      "reason": "The grouped_rows=8 branch is directly measured negative and should stay out of the top set."
+    },
+    {
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "status": "accepted",
+      "reason": "This is the strongest aggressive geometry-side family currently in the queue and best matches the new instruction to favor structural moves with multi-millisecond upside."
+    },
+    {
+      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+      "status": "deferred_but_live",
+      "reason": "This keeps a second aggressive alternate surface alive behind the 256x128 promotion."
+    },
+    {
+      "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "status": "deferred_but_live",
+      "reason": "This stays in the set as a follow-on aggressive 256x128 family rather than another small PTX-local retime."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "action_fingerprint": "promote_existing_256x128_pivot_hot_band_dispatch",
+      "mode": "explore",
+      "hypothesis": "The current PTX winner surface still sits at only about 48% tensor-pipe activity, 47.8% SM throughput, and 16.6% active warps. Under the new human guidance, that means the next recommendation should not be another narrow PTX-local retime whose upside is measured in hundredths of a millisecond. The strongest aggressive live family is to promote the existing 256x128 pivot hot-band kernel and give the hot region a materially different reuse geometry. That branch is the cleanest in-tree candidate for recovering multi-millisecond headroom because it changes the hot-band shape, staging footprint, and control amortization all at once rather than chasing another tiny local ordering tweak.",
+      "expected_bottleneck": "Structural latency hiding and control amortization on the hot band due to undersized effective work per scheduling decision, not just one more PTX microkernel handoff seam.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1670",
+        "src/kernels/bf16_gemm_v1.cu:2108-2128",
+        "src/kernels/bf16_gemm_v1.cu:2130-2135"
+      ],
+      "risk": "Medium to high. This is a broad hot-band dispatch change, but that is now a feature rather than a bug because the user explicitly wants more aggressive implementations once a family is chosen.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.171520 ms restored PTX run",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 2.24,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v20",
+        "rank_score": 1.8,
+        "aggressive_move_bonus": 0.35,
+        "profile_headroom_bonus": 0.3,
+        "family_coverage_bonus": 0.2,
+        "risk_penalty": 0.41,
+        "formula": "rank_score + aggressive_move_bonus + profile_headroom_bonus + family_coverage_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.4,
+      "predicted_fail_risk": 0.44,
+      "ranking_notes": [
+        "This now ranks first because the user explicitly wants more aggressive post-selection implementations instead of another micro-retime.",
+        "The current profile still leaves enormous utilization headroom, so geometry and staging changes should outrank tiny PTX-local tweaks.",
+        "Among the live families already in-tree, this is the strongest structural branch with credible multi-millisecond upside."
+      ],
+      "stop_condition": "Stop if the 256x128 promotion does not materially improve utilization or if it opens a broad regression without any sign of structural headroom capture."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Port grouped-row traversal into the non-PTX 128x128 sibling",
+      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+      "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+      "action_fingerprint": "port_grouped_rows_traversal_into_non_ptx_128x128_sibling",
+      "mode": "exploit",
+      "hypothesis": "If the loop is going to take a big swing, it should also preserve one alternate 128x128 surface that leaves the PTX microkernel entirely. Porting grouped-row traversal into the non-PTX 128x128 sibling does exactly that: it keeps the overall hot-band footprint but changes the execution surface and consumer pattern more fundamentally than another PTX control tweak. It ranks second because the 256x128 pivot is the more aggressive and more direct geometry change, but this sibling-surface branch still aligns with the new strategy far better than any sub-0.1 ms PTX-local chase.",
+      "expected_bottleneck": "Surface-level control and locality inefficiency on the current PTX hot-band path rather than one more within-surface handoff detail.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1871-1952",
+        "src/kernels/bf16_gemm_v1.cu:1979-1993",
+        "src/kernels/bf16_gemm_v1.cu:2108-2128"
+      ],
+      "risk": "Medium. This is a real alternate surface jump, but it still stays within a familiar 128x128 regime and better matches the new aggressive-search guidance than another PTX-local tweak.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 1.94,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v20",
+        "rank_score": 1.5,
+        "aggressive_move_bonus": 0.28,
+        "profile_headroom_bonus": 0.2,
+        "family_coverage_bonus": 0.18,
+        "risk_penalty": 0.22,
+        "formula": "rank_score + aggressive_move_bonus + profile_headroom_bonus + family_coverage_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.25,
+      "predicted_fail_risk": 0.4,
+      "ranking_notes": [
+        "This stays above any remaining PTX-local family because it represents a true alternate execution surface.",
+        "It ranks below dir_01 because the 256x128 pivot is the larger structural move with the clearest profile-driven rationale.",
+        "It remains important for queue breadth under the user's new aggressive-search rule."
+      ],
+      "stop_condition": "Stop if the sibling surface remains clearly behind the PTX baseline without showing any utilization or locality advantage worth following."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule",
+      "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "subfamily_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "action_fingerprint": "retune_auxiliary_256x128_hot_band_k_loop_schedule",
+      "mode": "exploit",
+      "hypothesis": "The queue should still carry a second 256x128-oriented family that can follow immediately if the direct 256x128 pivot promotion shows signal but misses cleanly. The auxiliary 256x128 hot-band K-loop schedule family is more aggressive than the current PTX control-path tweaks because it assumes the search should shift into broader geometry and schedule rewrites once a family is chosen. It stays third because the first two directions are even cleaner structural jumps, but it is still more aligned with the new human guidance than any remaining micro-optimization family.",
+      "expected_bottleneck": "K-loop scheduling and latency hiding on the broader 256x128 hot-band regime rather than PTX-local handoff or export sequencing.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1670",
+        "src/kernels/bf16_gemm_v1.cu:1660-1813",
+        "src/kernels/bf16_gemm_v1.cu:2119-2127"
+      ],
+      "risk": "Medium. This is a schedule-heavy 256x128 branch, but it keeps the search focused on structural paths with real upside.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 1.76,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v20",
+        "rank_score": 1.32,
+        "aggressive_move_bonus": 0.22,
+        "profile_headroom_bonus": 0.18,
+        "family_coverage_bonus": 0.18,
+        "risk_penalty": 0.14,
+        "formula": "rank_score + aggressive_move_bonus + profile_headroom_bonus + family_coverage_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.18,
+      "predicted_fail_risk": 0.38,
+      "ranking_notes": [
+        "This keeps another aggressive 256x128 family live under the new guidance.",
+        "It ranks below dir_01 and dir_02 because it is a follow-on schedule family rather than the cleanest first structural jump.",
+        "It still deserves the third slot because the user explicitly wants less timid implementations after selection."
+      ],
+      "stop_condition": "Stop if the auxiliary 256x128 family cannot show a credible utilization improvement or if it degenerates into another tiny local tweak."
+    }
+  ],
+  "notes": "Round 20 applies the user's new strategy directly: treat sub-0.1 ms effects as noise and push the diagnosis toward more aggressive, profile-driven structural moves. The top set therefore drops the current PTX-local micro families and prioritizes 256x128 and sibling-surface branches with larger theoretical upside."
 }
