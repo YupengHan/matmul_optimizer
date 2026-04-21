@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
-- candidate id: `diagnosis_20260421_003952:dir_01`
-- base run id: `20260421_003751_bf16_gemm_v1_a64efce`
-- primary family id: `legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling`
-- planned action fingerprint: `restore_grouped_row_non_ptx_128x128_sibling_surface_from_78421da`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_003952`
-- round loop: `round 21/100`
-- hypothesis: `Round 20 proved that the current aggressive move should not be another blind 256x128 geometry promotion: the hot-band kernel itself regressed from the PTX winner's 32.687 us to 43.097 us while tensor activity dropped from 48.39% to 36.77% and register occupancy collapsed from limit=2 back to limit=1. The best next move is therefore not another tiny PTX-local retime, but the closest evidence-backed alternate surface already in history: the grouped-row non-PTX 128x128 sibling. That branch previously measured 24.180737 ms with a 32.697 us hot-band kernel, essentially tied with the PTX winner inside the current noise band, while still changing the control/export surface materially enough to qualify as a real alternate family rather than a restore.`
-- expected bottleneck: `PTX-microkernel-specific control/export coupling on the current winner surface, while preserving grouped-row locality and the same broad 128x128 footprint.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:1855-1946, src/kernels/bf16_gemm_v1.cu:1970-2060, src/kernels/bf16_gemm_v1.cu:2081-2091`
-- risk: `Medium. This is a real surface pivot, but it is a measured-correct one that already stayed inside the 24.16-24.18 ms band instead of opening another multi-millisecond regression.`
-- metrics to re-check: `end-to-end median runtime versus the 24.164272 ms PTX best and the 30.136320 ms round-20 source run, hot-band gpu__time_duration.sum, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 22/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail

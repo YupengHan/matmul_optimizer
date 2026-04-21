@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `20`
-- remaining rounds: `80`
-- current round label: `round 21/100`
+- completed rounds: `21`
+- remaining rounds: `79`
+- current round label: `round 22/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 21/100. Node A will measure the result next.`
+- notes: `Completed round 21/100. Continue with node_b for round 22/100. Accepted base: 20260420_235922_bf16_gemm_v1_489574e at 24.164272 ms.`
 
 ## Last completed round
 
-- round: `20/100`
+- round: `21/100`
 - direction: `dir_01`
-- direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
-- verdict: `regressed`
-- runtime delta: `+5.964800 ms`
-- TFLOP/s delta: `-5.953162 TFLOP/s`
-- run dir: `runs/20260421_003751_bf16_gemm_v1_a64efce`
-- ncu rep path: `runs/20260421_003751_bf16_gemm_v1_a64efce/ncu_profile.ncu-rep`
+- direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
+- verdict: `improved`
+- runtime delta: `-5.957632 ms`
+- TFLOP/s delta: `+5.944246 TFLOP/s`
+- run dir: `runs/20260421_005058_bf16_gemm_v1_910beff`
+- ncu rep path: `runs/20260421_005058_bf16_gemm_v1_910beff/ncu_profile.ncu-rep`

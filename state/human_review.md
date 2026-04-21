@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 21/100` with `80` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 22/100` with `79` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_003952`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 21 treats round 20 as a hard negative on the exact 256x128 pivot promotion, not as a reason to retreat into more PTX-local noise chasing. The new ranking therefore promotes the closest evidence-backed alternate surface, keeps the exact PTX restore as the low-risk recovery fallback, and rehydrates one historical high-ceiling half-panel family back into the live queue so the search does not stay trapped inside 24.16-24.18 ms micro-variance.`
-- dir_01: Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling | bottleneck: PTX-microkernel-specific control/export coupling on the current winner surface, while preserving grouped-row locality and the same broad 128x128 footprint.
-- dir_02: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: The round-20 regression is dominated by the bad 256x128 pivot surface itself, so the restore attacks source drift rather than a live machine bottleneck family.
-- dir_03: Repair The 256x128 Half-Panel Register-Reuse Branch With Compact B Staging | bottleneck: Register-limited occupancy and oversized live state on the wide hot-band family, with the real fix requiring end-to-end half-panel staging rather than only half-width accumulation.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

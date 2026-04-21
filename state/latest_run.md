@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_003751_bf16_gemm_v1_a64efce`
-- run dir: `runs/20260421_003751_bf16_gemm_v1_a64efce`
-- kernel tag: `bf16_gemm_v1_a64efce`
-- round label: `round 20/100`
+- run id: `20260421_005058_bf16_gemm_v1_910beff`
+- run dir: `runs/20260421_005058_bf16_gemm_v1_910beff`
+- kernel tag: `bf16_gemm_v1_910beff`
+- round label: `round 21/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.136320 ms`
-- p10 runtime: `29.879097 ms`
-- p90 runtime: `31.465187 ms`
-- TFLOP/s: `24.124360 TFLOP/s`
-- previous run id: `20260421_003431_bf16_gemm_v1_f198bbb`
-- runtime delta vs previous measured run: `+5.964800 ms`
-- TFLOP/s delta vs previous measured run: `-5.953162 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.178688 ms`
+- p10 runtime: `24.168447 ms`
+- p90 runtime: `24.740454 ms`
+- TFLOP/s: `30.068605 TFLOP/s`
+- previous run id: `20260421_003751_bf16_gemm_v1_a64efce`
+- runtime delta vs previous measured run: `-5.957632 ms`
+- TFLOP/s delta vs previous measured run: `+5.944246 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
+- implemented direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_003751_bf16_gemm_v1_a64efce/summary.json`
-- measured commit: `a64efcefb5aa9f2ef5ba3ba7a606cdf018c384bd`
+- raw summary json: `runs/20260421_005058_bf16_gemm_v1_910beff/summary.json`
+- measured commit: `910beff68055b974cfdbb268cda1087c8b44d665`
 - new best custom: `no`
-- generated at: `2026-04-21T00:37:58-07:00`
+- generated at: `2026-04-21T00:51:05-07:00`
