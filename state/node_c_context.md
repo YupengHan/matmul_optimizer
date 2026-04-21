@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
+- candidate id: `auto_diagnosis_round_063:dir_01`
+- base run id: `20260421_084331_bf16_gemm_v1_8ad35c4`
+- primary family id: `legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path`
+- planned action fingerprint: `ptx_wait_commit_window_retime_without_replaying_closed_variants`
+- selection mode: `recommended`
+- source diagnosis id: `auto_diagnosis_round_063`
 - round loop: `round 63/100`
+- hypothesis: `The latest run is 24.392704 ms against an accepted anchor of 24.164272 ms. Round round 62/100 should replay the bounded `control_path` family once from the current state so the search keeps advancing instead of restoring forever.`
+- expected bottleneck: `A branch-local hot-band scheduling or geometry bottleneck on the dominant kernel path, rather than a pure restore-only action.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:2008-2022, src/kernels/bf16_gemm_v1.cu:2042-2054, src/kernels/bf16_gemm_v1.cu:2110-2117`
+- risk: `Moderate. This branch stays on the PTX winner surface but its upside is measured in hundredths of a millisecond and the family is easy to over-replay.`
+- metrics to re-check: `end-to-end median runtime, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
