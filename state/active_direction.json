@@ -11,7 +11,20 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T23:57:39-07:00",
   "source_diagnosis_id": "diagnosis_20260420_233659",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "restore_ptx_dispatch_and_df5bac2_staging_surface",
+  "semantic_delta_tags": [
+    "restore_ptx_default_dispatch",
+    "restore_ptx_prologue_order",
+    "restore_ptx_future_tile_refill_order",
+    "restore_inline_ptx_row_pair_issue"
+  ],
+  "secondary_family_ids": [],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:718-765",
+    "src/kernels/bf16_gemm_v1.cu:1982-2027",
+    "src/kernels/bf16_gemm_v1.cu:2084-2091"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
@@ -55,5 +68,5 @@
     "stop_condition": "Stop if the restore does not put the PTX microkernel back on the dominant hot-band launch, or if the restored PTX surface still cannot recover into the 24.16-24.18 ms band after one coherent pass.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
