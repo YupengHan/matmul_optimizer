@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `c859cd06456e600a76778265983f0cd6da925481`
-- plateau counter: `1`
-- round loop: `round 1/10`
-- rounds remaining: `10`
-- notes: `Node C build succeeded for round 1/10. Node A will now measure the new code path.`
+- latest measured commit: `5ea07e356339f761e5361611762dceb0273a84b6`
+- plateau counter: `2`
+- round loop: `round 2/10`
+- rounds remaining: `9`
+- notes: `Node A completed round 1/10. Run node_b to continue round 2/10.`
 
 ## Latest measured custom run
 
-- run id: `20260421_133418_bf16_gemm_v1_c859cd06`
-- run dir: `runs/20260421_133418_bf16_gemm_v1_c859cd06`
+- run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
+- run dir: `runs/20260421_142317_bf16_gemm_v1_5ea07e35`
 - correctness: `PASS`
-- median runtime: `24.407552 ms`
-- TFLOP/s: `29.786659 TFLOP/s`
+- median runtime: `30.007680 ms`
+- TFLOP/s: `24.227778 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_133418_round01_c859cd06`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `No additional human-review-only idea family is queued yet on this clean refactor branch. For round 1/10 the ranking stays tightly coupled to the live profile: test the existing 128x128x32 staged hot-band sibling first, keep the PTX wait-cadence rewrite as the higher-risk second lever, and reserve the 64x384 split rebalance as the third alternative.`
-- dir_01: Promote The Existing 128x128x32 Staged Hot-Band Kernel | bottleneck: synchronization_barrier_issue and long_scoreboard latency in the current hot-band 128x128 PTX microkernel
-- dir_02: Collapse The PTX Microkernel Wait-And-Sync Cadence | bottleneck: per-tile cp.async wait plus CTA barrier cadence in the PTX hot-band microkernel
-- dir_03: Push More Hot-Band Rows Into The 64x384 Peeled Path | bottleneck: hot-band decomposition choice is leaving too much work on the slower 128x128 PTX hotspot instead of the best historical 384-wide family
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

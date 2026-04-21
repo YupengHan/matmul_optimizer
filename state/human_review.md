@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 1/10` with `10` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 2/10` with `9` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_133418_round01_c859cd06`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `No additional human-review-only idea family is queued yet on this clean refactor branch. For round 1/10 the ranking stays tightly coupled to the live profile: test the existing 128x128x32 staged hot-band sibling first, keep the PTX wait-cadence rewrite as the higher-risk second lever, and reserve the 64x384 split rebalance as the third alternative.`
-- dir_01: Promote The Existing 128x128x32 Staged Hot-Band Kernel | bottleneck: synchronization_barrier_issue and long_scoreboard latency in the current hot-band 128x128 PTX microkernel
-- dir_02: Collapse The PTX Microkernel Wait-And-Sync Cadence | bottleneck: per-tile cp.async wait plus CTA barrier cadence in the PTX hot-band microkernel
-- dir_03: Push More Hot-Band Rows Into The 64x384 Peeled Path | bottleneck: hot-band decomposition choice is leaving too much work on the slower 128x128 PTX hotspot instead of the best historical 384-wide family
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`

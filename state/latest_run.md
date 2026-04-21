@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_133418_bf16_gemm_v1_c859cd06`
-- run dir: `runs/20260421_133418_bf16_gemm_v1_c859cd06`
-- kernel tag: `bf16_gemm_v1_c859cd06`
-- round label: `single-run`
+- run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
+- run dir: `runs/20260421_142317_bf16_gemm_v1_5ea07e35`
+- kernel tag: `bf16_gemm_v1_5ea07e35`
+- round label: `round 1/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.407552 ms`
-- p10 runtime: `24.234701 ms`
-- p90 runtime: `25.280390 ms`
-- TFLOP/s: `29.786659 TFLOP/s`
-- previous run id: `None`
-- runtime delta vs previous measured run: `N/A`
-- TFLOP/s delta vs previous measured run: `N/A`
-- perf verdict: `unknown`
-- implemented direction id: `None`
-- implemented direction name: `None`
-- implemented selection mode: `None`
+- median runtime: `30.007680 ms`
+- p10 runtime: `29.572915 ms`
+- p90 runtime: `31.207092 ms`
+- TFLOP/s: `24.227778 TFLOP/s`
+- previous run id: `20260421_133418_bf16_gemm_v1_c859cd06`
+- runtime delta vs previous measured run: `+5.600128 ms`
+- TFLOP/s delta vs previous measured run: `-5.558881 TFLOP/s`
+- perf verdict: `regressed`
+- implemented direction id: `dir_01`
+- implemented direction name: `Promote The Existing 128x128x32 Staged Hot-Band Kernel`
+- implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_133418_bf16_gemm_v1_c859cd06/summary.json`
-- ncu analysis path: `runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.json`
-- measured commit: `c859cd06456e600a76778265983f0cd6da925481`
+- raw summary json: `runs/20260421_142317_bf16_gemm_v1_5ea07e35/summary.json`
+- ncu analysis path: `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.json`
+- measured commit: `5ea07e356339f761e5361611762dceb0273a84b6`
 - new best custom: `no`
-- generated at: `2026-04-21T13:34:30-07:00`
+- generated at: `2026-04-21T14:23:29-07:00`
