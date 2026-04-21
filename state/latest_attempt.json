@@ -1,37 +1,37 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_005324:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_005324:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_005324",
-  "base_run_id": "20260421_005058_bf16_gemm_v1_910beff",
+  "attempt_id": "diagnosis_20260421_005735:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_005735:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_005735",
+  "base_run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
   "family_id": "historical::repair_the_256x128_half_panel_register_reuse_branch",
-  "subfamily_id": "historical::repair_the_256x128_half_panel_register_reuse_branch::restore_778a0b4_correctness_repair_surface",
+  "subfamily_id": "historical::repair_the_256x128_half_panel_register_reuse_branch::restore_76622e3_single_sourced_ownership_snapshot",
   "direction_id": "dir_01",
-  "direction_name": "Repair The 256x128 Half-Panel Register-Reuse Branch",
+  "direction_name": "Single-Source Warp Ownership End To End On The Half-Panel Branch",
   "mode": "explore",
-  "commit": "0c534cb56c1dcf9b48171528ba70bb2028aef44e",
-  "commit_short": "0c534cb",
-  "subject": "node_c: round 22/100 implement dir_01 Repair The 256x128 Half-Panel Register-Reuse Branch",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 23/100 implement dir_01 Single-Source Warp Ownership End To End On The Half-Panel Branch",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T00:55:36-07:00",
+  "selected_at": "2026-04-21T01:00:07-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_005058_bf16_gemm_v1_910beff",
-  "selection_score": 2.25,
-  "planned_action_fingerprint": "restore_half_panel_register_reuse_repair_surface_from_778a0b475a3fbcfd5a0f3fecc8381784fa832256",
-  "implemented_action_fingerprint": "restore_half_panel_register_reuse_repair_surface_from_778a0b475a3fbcfd5a0f3fecc8381784fa832256",
+  "source_run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
+  "selection_score": 2.02,
+  "planned_action_fingerprint": "restore_half_panel_single_sourced_ownership_snapshot_from_76622e3953ae33585df08f275e54bdd27fad9860",
+  "implemented_action_fingerprint": "restore_half_panel_single_sourced_ownership_snapshot_from_76622e3953ae33585df08f275e54bdd27fad9860",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v22",
-    "rank_score": 1.24,
-    "historical_headroom_bonus": 0.58,
-    "occupancy_breakthrough_bonus": 0.56,
+    "policy_id": "manual_round100_node_b_v23",
+    "rank_score": 1.18,
+    "confirmed_local_signal_bonus": 0.54,
+    "occupancy_breakthrough_bonus": 0.48,
     "user_guidance_bonus": 0.22,
-    "risk_penalty": 0.42,
-    "formula": "rank_score + historical_headroom_bonus + occupancy_breakthrough_bonus + user_guidance_bonus - risk_penalty"
+    "risk_penalty": 0.28,
+    "formula": "rank_score + confirmed_local_signal_bonus + occupancy_breakthrough_bonus + user_guidance_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
     "historical_surface_restore",
-    "half_panel_register_reuse",
+    "half_panel_single_sourced_ownership",
     "occupancy_breakthrough_probe"
   ],
   "secondary_family_ids": [],
@@ -39,9 +39,9 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "0c534cb56c1dcf9b48171528ba70bb2028aef44e",
-    "commit_short": "0c534cb",
-    "subject": "node_c: round 22/100 implement dir_01 Repair The 256x128 Half-Panel Register-Reuse Branch",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 23/100 implement dir_01 Single-Source Warp Ownership End To End On The Half-Panel Branch",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
@@ -50,41 +50,28 @@
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 397,
-      "deletions": 800
+      "insertions": 141,
+      "deletions": 39
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 397,
-    "deletions": 800
+    "insertions": 141,
+    "deletions": 39
   },
   "measurement": {
-    "run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
-    "measurement_commit": "0c534cb56c1dcf9b48171528ba70bb2028aef44e",
-    "runtime_ms": 29.81942368,
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
     "runtime_delta_ms": null,
-    "tflops": 24.3807335,
-    "correctness": false,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "43.84",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "43.29",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "61.83",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "19.93",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "36.51",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "32.92",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "21.27",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "0.62",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "8.91",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "0.78",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "correctness_failed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_005653_bf16_gemm_v1_0c534cb for candidate diagnosis_20260421_005324:dir_01; transition_label=CORRECTNESS_FAIL.",
-  "transition_label": "CORRECTNESS_FAIL"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

@@ -11,7 +11,16 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:00:07-07:00",
   "source_diagnosis_id": "diagnosis_20260421_005735",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "restore_half_panel_single_sourced_ownership_snapshot_from_76622e3953ae33585df08f275e54bdd27fad9860",
+  "semantic_delta_tags": [
+    "historical_surface_restore",
+    "half_panel_single_sourced_ownership",
+    "occupancy_breakthrough_probe"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Single-Source Warp Ownership End To End On The Half-Panel Branch",
@@ -55,5 +64,5 @@
     "stop_condition": "Stop if the 76622e3 continuation still fails correctness and does not materially reduce the branch's 21% barrier stall while preserving the occupancy breakthrough.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
