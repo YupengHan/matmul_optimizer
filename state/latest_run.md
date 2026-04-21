@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_185423_bf16_gemm_v1_1181247`
-- run dir: `runs/20260420_185423_bf16_gemm_v1_1181247`
-- kernel tag: `bf16_gemm_v1_1181247`
-- round label: `round 8/50`
+- run id: `20260420_190726_bf16_gemm_v1_cc89c17`
+- run dir: `runs/20260420_190726_bf16_gemm_v1_cc89c17`
+- kernel tag: `bf16_gemm_v1_cc89c17`
+- round label: `round 9/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.422464 ms`
-- p10 runtime: `24.221390 ms`
-- p90 runtime: `25.271095 ms`
-- TFLOP/s: `29.768471 TFLOP/s`
-- previous run id: `20260420_184822_bf16_gemm_v1_2ab9365`
-- runtime delta vs previous measured run: `-0.026560 ms`
-- TFLOP/s delta vs previous measured run: `+0.032339 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.152928 ms`
+- p10 runtime: `24.853695 ms`
+- p90 runtime: `26.216733 ms`
+- TFLOP/s: `28.903967 TFLOP/s`
+- previous run id: `20260420_185423_bf16_gemm_v1_1181247`
+- runtime delta vs previous measured run: `+0.730464 ms`
+- TFLOP/s delta vs previous measured run: `-0.864504 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage`
+- implemented direction name: `Specialize The Peeled 64x384 Residual Band On The New Best Sibling Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_185423_bf16_gemm_v1_1181247/summary.json`
-- measured commit: `1181247a12bfd0978dd155838558142b6386710e`
-- new best custom: `yes`
-- generated at: `2026-04-20T18:54:29-07:00`
+- raw summary json: `runs/20260420_190726_bf16_gemm_v1_cc89c17/summary.json`
+- measured commit: `cc89c17e6a132b1cb1d738be8a684e53f821fc66`
+- new best custom: `no`
+- generated at: `2026-04-20T19:07:33-07:00`
