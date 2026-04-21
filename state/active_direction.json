@@ -1,119 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Trim PTX export/store-path scalar live state on the current 128x128 anchor",
-  "candidate_id": "diagnosis_20260421_122308:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "exploit::trim_ptx_export_address_math_in_hot_band_epilogue",
-  "subfamily_id": "exploit::trim_ptx_export_address_math_in_hot_band_epilogue::post_mma_writer_live_state_after_b79a9bf",
-  "action_fingerprint": "trim_post_mma_export_address_live_state_after_helper_flatten_b79a9bf",
-  "selection_priority": 2.37,
-  "base_run_id": "20260421_122240_bf16_gemm_v1_b79a9bf",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T12:27:23-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_122308",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Trim PTX export/store-path scalar live state on the current 128x128 anchor",
-    "family_id": "exploit::trim_ptx_export_address_math_in_hot_band_epilogue",
-    "subfamily_id": "exploit::trim_ptx_export_address_math_in_hot_band_epilogue::post_mma_writer_live_state_after_b79a9bf",
-    "action_fingerprint": "trim_post_mma_export_address_live_state_after_helper_flatten_b79a9bf",
-    "mode": "exploit",
-    "hypothesis": "The helper flattening win says small PTX-local cleanup is still worth budget, but the unchanged 198-register / 16.64%-active-warps signature says the remaining pressure is no longer in the compute helper front-end. The next best bounded move is to narrow row/column-derived pointer math and per-warp export temporaries after the MMA loop so the writer path carries less scalar live state into the hot PTX epilogue.",
-    "expected_bottleneck": "occupancy_latency_hiding_issue with tail_overhead_or_generic_path_issue concentrated in the PTX export/store path after the MMA loop",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:804-860",
-      "src/kernels/bf16_gemm_v1.cu:1004-1065",
-      "src/kernels/bf16_gemm_v1.cu:1955-2064"
-    ],
-    "risk": "medium",
-    "metrics_to_recheck": [
-      "median runtime",
-      "launch__occupancy_limit_registers",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-    ],
-    "search_score_v1": 2.18,
-    "score_breakdown": {
-      "bottleneck_alignment": 0.83,
-      "implementation_scope": 0.82,
-      "freshness_bonus": 0.47,
-      "risk_penalty": -0.14,
-      "reason": "Best bounded next edit after the helper flattening result because it attacks the remaining scalar/live-state surface without abandoning the current measured anchor."
-    },
-    "predicted_gain_ms": 0.11,
-    "predicted_fail_risk": 0.24,
-    "ranking_notes": [
-      "Round 6 already showed that PTX-local cleanup can improve runtime on the current workload.",
-      "Registers and active warps stayed flat, so the next cleanup should move deeper into the post-MMA writer path rather than re-touch the same helper family.",
-      "This keeps the shared-memory footprint and hot-band geometry unchanged."
-    ],
-    "stop_condition": "Stop if the edit cannot keep the current writer correctness path intact, or if registers/active warps stay flat while runtime regresses.",
-    "evidence_refs": [
-      "state/node_b_context.md",
-      "state/latest_run.md",
-      "state/latest_ncu_summary.md",
-      "runs/20260421_122240_bf16_gemm_v1_b79a9bf/ncu_analysis.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics",
-        "metric_name": "Registers Per Thread",
-        "metric_value": 198.0,
-        "importance_score": 203.0,
-        "explanation": "The active PTX hot-band kernel is still register-limited at 198 registers per thread."
-      },
-      {
-        "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy",
-        "metric_name": "Achieved Occupancy",
-        "metric_value": 16.62,
-        "importance_score": 88.38,
-        "explanation": "Achieved occupancy is still pinned near the floor, so any store-path cleanup must buy back latency-hiding headroom."
-      }
-    ],
-    "expected_local_changes": [
-      "Push row/column-to-pointer conversion as late as possible into the final PTX writer helpers.",
-      "Narrow per-warp export temporaries so they do not stay live across the whole epilogue.",
-      "Keep the current grouped-row mapping, launch geometry, and shared export scratch size unchanged."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "current_value": 48.38,
-        "guardrail": "non_decreasing",
-        "reason": "Scalar cleanup should not dilute the tensor path."
-      },
-      {
-        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "current_value": 16.64,
-        "guardrail": "non_decreasing",
-        "reason": "The point of the cleanup is to ease latency hiding, not make it worse."
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "current_value": 5.94,
-        "guardrail": "non_increasing",
-        "reason": "Do not trade writer cleanup for a worse synchronization seam."
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "trim_post_mma_export_address_live_state_after_helper_flatten_b79a9bf"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

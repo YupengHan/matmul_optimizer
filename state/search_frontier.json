@@ -8,9 +8,9 @@
   "candidate_set_id": "candidate_set:diagnosis_20260421_122308",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": "diagnosis_20260421_122308:dir_01",
-  "selection_reason": "selected_via_recommended",
-  "selection_summary": "Selected diagnosis_20260421_122308:dir_01 -> dir_01 via mode=recommended.",
+  "selected_candidate_id": null,
+  "selection_reason": null,
+  "selection_summary": "Candidate diagnosis_20260421_122308:dir_01 closed via correctness_fail after selection.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -25574,7 +25574,7 @@
           "reason": "Do not trade scalar cleanup for a worse synchronization seam."
         }
       ],
-      "status": "parked",
+      "status": "open",
       "source_search_iteration": 112,
       "selection_count": 0,
       "reopen_count": 0,
@@ -25590,9 +25590,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": false,
-      "family_representative_score": null,
-      "family_representative_reason": null,
+      "is_family_representative": true,
+      "family_representative_score": 1.85,
+      "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
     },
@@ -25802,26 +25802,26 @@
           "reason": "Do not trade writer cleanup for a worse synchronization seam."
         }
       ],
-      "status": "selected",
+      "status": "correctness_failed",
       "source_search_iteration": 113,
       "selection_count": 1,
       "reopen_count": 0,
       "last_selected_at": "2026-04-21T12:27:23-07:00",
       "last_selected_selection_mode": "recommended",
-      "last_transition_label": null,
-      "last_transition_class": null,
-      "last_result_run_id": null,
-      "last_result_runtime_ms": null,
+      "last_transition_label": "CORRECTNESS_FAIL",
+      "last_transition_class": "correctness_failed",
+      "last_result_run_id": "20260421_122942_bf16_gemm_v1_3eed315",
+      "last_result_runtime_ms": 43.25016022,
       "last_runtime_delta_ms": null,
-      "last_result_correctness_passed": null,
-      "last_closed_at": null,
-      "last_closed_search_iteration": null,
+      "last_result_correctness_passed": false,
+      "last_closed_at": "2026-04-21T12:29:53-07:00",
+      "last_closed_search_iteration": 113,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 2.37,
-      "family_representative_reason": "best_family_candidate_after_reorder",
-      "invalid_reason": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": "measured_by_node_a",
       "notes": null
     },
     {
@@ -26064,7 +26064,7 @@
     }
   ],
   "notes": "Persistent frontier tracks 338 historical candidates; 17 family representatives are currently active for selection.",
-  "updated_at": "2026-04-21T12:27:23-07:00",
+  "updated_at": "2026-04-21T12:29:53-07:00",
   "family_representative_count": 17,
   "reopened_candidate_ids": []
 }
