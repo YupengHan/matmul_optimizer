@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:21:09-07:00",
   "source_diagnosis_id": "diagnosis_20260421_012002",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering",
@@ -57,5 +57,13 @@
     "stop_condition": "Stop if the grouped_rows=8 surface remains materially behind the exact PTX winner and the non-PTX sibling without a clearly better scheduler signature.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "restore_grouped_rows_8_ptx_consumer_ordering_surface"
 }
