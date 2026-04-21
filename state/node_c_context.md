@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore The Accepted Base And Expand The 64x384 Row Band`
+- candidate id: `diagnosis_20260421_142317_round02_5ea07e35:dir_01`
+- base run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
+- primary family id: `tiling_decomposition::expand_64x384_row_band`
+- planned action fingerprint: `restore_ptx_hotband_baseline:6400_pivot_rows->smaller_pivot_more_64x384_rows`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_142317_round02_5ea07e35`
 - round loop: `round 2/10`
+- hypothesis: `The accepted PTX hot-band launch is still the best measured baseline, but too much of the fixed shape remains on the 128x128 hotspot. Restoring that baseline and reducing kFixedPivotHotRows should move more work into the historically stronger 64x384 peeled path, cutting aggregate barrier exposure without reintroducing the staged-128x128 regression.`
+- expected bottleneck: `too much of the fixed hot band is assigned to the 128x128 PTX hotspot instead of the stronger 64x384 family`
+- code locations: `src/kernels/bf16_gemm_v1.cu:152, src/kernels/bf16_gemm_v1.cu:153, src/kernels/bf16_gemm_v1.cu:1956, src/kernels/bf16_gemm_v1.cu:2110, src/kernels/bf16_gemm_v1.cu:2122`
+- risk: `Moderate risk: the historical 64x384 sweep predates the newest PTX hot-band refinements, so moving too many rows may simply shift the bottleneck instead of shrinking it.`
+- metrics to re-check: `median runtime, smsp__warp_issue_stalled_barrier_per_warp_active.pct, sm__throughput.avg.pct_of_peak_sustained_elapsed, gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed`
 - latest run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
 - latest runtime: `30.007680 ms`
 - latest NCU analysis: `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `212.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `14.58` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.56` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `26.48` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` = `39.68` | GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,13 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `40.12` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.58` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `10.09` | barrier stalls are consuming 10.09% of active warp issue slots.
-- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `5.57` | long scoreboard stalls are consuming 5.57% of active warp issue slots.
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `N/A` | N/A
+- `sm__throughput.avg.pct_of_peak_sustained_elapsed` `non_decreasing` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Restore the default fixed-shape hot-band launch from the regressed 128x128x32 staged sibling back to the accepted PTX hot-band kernel.`
+- `Lower kFixedPivotHotRows so more hot-band rows run through the 64x384 peeled path while keeping the 64x96 tail unchanged.`
 
 ## Delta vs previous run
 
@@ -94,4 +94,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

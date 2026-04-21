@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `5ea07e356339f761e5361611762dceb0273a84b6`
 - plateau counter: `2`
 - round loop: `round 2/10`
 - rounds remaining: `9`
-- notes: `Node A completed round 1/10. Run node_b to continue round 2/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_142317_round02_5ea07e35:dir_01 via recommended selection for round 2/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_142317_round02_5ea07e35`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 2 should branch from the accepted base run 20260421_133418_bf16_gemm_v1_c859cd06, not from the round-1 regressed staged-kernel head. The top priority is to reduce time spent in the 128x128 hotspot rather than add more K-stage depth there.`
+- dir_01: Restore The Accepted Base And Expand The 64x384 Row Band | bottleneck: too much of the fixed hot band is assigned to the 128x128 PTX hotspot instead of the stronger 64x384 family
+- dir_02: Retune PTX Hot-Band Grouped-Row Traversal | bottleneck: launch-order and cache/locality inefficiency inside the accepted PTX hot-band traversal
+- dir_03: Swap To The Single-K 128x128 Non-Microkernel Sibling | bottleneck: microkernel-specific accumulate/store scheduling inside the accepted 128x128 hot-band path
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

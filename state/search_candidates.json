@@ -1,58 +1,209 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_133418_round01_c859cd06",
-  "source_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
-  "source_diagnosis_id": "diagnosis_20260421_133418_round01_c859cd06",
-  "generated_at": "2026-04-21T14:19:15-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_142317_round02_5ea07e35",
+  "source_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
+  "source_diagnosis_id": "diagnosis_20260421_142317_round02_5ea07e35",
+  "generated_at": "2026-04-21T14:30:24-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_133418_round01_c859cd06:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_142317_round02_5ea07e35:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_133418_round01_c859cd06:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_133418_round01_c859cd06",
-      "base_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
-      "base_measured_commit": "c859cd06456e600a76778265983f0cd6da925481",
-      "base_runtime_ms": 24.40755177,
+      "candidate_id": "diagnosis_20260421_142317_round02_5ea07e35:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_142317_round02_5ea07e35",
+      "base_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
+      "base_measured_commit": "5ea07e356339f761e5361611762dceb0273a84b6",
+      "base_runtime_ms": 30.00767994,
       "direction_id": "dir_01",
-      "direction_name": "Promote The Existing 128x128x32 Staged Hot-Band Kernel",
-      "family_id": "sync_pipeline::hotband_128x128_stage_swap",
-      "subfamily_id": "sync_pipeline::hotband_128x128x32_existing_kernel",
-      "action_fingerprint": "launch_fixed_hot_band:ptx128x128_microkernel->staged_128x128x32",
+      "direction_name": "Restore The Accepted Base And Expand The 64x384 Row Band",
+      "family_id": "tiling_decomposition::expand_64x384_row_band",
+      "subfamily_id": "tiling_decomposition::rebalance_fixed_pivot_hot_rows_from_accepted_base",
+      "action_fingerprint": "restore_ptx_hotband_baseline:6400_pivot_rows->smaller_pivot_more_64x384_rows",
       "rank_in_diagnosis": 1,
       "recommended": true,
       "mode": "exploit",
-      "priority": 0.82,
-      "search_score_v1": 0.82,
+      "priority": 0.81,
+      "search_score_v1": 0.81,
       "score_breakdown": {
         "expected_gain": 0.33,
-        "implementation_risk": 0.19,
-        "evidence_strength": 0.17,
-        "code_reuse": 0.13
+        "implementation_risk": 0.21,
+        "evidence_strength": 0.18,
+        "code_reuse": 0.09
       },
-      "predicted_gain_ms": 1.2,
-      "predicted_fail_risk": 0.28,
+      "predicted_gain_ms": 1.0,
+      "predicted_fail_risk": 0.36,
       "ranking_notes": [
-        "This is the cheapest measured-stall hypothesis to test because the alternative kernel body is already in-tree.",
-        "It keeps the same hot-band CTA shape while directly changing the per-stage wait and barrier cadence."
+        "Round 1 ruled out the staged 128x128 branch, so the next move should start from the accepted PTX baseline rather than stack another edit on the regressed head.",
+        "The 64x384 family is the only alternative with direct measured support in the repo state."
       ],
-      "hypothesis": "The current default hot-band kernel is paying too much synchronization and wait overhead per 16-wide K tile. The existing 128x128x32 staged sibling already consumes two K tiles per stage and should reduce barrier and long-scoreboard pressure in the dominant hot-band region without changing the overall 128x128 CTA footprint.",
-      "expected_bottleneck": "synchronization_barrier_issue and long_scoreboard latency in the current hot-band 128x128 PTX microkernel",
+      "hypothesis": "The accepted PTX hot-band launch is still the best measured baseline, but too much of the fixed shape remains on the 128x128 hotspot. Restoring that baseline and reducing kFixedPivotHotRows should move more work into the historically stronger 64x384 peeled path, cutting aggregate barrier exposure without reintroducing the staged-128x128 regression.",
+      "expected_bottleneck": "too much of the fixed hot band is assigned to the 128x128 PTX hotspot instead of the stronger 64x384 family",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1685",
-        "src/kernels/bf16_gemm_v1.cu:2102"
+        "src/kernels/bf16_gemm_v1.cu:152",
+        "src/kernels/bf16_gemm_v1.cu:153",
+        "src/kernels/bf16_gemm_v1.cu:1956",
+        "src/kernels/bf16_gemm_v1.cu:2110",
+        "src/kernels/bf16_gemm_v1.cu:2122"
       ],
-      "risk": "Low-to-moderate risk: the kernel already exists, but the alternate staging schedule may trade barrier relief for higher shared-memory traffic or a small register increase.",
+      "risk": "Moderate risk: the historical 64x384 sweep predates the newest PTX hot-band refinements, so moving too many rows may simply shift the bottleneck instead of shrinking it.",
       "metrics_to_recheck": [
         "median runtime",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"
       ],
-      "stop_condition": "Stop if runtime does not improve by at least 0.3 ms or if barrier and long-scoreboard stalls stay flat within measurement noise.",
+      "stop_condition": "Stop if runtime returns to the accepted base but does not improve it by at least 0.2 ms, or if barrier stalls fall while total runtime stays flat.",
       "evidence_refs": [
-        "state/latest_ncu_summary.md",
+        "state/autotune_round18_main_tiles.md",
         "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the default fixed-shape hot-band launch from the regressed 128x128x32 staged sibling back to the accepted PTX hot-band kernel.",
+        "Lower kFixedPivotHotRows so more hot-band rows run through the 64x384 peeled path while keeping the 64x96 tail unchanged."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "non_decreasing"
+        }
+      ],
+      "status": "open"
+    },
+    {
+      "candidate_id": "diagnosis_20260421_142317_round02_5ea07e35:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_142317_round02_5ea07e35",
+      "base_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
+      "base_measured_commit": "5ea07e356339f761e5361611762dceb0273a84b6",
+      "base_runtime_ms": 30.00767994,
+      "direction_id": "dir_02",
+      "direction_name": "Retune PTX Hot-Band Grouped-Row Traversal",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::retune_kFixedHotBandPtxGroupedRows",
+      "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->alternate_group_depth",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "exploit",
+      "priority": 0.69,
+      "search_score_v1": 0.69,
+      "score_breakdown": {
+        "expected_gain": 0.21,
+        "implementation_risk": 0.14,
+        "evidence_strength": 0.12,
+        "code_reuse": 0.22
+      },
+      "predicted_gain_ms": 0.4,
+      "predicted_fail_risk": 0.22,
+      "ranking_notes": [
+        "This is the cheapest clean experiment on top of the accepted PTX path.",
+        "It ranks behind dir_01 because the historical sweep gives stronger support to the 64x384 family than to any specific grouped-row value."
+      ],
+      "hypothesis": "The accepted PTX hot-band kernel may be paying unnecessary launch-order and cache-reuse penalties from the current four-row grouped traversal. Retuning kFixedHotBandPtxGroupedRows changes the block issue pattern without reopening the heavy staged-kernel path.",
+      "expected_bottleneck": "launch-order and cache/locality inefficiency inside the accepted PTX hot-band traversal",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1983",
+        "src/kernels/bf16_gemm_v1.cu:1988"
+      ],
+      "risk": "Low-to-moderate risk: the edit is small, but the effect can easily be noise-sized if grouped traversal is not actually the main issue.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if runtime change is within measurement noise after one buildable attempt.",
+      "evidence_refs": [
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md",
         "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the accepted PTX hot-band launch in place.",
+        "Retune kFixedHotBandPtxGroupedRows and measure whether CTA issue order and locality improve."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "non_decreasing"
+        }
+      ],
+      "status": "open"
+    },
+    {
+      "candidate_id": "diagnosis_20260421_142317_round02_5ea07e35:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_142317_round02_5ea07e35",
+      "base_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
+      "base_measured_commit": "5ea07e356339f761e5361611762dceb0273a84b6",
+      "base_runtime_ms": 30.00767994,
+      "direction_id": "dir_03",
+      "direction_name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
+      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+      "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
+      "action_fingerprint": "launch_fixed_hot_band:ptx_microkernel->single_k_128x128_regular",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "exploit",
+      "priority": 0.58,
+      "search_score_v1": 0.58,
+      "score_breakdown": {
+        "expected_gain": 0.18,
+        "implementation_risk": 0.24,
+        "evidence_strength": 0.08,
+        "code_reuse": 0.08
+      },
+      "predicted_gain_ms": 0.6,
+      "predicted_fail_risk": 0.41,
+      "ranking_notes": [
+        "This is a controlled kernel-variant swap with less shared-memory expansion than the staged 128x128x32 path.",
+        "It ranks third because there is no direct in-repo measurement yet showing the regular 128x128 sibling beats the accepted PTX microkernel."
+      ],
+      "hypothesis": "The existing single-K 128x128 sibling keeps the same stage depth as the accepted PTX path but uses the regular accumulate helper instead of the microkernel-specific ordering. That may trim scheduler or register overhead without paying the staged-128x128x32 cost.",
+      "expected_bottleneck": "microkernel-specific accumulate/store scheduling inside the accepted 128x128 hot-band path",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1839",
+        "src/kernels/bf16_gemm_v1.cu:1924",
+        "src/kernels/bf16_gemm_v1.cu:1956",
+        "src/kernels/bf16_gemm_v1.cu:2110"
+      ],
+      "risk": "Moderate risk: this is a variant swap without direct performance evidence on the current refactor branch, so it can regress just as easily as it improves.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if registers climb or active-warps fall relative to the accepted PTX base without a runtime improvement.",
+      "evidence_refs": [
+        "src/kernels/bf16_gemm_v1.cu",
+        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
+        "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.md"
       ],
       "target_hotspots": [
         {
@@ -67,163 +218,16 @@
         }
       ],
       "expected_local_changes": [
-        "Swap the default fixed-shape hot-band launch from the PTX microkernel path to the existing 128x128x32 staged kernel.",
-        "Keep the residual 64x384 row-band and 64x96 tail unchanged for the first measurement."
+        "Restore the accepted PTX baseline if needed, then replace the default hot-band launch with the single-K non-microkernel 128x128 sibling.",
+        "Keep the residual 64x384 path and 64x96 tail unchanged for the first comparison."
       ],
       "guardrail_metrics": [
         {
-          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
           "guardrail": "non_decreasing"
         },
         {
-          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "guardrail": "non_increasing"
-        }
-      ],
-      "status": "open"
-    },
-    {
-      "candidate_id": "diagnosis_20260421_133418_round01_c859cd06:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_133418_round01_c859cd06",
-      "base_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
-      "base_measured_commit": "c859cd06456e600a76778265983f0cd6da925481",
-      "base_runtime_ms": 24.40755177,
-      "direction_id": "dir_02",
-      "direction_name": "Collapse The PTX Microkernel Wait-And-Sync Cadence",
-      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
-      "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance",
-      "action_fingerprint": "ptx_microkernel:per_tile_wait_sync->pairwise_stage_advance",
-      "rank_in_diagnosis": 2,
-      "recommended": false,
-      "mode": "exploit",
-      "priority": 0.74,
-      "search_score_v1": 0.74,
-      "score_breakdown": {
-        "expected_gain": 0.36,
-        "implementation_risk": 0.31,
-        "evidence_strength": 0.15,
-        "code_reuse": 0.08
-      },
-      "predicted_gain_ms": 1.8,
-      "predicted_fail_risk": 0.54,
-      "ranking_notes": [
-        "The custom-vs-cuBLAS gap is dominated by synchronization and scoreboard stalls, so this has the clearest direct path to the remaining ~1.9 ms gap.",
-        "It ranks behind dir_01 only because the existing staged sibling provides a cheaper first measurement."
-      ],
-      "hypothesis": "The current PTX hot-band loop calls cp.async wait plus a CTA sync after every K tile, which matches the observed 5.49% barrier and 7.19% long-scoreboard cost. Porting a pairwise or two-K stage advance pattern, similar to the peeled 64x384 helper, should reduce the synchronization tax while keeping the current microkernel math path.",
-      "expected_bottleneck": "per-tile cp.async wait plus CTA barrier cadence in the PTX hot-band microkernel",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1436",
-        "src/kernels/bf16_gemm_v1.cu:1955",
-        "src/kernels/bf16_gemm_v1.cu:2039"
-      ],
-      "risk": "Moderate-to-high risk: this edits the PTX hot-band steady-state pipeline directly, so a small synchronization mistake can break correctness or regress tensor feed rate.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the edited loop reduces barrier stalls but causes correctness failures, or if runtime regresses by more than 0.5 ms after the first buildable attempt.",
-      "evidence_refs": [
-        "state/latest_ncu_summary.md",
-        "runs/20260421_133418_bf16_gemm_v1_c859cd06/ncu_analysis.md",
-        "runs/20260421_133046_cublas_ref_v4_lt_best/ncu_analysis.md"
-      ],
-      "target_hotspots": [
-        {
-          "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput"
-        },
-        {
-          "scope_type": "rule",
-          "scope_name": "TheoreticalOccupancy",
-          "location": "None"
-        }
-      ],
-      "expected_local_changes": [
-        "Refactor the PTX microkernel steady-state loop so future-stage refill happens in a pairwise cadence instead of waiting and syncing after every single K tile.",
-        "Reuse the existing peeled-row-band stage-advance helper pattern where possible to keep the sync semantics auditable."
-      ],
-      "guardrail_metrics": [
-        {
-          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "guardrail": "non_increasing"
-        },
-        {
-          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "guardrail": "non_increasing"
-        }
-      ],
-      "status": "open"
-    },
-    {
-      "candidate_id": "diagnosis_20260421_133418_round01_c859cd06:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_133418_round01_c859cd06",
-      "base_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
-      "base_measured_commit": "c859cd06456e600a76778265983f0cd6da925481",
-      "base_runtime_ms": 24.40755177,
-      "direction_id": "dir_03",
-      "direction_name": "Push More Hot-Band Rows Into The 64x384 Peeled Path",
-      "family_id": "tiling_decomposition::expand_64x384_row_band",
-      "subfamily_id": "tiling_decomposition::rebalance_fixed_pivot_hot_rows",
-      "action_fingerprint": "fixed_hot_split:pivot_rows_6400->smaller_128x128_region_larger_64x384_region",
-      "rank_in_diagnosis": 3,
-      "recommended": false,
-      "mode": "exploit",
-      "priority": 0.61,
-      "search_score_v1": 0.61,
-      "score_breakdown": {
-        "expected_gain": 0.24,
-        "implementation_risk": 0.24,
-        "evidence_strength": 0.09,
-        "code_reuse": 0.04
-      },
-      "predicted_gain_ms": 0.8,
-      "predicted_fail_risk": 0.43,
-      "ranking_notes": [
-        "The 64x384 family is supported by old fixed-tile measurements, but the current profile still points first at the 128x128 PTX hotspot, so this ranks third.",
-        "This is still a good fallback if the staged 128x128 sibling and PTX wait-cadence rewrite both fail to close the gap."
-      ],
-      "hypothesis": "The historical fixed-main-tile sweep already found 64x384 to be the strongest hot-band width family. Rebalancing the fixed split so fewer rows use the 128x128 PTX hotspot and more rows use the peeled 64x384 path may reduce CTA scheduling and synchronization overhead without rewriting the microkernel itself.",
-      "expected_bottleneck": "hot-band decomposition choice is leaving too much work on the slower 128x128 PTX hotspot instead of the best historical 384-wide family",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:152",
-        "src/kernels/bf16_gemm_v1.cu:153",
-        "src/kernels/bf16_gemm_v1.cu:2119"
-      ],
-      "risk": "Moderate risk: the old tile sweep favored 384 width, but expanding that path changes the row split and could expose new register or launch overhead outside the tiny residual band it currently covers.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-        "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the rebalance improves the profiled kernel metrics but total runtime does not move, which would imply the split change only shifted work rather than removing the dominant bottleneck.",
-      "evidence_refs": [
-        "state/autotune_round18_main_tiles.md",
-        "state/latest_ncu_summary.md",
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "target_hotspots": [
-        {
-          "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput"
-        }
-      ],
-      "expected_local_changes": [
-        "Retune kFixedPivotHotRows so a larger slice of the hot band launches through the peeled 64x384 path.",
-        "Keep the 64x96 tail kernel unchanged while measuring whether the split rebalance alone helps."
-      ],
-      "guardrail_metrics": [
-        {
-          "metric_name": "sm__throughput.avg.pct_of_peak_sustained_elapsed",
-          "guardrail": "non_decreasing"
-        },
-        {
-          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_name": "launch__occupancy_limit_registers",
           "guardrail": "non_increasing"
         }
       ],
