@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 8/10` with `3` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 9/10` with `2` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_155620`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human guidance review for round 8: the current loop still respects the user's 256x128/64x64 preference, but the latest negative result is not yet a clean reason to abandon the accepted-base family. The round-7 surface carried both 3-CTA residency and a two-stage export scratch lifetime, so the first priority is to separate those effects. That is why dir_01 trims export scratch first, dir_02 keeps a same-surface barrier retime in reserve, and the 256x128 family stays queued rather than selected immediately.`
-- dir_01: Trim The Grouped-Row 128x128 Sibling Export Scratch To Single Stage | bottleneck: Shared export lifetime and barrier tax on the grouped-row non-PTX 128x128 sibling, currently confounded with the 3-CTA residency probe.
-- dir_02: Retime The Non-PTX 3-CTA Barrier/Handoff Seam | bottleneck: Barrier cadence at the seam between cp.async wait completion, __syncthreads(), and future-tile refill ordering on the non-PTX 3-CTA sibling.
-- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, B-fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 
