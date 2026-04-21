@@ -3680,7 +3680,28 @@ def normalize_diagnosis_for_finalize(diagnosis: Dict[str, Any]) -> Dict[str, Any
     return normalized
 
 
-def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
+def _looks_like_placeholder(text: str) -> bool:
+    lowered = text.strip().lower()
+    placeholder_tokens = (
+        'todo',
+        'tbd',
+        'placeholder',
+        'auto-analysis',
+        'auto analysis',
+        'template',
+        'fill me',
+        'n/a',
+        'unknown',
+    )
+    return any(token in lowered for token in placeholder_tokens)
+
+
+def validate_diagnosis(
+    diagnosis: Dict[str, Any],
+    *,
+    latest_run: Dict[str, Any],
+    latest_ncu: Dict[str, Any],
+) -> None:
     diagnosis_id = diagnosis.get('diagnosis_id')
     if not isinstance(diagnosis_id, str) or not diagnosis_id.strip():
         raise RuntimeError('node_b diagnosis requires a non-empty diagnosis_id')
@@ -3695,6 +3716,21 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
     reasoning_summary = diagnosis.get('reasoning_summary')
     if not isinstance(reasoning_summary, str) or len(reasoning_summary.strip()) < 80:
         raise RuntimeError('node_b diagnosis requires a non-trivial reasoning_summary')
+    if _looks_like_placeholder(reasoning_summary):
+        raise RuntimeError('node_b diagnosis reasoning_summary looks like placeholder text instead of live reasoning')
+    source_run_id = diagnosis.get('source_run_id')
+    if source_run_id != latest_run.get('run_id'):
+        raise RuntimeError(
+            f'node_b diagnosis must target the latest measured run ({latest_run.get("run_id")}); got {source_run_id}'
+        )
+    runtime_ms = latest_run.get('median_runtime_ms')
+    if runtime_ms is not None:
+        runtime_token = f'{float(runtime_ms):.3f}'
+        if runtime_token not in reasoning_summary and str(latest_run.get('run_id')) not in reasoning_summary:
+            raise RuntimeError(
+                'node_b reasoning_summary must reference the live run context '
+                '(include latest run id or current runtime).'
+            )
     evidence_refs = set(normalize_string_list(diagnosis.get('evidence_refs')))
     required_evidence_refs = {
         'state/node_b_context.md',
@@ -3728,6 +3764,7 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
     }
     if len(fingerprints) != 3:
         raise RuntimeError('node_b requires three distinct action_fingerprint values')
+    ncu_metric_keys = set((latest_ncu.get('headline_metrics') or {}).keys())
     seen_ids = set()
     for direction in directions:
         direction_id = direction.get('direction_id')
@@ -3749,6 +3786,8 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
             value = direction.get(key)
             if not isinstance(value, str) or not value.strip():
                 raise RuntimeError(f'{direction_id} is missing non-empty field: {key}')
+            if _looks_like_placeholder(value):
+                raise RuntimeError(f'{direction_id} field {key} looks like placeholder text')
         if direction.get('mode') not in {'exploit', 'explore', 'restore'}:
             raise RuntimeError(f"{direction_id} mode must be one of: exploit, explore, restore")
         fingerprint = direction.get('action_fingerprint')
@@ -3760,6 +3799,11 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
         metrics = direction.get('metrics_to_recheck')
         if not isinstance(metrics, list) or not metrics or not all(isinstance(item, str) and item.strip() for item in metrics):
             raise RuntimeError(f'{direction_id} needs a non-empty metrics_to_recheck list')
+        if not any(metric in ncu_metric_keys for metric in metrics) and 'median runtime' not in ' '.join(metrics).lower():
+            raise RuntimeError(
+                f'{direction_id} metrics_to_recheck should include at least one live NCU headline metric '
+                'or an explicit runtime metric'
+            )
         if direction.get('search_score_v1') is None:
             raise RuntimeError(f'{direction_id} requires search_score_v1')
         try:
@@ -3967,8 +4011,9 @@ def run_node_b(args: argparse.Namespace) -> int:
     graph_state = load_graph_state()
     round_loop = load_round_loop_state()
     if args.finalize:
+        latest_ncu = load_latest_ncu_summary()
         diagnosis = normalize_diagnosis_for_finalize(load_json_file(REPO_ROOT / args.diagnosis_file))
-        validate_diagnosis(diagnosis)
+        validate_diagnosis(diagnosis, latest_run=latest_run, latest_ncu=latest_ncu)
         diagnosis['status'] = 'completed'
         diagnosis['created_at'] = diagnosis.get('created_at') or now_local_iso()
         diagnosis['source_run_id'] = diagnosis.get('source_run_id') or latest_run.get('run_id')
