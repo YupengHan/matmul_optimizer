@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 19/100` with `82` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 20/100` with `81` rounds remaining
 
 ## Direction approval policy
 
@@ -15,18 +15,16 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_003229`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 19 treats grouped_rows=8 as clear negative evidence. The next move is a direct restore back to the PTX winner surface, while 256x128 pivot and the non-PTX 128x128 sibling remain live as the next two alternate families.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: The grouped_rows=8 locality regime itself is the measured problem here; the immediate need is to remove that drift and recover the proven PTX winner surface.
-- dir_02: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: Geometry-level latency hiding and control amortization on the 256x128 hot-band path rather than PTX grouped-row locality.
-- dir_03: Port grouped-row traversal into the non-PTX 128x128 sibling | bottleneck: CTA traversal and locality on the non-PTX 128x128 sibling surface rather than PTX microkernel control behavior.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
