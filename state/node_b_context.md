@@ -11,10 +11,10 @@
         - `state/current_focus.md`
         - `state/human_review.md`
         - `src/kernels/bf16_gemm_v1.cu`
-        - `runs/20260421_084833_bf16_gemm_v1_bcd88dd/summary.json`
-        - `runs/20260421_084833_bf16_gemm_v1_bcd88dd/ncu_metrics.csv`
-        - `runs/20260421_084833_bf16_gemm_v1_bcd88dd/ncu_details.csv`
-        - `runs/20260421_084833_bf16_gemm_v1_bcd88dd/ncu_profile.ncu-rep`
+        - `runs/20260421_084842_bf16_gemm_v1_0e59f4c/summary.json`
+        - `runs/20260421_084842_bf16_gemm_v1_0e59f4c/ncu_metrics.csv`
+        - `runs/20260421_084842_bf16_gemm_v1_0e59f4c/ncu_details.csv`
+        - `runs/20260421_084842_bf16_gemm_v1_0e59f4c/ncu_profile.ncu-rep`
 
 - `state/autotune_round18_main_tiles.json`
 - `state/autotune_round18_main_tiles.md`
@@ -50,10 +50,10 @@
 
         ## Current source snapshot
 
-        - round loop: `round 93/100`
-        - rounds remaining after this one: `7`
-        - latest run id: `20260421_084833_bf16_gemm_v1_bcd88dd`
-        - median runtime: `24.649728 ms`
-        - TFLOP/s: `29.494014 TFLOP/s`
-        - measured commit: `bcd88dd7c7d5969537b80a9a78612767c04677e7`
-        - existing diagnosis status: `completed`
+        - round loop: `round 94/100`
+        - rounds remaining after this one: `6`
+        - latest run id: `20260421_084842_bf16_gemm_v1_0e59f4c`
+        - median runtime: `24.676256 ms`
+        - TFLOP/s: `29.462306 TFLOP/s`
+        - measured commit: `0e59f4ce1ebc7c77d318404225f61a22f41ec7cd`
+        - existing diagnosis status: `pending_generation`
