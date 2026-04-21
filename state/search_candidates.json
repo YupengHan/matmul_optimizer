@@ -1,62 +1,61 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_114106",
-  "source_run_id": "20260421_113859_bf16_gemm_v1_6668d21",
-  "source_diagnosis_id": "diagnosis_20260421_114106",
-  "generated_at": "2026-04-21T11:41:12-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_114422",
+  "source_run_id": "20260421_114147_bf16_gemm_v1_4784c8d",
+  "source_diagnosis_id": "diagnosis_20260421_114422",
+  "generated_at": "2026-04-21T11:44:25-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_114106:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_114422:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_114106:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_114106",
-      "base_run_id": "20260421_113859_bf16_gemm_v1_6668d21",
-      "base_measured_commit": "6668d2193f6619c3de1cc6000711a62fc1f0fcd8",
-      "base_runtime_ms": 46.36671829,
+      "candidate_id": "diagnosis_20260421_114422:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_114422",
+      "base_run_id": "20260421_114147_bf16_gemm_v1_4784c8d",
+      "base_measured_commit": "4784c8dad3001272fc9bd5ac33581f8a9bde6129",
+      "base_runtime_ms": 46.50905609,
       "direction_id": "dir_01",
-      "direction_name": "Restore the accepted PTX hot-band anchor after the failed live-state trim",
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_f768e80_surface",
-      "action_fingerprint": "restore_exact_f768e80_ptx_anchor_after_6668d21_loss",
+      "direction_name": "Re-anchor on the best measured PTX surface under the current workload",
+      "family_id": "legacy::reanchor_the_current_workload_ptx_surface",
+      "subfamily_id": "legacy::reanchor_the_current_workload_ptx_surface::exact_6668d21_surface",
+      "action_fingerprint": "restore_exact_6668d21_as_current_workload_anchor",
       "rank_in_diagnosis": 1,
       "recommended": true,
-      "mode": "restore",
-      "priority": 2.85,
-      "search_score_v1": 2.85,
+      "mode": "exploit",
+      "priority": 2.62,
+      "search_score_v1": 2.62,
       "score_breakdown": {
-        "recovery_value": 1.2,
-        "measured_loss_penalty_removed": 0.9,
-        "implementation_scope": 0.95,
-        "risk_bonus": 0.2,
-        "reason": "Fastest path back to the accepted baseline after an unambiguous PASS_LOSS on the active PTX family."
+        "local_anchor_value": 1.1,
+        "measured_evidence": 0.95,
+        "implementation_scope": 0.9,
+        "reason": "Fastest path to a valid current-workload base after the historical restore failed to recover."
       },
-      "predicted_gain_ms": 22.07,
-      "predicted_fail_risk": 0.05,
+      "predicted_gain_ms": 0.14,
+      "predicted_fail_risk": 0.08,
       "ranking_notes": [
-        "The previous step already proved this exploit is not ready for iteration on top of the current code.",
-        "Restore first so the next diagnosis is anchored on a real winner rather than on a known loss surface.",
-        "Do not interpret this as a new optimization idea; it is recovery to the accepted baseline."
+        "This is not a search breakthrough; it is a workload-aware re-anchor.",
+        "The last two measured PTX variants differ by only 0.14 ms, but only one should serve as the next local base.",
+        "Use this to reset the loop onto the best current-workload surface before barrier tuning."
       ],
-      "hypothesis": "The round-3 PTX live-state trim changed the wrong part of the recovered winner: despite a 2-register drop, active warps stayed flat and runtime exploded. Restoring the exact accepted PTX surface should recover the 24.293 ms anchor and re-establish a clean base for the next exploit.",
-      "expected_bottleneck": "Known register-limited plateau on the accepted 128x128 PTX surface; this direction is a recovery step, not a new bottleneck attack.",
+      "hypothesis": "The current workload has drifted enough that the old historical accepted base is no longer a valid recovery target. Restoring the slightly faster 20260421_113859_bf16_gemm_v1_6668d21 PTX variant should establish a sane current-workload anchor before more exploits are layered on top.",
+      "expected_bottleneck": "Current-workload re-anchoring step; establishes the local PTX baseline before the next bounded barrier exploit.",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu",
-        "restore source commit: f768e80d950fa4cd036ea003b32af972278df540"
+        "restore source commit: 6668d2193f6619c3de1cc6000711a62fc1f0fcd8"
       ],
       "risk": "low",
       "metrics_to_recheck": [
         "median runtime",
         "launch__occupancy_limit_registers",
         "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
       ],
-      "stop_condition": "Stop if the restored surface does not recover to within noise of the accepted base runtime.",
+      "stop_condition": "Stop if the restored current-workload anchor does not reproduce within noise of the prior 46.3667 ms measurement.",
       "evidence_refs": [
         "state/node_b_context.md",
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
-        "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.md",
+        "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.md",
+        "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.json",
         "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json",
         "docs/heuristics.md",
         "state/current_focus.md",
@@ -70,9 +69,9 @@
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "metric_value": 198.0,
+          "metric_value": 200.0,
           "metric_unit": "register/thread",
-          "importance_score": 203.0,
+          "importance_score": 205.0,
           "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
           "section_name": "Launch Statistics",
           "source_row_index": 14
@@ -83,23 +82,23 @@
           "scope_name": "Occupancy",
           "location": "Occupancy",
           "metric_name": "Achieved Occupancy",
-          "metric_value": 16.63,
+          "metric_value": 16.62,
           "metric_unit": "%",
-          "importance_score": 88.37,
+          "importance_score": 88.38,
           "explanation": "Occupancy is carrying metric Achieved Occupancy.",
           "section_name": "Occupancy",
           "source_row_index": 29
         }
       ],
       "expected_local_changes": [
-        "Restore the implementation surface from measured commit f768e80d950fa4cd036ea003b32af972278df540.",
-        "Discard the round-3 scope-narrowing edit rather than layering another exploit on top of a loss surface.",
-        "Keep the current workflow/workload support files on HEAD while only restoring compiled implementation code."
+        "Restore the implementation surface from measured commit 6668d2193f6619c3de1cc6000711a62fc1f0fcd8.",
+        "Treat this as current-workload anchoring, not as a regression recovery toward the stale 24 ms history.",
+        "Preserve workflow/workload support files on HEAD while only restoring compiled implementation code."
       ],
       "guardrail_metrics": [
         {
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "current_value": 48.36,
+          "current_value": 48.39,
           "guardrail": "non_decreasing",
           "reason": "Tensor activity is part of the active bottleneck picture and should not drop after the next code edit."
         },
@@ -111,50 +110,50 @@
         },
         {
           "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "current_value": 6.87,
+          "current_value": 6.95,
           "guardrail": "non_increasing",
-          "reason": "long scoreboard stalls are consuming 6.87% of active warp issue slots."
+          "reason": "long scoreboard stalls are consuming 6.95% of active warp issue slots."
         },
         {
           "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "current_value": 5.95,
+          "current_value": 5.57,
           "guardrail": "non_increasing",
-          "reason": "barrier stalls are consuming 5.95% of active warp issue slots."
+          "reason": "barrier stalls are consuming 5.57% of active warp issue slots."
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_114106:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_114106",
-      "base_run_id": "20260421_113859_bf16_gemm_v1_6668d21",
-      "base_measured_commit": "6668d2193f6619c3de1cc6000711a62fc1f0fcd8",
-      "base_runtime_ms": 46.36671829,
+      "candidate_id": "diagnosis_20260421_114422:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_114422",
+      "base_run_id": "20260421_114147_bf16_gemm_v1_4784c8d",
+      "base_measured_commit": "4784c8dad3001272fc9bd5ac33581f8a9bde6129",
+      "base_runtime_ms": 46.50905609,
       "direction_id": "dir_02",
-      "direction_name": "After recovery, retime the PTX barrier handoff without changing the shared footprint",
+      "direction_name": "After re-anchoring, retime the PTX barrier handoff on the 198-register surface",
       "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
-      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
-      "action_fingerprint": "retime_wait_group_after_restoring_accepted_ptx_anchor",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::on_198reg_current_workload_anchor",
+      "action_fingerprint": "retime_wait_group_on_6668d21_anchor_without_shared_growth",
       "rank_in_diagnosis": 2,
       "recommended": false,
       "mode": "explore",
-      "priority": 2.12,
-      "search_score_v1": 2.12,
+      "priority": 2.18,
+      "search_score_v1": 2.18,
       "score_breakdown": {
-        "bottleneck_alignment": 0.82,
-        "implementation_scope": 0.72,
-        "loss_recovery_dependency": -0.18,
-        "reason": "Best next bounded exploit after recovery because barrier worsened on the failed PTX-local probe."
+        "bottleneck_alignment": 0.86,
+        "implementation_scope": 0.7,
+        "anchor_dependency": -0.18,
+        "reason": "Best bounded follow-up once the current-workload anchor is restored."
       },
       "predicted_gain_ms": 0.08,
       "predicted_fail_risk": 0.34,
       "ranking_notes": [
-        "Barrier regressed on the failed probe, so this becomes the best next PTX-local follow-up once the base is recovered.",
-        "It stays below restore because acting on a known loss surface would only muddy the next measurement.",
+        "Barrier is the main remaining local seam once the workload-aware anchor is chosen.",
+        "This stays below dir_01 because the loop first needs a stable local base.",
         "The shared-memory footprint must remain fixed."
       ],
-      "hypothesis": "Once the accepted PTX anchor is restored, the next bounded exploit should target the barrier seam that regressed on the failed live-state probe while keeping the same 22016-byte shared footprint.",
-      "expected_bottleneck": "synchronization_barrier_issue on the accepted PTX hot-band path",
+      "hypothesis": "Once the 198-register PTX variant is restored as the current-workload anchor, the clearest next local gain is to pay down the barrier seam that rose on that branch without giving back the smaller register footprint.",
+      "expected_bottleneck": "synchronization_barrier_issue on the current-workload 198-register PTX surface",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:2021",
         "src/kernels/bf16_gemm_v1.cu:2033",
@@ -164,15 +163,16 @@
       "metrics_to_recheck": [
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
         "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
         "median runtime"
       ],
-      "stop_condition": "Stop if the retime requires growing shared-memory state or if barrier falls while runtime still regresses.",
+      "stop_condition": "Stop if the retime requires growing shared memory or if barrier improves without any runtime benefit.",
       "evidence_refs": [
         "state/node_b_context.md",
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
-        "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.md",
+        "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.md",
+        "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.json",
         "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json",
         "docs/heuristics.md",
         "state/current_focus.md",
@@ -186,9 +186,9 @@
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "metric_value": 198.0,
+          "metric_value": 200.0,
           "metric_unit": "register/thread",
-          "importance_score": 203.0,
+          "importance_score": 205.0,
           "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
           "section_name": "Launch Statistics",
           "source_row_index": 14
@@ -199,23 +199,23 @@
           "scope_name": "Occupancy",
           "location": "Occupancy",
           "metric_name": "Achieved Occupancy",
-          "metric_value": 16.63,
+          "metric_value": 16.62,
           "metric_unit": "%",
-          "importance_score": 88.37,
+          "importance_score": 88.38,
           "explanation": "Occupancy is carrying metric Achieved Occupancy.",
           "section_name": "Occupancy",
           "source_row_index": 29
         }
       ],
       "expected_local_changes": [
-        "Retune the cp.async wait and CTA sync ordering only after the accepted PTX anchor is back.",
-        "Keep the same grouped-row mapping and shared-memory budget.",
-        "Use the round-3 barrier delta as the local recheck seam."
+        "Restore 6668d21 first, then retime cp.async wait and CTA sync ordering on top of that surface.",
+        "Keep the grouped-row mapping and shared-memory budget unchanged.",
+        "Use barrier as the first local recheck, not absolute runtime vs the stale historical base."
       ],
       "guardrail_metrics": [
         {
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "current_value": 48.36,
+          "current_value": 48.39,
           "guardrail": "non_decreasing",
           "reason": "Tensor activity is part of the active bottleneck picture and should not drop after the next code edit."
         },
@@ -227,50 +227,50 @@
         },
         {
           "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "current_value": 6.87,
+          "current_value": 6.95,
           "guardrail": "non_increasing",
-          "reason": "long scoreboard stalls are consuming 6.87% of active warp issue slots."
+          "reason": "long scoreboard stalls are consuming 6.95% of active warp issue slots."
         },
         {
           "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "current_value": 5.95,
+          "current_value": 5.57,
           "guardrail": "non_increasing",
-          "reason": "barrier stalls are consuming 5.95% of active warp issue slots."
+          "reason": "barrier stalls are consuming 5.57% of active warp issue slots."
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_114106:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_114106",
-      "base_run_id": "20260421_113859_bf16_gemm_v1_6668d21",
-      "base_measured_commit": "6668d2193f6619c3de1cc6000711a62fc1f0fcd8",
-      "base_runtime_ms": 46.36671829,
+      "candidate_id": "diagnosis_20260421_114422:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_114422",
+      "base_run_id": "20260421_114147_bf16_gemm_v1_4784c8d",
+      "base_measured_commit": "4784c8dad3001272fc9bd5ac33581f8a9bde6129",
+      "base_runtime_ms": 46.50905609,
       "direction_id": "dir_03",
-      "direction_name": "Keep the 256x128 half-panel repair alive, but only after the PTX base is recovered",
+      "direction_name": "Keep the 256x128 half-panel repair alive behind the new local anchor",
       "family_id": "historical::repair_the_256x128_half_panel_register_reuse_branch",
       "subfamily_id": "historical::repair_the_256x128_half_panel_register_reuse_branch::compact_b_staging_and_explicit_half_panel_export",
-      "action_fingerprint": "defer_256x128_half_panel_repair_until_post_restore",
+      "action_fingerprint": "defer_256x128_repair_until_after_current_workload_reanchor",
       "rank_in_diagnosis": 3,
       "recommended": false,
       "mode": "explore",
-      "priority": 1.58,
-      "search_score_v1": 1.58,
+      "priority": 1.56,
+      "search_score_v1": 1.56,
       "score_breakdown": {
         "structural_upside": 0.9,
         "recent_regression_penalty": -0.64,
-        "implementation_scope": 0.32,
-        "reason": "Keeps the high-upside geometry family live without outranking the required recovery step."
+        "implementation_scope": 0.3,
+        "reason": "Keeps queue breadth without outranking the required workload-aware re-anchor."
       },
       "predicted_gain_ms": 0.8,
       "predicted_fail_risk": 0.67,
       "ranking_notes": [
-        "This stays in the top three only to preserve queue breadth.",
-        "Both the round-1 256x128 loss and the round-3 PTX loss argue for restore-first discipline.",
-        "Do not select it again until the accepted PTX anchor is stable."
+        "This stays in the top three only to preserve a non-PTX branch in the queue.",
+        "Do not revisit it before the current-workload PTX anchor is established.",
+        "Recent losses keep it well below dir_01 and dir_02."
       ],
-      "hypothesis": "The wide 256x128 family still represents the largest remaining structural upside, but recent PTX-local and 256x128 losses both say it should not be revisited until the accepted PTX base is restored and stable again.",
-      "expected_bottleneck": "occupancy_latency_hiding_issue on the wide geometry, with secondary barrier and short-scoreboard sensitivity",
+      "hypothesis": "The wide 256x128 family still carries the largest structural upside, but it should stay behind the workload-aware PTX re-anchor and barrier exploit sequence.",
+      "expected_bottleneck": "occupancy_latency_hiding_issue on the wide geometry, with secondary barrier sensitivity",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:1580",
         "src/kernels/bf16_gemm_v1.cu:1630",
@@ -283,12 +283,13 @@
         "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
         "median runtime"
       ],
-      "stop_condition": "Stop if the branch is revisited before the accepted PTX base is restored, or if barrier and short-scoreboard both spike again.",
+      "stop_condition": "Stop if this branch is selected before the current-workload PTX anchor is stable.",
       "evidence_refs": [
         "state/node_b_context.md",
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
-        "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.md",
+        "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.md",
+        "runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.json",
         "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json",
         "docs/heuristics.md",
         "state/current_focus.md",
@@ -302,9 +303,9 @@
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "metric_value": 198.0,
+          "metric_value": 200.0,
           "metric_unit": "register/thread",
-          "importance_score": 203.0,
+          "importance_score": 205.0,
           "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
           "section_name": "Launch Statistics",
           "source_row_index": 14
@@ -315,9 +316,9 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "DRAM Throughput",
-          "metric_value": 13.49,
+          "metric_value": 14.48,
           "metric_unit": "%",
-          "importance_score": 91.51,
+          "importance_score": 90.52,
           "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
           "section_name": "GPU Speed Of Light Throughput",
           "source_row_index": 4
@@ -328,23 +329,23 @@
           "scope_name": "Occupancy",
           "location": "Occupancy",
           "metric_name": "Achieved Occupancy",
-          "metric_value": 16.63,
+          "metric_value": 16.62,
           "metric_unit": "%",
-          "importance_score": 88.37,
+          "importance_score": 88.38,
           "explanation": "Occupancy is carrying metric Achieved Occupancy.",
           "section_name": "Occupancy",
           "source_row_index": 29
         }
       ],
       "expected_local_changes": [
-        "Keep this family in the queue, but defer actual implementation until after recovery.",
-        "Preserve the compact B-staging idea only if ownership and barrier seams are addressed together.",
-        "Treat the current direction as historical high-upside research, not as the immediate next move."
+        "Keep this family live, but defer implementation until after the PTX local anchor is set.",
+        "Preserve the compact B-staging idea only if barrier and ownership are addressed together.",
+        "Treat this as backlog, not immediate work."
       ],
       "guardrail_metrics": [
         {
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "current_value": 48.36,
+          "current_value": 48.39,
           "guardrail": "non_decreasing",
           "reason": "Tensor activity is part of the active bottleneck picture and should not drop after the next code edit."
         },
@@ -356,15 +357,15 @@
         },
         {
           "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "current_value": 6.87,
+          "current_value": 6.95,
           "guardrail": "non_increasing",
-          "reason": "long scoreboard stalls are consuming 6.87% of active warp issue slots."
+          "reason": "long scoreboard stalls are consuming 6.95% of active warp issue slots."
         },
         {
           "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "current_value": 5.95,
+          "current_value": 5.57,
           "guardrail": "non_increasing",
-          "reason": "barrier stalls are consuming 5.95% of active warp issue slots."
+          "reason": "barrier stalls are consuming 5.57% of active warp issue slots."
         }
       ],
       "status": "open"

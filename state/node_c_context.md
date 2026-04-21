@@ -5,15 +5,20 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Re-anchor on the best measured PTX surface under the current workload`
+- candidate id: `diagnosis_20260421_114422:dir_01`
+- base run id: `20260421_114147_bf16_gemm_v1_4784c8d`
+- primary family id: `legacy::reanchor_the_current_workload_ptx_surface`
+- planned action fingerprint: `restore_exact_6668d21_as_current_workload_anchor`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_114422`
 - round loop: `round 5/100`
+- hypothesis: `The current workload has drifted enough that the old historical accepted base is no longer a valid recovery target. Restoring the slightly faster 20260421_113859_bf16_gemm_v1_6668d21 PTX variant should establish a sane current-workload anchor before more exploits are layered on top.`
+- expected bottleneck: `Current-workload re-anchoring step; establishes the local PTX baseline before the next bounded barrier exploit.`
+- code locations: `src/kernels/bf16_gemm_v1.cu, restore source commit: 6668d2193f6619c3de1cc6000711a62fc1f0fcd8`
+- risk: `low`
+- metrics to re-check: `median runtime, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct`
 - latest run id: `20260421_114147_bf16_gemm_v1_4784c8d`
 - latest runtime: `46.509056 ms`
 - latest NCU analysis: `runs/20260421_114147_bf16_gemm_v1_4784c8d/ncu_analysis.json`
@@ -21,11 +26,7 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 ## Relevant hotspots
 
 - `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `200.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `14.48` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
 - `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.62` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `29.3` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.14` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
 
 ## Relevant bottleneck evidence
 
@@ -47,7 +48,9 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Restore the implementation surface from measured commit 6668d2193f6619c3de1cc6000711a62fc1f0fcd8.`
+- `Treat this as current-workload anchoring, not as a regression recovery toward the stale 24 ms history.`
+- `Preserve workflow/workload support files on HEAD while only restoring compiled implementation code.`
 
 ## Delta vs previous run
 
@@ -94,4 +97,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

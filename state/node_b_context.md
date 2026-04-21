@@ -80,6 +80,6 @@
         - median runtime: `46.509056 ms`
         - TFLOP/s: `15.631782 TFLOP/s`
         - measured commit: `4784c8dad3001272fc9bd5ac33581f8a9bde6129`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`
         - top bottleneck class: `occupancy_latency_hiding_issue`
         - top finding: `Launch Statistics is carrying metric Registers Per Thread.`
