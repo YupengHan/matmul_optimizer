@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
+- candidate id: `diagnosis_20260420_220312:dir_01`
+- base run id: `20260420_220130_bf16_gemm_v1_0893f2c`
+- primary family id: `legacy::promote_the_existing_256x128_pivot_hot_band_kernel`
+- planned action fingerprint: `538fb586502fa3b4`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_220312`
 - round loop: `round 2/20`
+- hypothesis: `Round 1/20 established the PTX one-k 128x128 branch as the new accepted base at 24.419329 ms, which already beats CUTLASS. That removes the pressure to keep shaving only the same control path and makes round 2/20 a better place to test the strongest orthogonal family still sitting in-tree. The hot-band PTX kernel is still the wall at 32.687232 ms with 200 registers per thread and only 16.62% active warps while launching a 60x50 grid over the first 6400 x 7680 rows. The existing 256x128 pivot family halves the pivot-band CTA count and restores an 8-warp CTA, so it is the cleanest next test of whether hot-band geometry and block-count overhead are now the limiting factor.`
+- expected bottleneck: `Hot-band CTA geometry and block-count overhead on the current 128x128 PTX base, rather than a remaining local control-path bubble inside the winning branch.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:80-105, src/kernels/bf16_gemm_v1.cu:1581-1677, src/kernels/bf16_gemm_v1.cu:2071-2137`
+- risk: `Moderate. The kernel already exists in-tree, but routing the default path onto it changes the hot-band family more materially than another PTX micro-retune and could lose if the larger CTA worsens the live set.`
+- metrics to re-check: `end-to-end median runtime versus the new 24.419329 ms base, hot-band kernel name and grid size in ncu_details.csv, hot-band gpu__time_duration.sum, hot-band sm__warps_active.avg.pct_of_peak_sustained_active, hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, hot-band launch__registers_per_thread`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
