@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- candidate id: `diagnosis_20260421_011652:dir_01`
-- base run id: `20260421_011620_bf16_gemm_v1_4c6e7a1`
-- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
-- planned action fingerprint: `restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a`
-- selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_011652`
-- round loop: `round 27/100`
-- hypothesis: `Round 26 answered the main question about the grouped-row non-PTX sibling: it is a stable alternate surface, but it does not break the plateau. Runtime recovered from 24.690687 ms to 24.183295 ms, yet the machine state came back almost exactly to the same 48.34%-tensor / 16.61%-warps / 5.49%-barrier / 7.23%-long-scoreboard envelope. That means the best next move is to restore the exact PTX winner again so the loop re-centers on the strongest measured anchor before it spends more rounds on tertiary surfaces.`
-- expected bottleneck: `No new bottleneck is being attacked here; this is the exact recovery path back to the best measured correct surface.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:1956-2060, src/kernels/bf16_gemm_v1.cu:2110-2127, src/kernels/bf16_gemm_v1.cu:156`
-- risk: `Low. This is the exact best measured surface and the safest way to erase the residual gap between the current alternate surface and the recorded winner.`
-- metrics to re-check: `end-to-end median runtime, correctness pass rate across all 3 cases, hot-band gpu__time_duration.sum, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 28/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
