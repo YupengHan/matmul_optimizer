@@ -1,18 +1,146 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_073952",
+  "status": "completed",
+  "created_at": "2026-04-21T07:39:52-07:00",
   "source_run_id": "20260421_014255_bf16_gemm_v1_a16425e",
   "source_run_dir": "runs/20260421_014255_bf16_gemm_v1_a16425e",
   "source_summary_json": "runs/20260421_014255_bf16_gemm_v1_a16425e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_073952:dir_01",
+  "family_audit": [
+    "Treat round 33 as the completed recovery step: the loop is already back on the exact PTX anchor at 24.171008 ms, so do not spend round 34 on another restore candidate.",
+    "Keep the forced-3-CTA 128x128 occupancy family closed for this round. Both the PTX and non-PTX launch-bounds probes raised active warps into the mid-20% range but regressed because barrier cost jumped into the ~11% band.",
+    "Reject the x32 shared-memory follow-up as a repeat direction for now. The larger shared footprint already showed that barrier amortization is not worth paying for with shared-memory blowup on this shape.",
+    "Promote PTX-local barrier/control surgery to the recommended family because the current live surface is now clean again and the repo has direct evidence that synchronization cadence, not just occupancy, is the next 128x128 limiter.",
+    "Keep one bounded same-surface PTX control-path exploit and one broader 256x128 high-ceiling branch alive behind the recommended choice."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Trim PTX Microkernel Barriers On The Restored 128x128 Anchor",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
+      "action_fingerprint": "trim_ptx_wait_sync_cadence_on_restored_anchor_without_two_k_stage_buffers",
+      "mode": "explore",
+      "hypothesis": "The loop is back on the exact PTX anchor, and the last two occupancy probes already answered the register-only question: both the PTX and non-PTX 128x128 launch-bounds variants cut registers to about 168 and raised active warps to roughly 24.7%, but both still regressed because synchronization cost spiked into the ~11% band. The accepted anchor keeps the hot-band kernel at 22.016 KB shared memory per block, 200 registers per thread, 16.63% active warps, 7.23% long-scoreboard stall, and 5.49% barrier stall. The next coherent move is therefore to keep the restored 128x128 PTX surface intact and surgically trim the wait/sync cadence or export handoff inside the PTX microkernel, without reintroducing the larger x32 shared-memory footprint.",
+      "expected_bottleneck": "Barrier cadence and PTX export/control handoff inside the single-K 128x128 PTX hot-band microkernel, now that recovery is complete and the failed residency probes isolated synchronization as the limiting tax on higher occupancy.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1832-2060"
+      ],
+      "risk": "High. This is microkernel-level control-flow surgery on the best-known branch, so correctness and codegen stability are both fragile.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus 24.171008 ms",
+        "hot-band gpu__time_duration.sum",
+        "hot-band launch__shared_mem_per_block_allocated",
+        "hot-band launch__registers_per_thread",
+        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.26,
+      "score_breakdown": {
+        "policy_id": "manual_round34_resume_after_recovery_v1",
+        "headroom_score": 1.45,
+        "evidence_score": 0.68,
+        "implementation_bonus": 0.23,
+        "risk_penalty": -0.1,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.35,
+      "predicted_fail_risk": 0.58,
+      "ranking_notes": [
+        "This is the strongest next move that is both directly evidenced by the last failed occupancy probes and still compatible with the restored anchor.",
+        "It is preferred over another broad occupancy edit because the recent evidence says synchronization became the binding constraint as soon as occupancy improved."
+      ],
+      "stop_condition": "Stop if the edit inflates shared memory above the restored 22.016 KB footprint, or if barrier stall does not improve materially while runtime stays flat or regresses."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "action_fingerprint": "retune_active_ptx_one_k_control_export_path_on_restored_anchor",
+      "mode": "exploit",
+      "hypothesis": "Even without another occupancy push, the restored PTX anchor still leaves obvious local waste on the table: the hot-band kernel dominates device time at 32.684512 ms with 200 registers per thread, only 16.63% active warps, 48.41% tensor-pipe activity, and 7.23% long-scoreboard stall. A bounded exploit pass inside the accepted PTX one-K control and export path remains coherent as a smaller-scope fallback to barrier surgery. The goal is not to replay the already-rejected handoff variants, but to trim residual consume-order and export-control friction while preserving the current geometry and grouped traversal.",
+      "expected_bottleneck": "Residual control-path overhead and live-range pressure inside the accepted PTX one-K 128x128 hot-band branch.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:718-802",
+        "src/kernels/bf16_gemm_v1.cu:1955-2060",
+        "src/kernels/bf16_gemm_v1.cu:2090-2137"
+      ],
+      "risk": "Moderate. This stays on the winning family and should be more bounded than the barrier-surgery branch, but PTX control-path edits are still correctness-sensitive.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus 24.171008 ms",
+        "hot-band gpu__time_duration.sum",
+        "hot-band launch__registers_per_thread",
+        "hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.07,
+      "score_breakdown": {
+        "policy_id": "manual_round34_resume_after_recovery_v1",
+        "rank_score": 1.82,
+        "active_surface_bonus": 0.2,
+        "frontier_alignment_bonus": 0.15,
+        "risk_penalty": -0.1,
+        "formula": "rank_score + active_surface_bonus + frontier_alignment_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.12,
+      "predicted_fail_risk": 0.33,
+      "ranking_notes": [
+        "Keep one bounded same-surface exploit family alive because the current best run still has low active-warps and meaningful long-scoreboard slack.",
+        "It ranks below dir_01 because the recent occupancy probes provide stronger new evidence for synchronization-focused surgery than for a generic PTX cleanup."
+      ],
+      "stop_condition": "Stop if the edit collapses into a replay of a previously measured PTX handoff variant or if it fails to move either long-scoreboard stall or end-to-end runtime."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
+      "mode": "explore",
+      "hypothesis": "The 256x128 family still represents the largest visible occupancy ceiling in repo history, because its broken half-panel branch showed that this shape can reach roughly low-90s registers per thread and low-30% active warps when the staging path is aggressive enough. The reason it stays third is that the correctness-safe 256x128 pivot path is still much broader and riskier than the PTX-local follow-ups. It remains worth carrying in the queue because it is the only family with a credible path to break the long-running 16.6% active-warps plateau decisively.",
+      "expected_bottleneck": "Register footprint and synchronization strategy on the 256x128 hot-band path, plus correctness-sensitive writer ownership.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:539-693",
+        "src/kernels/bf16_gemm_v1.cu:903-995"
+      ],
+      "risk": "High. This is still the broadest and most correctness-sensitive active family in the repo.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases",
+        "hot-band launch__registers_per_thread",
+        "hot-band sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 1.93,
+      "score_breakdown": {
+        "policy_id": "manual_round34_resume_after_recovery_v1",
+        "headroom_score": 1.82,
+        "evidence_score": 0.22,
+        "implementation_bonus": 0.04,
+        "risk_penalty": -0.15,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 1.3,
+      "predicted_fail_risk": 0.72,
+      "ranking_notes": [
+        "Keep this family alive because it still offers the highest theoretical ceiling in the repo.",
+        "It ranks below both PTX-local follow-ups because the implementation surface is broader and the correctness history is materially worse."
+      ],
+      "stop_condition": "Stop immediately on correctness failure or on another 28-30 ms class regression without a decisive occupancy breakthrough."
+    }
+  ],
+  "notes": "Round 34 starts from a cleanly restored PTX anchor rather than from a regressed live surface. That changes the diagnosis ranking: recovery is no longer the next action. The evidence from rounds 29 through 32 still matters, though, because both 128x128 launch-bounds probes showed the same causal shape: lower registers and higher active warps alone are not enough if synchronization cost spikes. That makes PTX-local barrier/control surgery the best next move on the restored anchor, with a bounded same-surface control-path exploit as the lower-risk fallback and the 256x128 low-register transplant still reserved as the high-ceiling, high-risk branch."
 }

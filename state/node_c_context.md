@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Trim PTX Microkernel Barriers On The Restored 128x128 Anchor`
+- candidate id: `diagnosis_20260421_073952:dir_01`
+- base run id: `20260421_014255_bf16_gemm_v1_a16425e`
+- primary family id: `aggressive::trim_microkernel_barriers_without_x32_shared_blowup`
+- planned action fingerprint: `trim_ptx_wait_sync_cadence_on_restored_anchor_without_two_k_stage_buffers`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_073952`
 - round loop: `round 34/100`
+- hypothesis: `The loop is back on the exact PTX anchor, and the last two occupancy probes already answered the register-only question: both the PTX and non-PTX 128x128 launch-bounds variants cut registers to about 168 and raised active warps to roughly 24.7%, but both still regressed because synchronization cost spiked into the ~11% band. The accepted anchor keeps the hot-band kernel at 22.016 KB shared memory per block, 200 registers per thread, 16.63% active warps, 7.23% long-scoreboard stall, and 5.49% barrier stall. The next coherent move is therefore to keep the restored 128x128 PTX surface intact and surgically trim the wait/sync cadence or export handoff inside the PTX microkernel, without reintroducing the larger x32 shared-memory footprint.`
+- expected bottleneck: `Barrier cadence and PTX export/control handoff inside the single-K 128x128 PTX hot-band microkernel, now that recovery is complete and the failed residency probes isolated synchronization as the limiting tax on higher occupancy.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1832-2060`
+- risk: `High. This is microkernel-level control-flow surgery on the best-known branch, so correctness and codegen stability are both fragile.`
+- metrics to re-check: `end-to-end median runtime versus 24.171008 ms, hot-band gpu__time_duration.sum, hot-band launch__shared_mem_per_block_allocated, hot-band launch__registers_per_thread, hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct, hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, hot-band sm__warps_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
