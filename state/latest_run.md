@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_181354_bf16_gemm_v1_e1c12b7`
-- run dir: `runs/20260420_181354_bf16_gemm_v1_e1c12b7`
-- kernel tag: `bf16_gemm_v1_e1c12b7`
-- round label: `round 3/50`
+- run id: `20260420_182305_bf16_gemm_v1_e003c0e`
+- run dir: `runs/20260420_182305_bf16_gemm_v1_e003c0e`
+- kernel tag: `bf16_gemm_v1_e003c0e`
+- round label: `round 4/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.515008 ms`
-- p10 runtime: `25.148842 ms`
-- p90 runtime: `26.174567 ms`
-- TFLOP/s: `28.493796 TFLOP/s`
-- previous run id: `20260420_180146_bf16_gemm_v1_2e4dd24`
-- runtime delta vs previous measured run: `+1.070592 ms`
-- TFLOP/s delta vs previous measured run: `-1.247943 TFLOP/s`
+- median runtime: `25.529856 ms`
+- p10 runtime: `25.117318 ms`
+- p90 runtime: `26.622335 ms`
+- TFLOP/s: `28.477224 TFLOP/s`
+- previous run id: `20260420_181354_bf16_gemm_v1_e1c12b7`
+- runtime delta vs previous measured run: `+0.014848 ms`
+- TFLOP/s delta vs previous measured run: `-0.016572 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune The Hot-Band Steady-State Handoff On The New Grouped-Rows-4 Base`
+- implemented direction name: `Trim PTX Accumulator And Export Live Range On The Restored Grouped-Rows-4 Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_181354_bf16_gemm_v1_e1c12b7/summary.json`
-- measured commit: `e1c12b7e611db6887f307c378b80accb49501bca`
+- raw summary json: `runs/20260420_182305_bf16_gemm_v1_e003c0e/summary.json`
+- measured commit: `e003c0ee2beed63523bd178b79458b6a5422ae44`
 - new best custom: `no`
-- generated at: `2026-04-20T18:14:03-07:00`
+- generated at: `2026-04-20T18:23:13-07:00`

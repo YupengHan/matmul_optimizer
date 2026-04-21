@@ -1,85 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_181421",
-  "status": "completed",
-  "created_at": "2026-04-20T18:14:21-07:00",
-  "source_run_id": "20260420_181354_bf16_gemm_v1_e1c12b7",
-  "source_run_dir": "runs/20260420_181354_bf16_gemm_v1_e1c12b7",
-  "source_summary_json": "runs/20260420_181354_bf16_gemm_v1_e1c12b7/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_182305_bf16_gemm_v1_e003c0e",
+  "source_run_dir": "runs/20260420_182305_bf16_gemm_v1_e003c0e",
+  "source_summary_json": "runs/20260420_182305_bf16_gemm_v1_e003c0e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Trim PTX Accumulator And Export Live Range On The Restored Grouped-Rows-4 Base",
-      "hypothesis": "Run `20260420_181354_bf16_gemm_v1_e1c12b7` is the first negative result after the grouped-rows-4 restore became the accepted best custom surface. It tested the recommended steady-state handoff retime and regressed end-to-end runtime from 24.44441605 ms to 25.51500797 ms, yet the dominant hot-band kernel barely changed versus the accepted `2e4dd24` base: kernel time only moved from 32.80 ms to 32.95 ms, registers stayed at 200, shared memory stayed at 22.016 KiB, barrier stayed flat at 5.61% -> 5.62%, and long scoreboard only worsened slightly from 7.43% to 7.58%. That is strong negative evidence against continuing the handoff-retime family on this surface. The remaining obvious open wall on the restored base is still occupancy and live-state pressure: `launch__occupancy_limit_registers = 2`, only 16.6% active warps, and a full `PtxWmmaAccTileSet64x64` plus repeated single-scratch export sequence kept alive through the PTX hot-band epilogue. The best next direction is therefore to leave the restored grouped-rows-4 launch and handoff semantics alone and instead shorten accumulator/export lifetimes to see whether the hot-band kernel can recover issue headroom without reopening the closed handoff family.",
-      "expected_bottleneck": "Register pressure and export-side live-state lifetime in the PTX hot-band microkernel, which is still capping occupancy and latency hiding on the restored best surface.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:405-408",
-        "src/kernels/bf16_gemm_v1.cu:1010-1067",
-        "src/kernels/bf16_gemm_v1.cu:1952-2047"
-      ],
-      "risk": "Medium to high. This attacks a persistent measured wall, but the export path is correctness-sensitive and a bad lifetime trim can add instructions or synchronization without reducing the 200-register footprint.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if registers stay at 200 or higher, occupancy does not improve, or tensor activity falls while runtime still fails to beat the restored 24.44441605 ms base."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore The 6144 Hot-Band/Peeled Seam As The Best Launch-Split Fallback",
-      "hypothesis": "Because the latest handoff-retime run is negative evidence and the implementation surface has already been restored to the accepted `2e4dd24` commit, the next alternatives should stay on the grouped-rows-4 PTX winner instead of stacking forward on the regressed branch. The strongest materially different measured fallback is still the bounded seam family: the hot-band kernel remains dominant, but the peeled and tail kernels still consume about 1.78 ms of profiled GPU time combined and both secondary kernels carry much higher barrier pressure than the hot-band kernel. A nearby pivot like the earlier 6144-row local best is therefore still the cleanest launch-boundary test left on this surface. It ranks behind dir_01 because prior seam measurements were still slower than the current 24.44441605 ms winner, but it remains better grounded than reopening more hot-band handoff churn that the latest run already failed to justify.",
-      "expected_bottleneck": "Boundary cost between the dominant 128x128 PTX hot-band launch and the peeled 64x384 follow-on path, especially whether the fixed 6400-row split leaves avoidable barrier-heavy work in the secondary kernels.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-156",
-        "src/kernels/bf16_gemm_v1.cu:1150-1164",
-        "src/kernels/bf16_gemm_v1.cu:2097-2114"
-      ],
-      "risk": "Medium. The change is mechanically narrow and already measured as a family, but it can easily just move work between kernels without reducing total runtime, and its known local best still trails the restored winner.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv peeled kernel gpu__time_duration.sum",
-        "runs/*/ncu_metrics.csv tail kernel gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
-      ],
-      "stop_condition": "Stop if the repivot only shifts time from the hot-band kernel into the peeled or tail kernels, or if it cannot beat the restored 24.44441605 ms base."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Keep The Broad Fixed-Main 64x384 Control Only As An Audit Branch",
-      "hypothesis": "The round-18 autotune files still show that `64x384` was the best broad fixed-main tile in the old sweep, so it remains the only clearly different non-PTX control family with measured ancestry. But the current loop is no longer trying to rescue a weak PTX surface; it already has a better custom result than CUTLASS on the grouped-rows-4 PTX path. That shifts this family even lower in rank. The latest regressed handoff-retime run does not change that conclusion: its hot-band metrics were nearly flat relative to the restored winner, which argues for local cleanup or boundary work first, not for abandoning the PTX branch. So the 64x384 fixed-main control stays only as a tertiary audit path if the two tighter families stall, using the old autotune evidence as rationale but respecting the newer negative evidence that broad control reopening is much slower than the current PTX winner.",
-      "expected_bottleneck": "Broader dispatch-path choice and arithmetic-intensity tradeoff across the fixed-shape hot band, not the inner PTX hot-band microkernel itself.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:152",
-        "src/kernels/bf16_gemm_v1.cu:1201-1248",
-        "src/kernels/bf16_gemm_v1.cu:2082-2095"
-      ],
-      "risk": "High. This family has measurable ancestry but lives far away from the current winning surface and is likely to reopen a broad regression rather than recover the 1.07 ms lost by the failed handoff-retime branch.",
-      "metrics_to_recheck": [
-        "correctness",
-        "median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "launch__occupancy_limit_registers"
-      ],
-      "stop_condition": "Treat this as audit-only control evidence; stop immediately if it opens another broad-family regression or lands well above the restored 24.44441605 ms PTX base."
-    }
-  ],
-  "notes": "Round 4/50 diagnosis anchored to run `20260420_181354_bf16_gemm_v1_e1c12b7`, with the implementation surface already restored to the accepted best measured commit `2e4dd246f55b505bd095c42b62c56dc497c8fde1`. The latest run is strong negative evidence against continuing the grouped-rows-4 handoff-retime family: the end-to-end median regressed by 1.070592 ms, but the dominant hot-band kernel barely moved versus the accepted base and kept the same 200-register / register-limited occupancy wall. That closes handoff-retime as the primary family for the next round. The ranking therefore pivots to the surviving materially different options on the restored winner: first register/export lifetime trimming because the occupancy wall remains completely open; second the bounded 6144 seam because the peeled and tail kernels are still barrier-heavy but the family is already known to be lower-upside than the current base; third the broad 64x384 fixed-main audit branch because the autotune ancestry still exists, but broad control reopening is much less credible now that the PTX winner already beats CUTLASS."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
