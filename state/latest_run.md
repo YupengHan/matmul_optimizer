@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_145629_bf16_gemm_v1_5383596d`
-- run dir: `runs/20260421_145629_bf16_gemm_v1_5383596d`
-- kernel tag: `bf16_gemm_v1_5383596d`
-- round label: `round 2/10`
+- run id: `20260421_150200_bf16_gemm_v1_f4fa1bbe`
+- run dir: `runs/20260421_150200_bf16_gemm_v1_f4fa1bbe`
+- kernel tag: `bf16_gemm_v1_f4fa1bbe`
+- round label: `round 3/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `47.290880 ms`
-- p10 runtime: `46.778265 ms`
-- p90 runtime: `56.647064 ms`
-- TFLOP/s: `15.373354 TFLOP/s`
-- previous run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
-- runtime delta vs previous measured run: `+17.283200 ms`
-- TFLOP/s delta vs previous measured run: `-8.854425 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `46.570496 ms`
+- p10 runtime: `46.327296 ms`
+- p90 runtime: `55.847528 ms`
+- TFLOP/s: `15.611159 TFLOP/s`
+- previous run id: `20260421_145629_bf16_gemm_v1_5383596d`
+- runtime delta vs previous measured run: `-0.720385 ms`
+- TFLOP/s delta vs previous measured run: `+0.237806 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Accepted Base And Expand The 64x384 Row Band`
+- implemented direction name: `Restore The Accepted Base And Increase PTX Grouped-Row Depth`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_145629_bf16_gemm_v1_5383596d/summary.json`
-- ncu analysis path: `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.json`
-- measured commit: `5383596d7276d7daebbe92c3dc04bea84a505aac`
+- raw summary json: `runs/20260421_150200_bf16_gemm_v1_f4fa1bbe/summary.json`
+- ncu analysis path: `runs/20260421_150200_bf16_gemm_v1_f4fa1bbe/ncu_analysis.json`
+- measured commit: `f4fa1bbe415aebb8a5e0e571e9ae36fed4fbce87`
 - new best custom: `no`
-- generated at: `2026-04-21T14:56:48-07:00`
+- generated at: `2026-04-21T15:02:17-07:00`
