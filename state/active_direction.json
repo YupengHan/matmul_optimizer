@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:33:35-07:00",
   "source_diagnosis_id": "diagnosis_20260421_013125",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Keep 3-CTA Residency And Amortize Barriers With Two-K Stages",
@@ -55,5 +55,13 @@
     "stop_condition": "Stop this follow-on family if it loses the occupancy gain from round 29 or if barrier stall stays near 10% with no runtime recovery; sub-0.10 ms movements should still be treated as noise.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "keep_grouped_rows4_and_three_cta_budget_then_route_default_hot_band_to_128x128x32_kernel"
 }

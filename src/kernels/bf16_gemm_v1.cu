@@ -1682,7 +1682,10 @@ __global__ void bf16_gemm_v1_tensor_core_fixed_hot_band_256x128_kernel(
 }
 
 template <int FixedKStages>
-__global__ __launch_bounds__(128, 2)
+// Carry the round-29 3-CTA residency target into the two-K-stage hot-band
+// variant so we can test whether barrier amortization can recover the lost
+// runtime without surrendering the lower register budget.
+__global__ __launch_bounds__(128, 3)
 void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
     const __nv_bfloat16* a,
     const __nv_bfloat16* b,
@@ -2110,8 +2113,8 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
-          kFixedBenchmarkKTiles><<<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel<
+          kFixedBenchmarkKTiles / kHotBandStageKTiles><<<
               dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
                    kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
                    1),
