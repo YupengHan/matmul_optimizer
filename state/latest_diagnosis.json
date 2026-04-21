@@ -1,18 +1,171 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_010129",
+  "status": "completed",
+  "created_at": "2026-04-21T01:01:29-07:00",
   "source_run_id": "20260421_010044_bf16_gemm_v1_ab3bbb2",
   "source_run_dir": "runs/20260421_010044_bf16_gemm_v1_ab3bbb2",
   "source_summary_json": "runs/20260421_010044_bf16_gemm_v1_ab3bbb2/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_010129:dir_01",
+  "family_audit": [
+    {
+      "family_id": "historical::repair_the_256x128_half_panel_register_reuse_branch",
+      "status": "rejected_this_round",
+      "reason": "The half-panel family has now been rehydrated twice on the current environment and both continuations failed correctness 0/3 while staying around 29.8-30.1 ms. The branch preserved the occupancy breakthrough, but the second targeted ownership snapshot regressed again, so this family should be closed for now."
+    },
+    {
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "status": "accepted",
+      "reason": "After two failed aggressive continuations, the loop should return to the exact best correct surface before opening another family."
+    },
+    {
+      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+      "status": "deferred_but_live",
+      "reason": "The grouped-row sibling surface remains the best correct non-PTX fallback and should stay live behind the PTX winner."
+    },
+    {
+      "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "status": "deferred_but_live",
+      "reason": "This remains the cleanest structurally different 256x128 family to keep in the queue once the loop has returned to a correct baseline."
+    },
+    {
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "status": "rejected_this_round",
+      "reason": "The direct pivot promotion remains closed-negative and should not be revisited ahead of the safer recovery surfaces."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
+      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
+      "mode": "restore",
+      "hypothesis": "Round 22 and round 23 were the right aggressive probe on the half-panel family, but the result is now decisive enough to step back. Both rehydrated snapshots failed correctness 0/3 and stayed around 30 ms even though they preserved the high-warps signature. That means the branch is not one bounded fix away from replacing the current best. The immediate next move should therefore be to restore the exact 489574e PTX winner surface so the loop returns to the best correct baseline before it spends more budget on other aggressive families.",
+      "expected_bottleneck": "No new bottleneck is being attacked here; this is an exact recovery of the best-known implementation surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:153-156",
+        "src/kernels/bf16_gemm_v1.cu:1970-2060",
+        "src/kernels/bf16_gemm_v1.cu:2093-2117"
+      ],
+      "risk": "Low. This is the exact best measured correct surface.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "correctness pass rate across all 3 cases",
+        "hot-band gpu__time_duration.sum",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.28,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v24",
+        "rank_score": 1.58,
+        "recovery_bonus": 0.46,
+        "measured_win_bonus": 0.36,
+        "risk_penalty": 0.12,
+        "formula": "rank_score + recovery_bonus + measured_win_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 5.92,
+      "predicted_fail_risk": 0.06,
+      "ranking_notes": [
+        "This now ranks first because the aggressive half-panel family has consumed enough budget to justify a hard reset to the best correct surface.",
+        "Returning to the PTX best preserves the search discipline: aggressive probes are allowed, but they do not replace the accepted base unless node_a actually proves them.",
+        "Once restored, the loop can pick the next structural family from a clean, correct anchor."
+      ],
+      "stop_condition": "Stop once the exact PTX best surface is restored or if a remeasurement shows it no longer reproduces the prior 24.16-24.18 ms band."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The Grouped-Row Non-PTX 128x128 Sibling Surface",
+      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+      "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling::exact_910beff_surface",
+      "action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_910beff68055b974cfdbb268cda1087c8b44d665",
+      "mode": "restore",
+      "hypothesis": "If the loop wants to step back from the failing half-panel family without returning immediately to PTX, the correct grouped-row sibling surface from round 21 is the right alternate recovery. It stayed in the same plateau band as the PTX winner while remaining correct and preserving a distinct non-PTX hot-band control surface.",
+      "expected_bottleneck": "This is a safe alternate-surface recovery, not a new bottleneck attack.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1855-1946",
+        "src/kernels/bf16_gemm_v1.cu:1970-2060",
+        "src/kernels/bf16_gemm_v1.cu:2081-2091"
+      ],
+      "risk": "Low to medium. This is an exact restore of a correct plateau alternate.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "correctness pass rate across all 3 cases",
+        "hot-band gpu__time_duration.sum",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 1.76,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v24",
+        "rank_score": 1.18,
+        "correct_alternate_surface_bonus": 0.3,
+        "recovery_bonus": 0.22,
+        "risk_penalty": 0.06,
+        "formula": "rank_score + correct_alternate_surface_bonus + recovery_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 5.9,
+      "predicted_fail_risk": 0.12,
+      "ranking_notes": [
+        "This remains the best correct non-PTX fallback after the half-panel branch failed.",
+        "It ranks below dir_01 because the PTX best is still the faster measured recovery target.",
+        "It stays above any new aggressive family because the loop should recover correctness first."
+      ],
+      "stop_condition": "Stop once the round-21 sibling surface is restored or if a remeasurement shows it no longer behaves like the prior 24.17 ms plateau alternate."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule",
+      "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "subfamily_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule::rehydrate_9a4bb85_surface",
+      "action_fingerprint": "rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722",
+      "mode": "exploit",
+      "hypothesis": "Once the loop has returned to a correct baseline, it should still keep one structurally different 256x128 family alive. The auxiliary 256x128 K-loop schedule family fills that role better than reopening the already-failed direct pivot or continuing the broken half-panel line.",
+      "expected_bottleneck": "Hot-band K-loop scheduling and latency hiding on a broader 256x128 reuse regime rather than the plateaued 128x128 surfaces.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:1676-1813",
+        "src/kernels/bf16_gemm_v1.cu:2108-2128"
+      ],
+      "risk": "Medium to high. This is a broad 256x128 family and prior support is weaker than the recovery surfaces.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 1.52,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v24",
+        "rank_score": 1.02,
+        "family_diversity_bonus": 0.22,
+        "geometry_shift_bonus": 0.18,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + family_diversity_bonus + geometry_shift_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.4,
+      "predicted_fail_risk": 0.46,
+      "ranking_notes": [
+        "This stays in the set to preserve one more broad 256x128 family after closing the half-panel continuation.",
+        "It ranks third because the loop should recover a correct anchor before spending more budget on broad geometry schedules.",
+        "It still outranks reopening the direct pivot or the broken half-panel continuation."
+      ],
+      "stop_condition": "Stop if the auxiliary 256x128 family cannot show any machine-state change beyond the plateau surfaces after the loop has re-anchored."
+    }
+  ],
+  "notes": "Round 24 closes the immediate half-panel continuation: the branch preserved the occupancy breakthrough but failed correctness twice in a row and did not recover runtime. The next best move is to restore a correct baseline first, then choose the next aggressive family from there."
 }
