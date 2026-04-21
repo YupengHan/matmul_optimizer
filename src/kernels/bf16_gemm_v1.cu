@@ -2018,7 +2018,7 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
   cp_async_commit_group();
-  cp_async_wait_group_1();
+  cp_async_wait_group_0();
   __syncthreads();
 
   #pragma unroll 2

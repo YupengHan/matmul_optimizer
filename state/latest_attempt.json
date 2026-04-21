@@ -1,90 +1,77 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_000721:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_000721:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_000721",
-  "base_run_id": "20260421_000626_bf16_gemm_v1_7f84649",
+  "attempt_id": "diagnosis_20260421_001509:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_001509:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_001509",
+  "base_run_id": "20260421_001009_bf16_gemm_v1_0cd407c",
   "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
   "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
   "direction_id": "dir_01",
   "direction_name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
   "mode": "exploit",
-  "commit": "0cd407cfef0a9ca819c94d99ce74a28a295fced8",
-  "commit_short": "0cd407c",
-  "subject": "node_c: round 15/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 16/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T00:08:50-07:00",
+  "selected_at": "2026-04-21T00:19:55-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_000626_bf16_gemm_v1_7f84649",
-  "selection_score": 2.42,
-  "planned_action_fingerprint": "8e91e546243f09ff",
-  "implemented_action_fingerprint": "ptx_future_tile_k_hoist_in_refill_path",
+  "source_run_id": "20260421_001009_bf16_gemm_v1_0cd407c",
+  "selection_score": 2.365,
+  "planned_action_fingerprint": "ptx_wait_commit_window_retime_without_replaying_closed_variants",
+  "implemented_action_fingerprint": "ptx_prologue_wait_group_0_after_double_prefetch",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v15",
+    "policy_id": "manual_round100_node_b_v16",
     "rank_score": 1.95,
     "frontier_alignment_bonus": 0.2,
     "active_surface_bonus": 0.2,
-    "absorbed_family_filter_bonus": 0.15,
-    "risk_penalty": 0.25,
-    "formula": "rank_score + frontier_alignment_bonus + active_surface_bonus + absorbed_family_filter_bonus - risk_penalty"
+    "flat_positive_evidence_bonus": 0.15,
+    "risk_penalty": 0.3,
+    "formula": "rank_score + frontier_alignment_bonus + active_surface_bonus + flat_positive_evidence_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
     "ptx_control_path",
-    "future_tile_k_hoist",
-    "refill_address_simplification"
+    "prologue_wait_retime",
+    "wait_group_0_after_double_prefetch"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2041-2053"
+    "src/kernels/bf16_gemm_v1.cu:2014-2022"
   ],
   "implementation": {
-    "commit": "0cd407cfef0a9ca819c94d99ce74a28a295fced8",
-    "commit_short": "0cd407c",
-    "subject": "node_c: round 15/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 16/100 implement dir_01 Continue The Active PTX One-K 128x128 Control-Path Exploit",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:2041-2053"
+      "src/kernels/bf16_gemm_v1.cu:2014-2022"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 3,
-      "deletions": 2
+      "insertions": 1,
+      "deletions": 1
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 3,
-    "deletions": 2
+    "insertions": 1,
+    "deletions": 1
   },
   "measurement": {
-    "run_id": "20260421_001009_bf16_gemm_v1_0cd407c",
-    "measurement_commit": "0cd407cfef0a9ca819c94d99ce74a28a295fced8",
-    "runtime_ms": 24.17100811,
-    "runtime_delta_ms": -0.0075836200000019005,
-    "tflops": 30.07815886,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.34",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.83",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.13",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.50",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.49",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.61",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.21",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.08",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.21",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.66",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "flat",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_001009_bf16_gemm_v1_0cd407c for candidate diagnosis_20260421_000721:dir_01; transition_label=PASS_FLAT.",
-  "transition_label": "PASS_FLAT"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
