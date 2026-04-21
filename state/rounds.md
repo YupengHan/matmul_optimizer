@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `100`
-- completed rounds: `48`
-- remaining rounds: `52`
-- current round label: `round 49/100`
+- completed rounds: `49`
+- remaining rounds: `51`
+- current round label: `round 50/100`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
@@ -14,15 +14,15 @@
 - started at: `2026-04-20T21:51:52-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 49/100. Node A will measure the result next.`
+- notes: `Completed round 49/100. Continue with node_b for round 50/100. Accepted base: 20260420_235922_bf16_gemm_v1_489574e at 24.164272 ms.`
 
 ## Last completed round
 
-- round: `48/100`
+- round: `49/100`
 - direction: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- verdict: `improved`
-- runtime delta: `-0.016384 ms`
-- TFLOP/s delta: `+0.019955 TFLOP/s`
-- run dir: `runs/20260421_083931_bf16_gemm_v1_1161ff1`
-- ncu rep path: `runs/20260421_083931_bf16_gemm_v1_1161ff1/ncu_profile.ncu-rep`
+- direction name: `Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering`
+- verdict: `regressed`
+- runtime delta: `+0.321968 ms`
+- TFLOP/s delta: `-0.387293 TFLOP/s`
+- run dir: `runs/20260421_083940_bf16_gemm_v1_fa87326`
+- ncu rep path: `runs/20260421_083940_bf16_gemm_v1_fa87326/ncu_profile.ncu-rep`

@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering`
-- candidate id: `auto_diagnosis_round_049:dir_01`
-- base run id: `20260421_083931_bf16_gemm_v1_1161ff1`
-- primary family id: `legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering`
-- planned action fingerprint: `restore_grouped_rows_8_consumer_ordering_anchor_replay`
-- selection mode: `recommended`
-- source diagnosis id: `auto_diagnosis_round_049`
-- round loop: `round 49/100`
-- hypothesis: `The latest run is 24.423936 ms against an accepted anchor of 24.164272 ms. Round round 48/100 should replay the bounded `grouped_rows8` family once from the current state so the search keeps advancing instead of restoring forever.`
-- expected bottleneck: `A branch-local hot-band scheduling or geometry bottleneck on the dominant kernel path, rather than a pure restore-only action.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:153-156, src/kernels/bf16_gemm_v1.cu:1956-2060, src/kernels/bf16_gemm_v1.cu:1983-1993`
-- risk: `Moderate to high. This branch changes CTA grouping and consumer locality and already has historical loss evidence, so it should stay bounded to an exact replay surface.`
-- metrics to re-check: `end-to-end median runtime, hot-band gpu__time_duration.sum, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 50/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
