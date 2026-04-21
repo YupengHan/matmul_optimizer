@@ -400,6 +400,8 @@ def default_round_loop_state() -> Dict[str, Any]:
         'current_round_index': None,
         'auto_use_recommended': False,
         'auto_select_frontier': False,
+        'selection_mode': None,
+        'selection_mode_source': None,
         'started_at': None,
         'completed_at': None,
         'last_completed_round': None,
@@ -422,6 +424,8 @@ def default_supervisor_task() -> Dict[str, Any]:
         'rounds_remaining': 0,
         'auto_use_recommended': False,
         'auto_select_frontier': False,
+        'selection_mode': None,
+        'selection_mode_source': None,
         'requires_gpu_access': True,
         'prepare_command': 'python scripts/graph.py node_a',
         'selection_command': None,
@@ -483,6 +487,11 @@ def default_search_state() -> Dict[str, Any]:
         'last_restore_source_commit': None,
         'last_restore_at': None,
         'last_restore_reason': None,
+        'loop_selection_preference': {
+            'mode': None,
+            'source': None,
+            'updated_at': None,
+        },
         'selection_policy': {
             'policy_id': 'family_representative_v2',
             'allow_restore_base': True,
@@ -678,15 +687,48 @@ def load_benchmark_state() -> Dict[str, Any]:
 
 
 def load_round_loop_state() -> Dict[str, Any]:
-    return load_json(ROUND_LOOP_STATE_PATH, default_round_loop_state())
+    payload = load_json(ROUND_LOOP_STATE_PATH, default_round_loop_state())
+    normalized = _merge_defaults(payload, default_round_loop_state())
+    if normalized.get('selection_mode') not in {'frontier', 'recommended', 'manual'}:
+        if normalized.get('auto_select_frontier'):
+            normalized['selection_mode'] = 'frontier'
+            normalized['selection_mode_source'] = normalized.get('selection_mode_source') or 'legacy_flags'
+        elif normalized.get('auto_use_recommended'):
+            normalized['selection_mode'] = 'recommended'
+            normalized['selection_mode_source'] = normalized.get('selection_mode_source') or 'legacy_flags'
+        elif normalized.get('active'):
+            normalized['selection_mode'] = 'manual'
+            normalized['selection_mode_source'] = normalized.get('selection_mode_source') or 'legacy_flags'
+    if normalized != payload:
+        write_json(ROUND_LOOP_STATE_PATH, normalized)
+    return normalized
 
 
 def load_supervisor_task() -> Dict[str, Any]:
-    return load_json(SUPERVISOR_TASK_PATH, default_supervisor_task())
+    payload = load_json(SUPERVISOR_TASK_PATH, default_supervisor_task())
+    normalized = _merge_defaults(payload, default_supervisor_task())
+    if normalized != payload:
+        write_json(SUPERVISOR_TASK_PATH, normalized)
+    return normalized
 
 
 def load_search_state() -> Dict[str, Any]:
-    return load_json(SEARCH_STATE_PATH, default_search_state())
+    payload = load_json(SEARCH_STATE_PATH, default_search_state())
+    normalized = _merge_defaults(payload, default_search_state())
+    preference = normalized.get('loop_selection_preference')
+    if not isinstance(preference, dict):
+        preference = {}
+    preference = _merge_defaults(preference, default_search_state()['loop_selection_preference'])
+    if preference.get('mode') not in {'frontier', 'recommended'}:
+        legacy_mode = normalized.get('last_selected_selection_mode')
+        if legacy_mode in {'frontier', 'recommended'}:
+            preference['mode'] = legacy_mode
+            preference['source'] = preference.get('source') or 'legacy_last_selected_selection_mode'
+            preference['updated_at'] = preference.get('updated_at') or normalized.get('last_selected_at')
+    normalized['loop_selection_preference'] = preference
+    if normalized != payload:
+        write_json(SEARCH_STATE_PATH, normalized)
+    return normalized
 
 
 def load_search_frontier() -> Dict[str, Any]:

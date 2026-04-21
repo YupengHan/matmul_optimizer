@@ -138,6 +138,111 @@ def round_label(round_loop: Dict[str, Any]) -> str:
     return f'round {idx}/{total}'
 
 
+def current_round_loop_selection_mode(round_loop: Dict[str, Any]) -> Optional[str]:
+    mode = round_loop.get('selection_mode')
+    if mode in {'frontier', 'recommended', 'manual'}:
+        return mode
+    if round_loop.get('auto_select_frontier'):
+        return 'frontier'
+    if round_loop.get('auto_use_recommended'):
+        return 'recommended'
+    if round_loop.get('active'):
+        return 'manual'
+    return None
+
+
+def preferred_loop_selection_mode(search_state: Dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
+    preference = search_state.get('loop_selection_preference')
+    if isinstance(preference, dict):
+        mode = preference.get('mode')
+        if mode in {'frontier', 'recommended'}:
+            return mode, preference.get('source') or 'persistent_preference'
+    legacy_mode = search_state.get('last_selected_selection_mode')
+    if legacy_mode in {'frontier', 'recommended'}:
+        return legacy_mode, 'legacy_last_selected_selection_mode'
+    return None, None
+
+
+def resolve_round_loop_selection_policy(
+    current_round_loop: Dict[str, Any],
+    search_state: Dict[str, Any],
+    *,
+    explicit_auto_use_recommended: bool,
+    explicit_auto_select_frontier: bool,
+    allow_selection_mode_change: bool = False,
+) -> Dict[str, Optional[str]]:
+    if explicit_auto_use_recommended and explicit_auto_select_frontier:
+        raise RuntimeError('round loop cannot enable both auto-use-recommended and auto-select-frontier')
+
+    established_mode = None
+    active_mode = current_round_loop_selection_mode(current_round_loop)
+    if current_round_loop.get('active') and active_mode in {'frontier', 'recommended'}:
+        established_mode = active_mode
+    else:
+        preferred_mode, _ = preferred_loop_selection_mode(search_state)
+        if preferred_mode in {'frontier', 'recommended'}:
+            established_mode = preferred_mode
+
+    if (
+        explicit_auto_use_recommended
+        and established_mode == 'frontier'
+        and not allow_selection_mode_change
+    ):
+        raise RuntimeError(
+            'refusing to downgrade loop selection from frontier to recommended without '
+            '--allow-selection-mode-change'
+        )
+
+    if explicit_auto_select_frontier:
+        return {'mode': 'frontier', 'source': 'explicit_flag'}
+    if explicit_auto_use_recommended:
+        return {'mode': 'recommended', 'source': 'explicit_flag'}
+
+    if current_round_loop.get('active') and active_mode in {'frontier', 'recommended'}:
+        return {'mode': active_mode, 'source': 'inherit_active_loop'}
+
+    preferred_mode, preferred_source = preferred_loop_selection_mode(search_state)
+    if preferred_mode in {'frontier', 'recommended'}:
+        source = (
+            'inherit_persistent_preference'
+            if preferred_source != 'legacy_last_selected_selection_mode'
+            else preferred_source
+        )
+        return {'mode': preferred_mode, 'source': source}
+
+    return {'mode': None, 'source': 'legacy_manual_default'}
+
+
+def apply_round_loop_selection_policy(
+    round_loop: Dict[str, Any],
+    *,
+    mode: Optional[str],
+    source: Optional[str],
+) -> None:
+    round_loop['selection_mode'] = mode
+    round_loop['selection_mode_source'] = source
+    round_loop['auto_select_frontier'] = mode == 'frontier'
+    round_loop['auto_use_recommended'] = mode == 'recommended'
+
+
+def persist_loop_selection_preference(
+    search_state: Dict[str, Any],
+    *,
+    mode: Optional[str],
+    source: Optional[str],
+    updated_at: Optional[str] = None,
+) -> None:
+    if mode not in {'frontier', 'recommended'}:
+        return
+    preference = search_state.get('loop_selection_preference')
+    if not isinstance(preference, dict):
+        preference = {}
+    preference['mode'] = mode
+    preference['source'] = source
+    preference['updated_at'] = updated_at or now_local_iso()
+    search_state['loop_selection_preference'] = preference
+
+
 def context_compression_interval() -> int:
     return 5
 
@@ -2059,6 +2164,8 @@ def compute_supervisor_task(
         'rounds_remaining': int(round_loop.get('remaining_rounds', 0)),
         'auto_use_recommended': bool(round_loop.get('auto_use_recommended')),
         'auto_select_frontier': bool(round_loop.get('auto_select_frontier')),
+        'selection_mode': current_round_loop_selection_mode(round_loop),
+        'selection_mode_source': round_loop.get('selection_mode_source'),
         'requires_gpu_access': False,
         'prepare_command': None,
         'selection_command': None,
@@ -2173,6 +2280,8 @@ def render_supervisor_context(
     lines.append(f"- round label: `{supervisor_task.get('round_label', 'single-run')}`")
     lines.append(f"- round loop active: `{'yes' if supervisor_task.get('round_loop_active') else 'no'}`")
     lines.append(f"- rounds remaining: `{supervisor_task.get('rounds_remaining', 0)}`")
+    lines.append(f"- loop selection mode: `{supervisor_task.get('selection_mode', 'N/A')}`")
+    lines.append(f"- loop selection source: `{supervisor_task.get('selection_mode_source', 'N/A')}`")
     lines.append(f"- auto-select frontier: `{'yes' if supervisor_task.get('auto_select_frontier') else 'no'}`")
     lines.append(f"- latest run id: `{latest_run.get('run_id', 'N/A')}`")
     lines.append(f"- latest runtime: `{fmt_runtime(latest_run.get('median_runtime_ms'))}`")
@@ -2343,9 +2452,19 @@ def refresh_node_c_context() -> None:
     )
 
 
-def start_round_loop(count: int, *, auto_use_recommended: bool, auto_select_frontier: bool) -> Dict[str, Any]:
+def start_round_loop(
+    count: int,
+    *,
+    selection_mode: Optional[str],
+    selection_mode_source: Optional[str],
+) -> Dict[str, Any]:
     latest_run = load_latest_run()
     round_loop = default_round_loop_state()
+    apply_round_loop_selection_policy(
+        round_loop,
+        mode=selection_mode,
+        source=selection_mode_source,
+    )
     round_loop.update(
         {
             'active': True,
@@ -2355,8 +2474,6 @@ def start_round_loop(count: int, *, auto_use_recommended: bool, auto_select_fron
             'remaining_rounds': count,
             'next_round_index': 1,
             'current_round_index': None,
-            'auto_use_recommended': auto_use_recommended,
-            'auto_select_frontier': auto_select_frontier,
             'started_at': now_local_iso(),
             'completed_at': None,
             'last_completed_round': None,
@@ -2367,8 +2484,12 @@ def start_round_loop(count: int, *, auto_use_recommended: bool, auto_select_fron
                 f'Started a {count}-round loop. '
                 + (
                     'Frontier top candidates will auto-select, with fallback to the current recommended direction.'
-                    if auto_select_frontier
-                    else ('Recommended directions will auto-select.' if auto_use_recommended else 'Direction approval remains manual.')
+                    if selection_mode == 'frontier'
+                    else (
+                        'Recommended directions will auto-select.'
+                        if selection_mode == 'recommended'
+                        else 'Direction approval remains manual.'
+                    )
                 )
             ),
         }
@@ -4597,6 +4718,12 @@ def select_candidate(candidate_id: str, selection_mode: str) -> int:
     search_state['last_selected_direction_id'] = candidate.get('direction_id')
     search_state['last_selected_selection_mode'] = selection_mode
     search_state['last_selected_at'] = active.get('selected_at')
+    persist_loop_selection_preference(
+        search_state,
+        mode=selection_mode,
+        source=f'selection:{selection_mode}',
+        updated_at=active.get('selected_at'),
+    )
     search_state['status'] = 'candidate_selected'
     search_state['notes'] = f"Selected frontier candidate {candidate.get('candidate_id')} for node_c."
     write_json(SEARCH_STATE_PATH, search_state)
@@ -4661,6 +4788,17 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
         'notes': 'Node C may now implement this one direction.',
     }
     write_json(ACTIVE_DIRECTION_PATH, active)
+    search_state = load_search_state()
+    search_state['last_selected_direction_id'] = direction_id
+    search_state['last_selected_selection_mode'] = selection_mode
+    search_state['last_selected_at'] = active.get('selected_at')
+    persist_loop_selection_preference(
+        search_state,
+        mode=selection_mode,
+        source=f'selection:{selection_mode}',
+        updated_at=active.get('selected_at'),
+    )
+    write_json(SEARCH_STATE_PATH, search_state)
     if selection_mode in ('approved', 'human_idea'):
         diagnosis['approved_direction_id'] = direction_id
     diagnosis['selected_direction_id'] = direction_id
@@ -5100,11 +5238,25 @@ def run_rounds(args: argparse.Namespace) -> int:
     if current.get('active') and not args.restart:
         raise RuntimeError('a round loop is already active; use --restart to replace it or --stop to end it')
 
+    search_state = load_search_state()
+    selection_policy = resolve_round_loop_selection_policy(
+        current,
+        search_state,
+        explicit_auto_use_recommended=args.auto_use_recommended,
+        explicit_auto_select_frontier=args.auto_select_frontier,
+        allow_selection_mode_change=args.allow_selection_mode_change,
+    )
     start_round_loop(
         args.count,
-        auto_use_recommended=args.auto_use_recommended,
-        auto_select_frontier=args.auto_select_frontier,
+        selection_mode=selection_policy.get('mode'),
+        selection_mode_source=selection_policy.get('source'),
     )
+    persist_loop_selection_preference(
+        search_state,
+        mode=selection_policy.get('mode'),
+        source=f"rounds_start:{selection_policy.get('source')}",
+    )
+    write_json(SEARCH_STATE_PATH, search_state)
     graph_state = load_graph_state()
     graph_state['notes'] = (
         f"Multi-round loop armed for {args.count} rounds. Continue with {graph_state.get('current_node', 'node_a')}."
@@ -5113,10 +5265,15 @@ def run_rounds(args: argparse.Namespace) -> int:
     refresh_all_views()
     print_step(
         f"started a {args.count}-round loop"
-        + (' with auto-select-frontier enabled' if args.auto_select_frontier else '')
+        + (' with auto-select-frontier enabled' if selection_policy.get('mode') == 'frontier' else '')
         + (
             ' with auto-use-recommended enabled'
-            if args.auto_use_recommended and not args.auto_select_frontier
+            if selection_policy.get('mode') == 'recommended'
+            else ''
+        )
+        + (
+            f" [{selection_policy.get('source')}]"
+            if selection_policy.get('source')
             else ''
         )
     )
@@ -5231,6 +5388,7 @@ def build_parser() -> argparse.ArgumentParser:
     rounds.add_argument('--count', type=int, default=None)
     rounds.add_argument('--auto-use-recommended', action='store_true')
     rounds.add_argument('--auto-select-frontier', action='store_true')
+    rounds.add_argument('--allow-selection-mode-change', action='store_true')
     rounds.add_argument('--restart', action='store_true')
     rounds.add_argument('--status', action='store_true')
     rounds.add_argument('--stop', action='store_true')
