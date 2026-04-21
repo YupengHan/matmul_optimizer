@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 4/50` with `47` rounds remaining
 
 ## Direction approval policy
@@ -14,16 +14,18 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260420_181421`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 4/50 diagnosis anchored to run `20260420_181354_bf16_gemm_v1_e1c12b7`, with the implementation surface already restored to the accepted best measured commit `2e4dd246f55b505bd095c42b62c56dc497c8fde1`. The latest run is strong negative evidence against continuing the grouped-rows-4 handoff-retime family: the end-to-end median regressed by 1.070592 ms, but the dominant hot-band kernel barely moved versus the accepted base and kept the same 200-register / register-limited occupancy wall. That closes handoff-retime as the primary family for the next round. The ranking therefore pivots to the surviving materially different options on the restored winner: first register/export lifetime trimming because the occupancy wall remains completely open; second the bounded 6144 seam because the peeled and tail kernels are still barrier-heavy but the family is already known to be lower-upside than the current base; third the broad 64x384 fixed-main audit branch because the autotune ancestry still exists, but broad control reopening is much less credible now that the PTX winner already beats CUTLASS.`
+- dir_01: Trim PTX Accumulator And Export Live Range On The Restored Grouped-Rows-4 Base | bottleneck: Register pressure and export-side live-state lifetime in the PTX hot-band microkernel, which is still capping occupancy and latency hiding on the restored best surface.
+- dir_02: Restore The 6144 Hot-Band/Peeled Seam As The Best Launch-Split Fallback | bottleneck: Boundary cost between the dominant 128x128 PTX hot-band launch and the peeled 64x384 follow-on path, especially whether the fixed 6400-row split leaves avoidable barrier-heavy work in the secondary kernels.
+- dir_03: Keep The Broad Fixed-Main 64x384 Control Only As An Audit Branch | bottleneck: Broader dispatch-path choice and arithmetic-intensity tradeoff across the fixed-shape hot band, not the inner PTX hot-band microkernel itself.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve or use-recommended-direction after node_b.`
+- selected direction: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one direction.`
