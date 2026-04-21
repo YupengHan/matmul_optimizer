@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_112628",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_113657",
   "source_run_id": "20260421_111322_bf16_gemm_v1_f768e80",
-  "source_diagnosis_id": "diagnosis_20260421_112628",
-  "generated_at": "2026-04-21T11:26:45-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_113657",
+  "generated_at": "2026-04-21T11:37:50-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_112628:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_113657:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_112628:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_112628",
+      "candidate_id": "diagnosis_20260421_113657:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_113657",
       "base_run_id": "20260421_111322_bf16_gemm_v1_f768e80",
       "base_measured_commit": "f768e80d950fa4cd036ea003b32af972278df540",
       "base_runtime_ms": 24.29337597,
@@ -32,8 +32,8 @@
       "predicted_gain_ms": 0.1,
       "predicted_fail_risk": 0.31,
       "ranking_notes": [
-        "The richer NCU handoff puts Registers Per Thread and Achieved Occupancy ahead of export-side cleanup.",
-        "This stays on the accepted PTX surface rather than reopening the failed 256x128 route immediately.",
+        "Registers Per Thread and Achieved Occupancy are still the highest-value structured findings.",
+        "This stays on the recovered winner instead of paying another geometry-switch tax.",
         "A small register drop can improve both active warps and tensor utilization at once."
       ],
       "hypothesis": "If the recovered PTX winner drops a small amount of register lifetime in the steady-state loop, achieved warps should rise above the current 16.63% plateau without reopening the round-1 256x128 regression.",
@@ -53,15 +53,16 @@
       ],
       "stop_condition": "Stop if registers stay flat near 200 and active warps do not improve, or if barrier rises while runtime regresses.",
       "evidence_refs": [
+        "state/node_b_context.md",
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
         "runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_analysis.md",
         "runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_analysis.json",
         "docs/heuristics.md",
+        "state/current_focus.md",
+        "state/human_review.md",
         "state/autotune_round18_main_tiles.md",
-        "src/kernels/bf16_gemm_v1.cu",
-        "state/node_b_context.md",
-        "state/human_review.md"
+        "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
         {
@@ -138,8 +139,8 @@
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_112628:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_112628",
+      "candidate_id": "diagnosis_20260421_113657:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_113657",
       "base_run_id": "20260421_111322_bf16_gemm_v1_f768e80",
       "base_measured_commit": "f768e80d950fa4cd036ea003b32af972278df540",
       "base_runtime_ms": 24.29337597,
@@ -183,15 +184,16 @@
       ],
       "stop_condition": "Stop if shared-memory allocation grows or if barrier improves but active warps and runtime both regress.",
       "evidence_refs": [
+        "state/node_b_context.md",
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
         "runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_analysis.md",
         "runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_analysis.json",
         "docs/heuristics.md",
+        "state/current_focus.md",
+        "state/human_review.md",
         "state/autotune_round18_main_tiles.md",
-        "src/kernels/bf16_gemm_v1.cu",
-        "state/node_b_context.md",
-        "state/human_review.md"
+        "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
         {
@@ -278,8 +280,8 @@
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_112628:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_112628",
+      "candidate_id": "diagnosis_20260421_113657:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_113657",
       "base_run_id": "20260421_111322_bf16_gemm_v1_f768e80",
       "base_measured_commit": "f768e80d950fa4cd036ea003b32af972278df540",
       "base_runtime_ms": 24.29337597,
@@ -302,8 +304,8 @@
       "predicted_gain_ms": 0.8,
       "predicted_fail_risk": 0.67,
       "ranking_notes": [
-        "This stays in the top three so the live queue does not collapse into only one PTX family.",
-        "It is ranked third because round 1 already showed how easily the wide branch can trade lower registers for worse barrier and short-scoreboard behavior.",
+        "This keeps one non-PTX family live so the queue does not collapse into only one surface.",
+        "It stays third because round 1 already showed how easily the wide branch can trade lower registers for worse barrier and short-scoreboard behavior.",
         "Use it only after bounded PTX-local exploits flatten out."
       ],
       "hypothesis": "The 256x128 geometry is still the only alternate family that materially changed register pressure, so a repaired half-panel branch could beat the PTX plateau if compact B staging survives without reintroducing the barrier and short-scoreboard collapse seen in round 1.",
@@ -323,15 +325,16 @@
       ],
       "stop_condition": "Stop immediately if runtime moves back toward the round-1 30 ms regression or if short-scoreboard and barrier both spike together.",
       "evidence_refs": [
+        "state/node_b_context.md",
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
         "runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_analysis.md",
         "runs/20260421_111322_bf16_gemm_v1_f768e80/ncu_analysis.json",
         "docs/heuristics.md",
+        "state/current_focus.md",
+        "state/human_review.md",
         "state/autotune_round18_main_tiles.md",
-        "src/kernels/bf16_gemm_v1.cu",
-        "state/node_b_context.md",
-        "state/human_review.md"
+        "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
         {

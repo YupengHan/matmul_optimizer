@@ -7,12 +7,12 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 - direction id: `dir_01`
 - direction name: `Trim live state inside the recovered 128x128 PTX hot-band control path`
-- candidate id: `diagnosis_20260421_112628:dir_01`
+- candidate id: `diagnosis_20260421_113657:dir_01`
 - base run id: `20260421_111322_bf16_gemm_v1_f768e80`
 - primary family id: `legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path`
 - planned action fingerprint: `trim_live_state_and_stage_pointer_lifetime_in_128x128_ptx_microkernel`
 - selection mode: `recommended`
-- source diagnosis id: `diagnosis_20260421_112628`
+- source diagnosis id: `diagnosis_20260421_113657`
 - round loop: `round 3/100`
 - hypothesis: `If the recovered PTX winner drops a small amount of register lifetime in the steady-state loop, achieved warps should rise above the current 16.63% plateau without reopening the round-1 256x128 regression.`
 - expected bottleneck: `occupancy_latency_hiding_issue with a secondary tensor_core_underutilization component on the accepted 128x128 PTX hot-band path`
