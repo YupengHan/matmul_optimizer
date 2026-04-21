@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T11:41:12-07:00",
   "source_diagnosis_id": "diagnosis_20260421_114106",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore the accepted PTX hot-band anchor after the failed live-state trim",
@@ -121,5 +121,14 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "implemented_action_fingerprint": "restore_exact_f768e80_ptx_anchor_after_6668d21_loss",
+  "semantic_delta_tags": [
+    "kernel_code",
+    "restore_exact_base",
+    "ptx_anchor_recovery"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ]
 }

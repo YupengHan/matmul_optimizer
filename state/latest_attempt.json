@@ -1,45 +1,45 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_113657:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_113657:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_113657",
-  "base_run_id": "20260421_111322_bf16_gemm_v1_f768e80",
-  "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-  "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path::narrow_stage_pointer_and_group_math_lifetimes",
+  "attempt_id": "diagnosis_20260421_114106:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_114106:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_114106",
+  "base_run_id": "20260421_113859_bf16_gemm_v1_6668d21",
+  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_f768e80_surface",
   "direction_id": "dir_01",
-  "direction_name": "Trim live state inside the recovered 128x128 PTX hot-band control path",
-  "mode": "exploit",
-  "commit": "6668d2193f6619c3de1cc6000711a62fc1f0fcd8",
-  "commit_short": "6668d21",
-  "subject": "node_c: round 3/100 implement dir_01 Trim live state inside the recovered 128x128 PTX hot-band control path",
+  "direction_name": "Restore the accepted PTX hot-band anchor after the failed live-state trim",
+  "mode": "restore",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 4/100 implement dir_01 Restore the accepted PTX hot-band anchor after the failed live-state trim",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T11:37:50-07:00",
+  "selected_at": "2026-04-21T11:41:12-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_111322_bf16_gemm_v1_f768e80",
-  "selection_score": 2.4325,
-  "planned_action_fingerprint": "trim_live_state_and_stage_pointer_lifetime_in_128x128_ptx_microkernel",
-  "implemented_action_fingerprint": "trim_group_mapping_scope_and_tile_address_lifetime_in_128x128_ptx_microkernel",
+  "source_run_id": "20260421_113859_bf16_gemm_v1_6668d21",
+  "selection_score": 3.0875,
+  "planned_action_fingerprint": "restore_exact_f768e80_ptx_anchor_after_6668d21_loss",
+  "implemented_action_fingerprint": "restore_exact_f768e80_ptx_anchor_after_6668d21_loss",
   "score_breakdown": {
-    "bottleneck_alignment": 0.98,
-    "implementation_scope": 0.79,
-    "branch_risk_penalty": -0.22,
-    "reason": "Matches the dominant register / occupancy wall on the recovered winner while staying inside one bounded PTX-local code surface."
+    "recovery_value": 1.2,
+    "measured_loss_penalty_removed": 0.9,
+    "implementation_scope": 0.95,
+    "risk_bonus": 0.2,
+    "reason": "Fastest path back to the accepted baseline after an unambiguous PASS_LOSS on the active PTX family."
   },
   "semantic_delta_tags": [
     "kernel_code",
-    "ptx_128x128_control_path",
-    "live_state_scope_narrowing",
-    "address_lifetime_trim"
+    "restore_exact_base",
+    "ptx_anchor_recovery"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "6668d2193f6619c3de1cc6000711a62fc1f0fcd8",
-    "commit_short": "6668d21",
-    "subject": "node_c: round 3/100 implement dir_01 Trim live state inside the recovered 128x128 PTX hot-band control path",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 4/100 implement dir_01 Restore the accepted PTX hot-band anchor after the failed live-state trim",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
@@ -48,174 +48,31 @@
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 38,
-      "deletions": 34
+      "insertions": 34,
+      "deletions": 38
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 38,
-    "deletions": 34
+    "insertions": 34,
+    "deletions": 38
   },
   "measurement": {
-    "run_id": "20260421_113859_bf16_gemm_v1_6668d21",
-    "measurement_commit": "6668d2193f6619c3de1cc6000711a62fc1f0fcd8",
-    "runtime_ms": 46.36671829,
-    "runtime_delta_ms": 22.073342320000002,
-    "tflops": 15.67976878,
-    "correctness": true,
-    "ncu_analysis_path": "runs/20260421_113859_bf16_gemm_v1_6668d21/ncu_analysis.json",
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 48.36,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 47.81,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 46.1,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 14.52,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 29.41,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 16.63,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 5.95,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 6.87,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 2.25,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 3.74,
-      "launch__occupancy_limit_registers": 2.0
-    },
-    "headline_metric_deltas_vs_previous_run": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": -0.04999999999999716,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": -0.030000000000001137,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": -0.030000000000001137,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 2.039999999999999,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": -0.6499999999999986,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 0.0,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 0.4800000000000004,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": -0.29000000000000004,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 0.08999999999999986,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 0.10000000000000009,
-      "launch__occupancy_limit_registers": 0.0
-    },
-    "structured_bottleneck_deltas": [
-      {
-        "stall_group": "barrier",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "previous": 5.47,
-        "current": 5.95,
-        "delta": 0.4800000000000004,
-        "trend": "regressed"
-      },
-      {
-        "stall_group": "long_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "previous": 7.16,
-        "current": 6.87,
-        "delta": -0.29000000000000004,
-        "trend": "improved"
-      },
-      {
-        "stall_group": "mio_throttle",
-        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "previous": 3.64,
-        "current": 3.74,
-        "delta": 0.10000000000000009,
-        "trend": "regressed"
-      },
-      {
-        "stall_group": "short_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "previous": 2.16,
-        "current": 2.25,
-        "delta": 0.08999999999999986,
-        "trend": "regressed"
-      }
-    ],
-    "top_hotspot_deltas": [
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l2_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L2 Cache Throughput",
-        "previous": 29.91,
-        "current": 27.75,
-        "delta": -2.16,
-        "trend": "regressed",
-        "importance_score": 77.25,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics",
-        "metric_name": "Registers Per Thread",
-        "previous": 200.0,
-        "current": 198.0,
-        "delta": -2.0,
-        "trend": "improved",
-        "importance_score": 205.0,
-        "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "DRAM Throughput",
-        "previous": 12.46,
-        "current": 13.49,
-        "delta": 1.0299999999999994,
-        "trend": "improved",
-        "importance_score": 92.53999999999999,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::memory_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "Memory Throughput",
-        "previous": 46.14,
-        "current": 46.11,
-        "delta": -0.030000000000001137,
-        "trend": "regressed",
-        "importance_score": 58.89,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric Memory Throughput.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l1_tex_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L1/TEX Cache Throughput",
-        "previous": 46.66,
-        "current": 46.63,
-        "delta": -0.02999999999999403,
-        "trend": "regressed",
-        "importance_score": 58.37,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "Compute (SM) Throughput",
-        "previous": 47.84,
-        "current": 47.82,
-        "delta": -0.020000000000003126,
-        "trend": "regressed",
-        "importance_score": 57.18,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
-        "bucket": "regressed"
-      }
-    ]
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "ncu_analysis_path": null,
+    "headline_metrics": {},
+    "headline_metric_deltas_vs_previous_run": {},
+    "structured_bottleneck_deltas": [],
+    "top_hotspot_deltas": []
   },
-  "transition_class": "regressed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_113859_bf16_gemm_v1_6668d21 for candidate diagnosis_20260421_113657:dir_01; transition_label=PASS_LOSS.",
-  "transition_label": "PASS_LOSS"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
