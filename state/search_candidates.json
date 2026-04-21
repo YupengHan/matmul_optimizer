@@ -1,116 +1,120 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260420_223553",
-  "source_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
-  "source_diagnosis_id": "diagnosis_20260420_223553",
-  "generated_at": "2026-04-20T22:38:30-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260420_224213",
+  "source_run_id": "20260420_224147_bf16_gemm_v1_df5bac2",
+  "source_diagnosis_id": "diagnosis_20260420_224213",
+  "generated_at": "2026-04-20T22:46:04-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260420_223553:dir_01",
+  "recommended_candidate_id": "diagnosis_20260420_224213:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260420_223553:dir_01",
-      "source_diagnosis_id": "diagnosis_20260420_223553",
-      "base_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
-      "base_measured_commit": "82c8e608fba26a9b0398984dd20ce199bb1d46f6",
-      "base_runtime_ms": 24.18065643,
+      "candidate_id": "diagnosis_20260420_224213:dir_01",
+      "source_diagnosis_id": "diagnosis_20260420_224213",
+      "base_run_id": "20260420_224147_bf16_gemm_v1_df5bac2",
+      "base_measured_commit": "df5bac281a2efef7f02478947a334a51b6510138",
+      "base_runtime_ms": 24.16435242,
       "direction_id": "dir_01",
-      "direction_name": "Apply Only A Minimal PTX Export Address Cleanup",
-      "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
-      "subfamily_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
-      "action_fingerprint": "0a4f037bb055c349",
-      "rank_in_diagnosis": 1,
-      "recommended": true,
-      "mode": "exploit",
-      "priority": 2.3,
-      "search_score_v1": 2.3,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v7",
-        "rank_score": 3.0,
-        "restored_surface_bonus": 0.2,
-        "bounded_scope_bonus": 0.15,
-        "risk_penalty": 1.05,
-        "formula": "rank_score + restored_surface_bonus + bounded_scope_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.03,
-      "predicted_fail_risk": 0.2,
-      "ranking_notes": [
-        "The restore family already paid off, so the next step should harvest that restored surface rather than immediately twiddle grouping again.",
-        "Export cleanup is the best-ranked still-open family that stays on the new accepted PTX branch and attacks a different surface from round 5 and round 6.",
-        "It is ranked ahead of the control-path exploit because the last direct control-order nudge already came back flat on the adjacent surface."
-      ],
-      "hypothesis": "Round 6 recovered the accepted PTX grouping surface and produced a clear runtime win, but the restored profile still carries the same occupancy ceiling and modest barrier / scoreboard costs. That points to the remaining overhead sitting close to the PTX export path rather than in another dispatch or locality knob. The best bounded next move is therefore to keep the restored grouping window intact and simplify only the PTX export address/control surface so writeback bookkeeping dies sooner without changing the MMA loop or widening the hot path.",
-      "expected_bottleneck": "PTX export-side address/control overhead and scratch bookkeeping on the restored accepted hot-band surface.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:925-947",
-        "src/kernels/bf16_gemm_v1.cu:1008-1065",
-        "src/kernels/bf16_gemm_v1.cu:2044-2047"
-      ],
-      "risk": "Low to medium. This keeps the freshly restored PTX branch intact and only narrows the export surface, but the upside is bounded and it can still become a no-op if the compiler already simplified the current path.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.180656 ms restored base",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "launch__registers_per_thread",
-        "hot-band gpu__time_duration.sum"
-      ],
-      "stop_condition": "Stop if export cleanup leaves runtime and the export-adjacent stall counters effectively unchanged after one bounded pass.",
-      "status": "open"
-    },
-    {
-      "candidate_id": "diagnosis_20260420_223553:dir_02",
-      "source_diagnosis_id": "diagnosis_20260420_223553",
-      "base_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
-      "base_measured_commit": "82c8e608fba26a9b0398984dd20ce199bb1d46f6",
-      "base_runtime_ms": 24.18065643,
-      "direction_id": "dir_02",
       "direction_name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
       "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
       "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
       "action_fingerprint": "8e91e546243f09ff",
-      "rank_in_diagnosis": 2,
-      "recommended": false,
+      "rank_in_diagnosis": 1,
+      "recommended": true,
       "mode": "exploit",
-      "priority": 2.0,
-      "search_score_v1": 2.0,
+      "priority": 2.55,
+      "search_score_v1": 2.55,
       "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v7",
-        "rank_score": 2.0,
-        "restored_surface_bonus": 0.25,
-        "prior_flat_penalty": 0.2,
-        "risk_penalty": 0.05,
-        "formula": "rank_score + restored_surface_bonus - prior_flat_penalty - risk_penalty"
+        "policy_id": "manual_round100_node_b_v8",
+        "rank_score": 3.0,
+        "new_best_but_flat_bonus": 0.25,
+        "frontier_alignment_bonus": 0.15,
+        "prior_flat_penalty": 0.4,
+        "risk_penalty": 0.45,
+        "formula": "rank_score + new_best_but_flat_bonus + frontier_alignment_bonus - prior_flat_penalty - risk_penalty"
       },
-      "predicted_gain_ms": 0.03,
-      "predicted_fail_risk": 0.25,
+      "predicted_gain_ms": 0.04,
+      "predicted_fail_risk": 0.28,
       "ranking_notes": [
-        "The family is still at the top of the persistent frontier, but it is no longer the first pick after the round-5 flat result.",
-        "Keeping it ranked second preserves an actionable live-branch alternative without pretending the first control-order tweak was a success.",
-        "If export cleanup is flat too, this family can still absorb another bounded attempt on the restored base."
+        "The export-address family just delivered a real but sub-threshold gain, which is exactly the signal to rotate back to the highest-ranked still-open adjacent family rather than dig deeper into the same cleanup branch.",
+        "This stays on the restored PTX winner and reuses the export cleanup as a better base, so it offers more upside than another bounded export-only tweak.",
+        "It is ranked ahead of the barrier-retime family because it is both higher on the live frontier and broader than a pure handoff-only adjustment."
       ],
-      "hypothesis": "Now that round 6 restored the accepted grouping window, the still-open PTX control-path family becomes coherent again as a secondary option. The earlier flat result came from a B-first prologue retune on the wrong surface; on the restored grouping base, a different bounded control/export nudge could still matter. This family stays below dir_01 because it already consumed one round for almost no gain, but it remains a plausible live-branch follow-up rather than a closed family.",
-      "expected_bottleneck": "Residual PTX hot-band control-path overhead on the restored grouping surface, not another locality or macro-tiling miss.",
+      "hypothesis": "Round 7/100 proved that the bounded PTX export-address cleanup is still live on top of the restored grouped-rows-4 PTX surface: runtime improved from 24.180656 ms to a new best custom 24.164352 ms with correctness intact. But the gain was only 0.016304 ms, small enough that the search policy still tagged it PASS_FLAT and left the accepted base unchanged. The counters also say the export family is nearing saturation rather than exposing a fresh win path: barrier only nudged down from 5.48 to 5.42, long-scoreboard ticked up from 7.17 to 7.26, and active warps stayed pinned at 16.62. That makes the still-open PTX control-path family the best next move, because it keeps the restored surface and the cleaned export helper but attacks the remaining inner-loop control / consume-order overhead that the narrow export cleanup could not fully remove.",
+      "expected_bottleneck": "Residual PTX hot-band control-path overhead and scoreboard / barrier balance on the restored grouped-rows-4 PTX surface, not another export-address-only cleanup.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:719-860",
-        "src/kernels/bf16_gemm_v1.cu:1010-1075",
-        "src/kernels/bf16_gemm_v1.cu:1957-2061"
+        "src/kernels/bf16_gemm_v1.cu:719-804",
+        "src/kernels/bf16_gemm_v1.cu:1005-1075",
+        "src/kernels/bf16_gemm_v1.cu:1981-2062"
       ],
-      "risk": "Moderate. This family is still live, but another too-small control-order nudge can easily collapse back into noise.",
+      "risk": "Moderate. This family is still live and remains the top frontier representative, but another too-small control-order nudge can easily collapse back into sub-threshold noise on an already good PTX base.",
       "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.180656 ms restored base",
-        "launch__registers_per_thread",
+        "end-to-end median runtime versus the 24.164352 ms new-best control run",
         "sm__warps_active.avg.pct_of_peak_sustained_active",
         "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "hot-band gpu__time_duration.sum"
       ],
-      "stop_condition": "Stop if another bounded control-path tweak again behaves like noise on top of the restored grouping surface.",
+      "stop_condition": "Stop if another bounded PTX control-path adjustment again lands as PASS_FLAT noise or if it worsens both scoreboard and barrier while leaving active warps pinned.",
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260420_223553:dir_03",
-      "source_diagnosis_id": "diagnosis_20260420_223553",
-      "base_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
-      "base_measured_commit": "82c8e608fba26a9b0398984dd20ce199bb1d46f6",
-      "base_runtime_ms": 24.18065643,
+      "candidate_id": "diagnosis_20260420_224213:dir_02",
+      "source_diagnosis_id": "diagnosis_20260420_224213",
+      "base_run_id": "20260420_224147_bf16_gemm_v1_df5bac2",
+      "base_measured_commit": "df5bac281a2efef7f02478947a334a51b6510138",
+      "base_runtime_ms": 24.16435242,
+      "direction_id": "dir_02",
+      "direction_name": "Steady-state Barrier / Handoff Retime",
+      "family_id": "legacy::steady_state_barrier_handoff_retime",
+      "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
+      "action_fingerprint": "8f8b5eca1122e2da",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "exploit",
+      "priority": 1.95,
+      "search_score_v1": 1.95,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v8",
+        "rank_score": 2.0,
+        "barrier_signal_bonus": 0.25,
+        "same_surface_bonus": 0.15,
+        "historical_gap_penalty": 0.15,
+        "risk_penalty": 0.3,
+        "formula": "rank_score + barrier_signal_bonus + same_surface_bonus - historical_gap_penalty - risk_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.32,
+      "ranking_notes": [
+        "Barrier is the one headline stall that actually improved under the export cleanup, which makes a direct handoff retime the cleanest way to continue exploiting that signal without repeating the same family.",
+        "This remains on the current PTX winner, unlike the off-branch fallback families, so it can still convert a small flat gain into a meaningful accepted-base move.",
+        "It stays below the broader PTX control-path family because the handoff-only version is more bounded and therefore lower-upside."
+      ],
+      "hypothesis": "The latest run suggests the export cleanup harvested most of the easy writeback win but did not convert it into an accepted-base transition. Barrier did improve slightly, from 5.48 to 5.42, while long-scoreboard moved the wrong way and occupancy stayed fixed. That combination is consistent with the active PTX branch now being exposed at the steady-state wait-group / handoff boundary rather than at the final export address surface itself. A very narrow retime around the PTX hot-band `cp.async` wait, `__syncthreads()`, and future-tile refill sequence is therefore the best second family: it stays on the same restored PTX branch, targets the most visible surviving scheduler friction directly, and avoids reopening the deeper export variants that already looked fragile historically.",
+      "expected_bottleneck": "Barrier latency and stage-handoff cadence in the active PTX hot-band steady-state loop, not grouped-row mapping or epilogue bookkeeping.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2010-2024",
+        "src/kernels/bf16_gemm_v1.cu:2026-2057",
+        "src/kernels/bf16_gemm_v1.cu:2060-2062"
+      ],
+      "risk": "Moderate. A handoff retime is still bounded, but it can easily trade one exposed stall class for another if the wait/commit ordering lengthens the active PTX critical path.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164352 ms run",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "stop_condition": "Stop if the handoff retime leaves barrier effectively unchanged or lowers barrier only by raising long-scoreboard enough to keep runtime flat.",
+      "status": "open"
+    },
+    {
+      "candidate_id": "diagnosis_20260420_224213:dir_03",
+      "source_diagnosis_id": "diagnosis_20260420_224213",
+      "base_run_id": "20260420_224147_bf16_gemm_v1_df5bac2",
+      "base_measured_commit": "df5bac281a2efef7f02478947a334a51b6510138",
+      "base_runtime_ms": 24.16435242,
       "direction_id": "dir_03",
       "direction_name": "Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage",
       "family_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
@@ -119,12 +123,12 @@
       "rank_in_diagnosis": 3,
       "recommended": false,
       "mode": "exploit",
-      "priority": 1.75,
-      "search_score_v1": 1.75,
+      "priority": 1.8,
+      "search_score_v1": 1.8,
       "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v7",
+        "policy_id": "manual_round100_node_b_v8",
         "rank_score": 1.0,
-        "historical_near_best_bonus": 0.5,
+        "historical_near_best_bonus": 0.55,
         "family_diversity_bonus": 0.35,
         "active_branch_penalty": 0.1,
         "formula": "rank_score + historical_near_best_bonus + family_diversity_bonus - active_branch_penalty"
@@ -132,25 +136,26 @@
       "predicted_gain_ms": 0.02,
       "predicted_fail_risk": 0.25,
       "ranking_notes": [
-        "This keeps one credible off-branch export family alive after the round-history queue rehydration.",
-        "It is deliberately below the two PTX-local families because the restored PTX path just won and should be exploited first.",
-        "If the PTX-local cleanup families flatten out, this branch becomes the cleanest next escape hatch."
+        "This keeps one non-PTX export family alive after the round-history queue reinjection instead of letting the frontier collapse onto only two PTX-local loops.",
+        "It is ranked below the two active-branch PTX families because the latest run was still a real new best custom and should be exploited before rotating away.",
+        "If both PTX-local follow-ups behave like PASS_FLAT again, this branch becomes the cleanest next escape hatch."
       ],
-      "hypothesis": "The live search queue should still keep one off-branch export family active so the loop does not collapse entirely onto the PTX hot path. The strongest recovered candidate there is the grouped-row sibling export-scratch trim, which historically measured 24.422464 ms. It stays low-ranked because it leaves the restored PTX winner, but it is still the best non-PTX export-side family worth preserving in the set.",
-      "expected_bottleneck": "Export scratch lifetime and writeback overhead on the grouped-row 128x128 sibling path, used as an off-branch fallback family.",
+      "hypothesis": "Round-history rehydration should keep at least one credible off-branch family alive while the loop continues exploiting the restored PTX surface. The strongest such escape hatch is still the grouped-row 128x128 sibling export-scratch trim, which historically measured 24.422464 ms and remains a clean alternative if the active PTX-local families now flatten out. It stays third because the restored PTX branch just produced the latest win and should still be exploited first, but this sibling export family is the best preserved fallback that attacks the same general export-lifetime theme without being trapped inside the current PTX control surface.",
+      "expected_bottleneck": "Export scratch lifetime and writeback overhead on the grouped-row non-PTX 128x128 sibling path, used as an off-branch fallback if the active PTX path stalls.",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:110-137",
         "src/kernels/bf16_gemm_v1.cu:936-1068",
         "src/kernels/bf16_gemm_v1.cu:1836-1948"
       ],
-      "risk": "Low to medium. The family has historical evidence and bounded scope, but it requires leaving the restored PTX path that just won.",
+      "risk": "Low to medium. The family has historical evidence and bounded scope, but taking it now means leaving the PTX branch that just established the latest best custom run.",
       "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.180656 ms restored base",
+        "end-to-end median runtime versus the 24.164352 ms new-best PTX run",
         "hot-band gpu__time_duration.sum",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active"
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
       ],
-      "stop_condition": "Stop if the sibling export-scratch trim cannot beat its own historical 24.422464 ms band or if switching off the restored PTX path immediately gives the win back.",
+      "stop_condition": "Stop if the sibling export-scratch trim cannot get close to its own 24.422464 ms historical band or if leaving the restored PTX path immediately gives the small new-best gain back.",
       "status": "open"
     }
   ],
