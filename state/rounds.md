@@ -1,12 +1,14 @@
 # Round loop
 
 - active: `yes`
-- status: `round_in_progress`
+- status: `awaiting_measurement`
 - total rounds: `100`
 - completed rounds: `5`
 - remaining rounds: `95`
 - current round label: `round 6/100`
-- auto use recommended: `yes`
+- selection strategy: `frontier_every_5_rounds_else_recommended_v1`
+- effective selection mode this round: `frontier`
+- auto use recommended: `no`
 - auto select frontier: `no`
 - accepted base run id: `20260421_105134_bf16_gemm_v1_8dcab81`
 - accepted base measured commit: `8dcab81ea44e6d66b1f22c2a768c8e9d3b21223f`
@@ -14,7 +16,7 @@
 - started at: `2026-04-21T11:05:50-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Executing round 6/100.`
+- notes: `Build passed for round 6/100. Node A will measure the result next.`
 
 ## Last completed round
 

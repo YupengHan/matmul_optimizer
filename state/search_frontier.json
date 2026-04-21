@@ -8,9 +8,9 @@
   "candidate_set_id": "candidate_set:diagnosis_20260421_114852",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": "diagnosis_20260421_114852:dir_01",
-  "selection_reason": "selected_via_recommended",
-  "selection_summary": "Selected diagnosis_20260421_114852:dir_01 -> dir_01 via mode=recommended.",
+  "selected_candidate_id": "diagnosis_20260420_222929:dir_01",
+  "selection_reason": "frontier_top_family_representative",
+  "selection_summary": "Selected diagnosis_20260420_222929:dir_01 -> dir_01 via mode=frontier.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -1918,10 +1918,10 @@
       "guardrail_metrics": [],
       "status": "selected",
       "source_search_iteration": 10,
-      "selection_count": 1,
+      "selection_count": 2,
       "reopen_count": 0,
-      "last_selected_at": "2026-04-20T22:30:55-07:00",
-      "last_selected_selection_mode": "recommended",
+      "last_selected_at": "2026-04-21T12:15:22-07:00",
+      "last_selected_selection_mode": "frontier",
       "last_transition_label": null,
       "last_transition_class": null,
       "last_result_run_id": null,
@@ -25062,7 +25062,7 @@
       "last_result_runtime_ms": 46.53209496,
       "last_runtime_delta_ms": 0.0230388700000006,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T11:51:49-07:00",
+      "last_closed_at": "2026-04-21T12:15:22-07:00",
       "last_closed_search_iteration": 112,
       "last_reopened_search_iteration": 112,
       "reopened_at": "2026-04-21T11:51:49-07:00",
@@ -25703,7 +25703,7 @@
     }
   ],
   "notes": "Persistent frontier tracks 335 historical candidates; 17 family representatives are currently active for selection.",
-  "updated_at": "2026-04-21T11:51:49-07:00",
+  "updated_at": "2026-04-21T12:15:22-07:00",
   "family_representative_count": 17,
   "reopened_candidate_ids": []
 }

@@ -28,8 +28,8 @@
   ],
   "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260421_114852:dir_01",
+  "selected_direction_id": null,
+  "selected_candidate_id": "diagnosis_20260420_222929:dir_01",
   "family_audit": [
     {
       "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
