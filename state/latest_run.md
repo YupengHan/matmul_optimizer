@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_184055_bf16_gemm_v1_9144f92`
-- run dir: `runs/20260420_184055_bf16_gemm_v1_9144f92`
-- kernel tag: `bf16_gemm_v1_9144f92`
-- round label: `round 6/50`
+- run id: `20260420_184822_bf16_gemm_v1_2ab9365`
+- run dir: `runs/20260420_184822_bf16_gemm_v1_2ab9365`
+- kernel tag: `bf16_gemm_v1_2ab9365`
+- round label: `round 7/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `29.100464 ms`
-- p10 runtime: `28.847206 ms`
-- p90 runtime: `30.381670 ms`
-- TFLOP/s: `24.983087 TFLOP/s`
-- previous run id: `20260420_183102_bf16_gemm_v1_29a10ec`
-- runtime delta vs previous measured run: `+3.435440 ms`
-- TFLOP/s delta vs previous measured run: `-3.344158 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.449024 ms`
+- p10 runtime: `24.229990 ms`
+- p90 runtime: `25.325159 ms`
+- TFLOP/s: `29.736132 TFLOP/s`
+- previous run id: `20260420_184055_bf16_gemm_v1_9144f92`
+- runtime delta vs previous measured run: `-4.651440 ms`
+- TFLOP/s delta vs previous measured run: `+4.753045 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reopen The Auxiliary 256x128 Hot-Band Schedule On The Restored Best Base`
+- implemented direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_184055_bf16_gemm_v1_9144f92/summary.json`
-- measured commit: `9144f92dd9a6f5b4f85ab4278581ccabe96eae93`
+- raw summary json: `runs/20260420_184822_bf16_gemm_v1_2ab9365/summary.json`
+- measured commit: `2ab93655cd79475876024fb5811e7c4c3be9c813`
 - new best custom: `no`
-- generated at: `2026-04-20T18:41:02-07:00`
+- generated at: `2026-04-20T18:48:28-07:00`

@@ -1,82 +1,15 @@
 {
-  "diagnosis_id": "diagnosis_20260420_184122",
-  "status": "completed",
-  "created_at": "2026-04-20T18:41:22-07:00",
-  "source_run_id": "20260420_184055_bf16_gemm_v1_9144f92",
-  "source_run_dir": "runs/20260420_184055_bf16_gemm_v1_9144f92",
-  "source_summary_json": "runs/20260420_184055_bf16_gemm_v1_9144f92/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260420_184822_bf16_gemm_v1_2ab9365",
+  "source_run_dir": "runs/20260420_184822_bf16_gemm_v1_2ab9365",
+  "source_summary_json": "runs/20260420_184822_bf16_gemm_v1_2ab9365/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
-      "hypothesis": "The latest measured run 20260420_184055_bf16_gemm_v1_9144f92 rejects the reopened 256x128 auxiliary branch as the next default path: the hot-band kernel alone took 40.086 ms versus 32.802 ms on the accepted 2e4dd24 base, tensor active dropped from 48.16% to 39.55%, barrier stalls jumped from 5.61% to 21.84%, and correctness failed on all 3 cases. The best next move is to keep the accepted grouped-row locality idea but remove the wide-CTA branch that introduced the barrier wall. The existing non-PTX 128x128 sibling is the cleanest control-family pivot because it already has correct measured ancestry, and porting the grouped-row physical-to-logical traversal into it is the most credible way to preserve locality without the broken 256x128 schedule.",
-      "expected_bottleneck": "If the grouped-row port is incomplete, the sibling kernel will likely give back L2 reuse and shift the bottleneck from barrier stalls to long-scoreboard or memory-latency stalls. The target is lower barrier share without collapsing cache behavior relative to the accepted grouped PTX base.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1836-1937",
-        "src/kernels/bf16_gemm_v1.cu:1938-1976",
-        "src/kernels/bf16_gemm_v1.cu:2078-2125"
-      ],
-      "risk": "Medium. Historical measured evidence for the plain two-stage sibling is only mid-25 to high-26 ms, so this is not a proven winner by itself, but it is the lowest-risk new family after the latest 256x128 correctness failure and avoids repeating the same PTX inner-loop experiments that already regressed in rounds 3 through 5.",
-      "metrics_to_recheck": [
-        "correctness pass rate across all 3 cases",
-        "median_runtime_ms",
-        "hot-band kernel gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop if the grouped-row sibling still trails the accepted 24.44441605 ms base by more than about 1 ms without materially reducing hot-band barrier stalls versus the 9144f92 regression, or if it introduces any correctness failure."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Retune The Accepted PTX Handoff Window Without Reopening Wide CTA Paths",
-      "hypothesis": "The accepted grouped-rows-4 PTX microkernel remains the only family on the current lineage that has actually delivered the 24.44441605 ms best result. The latest 256x128 regression says the next move should stay on that accepted hot-band family and only revisit the barrier and handoff window inside the existing 128x128 PTX loop, keeping grouped-row traversal, export shape, and launch split otherwise intact. Historical handoff-focused runs such as 20260420_084312_bf16_gemm_v1_57d08c3 at 24.71358395 ms show this family still has real upside, even though the current-lineage round-3 attempt e1c12b7 only reached 25.51500797 ms.",
-      "expected_bottleneck": "This branch is bounded by the current accepted base already being close to a local optimum. A retime that lowers one sync point can easily just move the stall budget from barrier to scoreboard or export/writeback without net runtime gain.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1008-1068",
-        "src/kernels/bf16_gemm_v1.cu:1938-2055",
-        "src/kernels/bf16_gemm_v1.cu:2078-2125"
-      ],
-      "risk": "Medium. This family has the best measured floor outside the exact accepted run, but it already produced one modest regression on the current grouped-rows-4 base, so it is ranked behind dir_01 as a stronger fallback than a primary recommendation.",
-      "metrics_to_recheck": [
-        "correctness pass rate across all 3 cases",
-        "median_runtime_ms",
-        "hot-band kernel gpu__time_duration.sum",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if another handoff retime remains above the accepted base with no clear barrier reduction, because that would confirm the present grouped PTX window is already the better fixed point."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Quarantine The 256x128 Auxiliary Branch To Fix Barrier Tax And Correctness",
-      "hypothesis": "The latest run is still useful diagnostic evidence even though it is not promotable: the 256x128 branch reduced register count to 167 but doubled shared-memory footprint to 42.5 KB per block, drove barrier stalls to 21.84%, and failed correctness on every case. If the branch is kept alive at all, it should only be as an isolated repair experiment that targets the explicit per-iteration synchronization and stage-reuse contract in the 256x128 loop rather than as a default-path promotion.",
-      "expected_bottleneck": "The dominating bottleneck is synchronization, not raw register pressure. The explicit `__syncthreads()` cadence and shared staging contract are likely starving tensor issue, and the same sequencing may also be the source of the full correctness failure.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-190",
-        "src/kernels/bf16_gemm_v1.cu:1576-1678",
-        "src/kernels/bf16_gemm_v1.cu:2078-2125"
-      ],
-      "risk": "High. The current measured evidence is hard-negative, and older direction-name ancestry around this family is not clean enough to trust as proof that the exact 256x128 path is already close to winning. This stays in the set only because the latest run makes the barrier and correctness failure mode very explicit.",
-      "metrics_to_recheck": [
-        "correctness pass rate across all 3 cases",
-        "median_runtime_ms",
-        "hot-band kernel gpu__time_duration.sum",
-        "launch__shared_mem_per_block_allocated",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-      ],
-      "stop_condition": "Stop immediately if any correctness case still fails or if the repaired branch cannot push hot-band barrier stalls back toward the single-digit range while materially improving the 40.086 ms hot-band kernel time seen in 9144f92."
-    }
-  ],
-  "notes": "Round 7/50 diagnosis for 20260420_184055_bf16_gemm_v1_9144f92. Human-review audit: state/human_review.md currently contains only workflow-gate and approval-policy text, with no explicit user-supplied idea-family bullets to accept or reject one by one, so the ranking is evidence-driven rather than keyed to queued human ideas. Accepted for this round: correctness-preserving 128x128 control pivots that keep the grouped-row locality lesson from the accepted 2e4dd24 base while abandoning the broken wide-CTA auxiliary promotion; the primary family is dir_01. Deferred: another bounded retime inside the accepted grouped PTX handoff window, because that family has a strong historical floor (24.71358395 ms on 57d08c3) but already regressed once on the current grouped-rows-4 lineage (25.51500797 ms on e1c12b7). Rejected for this round: promoting the measured 256x128 auxiliary path as-is, because 9144f92 failed correctness 0/3 and its hot-band kernel regressed to 40.086 ms with 21.84% barrier stalls and only 39.55% tensor activity. Also rejected: reopening the broad fixed-main override family, because the old round-18 autotune sweep only proved 384 was the best option on the much older flat fixed-main surface, while newer current-regime validation runs ef8cb27 (33.59487915 ms) and a64854a (33.9645443 ms) show that family is far off the accepted 24.44441605 ms base."
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }
