@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `910beff68055b974cfdbb268cda1087c8b44d665`
 - plateau counter: `9`
 - round loop: `round 22/100`
 - rounds remaining: `79`
-- notes: `Node A completed round 21/100. Run node_b to continue round 22/100.`
+- notes: `Node C is ready to implement diagnosis_20260421_005324:dir_01 via recommended selection for round 22/100.`
 
 ## Latest measured custom run
 
@@ -28,19 +28,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_005324`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 22 treats the round-21 sibling run as a plateau-equivalent alternate surface, not as a new frontier leader. The current correct surfaces are all clustered within 0.02 ms and keep the same 16.6%-warps / 48%-tensor machine state, so the next recommendation intentionally shifts to the only historical family that ever broke that wall: the half-panel 256x128 register-reuse branch.`
+- dir_01: Repair The 256x128 Half-Panel Register-Reuse Branch | bottleneck: Register-limited occupancy and oversized live state on the wide hot-band family, which the plateaued PTX and sibling surfaces are no longer moving.
+- dir_02: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: No new bottleneck is being attacked here; this is an exact recovery of the best-known implementation surface.
+- dir_03: Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule | bottleneck: Hot-band K-loop scheduling and latency hiding on a broader 256x128 reuse regime rather than the live-state wall on the plateaued 128x128 surfaces.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
