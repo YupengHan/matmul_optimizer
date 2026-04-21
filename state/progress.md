@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `68c21acd26439775c646252dbb0e52d247ea9f47`
 - plateau counter: `0`
 - round loop: `round 4/20`
 - rounds remaining: `17`
-- notes: `Node A completed round 3/20. Run node_b to continue round 4/20.`
+- notes: `Node C is ready to implement diagnosis_20260420_221111:dir_01 via recommended selection for round 4/20.`
 
 ## Latest measured custom run
 
@@ -29,19 +29,21 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260420_221111`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 4/20 human-review audit: the queue still contributes only the approval gate and exactly-one-direction rule. The current PTX exploit family just produced the new best custom run at 24.177664 ms, but the NCU signature stayed almost unchanged, which argues against immediately spending another round on the same class of PTX control tweak. Accepted as the primary family for this diagnosis is therefore the cheap grouped-CTA traversal/locality probe on the 128x128 PTX grid. Deferred fallback families are another bounded PTX exploit pass and a reopen of the prior PTX baseline as an A/B guardrail. The failed 256x128 pivot family remains rejected for this round.`
+- dir_01: Retune Hot-Band CTA Traversal On The 128x128 PTX Grid | bottleneck: Inter-CTA locality and traversal efficiency on the current 128x128 PTX hot-band grid under low occupancy.
+- dir_02: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX control-path overhead in the current one-k 128x128 hot-band branch.
+- dir_03: Reopen The Prior PTX One-K 128x128 Control Branch For A/B Guardrail | bottleneck: Not a new bottleneck attack; this is the PTX-family A/B restore guardrail.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
