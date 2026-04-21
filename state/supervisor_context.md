@@ -4,27 +4,27 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Current dispatch
 
-- dispatch node: `node_b`
+- dispatch node: `node_c`
 - dispatch mode: `sub_agent`
-- graph status: `ready_for_node_b`
+- graph status: `ready_for_node_c`
 - round label: `round 36/100`
 - round loop active: `yes`
 - rounds remaining: `65`
 - auto-select frontier: `no`
 - latest run id: `20260421_074828_bf16_gemm_v1_f07f873`
 - latest runtime: `24.175471 ms`
-- recommended direction: `None`
-- active direction: `None`
-- display update due at current checkpoint: `yes`
+- recommended direction: `dir_01`
+- active direction: `dir_01`
+- display update due at current checkpoint: `no`
 - watchdog status: `healthy`
 
 ## Supervisor protocol
 
 - read `docs/supervisor_protocol.md` first
-- node-specific protocol: `docs/node_b_protocol.md`
-- node context file: `state/node_b_context.md`
-- prepare command: `python scripts/graph.py node_b`
-- finalize command: `python scripts/graph.py node_b --finalize`
+- node-specific protocol: `docs/node_c_protocol.md`
+- node context file: `state/node_c_context.md`
+- prepare command: `python scripts/graph.py node_c`
+- finalize command: `python scripts/graph.py node_c --finalize`
 - current dispatch requires direct GPU access: `no`
 
 ## Dispatch rule
@@ -45,18 +45,18 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 - next context compression checkpoint: after `40` completed rounds
 - last display refresh checkpoint: after `35` completed rounds
 - next display refresh checkpoint: after `40` completed rounds
-- display refresh checkpoint open now: `yes`
+- display refresh checkpoint open now: `no`
 - display refresh action: Use the matmul-doc-sync skill or an equivalent narrow doc-refresh pass to update `README.md`, `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`, and the rendered optimization tree, then commit only those doc/image files.
 - keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop
 
 ## Watchdog
 
 - timeout: `10` minutes without workflow changes
-- latest observed progress: `2026-04-21T07:48:34-07:00` via `state/graph_state.json`
+- latest observed progress: `2026-04-21T07:52:07-07:00` via `state/graph_state.json`
 - idle minutes: `0.0`
 - watchdog status: `healthy`
 - continue instruction: `No watchdog action is currently required.`
 
 ## Notes
 
-- `Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.`
+- `Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.`
