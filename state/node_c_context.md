@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- candidate id: `auto_diagnosis_round_052:dir_01`
-- base run id: `20260421_083959_bf16_gemm_v1_64d7808`
-- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
-- planned action fingerprint: `restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a`
-- selection mode: `recommended`
-- source diagnosis id: `auto_diagnosis_round_052`
-- round loop: `round 52/100`
-- hypothesis: `The latest measured run landed at 30.710640 ms, still +6.546368 ms away from the accepted 24.164272 ms anchor. The fastest way to keep the loop grounded is to replay the exact accepted PTX surface before reopening another branch.`
-- expected bottleneck: `Search drift away from the accepted PTX steady state rather than a missing structural opportunity.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:153-156, src/kernels/bf16_gemm_v1.cu:2000-2060, src/kernels/bf16_gemm_v1.cu:2107-2128`
-- risk: `Low. This is the known accepted PTX anchor surface.`
-- metrics to re-check: `end-to-end median runtime, hot-band gpu__time_duration.sum, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 53/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
