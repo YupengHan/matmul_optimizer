@@ -402,6 +402,8 @@ def default_round_loop_state() -> Dict[str, Any]:
         'auto_select_frontier': False,
         'selection_mode': None,
         'selection_mode_source': None,
+        'selection_strategy': None,
+        'selection_strategy_source': None,
         'started_at': None,
         'completed_at': None,
         'last_completed_round': None,
@@ -426,6 +428,9 @@ def default_supervisor_task() -> Dict[str, Any]:
         'auto_select_frontier': False,
         'selection_mode': None,
         'selection_mode_source': None,
+        'selection_strategy': None,
+        'selection_strategy_source': None,
+        'effective_selection_mode': None,
         'requires_gpu_access': True,
         'prepare_command': 'python scripts/graph.py node_a',
         'selection_command': None,
@@ -488,6 +493,7 @@ def default_search_state() -> Dict[str, Any]:
         'last_restore_at': None,
         'last_restore_reason': None,
         'loop_selection_preference': {
+            'strategy': None,
             'mode': None,
             'source': None,
             'updated_at': None,
@@ -689,8 +695,51 @@ def load_benchmark_state() -> Dict[str, Any]:
 def load_round_loop_state() -> Dict[str, Any]:
     payload = load_json(ROUND_LOOP_STATE_PATH, default_round_loop_state())
     normalized = _merge_defaults(payload, default_round_loop_state())
+    if normalized.get('selection_strategy') not in {
+        'frontier',
+        'recommended',
+        'manual',
+        'frontier_every_5_rounds_else_recommended_v1',
+    }:
+        legacy_mode = normalized.get('selection_mode')
+        if legacy_mode in {'frontier', 'recommended', 'manual'}:
+            normalized['selection_strategy'] = legacy_mode
+            normalized['selection_strategy_source'] = (
+                normalized.get('selection_strategy_source')
+                or normalized.get('selection_mode_source')
+                or 'legacy_selection_mode'
+            )
+        elif normalized.get('auto_select_frontier'):
+            normalized['selection_strategy'] = 'frontier'
+            normalized['selection_strategy_source'] = normalized.get('selection_strategy_source') or 'legacy_flags'
+        elif normalized.get('auto_use_recommended'):
+            normalized['selection_strategy'] = 'recommended'
+            normalized['selection_strategy_source'] = normalized.get('selection_strategy_source') or 'legacy_flags'
+        elif normalized.get('active'):
+            normalized['selection_strategy'] = 'manual'
+            normalized['selection_strategy_source'] = normalized.get('selection_strategy_source') or 'legacy_flags'
     if normalized.get('selection_mode') not in {'frontier', 'recommended', 'manual'}:
-        if normalized.get('auto_select_frontier'):
+        if normalized.get('selection_strategy') in {'frontier', 'recommended', 'manual'}:
+            normalized['selection_mode'] = normalized.get('selection_strategy')
+            normalized['selection_mode_source'] = (
+                normalized.get('selection_mode_source')
+                or normalized.get('selection_strategy_source')
+            )
+        elif normalized.get('selection_strategy') == 'frontier_every_5_rounds_else_recommended_v1':
+            round_index = normalized.get('current_round_index')
+            if round_index is None and normalized.get('active') and int(normalized.get('remaining_rounds', 0) or 0) > 0:
+                round_index = normalized.get('next_round_index', 1)
+            if round_index is not None:
+                normalized['selection_mode'] = (
+                    'frontier'
+                    if ((int(round_index) - 1) % 5 == 0)
+                    else 'recommended'
+                )
+                normalized['selection_mode_source'] = (
+                    normalized.get('selection_mode_source')
+                    or 'derived_from_selection_strategy'
+                )
+        elif normalized.get('auto_select_frontier'):
             normalized['selection_mode'] = 'frontier'
             normalized['selection_mode_source'] = normalized.get('selection_mode_source') or 'legacy_flags'
         elif normalized.get('auto_use_recommended'):
@@ -719,6 +768,15 @@ def load_search_state() -> Dict[str, Any]:
     if not isinstance(preference, dict):
         preference = {}
     preference = _merge_defaults(preference, default_search_state()['loop_selection_preference'])
+    if preference.get('strategy') not in {
+        'frontier',
+        'recommended',
+        'frontier_every_5_rounds_else_recommended_v1',
+    }:
+        legacy_mode = preference.get('mode')
+        if legacy_mode in {'frontier', 'recommended'}:
+            preference['strategy'] = legacy_mode
+            preference['source'] = preference.get('source') or 'legacy_preference_mode'
     if preference.get('mode') not in {'frontier', 'recommended'}:
         legacy_mode = normalized.get('last_selected_selection_mode')
         if legacy_mode in {'frontier', 'recommended'}:

@@ -138,7 +138,13 @@ def round_label(round_loop: Dict[str, Any]) -> str:
     return f'round {idx}/{total}'
 
 
-def current_round_loop_selection_mode(round_loop: Dict[str, Any]) -> Optional[str]:
+ROUND_LOOP_CADENCE_STRATEGY = 'frontier_every_5_rounds_else_recommended_v1'
+
+
+def configured_round_loop_selection_strategy(round_loop: Dict[str, Any]) -> Optional[str]:
+    strategy = round_loop.get('selection_strategy')
+    if strategy in {'frontier', 'recommended', 'manual', ROUND_LOOP_CADENCE_STRATEGY}:
+        return strategy
     mode = round_loop.get('selection_mode')
     if mode in {'frontier', 'recommended', 'manual'}:
         return mode
@@ -151,9 +157,31 @@ def current_round_loop_selection_mode(round_loop: Dict[str, Any]) -> Optional[st
     return None
 
 
-def preferred_loop_selection_mode(search_state: Dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
+def effective_round_loop_selection_mode(
+    round_loop: Dict[str, Any],
+    round_index: Optional[int] = None,
+) -> Optional[str]:
+    strategy = configured_round_loop_selection_strategy(round_loop)
+    if strategy in {'frontier', 'recommended', 'manual'}:
+        return strategy
+    if strategy == ROUND_LOOP_CADENCE_STRATEGY:
+        idx = round_index if round_index is not None else active_round_index(round_loop)
+        if idx is None:
+            return 'frontier'
+        return 'frontier' if ((int(idx) - 1) % 5 == 0) else 'recommended'
+    return None
+
+
+def current_round_loop_selection_mode(round_loop: Dict[str, Any]) -> Optional[str]:
+    return effective_round_loop_selection_mode(round_loop)
+
+
+def preferred_loop_selection_strategy(search_state: Dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
     preference = search_state.get('loop_selection_preference')
     if isinstance(preference, dict):
+        strategy = preference.get('strategy')
+        if strategy in {'frontier', 'recommended', ROUND_LOOP_CADENCE_STRATEGY}:
+            return strategy, preference.get('source') or 'persistent_preference'
         mode = preference.get('mode')
         if mode in {'frontier', 'recommended'}:
             return mode, preference.get('source') or 'persistent_preference'
@@ -174,43 +202,48 @@ def resolve_round_loop_selection_policy(
     if explicit_auto_use_recommended and explicit_auto_select_frontier:
         raise RuntimeError('round loop cannot enable both auto-use-recommended and auto-select-frontier')
 
-    established_mode = None
-    active_mode = current_round_loop_selection_mode(current_round_loop)
-    if current_round_loop.get('active') and active_mode in {'frontier', 'recommended'}:
-        established_mode = active_mode
+    established_strategy = None
+    active_strategy = configured_round_loop_selection_strategy(current_round_loop)
+    if current_round_loop.get('active') and active_strategy in {'frontier', 'recommended', ROUND_LOOP_CADENCE_STRATEGY}:
+        established_strategy = active_strategy
     else:
-        preferred_mode, _ = preferred_loop_selection_mode(search_state)
-        if preferred_mode in {'frontier', 'recommended'}:
-            established_mode = preferred_mode
+        preferred_strategy, _ = preferred_loop_selection_strategy(search_state)
+        if preferred_strategy in {'frontier', 'recommended', ROUND_LOOP_CADENCE_STRATEGY}:
+            established_strategy = preferred_strategy
+
+    explicit_strategy = None
+    if explicit_auto_select_frontier:
+        explicit_strategy = 'frontier'
+    elif explicit_auto_use_recommended:
+        explicit_strategy = 'recommended'
 
     if (
-        explicit_auto_use_recommended
-        and established_mode == 'frontier'
+        explicit_strategy is not None
+        and established_strategy is not None
+        and explicit_strategy != established_strategy
         and not allow_selection_mode_change
     ):
         raise RuntimeError(
-            'refusing to downgrade loop selection from frontier to recommended without '
+            'refusing to change established loop selection strategy without '
             '--allow-selection-mode-change'
         )
 
-    if explicit_auto_select_frontier:
-        return {'mode': 'frontier', 'source': 'explicit_flag'}
-    if explicit_auto_use_recommended:
-        return {'mode': 'recommended', 'source': 'explicit_flag'}
+    if explicit_strategy is not None:
+        return {'mode': explicit_strategy, 'source': 'explicit_flag'}
 
-    if current_round_loop.get('active') and active_mode in {'frontier', 'recommended'}:
-        return {'mode': active_mode, 'source': 'inherit_active_loop'}
+    if current_round_loop.get('active') and active_strategy in {'frontier', 'recommended', ROUND_LOOP_CADENCE_STRATEGY}:
+        return {'mode': active_strategy, 'source': 'inherit_active_loop'}
 
-    preferred_mode, preferred_source = preferred_loop_selection_mode(search_state)
-    if preferred_mode in {'frontier', 'recommended'}:
+    preferred_strategy, preferred_source = preferred_loop_selection_strategy(search_state)
+    if preferred_strategy in {'frontier', 'recommended', ROUND_LOOP_CADENCE_STRATEGY}:
         source = (
             'inherit_persistent_preference'
             if preferred_source != 'legacy_last_selected_selection_mode'
             else preferred_source
         )
-        return {'mode': preferred_mode, 'source': source}
+        return {'mode': preferred_strategy, 'source': source}
 
-    return {'mode': None, 'source': 'legacy_manual_default'}
+    return {'mode': ROUND_LOOP_CADENCE_STRATEGY, 'source': 'workflow_default'}
 
 
 def apply_round_loop_selection_policy(
@@ -219,8 +252,13 @@ def apply_round_loop_selection_policy(
     mode: Optional[str],
     source: Optional[str],
 ) -> None:
-    round_loop['selection_mode'] = mode
-    round_loop['selection_mode_source'] = source
+    round_loop['selection_strategy'] = mode
+    round_loop['selection_strategy_source'] = source
+    effective_mode = effective_round_loop_selection_mode(round_loop)
+    round_loop['selection_mode'] = effective_mode
+    round_loop['selection_mode_source'] = (
+        f'from_{mode}' if mode == ROUND_LOOP_CADENCE_STRATEGY and effective_mode else source
+    )
     round_loop['auto_select_frontier'] = mode == 'frontier'
     round_loop['auto_use_recommended'] = mode == 'recommended'
 
@@ -232,12 +270,13 @@ def persist_loop_selection_preference(
     source: Optional[str],
     updated_at: Optional[str] = None,
 ) -> None:
-    if mode not in {'frontier', 'recommended'}:
+    if mode not in {'frontier', 'recommended', ROUND_LOOP_CADENCE_STRATEGY}:
         return
     preference = search_state.get('loop_selection_preference')
     if not isinstance(preference, dict):
         preference = {}
-    preference['mode'] = mode
+    preference['strategy'] = mode
+    preference['mode'] = mode if mode in {'frontier', 'recommended'} else None
     preference['source'] = source
     preference['updated_at'] = updated_at or now_local_iso()
     search_state['loop_selection_preference'] = preference
@@ -1728,12 +1767,16 @@ def render_benchmark_baselines_md(benchmark_state: Dict[str, Any]) -> str:
 
 def render_rounds_md(round_loop: Dict[str, Any]) -> str:
     lines = ['# Round loop', '']
+    strategy = configured_round_loop_selection_strategy(round_loop)
+    effective_mode = effective_round_loop_selection_mode(round_loop)
     lines.append(f"- active: `{'yes' if round_loop.get('active') else 'no'}`")
     lines.append(f"- status: `{round_loop.get('status', 'idle')}`")
     lines.append(f"- total rounds: `{round_loop.get('total_rounds', 0)}`")
     lines.append(f"- completed rounds: `{round_loop.get('completed_rounds', 0)}`")
     lines.append(f"- remaining rounds: `{round_loop.get('remaining_rounds', 0)}`")
     lines.append(f"- current round label: `{round_label(round_loop)}`")
+    lines.append(f"- selection strategy: `{strategy or 'N/A'}`")
+    lines.append(f"- effective selection mode this round: `{effective_mode or 'N/A'}`")
     lines.append(f"- auto use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
     lines.append(f"- auto select frontier: `{'yes' if round_loop.get('auto_select_frontier') else 'no'}`")
     lines.append(f"- accepted base run id: `{round_loop.get('accepted_base_run_id', 'N/A')}`")
@@ -2164,8 +2207,11 @@ def compute_supervisor_task(
         'rounds_remaining': int(round_loop.get('remaining_rounds', 0)),
         'auto_use_recommended': bool(round_loop.get('auto_use_recommended')),
         'auto_select_frontier': bool(round_loop.get('auto_select_frontier')),
+        'selection_strategy': configured_round_loop_selection_strategy(round_loop),
+        'selection_strategy_source': round_loop.get('selection_strategy_source'),
         'selection_mode': current_round_loop_selection_mode(round_loop),
         'selection_mode_source': round_loop.get('selection_mode_source'),
+        'effective_selection_mode': effective_round_loop_selection_mode(round_loop),
         'requires_gpu_access': False,
         'prepare_command': None,
         'selection_command': None,
@@ -2227,11 +2273,10 @@ def compute_supervisor_task(
     elif current_node == 'node_c':
         selection_command = None
         if not active_direction.get('direction_id'):
-            if round_loop.get('active') and round_loop.get('auto_select_frontier') and has_frontier_candidate:
+            effective_mode = effective_round_loop_selection_mode(round_loop)
+            if round_loop.get('active') and effective_mode == 'frontier' and has_frontier_candidate:
                 selection_command = 'python scripts/graph.py select-next'
-            elif diagnosis.get('recommended_direction_id') and (
-                round_loop.get('auto_use_recommended') or round_loop.get('auto_select_frontier')
-            ):
+            elif diagnosis.get('recommended_direction_id') and effective_mode in {'frontier', 'recommended'}:
                 selection_command = 'python scripts/graph.py use-recommended-direction'
             else:
                 selection_command = 'python scripts/graph.py approve --direction dir_0X'
@@ -2280,8 +2325,9 @@ def render_supervisor_context(
     lines.append(f"- round label: `{supervisor_task.get('round_label', 'single-run')}`")
     lines.append(f"- round loop active: `{'yes' if supervisor_task.get('round_loop_active') else 'no'}`")
     lines.append(f"- rounds remaining: `{supervisor_task.get('rounds_remaining', 0)}`")
-    lines.append(f"- loop selection mode: `{supervisor_task.get('selection_mode', 'N/A')}`")
-    lines.append(f"- loop selection source: `{supervisor_task.get('selection_mode_source', 'N/A')}`")
+    lines.append(f"- loop selection strategy: `{supervisor_task.get('selection_strategy', 'N/A')}`")
+    lines.append(f"- loop selection strategy source: `{supervisor_task.get('selection_strategy_source', 'N/A')}`")
+    lines.append(f"- effective selection mode this round: `{supervisor_task.get('effective_selection_mode', 'N/A')}`")
     lines.append(f"- auto-select frontier: `{'yes' if supervisor_task.get('auto_select_frontier') else 'no'}`")
     lines.append(f"- latest run id: `{latest_run.get('run_id', 'N/A')}`")
     lines.append(f"- latest runtime: `{fmt_runtime(latest_run.get('median_runtime_ms'))}`")
@@ -2460,11 +2506,6 @@ def start_round_loop(
 ) -> Dict[str, Any]:
     latest_run = load_latest_run()
     round_loop = default_round_loop_state()
-    apply_round_loop_selection_policy(
-        round_loop,
-        mode=selection_mode,
-        source=selection_mode_source,
-    )
     round_loop.update(
         {
             'active': True,
@@ -2486,13 +2527,22 @@ def start_round_loop(
                     'Frontier top candidates will auto-select, with fallback to the current recommended direction.'
                     if selection_mode == 'frontier'
                     else (
+                        'Rounds 1, 6, 11, ... will auto-select from the frontier; rounds 2-5 in each 5-round block will auto-select the current recommended direction.'
+                        if selection_mode == ROUND_LOOP_CADENCE_STRATEGY
+                        else (
                         'Recommended directions will auto-select.'
                         if selection_mode == 'recommended'
                         else 'Direction approval remains manual.'
+                        )
                     )
                 )
             ),
         }
+    )
+    apply_round_loop_selection_policy(
+        round_loop,
+        mode=selection_mode,
+        source=selection_mode_source,
     )
     write_json(ROUND_LOOP_STATE_PATH, round_loop)
     return round_loop
@@ -4606,7 +4656,8 @@ def run_node_b(args: argparse.Namespace) -> int:
             DIAGNOSIS_HISTORY_PATH,
             diagnosis_history_entry(diagnosis, latest_run, round_loop),
         )
-        if round_loop.get('active') and round_loop.get('auto_select_frontier'):
+        effective_mode = effective_round_loop_selection_mode(round_loop)
+        if round_loop.get('active') and effective_mode == 'frontier':
             try:
                 select_next_candidate()
             except RuntimeError as exc:
@@ -4616,15 +4667,15 @@ def run_node_b(args: argparse.Namespace) -> int:
                 if recommended:
                     select_direction(recommended, 'recommended')
             round_loop = load_round_loop_state()
-        elif round_loop.get('active') and round_loop.get('auto_use_recommended'):
+        elif round_loop.get('active') and effective_mode == 'recommended':
             select_direction(diagnosis.get('recommended_direction_id'), 'recommended')
             round_loop = load_round_loop_state()
         refresh_all_views()
         if not args.skip_commit:
             commit_paths(node_state_paths_for_commit(), node_b_commit_message(diagnosis, latest_run, round_loop))
-        if round_loop.get('active') and round_loop.get('auto_select_frontier'):
+        if round_loop.get('active') and effective_mode == 'frontier':
             print_step('node_b finalized; auto-selected the next frontier candidate for node_c')
-        elif round_loop.get('active') and round_loop.get('auto_use_recommended'):
+        elif round_loop.get('active') and effective_mode == 'recommended':
             print_step('node_b finalized; auto-selected the recommended direction for node_c')
         else:
             print_step('node_b finalized; next node is node_c')
@@ -4718,10 +4769,12 @@ def select_candidate(candidate_id: str, selection_mode: str) -> int:
     search_state['last_selected_direction_id'] = candidate.get('direction_id')
     search_state['last_selected_selection_mode'] = selection_mode
     search_state['last_selected_at'] = active.get('selected_at')
+    round_loop_for_preference = load_round_loop_state()
+    preference_strategy = configured_round_loop_selection_strategy(round_loop_for_preference)
     persist_loop_selection_preference(
         search_state,
-        mode=selection_mode,
-        source=f'selection:{selection_mode}',
+        mode=preference_strategy or selection_mode,
+        source=f'selection_strategy:{preference_strategy or selection_mode}',
         updated_at=active.get('selected_at'),
     )
     search_state['status'] = 'candidate_selected'
@@ -4792,10 +4845,12 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
     search_state['last_selected_direction_id'] = direction_id
     search_state['last_selected_selection_mode'] = selection_mode
     search_state['last_selected_at'] = active.get('selected_at')
+    round_loop_for_preference = load_round_loop_state()
+    preference_strategy = configured_round_loop_selection_strategy(round_loop_for_preference)
     persist_loop_selection_preference(
         search_state,
-        mode=selection_mode,
-        source=f'selection:{selection_mode}',
+        mode=preference_strategy or selection_mode,
+        source=f'selection_strategy:{preference_strategy or selection_mode}',
         updated_at=active.get('selected_at'),
     )
     write_json(SEARCH_STATE_PATH, search_state)
@@ -5145,6 +5200,8 @@ def run_status(_: argparse.Namespace) -> int:
     print(f"round_loop_label={round_label(round_loop)}")
     print(f"rounds_remaining={round_loop.get('remaining_rounds')}")
     print(f"round_loop_status={round_loop.get('status')}")
+    print(f"selection_strategy={configured_round_loop_selection_strategy(round_loop)}")
+    print(f"effective_selection_mode={effective_round_loop_selection_mode(round_loop)}")
     print(f"continue_required={supervisor_task.get('continue_required')}")
     print(f"stop_allowed={supervisor_task.get('stop_allowed')}")
     print(f"continue_until={supervisor_task.get('continue_until')}")
@@ -5173,6 +5230,8 @@ def run_supervisor(_: argparse.Namespace) -> int:
     print(f"round_label={supervisor_task.get('round_label')}")
     print(f"round_loop_active={supervisor_task.get('round_loop_active')}")
     print(f"rounds_remaining={supervisor_task.get('rounds_remaining')}")
+    print(f"selection_strategy={supervisor_task.get('selection_strategy')}")
+    print(f"effective_selection_mode={supervisor_task.get('effective_selection_mode')}")
     print(f"continue_required={supervisor_task.get('continue_required')}")
     print(f"stop_allowed={supervisor_task.get('stop_allowed')}")
     print(f"continue_until={supervisor_task.get('continue_until')}")
@@ -5208,6 +5267,8 @@ def run_rounds(args: argparse.Namespace) -> int:
         print(f"completed_rounds={round_loop.get('completed_rounds')}")
         print(f"remaining_rounds={round_loop.get('remaining_rounds')}")
         print(f"round_label={round_label(round_loop)}")
+        print(f"selection_strategy={configured_round_loop_selection_strategy(round_loop)}")
+        print(f"effective_selection_mode={effective_round_loop_selection_mode(round_loop)}")
         print(f"auto_use_recommended={round_loop.get('auto_use_recommended')}")
         print(f"auto_select_frontier={round_loop.get('auto_select_frontier')}")
         print(f"notes={round_loop.get('notes')}")
@@ -5272,6 +5333,11 @@ def run_rounds(args: argparse.Namespace) -> int:
             else ''
         )
         + (
+            ' with 5-round frontier cadence enabled'
+            if selection_policy.get('mode') == ROUND_LOOP_CADENCE_STRATEGY
+            else ''
+        )
+        + (
             f" [{selection_policy.get('source')}]"
             if selection_policy.get('source')
             else ''
@@ -5290,7 +5356,8 @@ def run_cycle(args: argparse.Namespace) -> int:
     if current_node == 'node_c':
         active_direction = load_active_direction()
         if not active_direction.get('direction_id') and round_loop.get('active'):
-            if round_loop.get('auto_select_frontier'):
+            effective_mode = effective_round_loop_selection_mode(round_loop)
+            if effective_mode == 'frontier':
                 try:
                     select_next_candidate()
                 except RuntimeError as exc:
@@ -5300,7 +5367,7 @@ def run_cycle(args: argparse.Namespace) -> int:
                     recommended = diagnosis.get('recommended_direction_id')
                     if recommended:
                         select_direction(recommended, 'recommended')
-            elif round_loop.get('auto_use_recommended'):
+            elif effective_mode == 'recommended':
                 diagnosis = load_latest_diagnosis()
                 recommended = diagnosis.get('recommended_direction_id')
                 if recommended:

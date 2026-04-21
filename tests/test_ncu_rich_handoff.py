@@ -418,10 +418,43 @@ class NcuRichHandoffTests(unittest.TestCase):
         self.assertTrue(graph.path_is_allowed('scripts/graph.py', attempt_surface))
         self.assertTrue(graph.path_is_allowed('scripts/sweep_fixed_main_tiles.py', attempt_surface))
 
-    def test_round_loop_selection_policy_inherits_persistent_frontier_preference(self) -> None:
+    def test_round_loop_selection_policy_defaults_to_cadence_workflow(self) -> None:
         round_loop = state_lib.default_round_loop_state()
         search_state = state_lib.default_search_state()
-        search_state['loop_selection_preference']['mode'] = 'frontier'
+
+        policy = graph.resolve_round_loop_selection_policy(
+            round_loop,
+            search_state,
+            explicit_auto_use_recommended=False,
+            explicit_auto_select_frontier=False,
+        )
+
+        self.assertEqual(policy['mode'], graph.ROUND_LOOP_CADENCE_STRATEGY)
+        self.assertEqual(policy['source'], 'workflow_default')
+
+        graph.apply_round_loop_selection_policy(
+            round_loop,
+            mode=policy['mode'],
+            source=policy['source'],
+        )
+        round_loop.update({'active': True, 'remaining_rounds': 100, 'next_round_index': 1})
+        graph.apply_round_loop_selection_policy(
+            round_loop,
+            mode=policy['mode'],
+            source=policy['source'],
+        )
+        self.assertFalse(round_loop['auto_select_frontier'])
+        self.assertFalse(round_loop['auto_use_recommended'])
+        self.assertEqual(round_loop['selection_strategy'], graph.ROUND_LOOP_CADENCE_STRATEGY)
+        self.assertEqual(graph.effective_round_loop_selection_mode(round_loop, 1), 'frontier')
+        self.assertEqual(graph.effective_round_loop_selection_mode(round_loop, 2), 'recommended')
+        self.assertEqual(graph.effective_round_loop_selection_mode(round_loop, 5), 'recommended')
+        self.assertEqual(graph.effective_round_loop_selection_mode(round_loop, 6), 'frontier')
+
+    def test_round_loop_selection_policy_inherits_persistent_cadence_preference(self) -> None:
+        round_loop = state_lib.default_round_loop_state()
+        search_state = state_lib.default_search_state()
+        search_state['loop_selection_preference']['strategy'] = graph.ROUND_LOOP_CADENCE_STRATEGY
         search_state['loop_selection_preference']['source'] = 'user_preference'
 
         policy = graph.resolve_round_loop_selection_policy(
@@ -431,27 +464,19 @@ class NcuRichHandoffTests(unittest.TestCase):
             explicit_auto_select_frontier=False,
         )
 
-        self.assertEqual(policy['mode'], 'frontier')
+        self.assertEqual(policy['mode'], graph.ROUND_LOOP_CADENCE_STRATEGY)
         self.assertEqual(policy['source'], 'inherit_persistent_preference')
 
-        graph.apply_round_loop_selection_policy(
-            round_loop,
-            mode=policy['mode'],
-            source=policy['source'],
-        )
-        self.assertTrue(round_loop['auto_select_frontier'])
-        self.assertFalse(round_loop['auto_use_recommended'])
-        self.assertEqual(round_loop['selection_mode'], 'frontier')
-
-    def test_round_loop_selection_policy_preserves_active_frontier_loop_on_restart(self) -> None:
+    def test_round_loop_selection_policy_preserves_active_cadence_loop_on_restart(self) -> None:
         round_loop = state_lib.default_round_loop_state()
         round_loop.update(
             {
                 'active': True,
-                'auto_select_frontier': True,
-                'auto_use_recommended': False,
-                'selection_mode': 'frontier',
-                'selection_mode_source': 'explicit_flag',
+                'remaining_rounds': 95,
+                'next_round_index': 6,
+                'current_round_index': 6,
+                'selection_strategy': graph.ROUND_LOOP_CADENCE_STRATEGY,
+                'selection_strategy_source': 'workflow_default',
             }
         )
 
@@ -462,14 +487,14 @@ class NcuRichHandoffTests(unittest.TestCase):
             explicit_auto_select_frontier=False,
         )
 
-        self.assertEqual(policy['mode'], 'frontier')
+        self.assertEqual(policy['mode'], graph.ROUND_LOOP_CADENCE_STRATEGY)
         self.assertEqual(policy['source'], 'inherit_active_loop')
+        self.assertEqual(graph.effective_round_loop_selection_mode(round_loop), 'frontier')
 
-    def test_round_loop_selection_policy_blocks_silent_downgrade_from_frontier(self) -> None:
+    def test_round_loop_selection_policy_blocks_silent_change_from_cadence(self) -> None:
         round_loop = state_lib.default_round_loop_state()
         search_state = state_lib.default_search_state()
-        search_state['loop_selection_preference']['mode'] = 'frontier'
-        search_state['last_selected_selection_mode'] = 'frontier'
+        search_state['loop_selection_preference']['strategy'] = graph.ROUND_LOOP_CADENCE_STRATEGY
 
         with self.assertRaisesRegex(RuntimeError, 'allow-selection-mode-change'):
             graph.resolve_round_loop_selection_policy(
@@ -482,7 +507,7 @@ class NcuRichHandoffTests(unittest.TestCase):
     def test_round_loop_selection_policy_allows_explicit_override_when_requested(self) -> None:
         round_loop = state_lib.default_round_loop_state()
         search_state = state_lib.default_search_state()
-        search_state['loop_selection_preference']['mode'] = 'frontier'
+        search_state['loop_selection_preference']['strategy'] = graph.ROUND_LOOP_CADENCE_STRATEGY
 
         policy = graph.resolve_round_loop_selection_policy(
             round_loop,
