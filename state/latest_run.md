@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_123502_bf16_gemm_v1_310a824`
-- run dir: `runs/20260421_123502_bf16_gemm_v1_310a824`
-- kernel tag: `bf16_gemm_v1_310a824`
-- round label: `round 8/100`
+- run id: `20260421_123908_bf16_gemm_v1_1db08fc`
+- run dir: `runs/20260421_123908_bf16_gemm_v1_1db08fc`
+- kernel tag: `bf16_gemm_v1_1db08fc`
+- round label: `round 9/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.184448 ms`
-- p10 runtime: `45.993575 ms`
-- p90 runtime: `56.247901 ms`
-- TFLOP/s: `15.741650 TFLOP/s`
-- previous run id: `20260421_122942_bf16_gemm_v1_3eed315`
-- runtime delta vs previous measured run: `+2.934288 ms`
-- TFLOP/s delta vs previous measured run: `-1.067985 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `46.056448 ms`
+- p10 runtime: `45.980878 ms`
+- p90 runtime: `54.443623 ms`
+- TFLOP/s: `15.785399 TFLOP/s`
+- previous run id: `20260421_123502_bf16_gemm_v1_310a824`
+- runtime delta vs previous measured run: `-0.128000 ms`
+- TFLOP/s delta vs previous measured run: `+0.043749 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Repair the PTX writer row sweep while preserving the 104-register surface`
+- implemented direction name: `Recover a compact correctness-safe 4-row PTX writer sweep`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_123502_bf16_gemm_v1_310a824/summary.json`
-- ncu analysis path: `runs/20260421_123502_bf16_gemm_v1_310a824/ncu_analysis.json`
-- measured commit: `310a8243e68c0bb6de2fed90d7d5074ab342567f`
+- raw summary json: `runs/20260421_123908_bf16_gemm_v1_1db08fc/summary.json`
+- ncu analysis path: `runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.json`
+- measured commit: `1db08fc0e373507cd63d0a43e4791f43c6de5b17`
 - new best custom: `no`
-- generated at: `2026-04-21T12:35:13-07:00`
+- generated at: `2026-04-21T12:39:18-07:00`
