@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T08:39:46-07:00",
   "source_diagnosis_id": "auto_diagnosis_round_050",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
@@ -52,5 +52,13 @@
     "stop_condition": "Stop if this replay does not beat the active anchor cleanly or if it broadens beyond an exact bounded historical surface.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a"
 }
