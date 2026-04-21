@@ -1,96 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
-  "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops",
-  "subfamily_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops::ptx_and_non_ptx_hot_band_paths",
-  "action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops",
-  "selection_priority": 0.81,
-  "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:29:22-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
-    "family_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops",
-    "subfamily_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops::ptx_and_non_ptx_hot_band_paths",
-    "action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops",
-    "mode": "exploit",
-    "hypothesis": "The regular 128x128 sibling already showed that a small register reduction and a cleaner consume path can recover some of the grouped-row loss. The next cheapest win is to hoist warp-local A-row and B-column shared offsets out of the hot-band steady-state loops so the active 128x128 path spends fewer issue slots on invariant pointer math while keeping the same CTA geometry, stage depth, and shared-memory footprint.",
-    "expected_bottleneck": "Warp-local shared-pointer arithmetic and loop-carried control overhead in the 128x128 hot-band steady state are still diluting tensor issue on a latency-limited path.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1775-1796",
-      "src/kernels/bf16_gemm_v1.cu:1910-1924",
-      "src/kernels/bf16_gemm_v1.cu:2024-2039"
-    ],
-    "risk": "Low. The change stays inside the active 128x128 hot-band loops and should not alter CTA geometry, staging depth, or ownership.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "launch__registers_per_thread"
-    ],
-    "search_score_v1": 0.81,
-    "score_breakdown": {
-      "policy_id": "manual_round03_diverse_family_refresh_v1",
-      "headroom_score": 0.34,
-      "evidence_score": 0.22,
-      "implementation_bonus": 0.18,
-      "risk_penalty": -0.07,
-      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.08,
-    "predicted_fail_risk": 0.12,
-    "ranking_notes": [
-      "This is the cleanest follow-on after the regular-sibling experiment because it preserves the same recovered register footprint and tests whether control overhead is the remaining gap.",
-      "It also matches the user request to inject a materially different family without reopening a stale negative branch immediately.",
-      "This is the least aligned with the new 256x128 tiling preference, but it is still the cheapest next exploit on the current live 128x128 surface."
-    ],
-    "stop_condition": "Stop if the implementation needs to change CTA geometry, stage count, or dispatch order instead of remaining a local offset-hoist cleanup.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "runs/20260421_152228_bf16_gemm_v1_2fbb368d/ncu_analysis.md",
-      "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      }
-    ],
-    "expected_local_changes": [
-      "Precompute warp-local A and B shared offsets once per warp before the 128x128 steady-state loops.",
-      "Keep the current single-K staging and grouped_rows=4 traversal unchanged."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "launch__registers_per_thread",
-        "guardrail": "non_increasing"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "guardrail": "non_increasing"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

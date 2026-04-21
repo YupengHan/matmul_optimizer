@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_152228_bf16_gemm_v1_2fbb368d`
-- run dir: `runs/20260421_152228_bf16_gemm_v1_2fbb368d`
-- kernel tag: `bf16_gemm_v1_2fbb368d`
-- round label: `round 2/10`
+- run id: `20260421_153021_bf16_gemm_v1_24f31aab`
+- run dir: `runs/20260421_153021_bf16_gemm_v1_24f31aab`
+- kernel tag: `bf16_gemm_v1_24f31aab`
+- round label: `round 3/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.392608 ms`
-- p10 runtime: `24.186368 ms`
-- p90 runtime: `24.772813 ms`
-- TFLOP/s: `29.804908 TFLOP/s`
-- previous run id: `20260421_150910_bf16_gemm_v1_7496aff2`
-- runtime delta vs previous measured run: `-0.144481 ms`
-- TFLOP/s delta vs previous measured run: `+0.175499 TFLOP/s`
+- median runtime: `24.195072 ms`
+- p10 runtime: `24.178176 ms`
+- p90 runtime: `25.326591 ms`
+- TFLOP/s: `30.048244 TFLOP/s`
+- previous run id: `20260421_152228_bf16_gemm_v1_2fbb368d`
+- runtime delta vs previous measured run: `-0.197536 ms`
+- TFLOP/s delta vs previous measured run: `+0.243336 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Swap To The Single-K 128x128 Non-Microkernel Sibling`
+- implemented direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_152228_bf16_gemm_v1_2fbb368d/summary.json`
-- ncu analysis path: `runs/20260421_152228_bf16_gemm_v1_2fbb368d/ncu_analysis.json`
-- measured commit: `2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4`
+- raw summary json: `runs/20260421_153021_bf16_gemm_v1_24f31aab/summary.json`
+- ncu analysis path: `runs/20260421_153021_bf16_gemm_v1_24f31aab/ncu_analysis.json`
+- measured commit: `24f31aab56b50712067f744ffab280ba1e33c341`
 - new best custom: `no`
-- generated at: `2026-04-21T15:22:39-07:00`
+- generated at: `2026-04-21T15:30:32-07:00`
