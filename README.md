@@ -335,6 +335,10 @@ At the moment, the official benchmark snapshot in the repo is:
 
   The current agent flow still leaves part of the execution path in the hands of the model. One identified failure mode was that the agent received the correct Markdown instructions but still got stuck because of model drift under long context / annealing pressure. The fix should be structural: keep diagnosis and implementation in the agent, but move node dispatch and state-transition control into deterministic repo-local scripts so the loop cannot stall just because the model misread or mis-prioritized a long prompt.
 
+- [ ] TODO - add a host-level resident supervisor runner
+
+  The current protocol now marks active-loop continue points machine-readably, but it still depends on a live top-level Codex supervisor process to consume that state. To keep long round loops running across SSH disconnects, IP changes, or terminal loss, add a host-level resident executor around `python scripts/graph.py supervisor` that survives shell/session churn, re-reads `state/supervisor_task.json`, honors the continue contract, and resumes the active dispatch step until the round budget is exhausted or the user explicitly redirects the workflow.
+
 ## Document Map
 
 This README is intentionally public-facing now. The workflow-specific and Codex-specific operating details live in narrower docs:
