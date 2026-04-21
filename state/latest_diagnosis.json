@@ -1,18 +1,151 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_232331",
+  "status": "completed",
+  "created_at": "2026-04-20T23:23:31-07:00",
   "source_run_id": "20260420_232254_bf16_gemm_v1_78421da",
   "source_run_dir": "runs/20260420_232254_bf16_gemm_v1_78421da",
   "source_summary_json": "runs/20260420_232254_bf16_gemm_v1_78421da/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260420_232331:dir_01",
+  "family_audit": [
+    "accepted: legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage because round 9 validated the grouped-row non-PTX sibling as PASS_FLAT against the accepted base (24.18073654 ms versus 24.18065643 ms) and the next bounded cost on that branch is still the sibling export scratch lifetime.",
+    "deferred: legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path because the active PTX branch still owns the best-known 24.16435242 ms run, but two recent PTX-local follow-ups already flattened enough that it should sit behind the now-validated sibling follow-on.",
+    "deferred: legacy::steady_state_barrier_handoff_retime as the narrower active-PTX scheduler fallback if both the sibling export trim and the broader PTX control family fail cleanly.",
+    "rejected for this round: legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling because round 9 already measured the dispatch switch itself and converted that family from a pending pivot into a validated surface for follow-on work.",
+    "rejected for this round: legacy::promote_the_existing_256x128_pivot_hot_band_kernel because its earlier regression remains too large relative to the currently open sibling and PTX-local frontier families."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage",
+      "family_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
+      "subfamily_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
+      "action_fingerprint": "739689f47db8e67a",
+      "mode": "exploit",
+      "hypothesis": "Round 9 turned the grouped-row non-PTX 128x128 sibling from a historical escape hatch into a directly measured live branch: switching the default hot-band dispatch onto that sibling measured 24.18073654 ms, which is only 0.00008011 ms slower than the accepted-base run at 24.18065643 ms and therefore effectively PASS_FLAT on the active search anchor. The NCU headline signature also stayed in the same band instead of collapsing: active warps held at 16.62, long-scoreboard stayed at 7.26, and barrier only moved to 5.48. That means the branch validation step is done. The cleanest next move is the historically positive follow-on inside that family: replace the sibling's heavier generic export scratch lifetime with the PTX-style single-stage per-warp scratch path that previously improved the sibling branch from 24.449024 ms to 24.422464 ms. Now that the sibling route is live in the current tree, this bounded export-side trim is the highest-upside next step without reopening a broader family pivot.",
+      "expected_bottleneck": "Shared export and writeback overhead inside the grouped-row non-PTX 128x128 sibling, especially the sibling branch's heavier export scratch lifetime after the hot-band dispatch has already moved onto that family.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:110-137",
+        "src/kernels/bf16_gemm_v1.cu:936-1068",
+        "src/kernels/bf16_gemm_v1.cu:1843-1948"
+      ],
+      "risk": "Medium. The family is bounded and historically positive, but it still leaves the absolute best-known PTX run behind unless the sibling export trim converts the newly validated flat branch into a real win.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
+        "end-to-end median runtime versus the 24.180656 ms accepted-base run",
+        "hot-band gpu__time_duration.sum",
+        "shared-memory footprint or allocation on the sibling path",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "correctness pass rate across all 3 cases"
+      ],
+      "search_score_v1": 2.4,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v10",
+        "rank_score": 3.0,
+        "validated_branch_bonus": 0.35,
+        "historical_win_bonus": 0.2,
+        "risk_penalty": 0.45,
+        "formula": "rank_score + validated_branch_bonus + historical_win_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.03,
+      "predicted_fail_risk": 0.28,
+      "ranking_notes": [
+        "Round 9 removed the main coherence objection to this family by proving the sibling dispatch itself is flat on the accepted surface rather than a real regression.",
+        "This is the highest-priority open frontier family after the live-queue rehydration and it now lines up with the latest measured evidence instead of only historical runs.",
+        "It ranks above the PTX-local fallbacks because it attacks the most concrete residual cost on the only newly validated off-branch surface."
+      ],
+      "stop_condition": "Stop if the sibling export-scratch trim cannot beat the accepted-base 24.180656 ms band or if it improves sibling-local counters without moving runtime enough to threaten the 24.164352 ms best-known PTX run."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "action_fingerprint": "8e91e546243f09ff",
+      "mode": "exploit",
+      "hypothesis": "The active PTX branch still owns the best-known custom runtime at 24.16435242 ms, so it cannot be dropped from the queue just because the last two PTX-local tweaks flattened out. The right interpretation of rounds 7 through 9 is narrower: the export-address cleanup harvested a tiny writeback win, the follow-up issue-grouping retime flattened, and the sibling dispatch pivot then validated an off-branch alternative without beating the PTX best. That leaves one coherent PTX fallback alive: a bounded control-path exploit that stays on the best-known PTX surface but avoids simply replaying the same export cleanup or handoff micro-change. If the sibling export trim fails to convert its flat branch into a win, this remains the strongest on-surface family to revisit.",
+      "expected_bottleneck": "Residual PTX hot-band control-path overhead on the best-known 128x128 PTX surface, especially helper lifetime and consume-order friction that the export-address cleanup did not remove.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:719-860",
+        "src/kernels/bf16_gemm_v1.cu:1010-1075",
+        "src/kernels/bf16_gemm_v1.cu:1957-2061"
+      ],
+      "risk": "Moderate. The family has one historical PASS_WIN and multiple later PASS_FLAT outcomes, so another attempt must be materially different from the already-baked control-order tweaks or it will likely collapse back into noise.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 2.05,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v10",
+        "rank_score": 2.0,
+        "best_known_surface_bonus": 0.25,
+        "recent_flat_penalty": 0.15,
+        "risk_penalty": 0.05,
+        "formula": "rank_score + best_known_surface_bonus - recent_flat_penalty - risk_penalty"
+      },
+      "predicted_gain_ms": 0.02,
+      "predicted_fail_risk": 0.3,
+      "ranking_notes": [
+        "This remains the best active-PTX fallback because the branch still owns the absolute best runtime even after the sibling pivot validated as flat.",
+        "It stays below the sibling export trim because recent PTX-local follow-ups already spent two rounds for one tiny win and one slight regression.",
+        "Keeping it second preserves a live way back onto the best-known PTX surface if the sibling follow-on fails."
+      ],
+      "stop_condition": "Stop if another bounded PTX control-path tweak again behaves like PASS_FLAT noise without improving the 24.164352 ms best-known PTX band."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Steady-state Barrier / Handoff Retime",
+      "family_id": "legacy::steady_state_barrier_handoff_retime",
+      "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
+      "action_fingerprint": "8f8b5eca1122e2da",
+      "mode": "exploit",
+      "hypothesis": "The barrier and handoff family remains worth carrying only as a narrower scheduler fallback, not as the next recommendation. The evidence is mixed but still coherent enough to keep alive: the PTX export cleanup improved barrier slightly on the best-known run, round 8 then flattened without changing the stall mix much, and round 9's sibling branch did not reveal a radically better occupancy or scoreboard signature. That means a carefully bounded wait-group and handoff retime is still a plausible third option if both the sibling export trim and the broader PTX control family fail to convert. It stays third because the current source already includes the strongest obvious one-sync cleanup, so another retime has less headroom than the two families above.",
+      "expected_bottleneck": "Residual wait-group and barrier cadence in the hot-band steady-state loop, either on the active PTX branch or as a scheduler lens for comparing the sibling follow-on.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2010-2024",
+        "src/kernels/bf16_gemm_v1.cu:2026-2057",
+        "src/kernels/bf16_gemm_v1.cu:2060-2062"
+      ],
+      "risk": "Moderate. A handoff retime is bounded, but the source already absorbed the strongest obvious cleanup and another retime can easily trade barrier for scoreboard without moving runtime.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 1.95,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v10",
+        "rank_score": 1.9,
+        "bounded_surface_bonus": 0.2,
+        "already_baked_penalty": 0.15,
+        "formula": "rank_score + bounded_surface_bonus - already_baked_penalty"
+      },
+      "predicted_gain_ms": 0.02,
+      "predicted_fail_risk": 0.34,
+      "ranking_notes": [
+        "This remains a coherent hold-in-queue family because the scheduler-facing counters are still flat enough that a bounded handoff retime could matter if the higher-ranked families fail.",
+        "It ranks below the broader PTX control family because the likely upside is smaller and the current tree already contains the strongest obvious handoff cleanup.",
+        "Keeping it third preserves a materially different scheduler lever without reopening the already rejected geometry pivots."
+      ],
+      "stop_condition": "Stop if another handoff retime only trades barrier against scoreboard again without changing runtime meaningfully."
+    }
+  ],
+  "notes": "Round 10/100 audit: round 9 converted the grouped-row non-PTX 128x128 sibling from a queued family into a directly measured live branch. The dispatch switch measured 24.18073654 ms with correctness intact, which is only 0.00008011 ms slower than the accepted-base run at 24.18065643 ms and therefore effectively PASS_FLAT on the active search anchor, even though it still trails the 24.16435242 ms best-known PTX run by 0.01638412 ms. The right next move is no longer to recommend the sibling pivot itself, because that validation step is now complete. Instead, the diagnosis promotes the sibling export-scratch trim to rank 1 as the bounded follow-on on top of the newly validated sibling surface, while keeping two active-PTX fallback families alive behind it. The live queue rehydration remains in effect; these rankings intentionally follow the strongest currently open family representatives rather than only the newest diagnosis lineage."
 }
