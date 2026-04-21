@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_155210_bf16_gemm_v1_9cac32cb`
-- run dir: `runs/20260421_155210_bf16_gemm_v1_9cac32cb`
-- kernel tag: `bf16_gemm_v1_9cac32cb`
-- round label: `round 6/10`
+- run id: `20260421_155533_bf16_gemm_v1_83acaae4`
+- run dir: `runs/20260421_155533_bf16_gemm_v1_83acaae4`
+- kernel tag: `bf16_gemm_v1_83acaae4`
+- round label: `round 7/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.346112 ms`
-- p10 runtime: `24.327168 ms`
-- p90 runtime: `25.078218 ms`
-- TFLOP/s: `29.861828 TFLOP/s`
-- previous run id: `20260421_154110_bf16_gemm_v1_afe26c16`
-- runtime delta vs previous measured run: `-5.822463 ms`
-- TFLOP/s delta vs previous measured run: `+5.763262 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.541056 ms`
+- p10 runtime: `26.446438 ms`
+- p90 runtime: `28.313498 ms`
+- TFLOP/s: `27.392257 TFLOP/s`
+- previous run id: `20260421_155210_bf16_gemm_v1_9cac32cb`
+- runtime delta vs previous measured run: `+2.194943 ms`
+- TFLOP/s delta vs previous measured run: `-2.469571 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX Wait/Sync Handoff On The 128x128 Anchor`
+- implemented direction name: `Force 3-CTA Residency On The Non-PTX 128x128 Sibling`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_155210_bf16_gemm_v1_9cac32cb/summary.json`
-- ncu analysis path: `runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.json`
-- measured commit: `9cac32cbd567419bdc7204b46a812665da0cc865`
+- raw summary json: `runs/20260421_155533_bf16_gemm_v1_83acaae4/summary.json`
+- ncu analysis path: `runs/20260421_155533_bf16_gemm_v1_83acaae4/ncu_analysis.json`
+- measured commit: `83acaae48069fdc5202a8bddf7cc4120d9d2ac62`
 - new best custom: `no`
-- generated at: `2026-04-21T15:52:22-07:00`
+- generated at: `2026-04-21T15:55:45-07:00`

@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `9cac32cbd567419bdc7204b46a812665da0cc865`
-- plateau counter: `11`
-- round loop: `round 7/10`
-- rounds remaining: `4`
-- notes: `Node C build succeeded for round 7/10. Node A will now measure the new code path.`
+- latest measured commit: `83acaae48069fdc5202a8bddf7cc4120d9d2ac62`
+- plateau counter: `12`
+- round loop: `round 8/10`
+- rounds remaining: `3`
+- notes: `Node A completed round 7/10. Run node_b to continue round 8/10.`
 
 ## Latest measured custom run
 
-- run id: `20260421_155210_bf16_gemm_v1_9cac32cb`
-- run dir: `runs/20260421_155210_bf16_gemm_v1_9cac32cb`
+- run id: `20260421_155533_bf16_gemm_v1_83acaae4`
+- run dir: `runs/20260421_155533_bf16_gemm_v1_83acaae4`
 - correctness: `PASS`
-- median runtime: `24.346112 ms`
-- TFLOP/s: `29.861828 TFLOP/s`
+- median runtime: `26.541056 ms`
+- TFLOP/s: `27.392257 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_155253`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human guidance review for round 7: the latest run validated the choice to leave the losing 256x128 surface, but it did not validate staying on the PTX family as the main branch. The recovered PTX run became a good fallback surface, not the new winner. That is why the ranking now prefers the accepted non-PTX sibling plus one bounded occupancy probe, keeps one PTX wait/sync-collapse refinement in reserve, and leaves the 256x128 family queued rather than deleting it.`
-- dir_01: Force 3-CTA Residency On The Non-PTX 128x128 Sibling | bottleneck: Register-limited occupancy and latency hiding on the accepted non-PTX 128x128 hot-band surface.
-- dir_02: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: The seam between cp.async wait-group release, __syncthreads(), and future-stage refill ordering on the PTX 128x128 microkernel.
-- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

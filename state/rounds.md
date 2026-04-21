@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `10`
-- completed rounds: `6`
-- remaining rounds: `4`
-- current round label: `round 7/10`
+- completed rounds: `7`
+- remaining rounds: `3`
+- current round label: `round 8/10`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_153021_bf16_gemm_v1_24f31aab`
@@ -14,15 +14,15 @@
 - started at: `2026-04-21T15:07:19-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 7/10. Node A will measure the result next.`
+- notes: `Completed round 7/10. Continue with node_b for round 8/10. Accepted base: 20260421_153021_bf16_gemm_v1_24f31aab at 24.195072 ms.`
 
 ## Last completed round
 
-- round: `6/10`
+- round: `7/10`
 - direction: `dir_01`
-- direction name: `Trim PTX Wait/Sync Handoff On The 128x128 Anchor`
-- verdict: `improved`
-- runtime delta: `-5.822463 ms`
-- TFLOP/s delta: `+5.763262 TFLOP/s`
-- run dir: `runs/20260421_155210_bf16_gemm_v1_9cac32cb`
-- ncu rep path: `runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_profile.ncu-rep`
+- direction name: `Force 3-CTA Residency On The Non-PTX 128x128 Sibling`
+- verdict: `regressed`
+- runtime delta: `+2.194943 ms`
+- TFLOP/s delta: `-2.469571 TFLOP/s`
+- run dir: `runs/20260421_155533_bf16_gemm_v1_83acaae4`
+- ncu rep path: `runs/20260421_155533_bf16_gemm_v1_83acaae4/ncu_profile.ncu-rep`

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-21T15:52:22-07:00",
-  "last_result_run_id": "20260421_155210_bf16_gemm_v1_9cac32cb",
-  "last_transition_label": "PASS_WIN",
+  "updated_at": "2026-04-21T15:55:45-07:00",
+  "last_result_run_id": "20260421_155533_bf16_gemm_v1_83acaae4",
+  "last_transition_label": "PASS_LOSS",
   "families": {
     "sync_pipeline::hotband_128x128_stage_swap": {
       "family_id": "sync_pipeline::hotband_128x128_stage_swap",
@@ -138,6 +138,23 @@
       "last_candidate_id": "diagnosis_20260421_154619:dir_01",
       "last_attempt_id": "diagnosis_20260421_154619:dir_01",
       "last_registers_per_thread": 200.0,
+      "last_shared_mem_per_block_allocated": 26112.0
+    },
+    "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling": {
+      "family_id": "aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling",
+      "wins": 0,
+      "flats": 0,
+      "losses": 1,
+      "fails": 0,
+      "last_transition_label": "PASS_LOSS",
+      "freeze_status": "closed_negative",
+      "best_runtime_ms": 26.54105568,
+      "best_run_id": "20260421_155533_bf16_gemm_v1_83acaae4",
+      "last_result_run_id": "20260421_155533_bf16_gemm_v1_83acaae4",
+      "last_result_runtime_ms": 26.54105568,
+      "last_candidate_id": "diagnosis_20260421_155253:dir_01",
+      "last_attempt_id": "diagnosis_20260421_155253:dir_01",
+      "last_registers_per_thread": 168.0,
       "last_shared_mem_per_block_allocated": 26112.0
     }
   },
