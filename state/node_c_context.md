@@ -4,11 +4,16 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Re-Lock The Single-K 128x128 Hot-Band Default`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_195219`
 - round loop: `round 15/50`
+- hypothesis: `Round 15/50 has no extra user-authored idea family in `state/human_review.md` beyond the approval gate and the requirement that node_c implement exactly one direction, so the best next move is a single-family rollback of the just-measured negative. The latest run `20260420_194440_bf16_gemm_v1_cb070a7` regressed from `25.504256 ms` to `31.797344 ms` after promoting `bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel`, and the dominant hot-band kernel now carries `212` regs/thread, `43,008` B shared/block, register/shared occupancy caps of `2/2`, `10.06%` barrier stall, and `10.27%`/`5.03%` L1 bank read/write pressure while tensor activity sits at only `39.88%`. That points to two-K stage depth and its extra shared/export lifetime as the primary regression source, so the highest-upside low-risk fix is to make the default fixed-shape path use the prior single-K `128x128` hot-band kernel again.`
+- expected bottleneck: `Register-limited occupancy plus shared-memory/barrier pressure inside the two-K `128x128x32` hot-band kernel, not the residual `64x384` rows or the `64x96` tail.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1687-1840, src/kernels/bf16_gemm_v1.cu:1842-1947, src/kernels/bf16_gemm_v1.cu:2090-2138`
+- risk: `Low to moderate. The single-K `128x128` branch is already in-tree and was the immediate predecessor to this regression, but rolling back stage depth may only recover the `25.504256 ms` surface rather than the older `24.422464 ms` accepted best if another drift remains.`
+- metrics to re-check: `end-to-end median runtime versus the current `31.797344 ms`, the prior `25.504256 ms`, and the accepted `24.422464 ms`, hot-band `launch__registers_per_thread`, hot-band `launch__shared_mem_per_block_allocated`, hot-band `smsp__warp_issue_stalled_barrier_per_warp_active.pct`, hot-band `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`, hot-band `l1tex__data_bank_reads.avg.pct_of_peak_sustained_elapsed` and `l1tex__data_bank_writes.avg.pct_of_peak_sustained_elapsed``
 
 ## Allowed edit surface
 
@@ -26,4 +31,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; select one before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
