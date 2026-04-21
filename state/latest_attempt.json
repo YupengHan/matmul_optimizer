@@ -1,52 +1,52 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_003535:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_003535:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_003535",
-  "base_run_id": "20260421_003431_bf16_gemm_v1_f198bbb",
-  "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-  "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+  "attempt_id": "diagnosis_20260421_003952:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_003952:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_003952",
+  "base_run_id": "20260421_003751_bf16_gemm_v1_a64efce",
+  "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+  "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling::exact_78421da_surface",
   "direction_id": "dir_01",
-  "direction_name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
-  "mode": "explore",
-  "commit": "a64efcefb5aa9f2ef5ba3ba7a606cdf018c384bd",
-  "commit_short": "a64efce",
-  "subject": "node_c: round 20/100 implement dir_01 Promote The Existing 256x128 Pivot Hot-Band Kernel",
+  "direction_name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
+  "mode": "exploit",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 21/100 implement dir_01 Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T00:36:57-07:00",
+  "selected_at": "2026-04-21T00:49:26-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_003431_bf16_gemm_v1_f198bbb",
-  "selection_score": 2.3,
-  "planned_action_fingerprint": "promote_existing_256x128_pivot_hot_band_dispatch",
-  "implemented_action_fingerprint": "promote_existing_256x128_pivot_hot_band_dispatch",
+  "source_run_id": "20260421_003751_bf16_gemm_v1_a64efce",
+  "selection_score": 2.375,
+  "planned_action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_78421da",
+  "implemented_action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_78421da",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v20",
-    "rank_score": 1.8,
-    "aggressive_move_bonus": 0.35,
-    "profile_headroom_bonus": 0.3,
-    "family_coverage_bonus": 0.2,
-    "risk_penalty": 0.41,
-    "formula": "rank_score + aggressive_move_bonus + profile_headroom_bonus + family_coverage_bonus - risk_penalty"
+    "policy_id": "manual_round100_node_b_v21",
+    "rank_score": 1.65,
+    "measured_near_best_bonus": 0.42,
+    "alternate_surface_bonus": 0.32,
+    "current_regression_recovery_bonus": 0.18,
+    "risk_penalty": 0.36,
+    "formula": "rank_score + measured_near_best_bonus + alternate_surface_bonus + current_regression_recovery_bonus - risk_penalty"
   },
   "semantic_delta_tags": [
     "hot_band_dispatch_swap",
-    "pivot_256x128",
-    "aggressive_geometry_change"
+    "non_ptx_128x128_sibling",
+    "grouped_row_surface_restore"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2110-2117"
+    "src/kernels/bf16_gemm_v1.cu:2109-2116"
   ],
   "implementation": {
-    "commit": "a64efcefb5aa9f2ef5ba3ba7a606cdf018c384bd",
-    "commit_short": "a64efce",
-    "subject": "node_c: round 20/100 implement dir_01 Promote The Existing 256x128 Pivot Hot-Band Kernel",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 21/100 implement dir_01 Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      "src/kernels/bf16_gemm_v1.cu:2109-2116"
     ],
     "diff_stats": {
       "files_changed": 1,
@@ -62,29 +62,16 @@
     "deletions": 4
   },
   "measurement": {
-    "run_id": "20260421_003751_bf16_gemm_v1_a64efce",
-    "measurement_commit": "a64efcefb5aa9f2ef5ba3ba7a606cdf018c384bd",
-    "runtime_ms": 30.13632011,
-    "runtime_delta_ms": 5.964799880000001,
-    "tflops": 24.12435954,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "36.77",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "36.28",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "32.96",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "15.87",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "18.46",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.66",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "8.32",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "2.19",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "6.78",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "0.84",
-      "launch__occupancy_limit_registers": "1"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "regressed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_003751_bf16_gemm_v1_a64efce for candidate diagnosis_20260421_003535:dir_01; transition_label=PASS_LOSS.",
-  "transition_label": "PASS_LOSS"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

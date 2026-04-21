@@ -11,7 +11,16 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:49:26-07:00",
   "source_diagnosis_id": "diagnosis_20260421_003952",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_78421da",
+  "semantic_delta_tags": [
+    "hot_band_dispatch_swap",
+    "non_ptx_128x128_sibling",
+    "grouped_row_surface_restore"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:2109-2116"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
@@ -55,5 +64,5 @@
     "stop_condition": "Stop if the sibling surface lands clearly outside the 24.16-24.18 ms band or if the hot-band kernel no longer tracks the PTX winner within a comparable utilization/stall envelope.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
