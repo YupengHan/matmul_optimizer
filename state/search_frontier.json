@@ -2,16 +2,16 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
-  "source_measured_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
-  "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_152228_round03_clean_2fbb368d",
+  "source_run_id": "20260421_153021_bf16_gemm_v1_24f31aab",
+  "source_measured_commit": "24f31aab56b50712067f744ffab280ba1e33c341",
+  "source_diagnosis_id": "diagnosis_20260421_153021_round04_clean_24f31aab",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_153021_round04_clean_24f31aab",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T15:30:32-07:00",
+  "updated_at": "2026-04-21T15:33:08-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01 closed via pass_win after selection.",
+  "selected_candidate_id": "diagnosis_20260421_153021_round04_clean_24f31aab:dir_01",
+  "selection_reason": "selected_via_recommended",
+  "selection_summary": "Selected diagnosis_20260421_153021_round04_clean_24f31aab:dir_01 -> dir_01 via mode=recommended.",
   "family_representative_count": 9,
   "reopened_candidate_ids": [],
   "candidates": [
@@ -481,7 +481,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.585,
+      "family_representative_score": 0.555,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -1045,7 +1045,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.6725,
+      "family_representative_score": 0.6425,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -1324,7 +1324,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.525,
+      "family_representative_score": 0.495,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -1495,7 +1495,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 1.855,
+      "family_representative_score": 1.825,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260421_013500 / run 20260421_013416_bf16_gemm_v1_17032e6; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
@@ -1579,7 +1579,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.18,
+      "family_representative_score": 2.15,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260421_012211 / run 20260421_012143_bf16_gemm_v1_803e749; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
@@ -1662,7 +1662,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.41,
+      "family_representative_score": 2.38,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260421_093739 / run 20260421_084952_bf16_gemm_v1_8b1af08; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
@@ -1728,7 +1728,7 @@
       "target_hotspots": [],
       "expected_local_changes": [],
       "guardrail_metrics": [],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 6,
       "selection_count": 0,
       "reopen_count": 0,
@@ -1744,9 +1744,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 0.6325,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": "Seeded on refactor branch from master diagnosis diagnosis_20260420_200135 / run 20260420_200110_bf16_gemm_v1_e6fdb8b; rebound to clean accepted base 20260421_150626_bf16_gemm_v1_6cc462c4.",
       "idea_origin": "master_heuristic_history_rehydration"
@@ -1841,8 +1841,8 @@
       "last_result_runtime_ms": 24.19507217,
       "last_runtime_delta_ms": -0.19753551999999885,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T15:30:32-07:00",
-      "last_closed_search_iteration": 7,
+      "last_closed_at": "2026-04-21T15:33:08-07:00",
+      "last_closed_search_iteration": 8,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -2050,7 +2050,304 @@
       "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_153021_round04_clean_24f31aab:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_153021_round04_clean_24f31aab",
+      "base_run_id": "20260421_153021_bf16_gemm_v1_24f31aab",
+      "base_measured_commit": "24f31aab56b50712067f744ffab280ba1e33c341",
+      "base_runtime_ms": 24.19507217,
+      "direction_id": "dir_01",
+      "direction_name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
+      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
+      "action_fingerprint": "538fb586502fa3b4",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "explore",
+      "priority": 0.84,
+      "search_score_v1": 0.84,
+      "score_breakdown": {
+        "policy_id": "manual_round04_human_guidance_tiling_v1",
+        "headroom_score": 0.37,
+        "evidence_score": 0.21,
+        "implementation_bonus": 0.18,
+        "risk_penalty": -0.09,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.4,
+      "predicted_fail_risk": 0.28,
+      "ranking_notes": [
+        "This is the simplest direction that directly matches the new persistent human guidance around 256x128 tiling and 64x64 warp tiles.",
+        "It outranks dir_02 because it is already in-tree and therefore tests the geometry thesis without immediately paying the cost of a correctness-sensitive rewrite."
+      ],
+      "hypothesis": "The 128x128 family has now delivered two incremental wins without moving achieved warps or occupancy limits. The cleanest next structural test is to route the default hot-band launch onto the existing 256x128 pivot kernel so the search directly tests the human-guided 256x128 / 64x64 tiling preference and a materially different CTA geometry on the accepted clean base.",
+      "expected_bottleneck": "Current four-warp 128x128 CTA geometry is capping residency and CTA-count efficiency on the hot-band region more than local pointer arithmetic is.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1683",
+        "src/kernels/bf16_gemm_v1.cu:2090-2138"
+      ],
+      "risk": "Moderate. The kernel already exists and aligns with the human tiling guidance, but a larger CTA can still lose if it bloats the live set or export path.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "kernel name and grid size in ncu_metrics.csv",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the 256x128 pivot kernel fails to improve achieved warps or regresses runtime materially versus the new accepted base.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Swap the default hot-band launch from the current 128x128 regular sibling to the existing 256x128 pivot kernel.",
+        "Keep the residual row-band and tail handling unchanged for the first measurement."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        },
+        {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "watch"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 8,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T15:33:08-07:00",
+      "last_selected_selection_mode": "recommended",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 1.02,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_153021_round04_clean_24f31aab:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_153021_round04_clean_24f31aab",
+      "base_run_id": "20260421_153021_bf16_gemm_v1_24f31aab",
+      "base_measured_commit": "24f31aab56b50712067f744ffab280ba1e33c341",
+      "base_runtime_ms": 24.19507217,
+      "direction_id": "dir_02",
+      "direction_name": "Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::keep_correct_pivot_writer_ownership",
+      "action_fingerprint": "restore_correct_256x128_pivot_surface_then_transplant_low_reg_half_panel_staging_without_writer_split",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.72,
+      "search_score_v1": 0.72,
+      "score_breakdown": {
+        "policy_id": "manual_round04_human_guidance_tiling_v1",
+        "headroom_score": 0.5,
+        "evidence_score": 0.16,
+        "implementation_bonus": 0.05,
+        "risk_penalty": -0.19,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 1.1,
+      "predicted_fail_risk": 0.72,
+      "ranking_notes": [
+        "This is the strongest direct match to the human guidance around 256x128 tiling, register reuse, and deeper buffering.",
+        "It ranks behind dir_01 only because the geometry-only pivot promotion is a much cleaner first test on the same idea axis."
+      ],
+      "hypothesis": "If the simple 256x128 pivot is still not enough, the stronger version of the same human-guided idea is to start from the correctness-safe 256x128 pivot and transplant the low-register staging / reuse behavior from the archived half-panel branch without reviving split-writer ownership.",
+      "expected_bottleneck": "Register footprint and steady-state staging efficiency inside the 256x128 hot-band path are still capping residency and latency hiding.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1580-1676",
+        "src/kernels/bf16_gemm_v1.cu:539-693",
+        "src/kernels/bf16_gemm_v1.cu:903-995"
+      ],
+      "risk": "High. This is the highest-ceiling family left in the repo, but it touches the same 256x128 control/export surface that has failed correctness before.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "median runtime"
+      ],
+      "stop_condition": "Stop immediately if correctness fails again or if the implementation revives the old split-writer ownership pattern.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "master:state/diagnosis_history.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Start from the correctness-safe 256x128 pivot launch surface.",
+        "Transplant only the low-register staging and reuse ideas from the archived half-panel branch."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 8,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_153021_round04_clean_24f31aab:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_153021_round04_clean_24f31aab",
+      "base_run_id": "20260421_153021_bf16_gemm_v1_24f31aab",
+      "base_measured_commit": "24f31aab56b50712067f744ffab280ba1e33c341",
+      "base_runtime_ms": 24.19507217,
+      "direction_id": "dir_03",
+      "direction_name": "Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
+      "action_fingerprint": "restore_three_cta_microkernel_surface_then_trim_wait_sync_cadence_without_two_k_stage_buffers",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.61,
+      "search_score_v1": 0.61,
+      "score_breakdown": {
+        "policy_id": "manual_round04_human_guidance_tiling_v1",
+        "headroom_score": 0.41,
+        "evidence_score": 0.13,
+        "implementation_bonus": 0.08,
+        "risk_penalty": -0.21,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.55,
+      "predicted_fail_risk": 0.58,
+      "ranking_notes": [
+        "This stays in the top three because it is the strongest non-256x128 fallback and still matches the human guidance around async copy, reuse, and staging.",
+        "It ranks third because the new accepted 128x128 run suggests the next big move should test geometry before returning to another PTX schedule surgery."
+      ],
+      "hypothesis": "If the 256x128 family underdelivers, the best orthogonal fallback is still to return to the accepted PTX microkernel surface and trim the single-K barrier cadence more surgically while preserving the smaller shared-memory footprint.",
+      "expected_bottleneck": "Barrier cadence and PTX-stage handoff overhead inside the single-K 128x128 microkernel remain an unresolved latency tax on the accepted PTX surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1956-2056",
+        "src/kernels/bf16_gemm_v1.cu:2107-2116"
+      ],
+      "risk": "High. This remains PTX-microkernel surgery on the accepted surface.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__shared_mem_per_block_allocated",
+        "launch__registers_per_thread",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if shared memory rises above the accepted 22,016 B footprint or if barrier stall does not improve materially when compared to the PTX accepted-base profile.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted PTX microkernel launch surface if needed before editing the wait/sync cadence.",
+        "Retune the single-K consumer-barrier handoff without adding a second full K-tile shared buffer pair."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 8,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 22 historical candidates; 9 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 25 historical candidates; 9 family representatives are currently active for selection."
 }
