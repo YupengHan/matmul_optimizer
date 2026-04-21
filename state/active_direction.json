@@ -1,102 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Trim PTX Wait/Sync Handoff On The 128x128 Anchor",
-  "candidate_id": "diagnosis_20260421_154619:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
-  "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
-  "action_fingerprint": "restore_ptx_128x128_anchor_then_batch_export_and_trim_wait_sync_without_x32_shared_growth",
-  "selection_priority": 0.92,
-  "base_run_id": "20260421_154110_bf16_gemm_v1_afe26c16",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:51:03-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_154619",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Trim PTX Wait/Sync Handoff On The 128x128 Anchor",
-    "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
-    "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::keep_22016b_shared_footprint",
-    "action_fingerprint": "restore_ptx_128x128_anchor_then_batch_export_and_trim_wait_sync_without_x32_shared_growth",
-    "mode": "explore",
-    "hypothesis": "The current 256x128 branch is no longer the right place to keep pushing: it already reached 167 regs/thread and 16.66% active warps, but it still lost badly because the synchronization regime stayed at 8.32% barrier stall and the overall kernel remained far from the cuBLASLt ceiling. cuBLAS reaches 49.39% tensor activity with only 8.33% active warps because it keeps barrier and scoreboard cost near zero. That makes the next coherent move a return to the tighter 128x128 PTX anchor plus a narrow handoff surgery that trims the wait-group and export cadence while keeping the smaller 22,016 B shared-memory footprint.",
-    "expected_bottleneck": "Barrier cadence and export/control handoff inside the single-K 128x128 PTX microkernel, especially the seam between finishing a tile, releasing the stage with __syncthreads(), and refilling the reused buffer.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1002-1084",
-      "src/kernels/bf16_gemm_v1.cu:1983-2062",
-      "src/kernels/bf16_gemm_v1.cu:2139-2147"
-    ],
-    "risk": "Moderate-high. This stays inside a bounded hot-band surface, but it is still PTX control-path surgery and therefore sensitive to both correctness and codegen shifts.",
-    "metrics_to_recheck": [
-      "correctness on all 3 dataset cases before trusting runtime",
-      "median runtime versus the 24.195072 ms accepted base and the 22.000000 ms cuBLAS baseline",
-      "launch__shared_mem_per_block_allocated",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "gpu__time_duration.sum"
-    ],
-    "search_score_v1": 0.92,
-    "score_breakdown": {
-      "policy_id": "manual_round06_post_flat_256x128_v1",
-      "headroom_score": 0.47,
-      "evidence_score": 0.31,
-      "implementation_bonus": 0.19,
-      "risk_penalty": -0.05,
-      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.35,
-    "predicted_fail_risk": 0.58,
-    "ranking_notes": [
-      "This is the most direct response to the cuBLAS comparison: our gap is dominated by synchronization quality, not by lack of raw occupancy.",
-      "It also aligns best with the human guidance on Async Copy, Pg2s, Ps2r, and Stage because it improves the existing staged pipeline instead of widening it.",
-      "Round 5's flat 256x128 transplant result is the reason this family moves ahead of both the non-PTX occupancy probe and the broader 256x128 reuse branch."
-    ],
-    "stop_condition": "Stop if the edit increases shared memory beyond the 22,016 B-class 128x128 anchor footprint, or if barrier and long-scoreboard metrics stay flat while runtime remains above the accepted base.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.md",
-      "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      }
-    ],
-    "expected_local_changes": [
-      "Restore the 128x128 PTX anchor launch path from the current losing 256x128 pivot.",
-      "Retune the PTX wait/sync or export batching seam without reintroducing the larger x32-style shared-memory footprint."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "launch__shared_mem_per_block_allocated",
-        "guardrail": "non_increasing"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "non_increasing"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "restore_ptx_128x128_anchor_then_batch_export_and_trim_wait_sync_without_x32_shared_growth"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

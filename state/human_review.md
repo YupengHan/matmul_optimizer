@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 6/10` with `5` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 7/10` with `4` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_154619`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human guidance review for round 6: the 256x128 / 64x64 idea family remains strategically relevant, but the latest clean-loop evidence says it should not be the next code edit. The round-4 256x128 pivot and round-5 compact transplant both left the branch in the same losing machine state, while the cuBLASLt reference makes the ceiling clearer: this workload is not missing raw active-warps so much as it is missing a low-friction synchronization and handoff regime. That is why dir_01 ranks first even though it steps away from the currently running 256x128 surface. The queue still preserves one bounded occupancy probe on the accepted non-PTX 128x128 sibling and one deferred high-ceiling 256x128 branch so the search does not collapse back into a single-family local minimum.`
-- dir_01: Trim PTX Wait/Sync Handoff On The 128x128 Anchor | bottleneck: Barrier cadence and export/control handoff inside the single-K 128x128 PTX microkernel, especially the seam between finishing a tile, releasing the stage with __syncthreads(), and refilling the reused buffer.
-- dir_02: Force 3-CTA Residency On The Non-PTX 128x128 Sibling | bottleneck: Register-limited occupancy and latency hiding on the accepted non-PTX 128x128 hot-band surface.
-- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, B-fragment lifetime, and writer-ownership constraints inside the 256x128 hot-band pivot.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 

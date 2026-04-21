@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_154110_bf16_gemm_v1_afe26c16`
-- run dir: `runs/20260421_154110_bf16_gemm_v1_afe26c16`
-- kernel tag: `bf16_gemm_v1_afe26c16`
-- round label: `round 5/10`
+- run id: `20260421_155210_bf16_gemm_v1_9cac32cb`
+- run dir: `runs/20260421_155210_bf16_gemm_v1_9cac32cb`
+- kernel tag: `bf16_gemm_v1_9cac32cb`
+- round label: `round 6/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.168575 ms`
-- p10 runtime: `30.113178 ms`
-- p90 runtime: `31.295898 ms`
-- TFLOP/s: `24.098567 TFLOP/s`
-- previous run id: `20260421_153357_bf16_gemm_v1_f1c576ee`
-- runtime delta vs previous measured run: `-0.005040 ms`
-- TFLOP/s delta vs previous measured run: `+0.004025 TFLOP/s`
+- median runtime: `24.346112 ms`
+- p10 runtime: `24.327168 ms`
+- p90 runtime: `25.078218 ms`
+- TFLOP/s: `29.861828 TFLOP/s`
+- previous run id: `20260421_154110_bf16_gemm_v1_afe26c16`
+- runtime delta vs previous measured run: `-5.822463 ms`
+- TFLOP/s delta vs previous measured run: `+5.763262 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot`
+- implemented direction name: `Trim PTX Wait/Sync Handoff On The 128x128 Anchor`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_154110_bf16_gemm_v1_afe26c16/summary.json`
-- ncu analysis path: `runs/20260421_154110_bf16_gemm_v1_afe26c16/ncu_analysis.json`
-- measured commit: `afe26c16b7d2d62c7e91cb7725ccc9f7bbba0d01`
+- raw summary json: `runs/20260421_155210_bf16_gemm_v1_9cac32cb/summary.json`
+- ncu analysis path: `runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.json`
+- measured commit: `9cac32cbd567419bdc7204b46a812665da0cc865`
 - new best custom: `no`
-- generated at: `2026-04-21T15:41:22-07:00`
+- generated at: `2026-04-21T15:52:22-07:00`
