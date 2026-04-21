@@ -1,18 +1,146 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_000721",
+  "status": "completed",
+  "created_at": "2026-04-21T00:07:21-07:00",
   "source_run_id": "20260421_000626_bf16_gemm_v1_7f84649",
   "source_run_dir": "runs/20260421_000626_bf16_gemm_v1_7f84649",
   "source_summary_json": "runs/20260421_000626_bf16_gemm_v1_7f84649/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_000721:dir_01",
   "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+      "action_fingerprint": "8e91e546243f09ff",
+      "mode": "exploit",
+      "hypothesis": "Round 14 restored the PTX winner after the round-13 handoff miss and confirmed that the regression was a one-variant failure rather than wider source drift: the current source now matches the best-known `489574e` kernel file exactly and runtime recovered from 24.48483181 ms back to 24.17859173 ms. That also means several families should be filtered out again for this round: the restore family is absorbed on the current source, the export-cleanup family is already baked into this PTX surface, and the A-then-B handoff variant is now a measured negative. With those filters applied, the strongest remaining live family is the active PTX control path. The branch still runs at only 16.62% active warps with non-trivial barrier and long-scoreboard cost, so one more bounded control-path exploit remains the best next move as long as it does not replay the already-tested B-first prologue, issue-grouping, or A-then-B handoff sub-variants.",
+      "expected_bottleneck": "Residual control-path and consume-order overhead inside the active PTX hot-band microkernel after the absorbed restore/export cleanup and the rejected handoff variant are removed from consideration.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:718-802",
+        "src/kernels/bf16_gemm_v1.cu:1954-2053",
+        "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      ],
+      "risk": "Moderate. The family is still the best active-branch lever, but prior sub-variants have mixed evidence, so another attempt must stay narrowly distinct from the already-closed control-order and handoff changes.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.178592 ms accepted base and the 24.164272 ms best-known run",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__occupancy_limit_registers",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 2.25,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v15",
+        "rank_score": 1.95,
+        "frontier_alignment_bonus": 0.2,
+        "active_surface_bonus": 0.2,
+        "absorbed_family_filter_bonus": 0.15,
+        "risk_penalty": 0.25,
+        "formula": "rank_score + frontier_alignment_bonus + active_surface_bonus + absorbed_family_filter_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.01,
+      "predicted_fail_risk": 0.32,
+      "ranking_notes": [
+        "This is now the top open frontier family once the absorbed restore/export families and the rejected handoff sub-variant are filtered out.",
+        "The restored PTX surface remains the overall best branch, so the next recommendation should stay on that branch rather than resetting immediately to an alternate surface.",
+        "It ranks first because it is the highest-confidence unabsorbed follow-on on the current winner."
+      ],
+      "stop_condition": "Stop if the next control-path tweak replays any already-measured prologue, issue-grouping, or handoff sub-variant, or if it remains runtime-flat on the restored PTX surface."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
+      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "action_fingerprint": "b2d12d979d34a9d3",
+      "mode": "restore",
+      "hypothesis": "The loop should keep one alternate PTX surface alive in the live queue in case the grouped_rows=4 branch saturates again after the restore. The grouped_rows=8 consumer-ordering family remains the strongest such fallback. It is still open in the frontier, still comes from measured round-history recovery, and still gives the search a materially different PTX locality regime. It stays second because the restored grouped_rows=4 PTX surface remains the best measured branch when the handoff order is correct.",
+      "expected_bottleneck": "Consumer-side ordering and grouped-row locality inside the PTX hot-band microkernel under the grouped_rows=8 regime.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:153-156",
+        "src/kernels/bf16_gemm_v1.cu:1983-1993",
+        "src/kernels/bf16_gemm_v1.cu:2110-2117"
+      ],
+      "risk": "Moderate. This is an alternate-branch reset onto a historically slower PTX surface, so it should remain a fallback until the grouped_rows=4 control family is exhausted or clearly stalls.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime versus the 24.178592 ms accepted base and the 24.164272 ms best-known run",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band gpu__time_duration.sum",
+        "correctness pass rate across all 3 cases"
+      ],
+      "search_score_v1": 2.0,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v15",
+        "rank_score": 1.7,
+        "round_history_bonus": 0.2,
+        "alternate_surface_bonus": 0.25,
+        "best_surface_penalty": 0.15,
+        "formula": "rank_score + round_history_bonus + alternate_surface_bonus - best_surface_penalty"
+      },
+      "predicted_gain_ms": 0.008,
+      "predicted_fail_risk": 0.38,
+      "ranking_notes": [
+        "This stays near the top because the user explicitly asked to keep promising round-history states active in the live queue.",
+        "It ranks behind dir_01 because the grouped_rows=4 PTX surface remains the best measured branch and has not been exhausted yet.",
+        "Keeping it second preserves a real alternate PTX surface if active-branch control tuning flattens again."
+      ],
+      "stop_condition": "Stop if the grouped_rows=8 restore remains materially behind the restored grouped_rows=4 PTX surface without showing a clearly better scheduler signature."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune The Auxiliary 256x128 Hot-Band K-Loop Schedule",
+      "family_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "subfamily_id": "legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule",
+      "action_fingerprint": "916ce2d0e8503419",
+      "mode": "exploit",
+      "hypothesis": "The queue still needs one orthogonal non-PTX fallback from `round_history` so the search does not collapse entirely into PTX-local variants. The auxiliary 256x128 hot-band family remains the cleanest such fallback because it already carries async staging and a larger reuse tile, yet still exposes a bounded local knob in the K-loop schedule. It stays third because the immediate priority is still to work the active PTX surface, but it remains worth carrying as a real geometry-side escape hatch.",
+      "expected_bottleneck": "Compute scheduling and latency hiding on the auxiliary 256x128 hot-band path, not DRAM bandwidth and not another PTX grouped-row retime.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1587-1649",
+        "src/kernels/bf16_gemm_v1.cu:1660-1813",
+        "src/kernels/bf16_gemm_v1.cu:2119-2127"
+      ],
+      "risk": "Medium. This branch is orthogonal and reversible, but it is not the current default, so upside depends on the alternate geometry becoming more competitive after a bounded schedule cleanup.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 1.55,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v15",
+        "rank_score": 1.2,
+        "family_coverage_bonus": 0.2,
+        "round_history_bonus": 0.25,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + family_coverage_bonus + round_history_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.006,
+      "predicted_fail_risk": 0.36,
+      "ranking_notes": [
+        "This family stays in the set to preserve one non-PTX geometry fallback backed by round-history evidence.",
+        "It ranks below the two PTX directions because the active PTX surface still owns the best measured runtime.",
+        "Keeping it third avoids queue collapse while still respecting the current active-branch evidence."
+      ],
+      "stop_condition": "Stop if the 256x128 schedule retune cannot get meaningfully closer to the 24.16-24.18 ms band or if it reopens a broad geometry regression."
+    }
+  ],
+  "notes": "Round 15/100 audit: round 14 confirmed that the round-13 regression was a single bad handoff variant, not broader source drift. The current source matches the best-known `489574e` PTX kernel file again and recovered to the 24.16-24.18 ms performance band. That lets the diagnosis filter out absorbed restore/export families and the already-rejected A-then-B handoff, then return to the strongest genuinely open active-PTX follow-on while preserving one alternate PTX surface and one orthogonal round-history fallback in the live queue."
 }
