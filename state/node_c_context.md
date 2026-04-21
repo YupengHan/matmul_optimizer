@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Retime the PTX barrier seam on the current correctness-safe 128x128 anchor`
+- candidate id: `diagnosis_20260421_124005:dir_01`
+- base run id: `20260421_123908_bf16_gemm_v1_1db08fc`
+- primary family id: `aggressive::trim_microkernel_barriers_without_x32_shared_blowup`
+- planned action fingerprint: `retime_wait_group_and_sync_seam_on_current_correct_1db08fc_anchor`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_124005`
 - round loop: `round 10/100`
+- hypothesis: `The last two writer-family iterations both landed back on the same 198-register / 16.6%-active-warps regime, so the cheapest remaining local seam on the correct anchor is the cp.async wait-group plus CTA barrier handoff. A bounded retime can target the persistent 5.95% barrier stall and 6.85% long-scoreboard stall without touching writer coverage or geometry.`
+- expected bottleneck: `synchronization_barrier_issue layered on top of occupancy_latency_hiding_issue in the current correctness-safe 128x128 PTX anchor`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1955-2066, src/kernels/bf16_gemm_v1.cu:2023-2056, src/kernels/bf16_gemm_v1.cu:338-359`
+- risk: `medium`
+- metrics to re-check: `correctness, median runtime, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 - latest run id: `20260421_123908_bf16_gemm_v1_1db08fc`
 - latest runtime: `46.056448 ms`
 - latest NCU analysis: `runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `198.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `14.59` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.61` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `29.7` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.1` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
+- `section` `Warp Stall Sampling` @ `Warp Stall Sampling` | `smsp__warp_issue_stalled_barrier_per_warp_active.pct` = `5.95` | Barrier remains the most actionable local stall seam on the current correct anchor.
+- `section` `Warp Stall Sampling` @ `Warp Stall Sampling` | `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` = `6.85` | Any handoff retime must not simply trade barrier time for worse scoreboard pressure.
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,14 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `48.34` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.62` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `6.85` | long scoreboard stalls are consuming 6.85% of active warp issue slots.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `5.95` | barrier stalls are consuming 5.95% of active warp issue slots.
+- `correctness` `must_pass` from `1.0` | This stays on the current correctness-safe anchor.
+- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `6.85` | Do not improve barrier by worsening scoreboard stalls.
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Retune cp.async wait-group completion versus CTA-wide sync on the steady-state PTX path.`
+- `Keep writer coverage and the 22016-byte shared-memory budget fixed.`
+- `Do not mix barrier work with another writer sweep rewrite.`
 
 ## Delta vs previous run
 
@@ -94,4 +95,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

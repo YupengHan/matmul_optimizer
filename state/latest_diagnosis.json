@@ -1,22 +1,296 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_124005",
+  "status": "completed",
+  "created_at": "2026-04-21T12:40:05-07:00",
   "source_run_id": "20260421_123908_bf16_gemm_v1_1db08fc",
   "source_run_dir": "runs/20260421_123908_bf16_gemm_v1_1db08fc",
   "source_summary_json": "runs/20260421_123908_bf16_gemm_v1_1db08fc/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "For live run 20260421_123908_bf16_gemm_v1_1db08fc at 46.056448 ms, the compact 4-row writer sweep produced only a token 0.128 ms improvement and left the kernel pinned at the same 198 registers/thread, 16.62% active warps, and occupancy_limit_registers=2 as the current correctness-safe anchor. Combined with the previous round, that is enough evidence to stop spending immediate budget on writer-shape variants: the round-7 low-register signal was interesting, but the two correctness-safe follow-ons both converged back to the same old occupancy floor. The next best move is therefore to retime the PTX wait-group and CTA barrier seam on the current correct anchor. I keep one strictly smaller export-address cleanup direction second in case there is still a tiny low-risk scalar win left that does not disturb row coverage, and I keep the 256x128 half-panel pivot third as the orthogonal structural branch once the local PTX seam is exhausted.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.md",
+    "runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.json",
+    "runs/20260421_123908_bf16_gemm_v1_1db08fc/summary.json",
+    "state/latest_attempt.json",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "auto-analysis",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_124005:dir_01",
+  "family_audit": [
+    {
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "decision": "accept",
+      "score": 2.16,
+      "reason": "The writer-family retries flattened out and the current correct anchor still shows barrier plus long-scoreboard as the cleanest local seam."
+    },
+    {
+      "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+      "decision": "keep_live",
+      "score": 1.94,
+      "reason": "A smaller scalar cleanup than the recent writer rewrites is still defensible, but it stays below the barrier seam."
+    },
+    {
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "decision": "keep_live",
+      "score": 1.72,
+      "reason": "Best orthogonal high-upside branch after the local PTX anchor is exhausted."
+    },
+    {
+      "family_id": "exploit::recover_compact_full_row_ptx_writer_sweep",
+      "decision": "defer_after_flat_result",
+      "score": 1.1,
+      "reason": "Two correctness-safe follow-ons converged back to the same 198-register anchor, so this family should pause for now."
+    },
+    {
+      "family_id": "legacy::restore_current_workload_correct_ptx_writer_surface",
+      "decision": "already_have_anchor",
+      "score": 1.0,
+      "reason": "The repo is already sitting on the current correctness-safe writer anchor; no extra restore budget is needed this round."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Retime the PTX barrier seam on the current correctness-safe 128x128 anchor",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::current_1db08fc_anchor",
+      "action_fingerprint": "retime_wait_group_and_sync_seam_on_current_correct_1db08fc_anchor",
+      "mode": "exploit",
+      "hypothesis": "The last two writer-family iterations both landed back on the same 198-register / 16.6%-active-warps regime, so the cheapest remaining local seam on the correct anchor is the cp.async wait-group plus CTA barrier handoff. A bounded retime can target the persistent 5.95% barrier stall and 6.85% long-scoreboard stall without touching writer coverage or geometry.",
+      "expected_bottleneck": "synchronization_barrier_issue layered on top of occupancy_latency_hiding_issue in the current correctness-safe 128x128 PTX anchor",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955-2066",
+        "src/kernels/bf16_gemm_v1.cu:2023-2056",
+        "src/kernels/bf16_gemm_v1.cu:338-359"
+      ],
+      "risk": "medium",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.16,
+      "score_breakdown": {
+        "bottleneck_alignment": 0.86,
+        "implementation_scope": 0.74,
+        "anchor_stability": 0.7,
+        "risk_penalty": -0.14,
+        "reason": "Best current-anchor exploit after the writer-shape family flattened out."
+      },
+      "predicted_gain_ms": 0.1,
+      "predicted_fail_risk": 0.34,
+      "ranking_notes": [
+        "This is now the cleanest local seam on the current correctness-safe anchor.",
+        "It does not depend on preserving the round-7 low-register writer signal.",
+        "Keep the shared-memory footprint fixed."
+      ],
+      "stop_condition": "Stop if barrier retiming breaks correctness, grows shared memory, or improves barrier without any runtime win.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_123908_bf16_gemm_v1_1db08fc/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "stall::barrier",
+          "scope_type": "section",
+          "scope_name": "Warp Stall Sampling",
+          "location": "Warp Stall Sampling",
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_value": 5.95,
+          "importance_score": 55.95,
+          "explanation": "Barrier remains the most actionable local stall seam on the current correct anchor."
+        },
+        {
+          "hotspot_id": "stall::long_scoreboard",
+          "scope_type": "section",
+          "scope_name": "Warp Stall Sampling",
+          "location": "Warp Stall Sampling",
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "metric_value": 6.85,
+          "importance_score": 56.85,
+          "explanation": "Any handoff retime must not simply trade barrier time for worse scoreboard pressure."
+        }
+      ],
+      "expected_local_changes": [
+        "Retune cp.async wait-group completion versus CTA-wide sync on the steady-state PTX path.",
+        "Keep writer coverage and the 22016-byte shared-memory budget fixed.",
+        "Do not mix barrier work with another writer sweep rewrite."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 1.0,
+          "guardrail": "must_pass",
+          "reason": "This stays on the current correctness-safe anchor."
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "current_value": 6.85,
+          "guardrail": "non_increasing",
+          "reason": "Do not improve barrier by worsening scoreboard stalls."
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Apply only a minimal PTX export-address cleanup on the correct anchor",
+      "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
+      "subfamily_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup::late_pointer_conversion_only",
+      "action_fingerprint": "minimal_late_pointer_conversion_cleanup_without_touching_row_sweep",
+      "mode": "exploit",
+      "hypothesis": "The broader writer rewrites did not hold, but there can still be a small low-risk scalar cleanup left inside the correct PTX writer path. Restrict the change to late pointer conversion and row/column-derived scalar lifetimes only, without changing row coverage or helper topology.",
+      "expected_bottleneck": "occupancy_latency_hiding_issue with a small tail_overhead_or_generic_path_issue in the PTX export address math",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:934-975",
+        "src/kernels/bf16_gemm_v1.cu:1034-1075",
+        "src/kernels/bf16_gemm_v1.cu:2060-2064"
+      ],
+      "risk": "medium",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 1.94,
+      "score_breakdown": {
+        "bottleneck_alignment": 0.68,
+        "implementation_scope": 0.84,
+        "recent_family_penalty": -0.12,
+        "risk_penalty": -0.1,
+        "reason": "Smaller and safer than the recent writer rewrites, but still secondary to the barrier seam."
+      },
+      "predicted_gain_ms": 0.06,
+      "predicted_fail_risk": 0.26,
+      "ranking_notes": [
+        "This is intentionally narrower than the recent writer-shape attempts.",
+        "It stays below dir_01 because the last two rounds showed that writer-side work can easily expand into bigger changes than intended.",
+        "Keep row coverage and helper structure fixed."
+      ],
+      "stop_condition": "Stop if the cleanup touches row coverage again or cannot stay correctness-safe.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/latest_attempt.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 198.0,
+          "importance_score": 203.0,
+          "explanation": "A true minimal cleanup should not make the current register floor worse."
+        }
+      ],
+      "expected_local_changes": [
+        "Push pointer conversion as late as possible in the correct PTX writer.",
+        "Do not change the row sweep or helper topology.",
+        "Use this only as a scalar-lifetime cleanup."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 1.0,
+          "guardrail": "must_pass",
+          "reason": "This must remain a correctness-safe cleanup."
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Transplant the lower-register half-panel budget into the correctness-safe 256x128 pivot",
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "subfamily_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot::current_workload_correct_pivot_writer",
+      "action_fingerprint": "transplant_half_panel_budget_into_correct_256x128_pivot_after_ptx_writer_flattened_out",
+      "mode": "explore",
+      "hypothesis": "If the local PTX anchor stays stuck at 198 registers and 16.6% active warps after the barrier exploit, the next meaningful move is the correctness-safe 256x128 pivot with the lower-register half-panel budget transplanted into it. That remains the best orthogonal branch against the same occupancy ceiling.",
+      "expected_bottleneck": "occupancy_latency_hiding_issue attacked through geometry and register-budget change rather than another PTX-local cleanup",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1510-1675",
+        "src/kernels/bf16_gemm_v1.cu:1677-1832",
+        "src/kernels/bf16_gemm_v1.cu:2114-2131"
+      ],
+      "risk": "high",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 1.72,
+      "score_breakdown": {
+        "structural_upside": 0.94,
+        "bottleneck_alignment": 0.76,
+        "implementation_scope_penalty": -0.32,
+        "correctness_risk_penalty": -0.26,
+        "reason": "Best orthogonal branch once the local PTX exploit sequence is exhausted."
+      },
+      "predicted_gain_ms": 0.18,
+      "predicted_fail_risk": 0.55,
+      "ranking_notes": [
+        "Keep this alive so the queue does not collapse to only PTX-local work.",
+        "It stays third because the current PTX anchor still has one cleaner local seam left.",
+        "Use it when the barrier family also flattens out."
+      ],
+      "stop_condition": "Stop if the pivot transplant broadens beyond the hot-band path, fails correctness, or does not improve the occupancy signature.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "state/autotune_round18_main_tiles.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 198.0,
+          "importance_score": 203.0,
+          "explanation": "The point of the pivot is to move off the current register floor entirely."
+        }
+      ],
+      "expected_local_changes": [
+        "Reuse the correctness-safe 256x128 writer path.",
+        "Transplant only the lower-register half-panel staging and ownership choices.",
+        "Keep the change limited to the hot-band branch and launch selection."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 1.0,
+          "guardrail": "must_pass",
+          "reason": "This branch has a wider correctness surface and must stay clean."
+        }
+      ]
+    }
+  ],
+  "notes": "Round 10/100 diagnosis emitted after the compact writer sweep stayed correctness-safe but failed to move the 198-register anchor."
 }
