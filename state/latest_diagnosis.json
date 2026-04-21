@@ -1,22 +1,245 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
+  "status": "completed",
+  "created_at": "2026-04-21T15:09:48-07:00",
   "source_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
   "source_run_dir": "runs/20260421_150910_bf16_gemm_v1_7496aff2",
   "source_summary_json": "runs/20260421_150910_bf16_gemm_v1_7496aff2/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "The live run context is 20260421_150910_bf16_gemm_v1_7496aff2 at 24.537088 ms. This clean grouped-row experiment produced a useful negative result. Increasing kFixedHotBandPtxGroupedRows from 4 to 8 lowered barrier stalls from 5.46% to 5.33%, but long-scoreboard stalls rose from 7.24% to 7.33% and runtime regressed by 0.214 ms. That means the remaining gap to cuBLAS is not solved by deeper B-tile row grouping alone. The accepted clean base therefore stays at 24.324 ms, and the next move should target the long-scoreboard gap more directly while preserving the same row split and single-K stage depth. The best next clean experiment is the existing single-K 128x128 non-microkernel sibling, which changes the accumulate ordering without reopening the failed staged-128x128x32 path. The second choice is a launch-bounds retune to see whether the compiler can trim register pressure enough to help latency hiding. The third choice is the opposite grouped-row retune, from 4 down to 2, which tests whether the eight-row grouping overshot and whether tighter A locality is preferable to deeper B reuse.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_150910_bf16_gemm_v1_7496aff2/summary.json",
+    "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.md",
+    "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
+    "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
+  "family_audit": [
+    {
+      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+      "decision": "accept",
+      "rationale": "The grouped-row experiment only traded one stall class for another. The non-microkernel sibling is now the cleanest way to target long-scoreboard behavior while preserving the accepted row split and stage depth."
+    },
+    {
+      "family_id": "register_pressure::retune_ptx_launch_bounds",
+      "decision": "keep_hot",
+      "rationale": "Launch-bounds retuning is still worth trying because the clean baseline remains latency-limited at 200 registers per thread, even if occupancy is not the whole answer."
+    },
+    {
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "decision": "keep_as_alternative",
+      "rationale": "The 8-row grouping was too deep. A smaller grouping depth is still a valid opposite-direction fallback, but it no longer deserves top priority."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
+      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+      "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
+      "action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+      "mode": "exploit",
+      "hypothesis": "The grouped-row experiment showed that launch-order changes alone are not enough. The existing single-K 128x128 sibling keeps the accepted row split and one-K stage depth while changing the accumulate ordering away from the microkernel-specific path, which may reduce long-scoreboard waste directly.",
+      "expected_bottleneck": "microkernel-specific accumulate ordering is contributing to long-scoreboard stalls on the accepted hot-band split",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1839",
+        "src/kernels/bf16_gemm_v1.cu:1924",
+        "src/kernels/bf16_gemm_v1.cu:1956",
+        "src/kernels/bf16_gemm_v1.cu:2114"
+      ],
+      "risk": "Moderate risk: the variant is in-tree, but it still lacks a clean measurement on the accepted row split.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 0.76,
+      "score_breakdown": {
+        "expected_gain": 0.26,
+        "implementation_risk": 0.24,
+        "evidence_strength": 0.15,
+        "code_reuse": 0.11
+      },
+      "predicted_gain_ms": 0.9,
+      "predicted_fail_risk": 0.39,
+      "ranking_notes": [
+        "This is the cleanest next experiment that directly targets the long-scoreboard gap exposed by the grouped-row result.",
+        "It preserves the accepted hot-band row split, so the measurement stays focused on one kernel-variant change."
+      ],
+      "stop_condition": "Stop if runtime regresses again while long-scoreboard stalls stay flat or worsen.",
+      "evidence_refs": [
+        "src/kernels/bf16_gemm_v1.cu",
+        "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the grouped-row constant back to the clean accepted base if needed.",
+        "Swap the default hot-band launch from the PTX microkernel path to the existing single-K non-microkernel 128x128 sibling."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Retune PTX Launch Bounds On The Clean Baseline",
+      "family_id": "register_pressure::retune_ptx_launch_bounds",
+      "subfamily_id": "register_pressure::launch_bounds_128x128_ptx_min_blocks_2_to_3",
+      "action_fingerprint": "clean_ptx_hotband_baseline:launch_bounds_min_blocks_2->3",
+      "mode": "explore",
+      "hypothesis": "The clean PTX hotspot still sits at 200 registers per thread with occupancy capped at two blocks per SM. Tightening __launch_bounds__ may trim enough register pressure to improve latency hiding if the compiler does not spill.",
+      "expected_bottleneck": "register pressure and low CTA residency on the accepted PTX hot-band path",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955"
+      ],
+      "risk": "High risk: forcing tighter launch bounds can introduce spills or a worse schedule, and the clean cuBLAS reference does not point to occupancy as the main missing ingredient.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 0.54,
+      "score_breakdown": {
+        "expected_gain": 0.19,
+        "implementation_risk": 0.32,
+        "evidence_strength": 0.06,
+        "code_reuse": 0.09
+      },
+      "predicted_gain_ms": 0.5,
+      "predicted_fail_risk": 0.54,
+      "ranking_notes": [
+        "This remains worth keeping because the clean PTX path is still latency-limited.",
+        "It ranks behind the non-microkernel sibling because the grouped-row result points more strongly at scoreboard behavior than at occupancy."
+      ],
+      "stop_condition": "Stop immediately if build output or NCU shows spills, or if runtime regresses without lowering register pressure.",
+      "evidence_refs": [
+        "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
+        "runs/20260421_150524_cublas_ref_clean_post_cleanup/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the grouped-row constant back to the clean accepted base if needed.",
+        "Retune the PTX microkernel launch-bounds annotation and keep the rest of the launch topology unchanged for the first measurement."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Try A Shallower PTX Grouped-Row Setting",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::grouped_rows_4_to_2_for_a_locality",
+      "action_fingerprint": "clean_ptx_hotband_baseline:grouped_rows_4->2",
+      "mode": "explore",
+      "hypothesis": "The failed 8-row grouping suggests the PTX hot-band path may prefer tighter A locality over deeper B reuse. Dropping kFixedHotBandPtxGroupedRows from 4 to 2 tests the opposite launch-order direction without changing the row split or K-stage structure.",
+      "expected_bottleneck": "current grouped-row traversal may still be mismatched to A/B locality balance on the accepted PTX hot-band path",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1983",
+        "src/kernels/bf16_gemm_v1.cu:1988"
+      ],
+      "risk": "Moderate risk: this is the same family that just failed in the opposite direction, so the upside may be small.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "search_score_v1": 0.45,
+      "score_breakdown": {
+        "expected_gain": 0.14,
+        "implementation_risk": 0.18,
+        "evidence_strength": 0.05,
+        "code_reuse": 0.08
+      },
+      "predicted_gain_ms": 0.3,
+      "predicted_fail_risk": 0.31,
+      "ranking_notes": [
+        "This stays in reserve as the opposite-direction launch-order test after the 8-row setting failed.",
+        "It ranks third because the non-microkernel sibling is now the more direct scoreboard experiment."
+      ],
+      "stop_condition": "Stop if runtime change is within noise or if scoreboard stalls do not improve after one measurement.",
+      "evidence_refs": [
+        "runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.md",
+        "runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the grouped-row constant back to the clean accepted base if needed.",
+        "Decrease kFixedHotBandPtxGroupedRows from 4 to 2 and remeasure."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "non_decreasing"
+        }
+      ]
+    }
+  ],
+  "notes": "This diagnosis continues the clean 10-round loop. The 8-row grouped setting is now treated as a measured negative result, so the next recommended clean round moves to the non-microkernel sibling."
 }
