@@ -1,33 +1,10 @@
 {
-  "direction_id": "dir_01",
-  "name": "Trim The Fixed 64x96 Tail On The Restored 1181247 Base",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T19:11:23-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_190757",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "rank": 1,
-    "name": "Trim The Fixed 64x96 Tail On The Restored 1181247 Base",
-    "hypothesis": "The human-review queue still contains only workflow state and no new user-supplied idea bullets, so round 10 has to make the accept/defer/reject mapping directly from the measured evidence. The latest measured run cc89c17 rejected the peeled-single-stage residual family as the default next move because end-to-end performance regressed from 24.422464 ms to 25.152928 ms even though the hot-band kernel stayed essentially unchanged and the peeled kernel looked better in isolation. On that regressed run, the fixed 64x96 tail is now the clearest remaining bounded outlier: it still consumes about 0.908 ms while showing the worst stall mix in the profile at 26.14% barrier, 15.59% long-scoreboard, 13.50% short-scoreboard, and 14.66% MIO throttle. Since the implementation surface is already restored to the accepted 1181247 base, the best next move is to leave the main hot-band and peeled default alone and trim the isolated tail path.",
-    "expected_bottleneck": "Generic 64x96 tail staging and epilogue synchronization overhead on the restored fixed split.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:40-78",
-      "src/kernels/bf16_gemm_v1.cu:1167-1178",
-      "src/kernels/bf16_gemm_v1.cu:1298-1405",
-      "src/kernels/bf16_gemm_v1.cu:2130-2136"
-    ],
-    "risk": "Low to moderate. The tail path is isolated and the current source is already back on the accepted base, but the tail is a sub-millisecond kernel so the upside is bounded and easy to lose in noise if the edit leaks into generic paths.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime versus the 24.422464 ms 1181247 baseline",
-      "p10 and p90 runtime spread on the fixed perf run",
-      "64x96 tail kernel gpu__time_duration.sum",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct for the tail kernel",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct for the tail kernel",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct for the tail kernel",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct for the tail kernel"
-    ],
-    "stop_condition": "Stop if a tail-only cleanup cannot beat the restored 1181247 median by more than noise or if it starts perturbing the hot-band or peeled kernels."
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve or use-recommended-direction after node_b."
 }

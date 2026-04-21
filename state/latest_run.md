@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_190726_bf16_gemm_v1_cc89c17`
-- run dir: `runs/20260420_190726_bf16_gemm_v1_cc89c17`
-- kernel tag: `bf16_gemm_v1_cc89c17`
-- round label: `round 9/50`
+- run id: `20260420_191351_bf16_gemm_v1_69f60e6`
+- run dir: `runs/20260420_191351_bf16_gemm_v1_69f60e6`
+- kernel tag: `bf16_gemm_v1_69f60e6`
+- round label: `round 10/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.152928 ms`
-- p10 runtime: `24.853695 ms`
-- p90 runtime: `26.216733 ms`
-- TFLOP/s: `28.903967 TFLOP/s`
-- previous run id: `20260420_185423_bf16_gemm_v1_1181247`
-- runtime delta vs previous measured run: `+0.730464 ms`
-- TFLOP/s delta vs previous measured run: `-0.864504 TFLOP/s`
+- median runtime: `25.164400 ms`
+- p10 runtime: `24.907456 ms`
+- p90 runtime: `26.283316 ms`
+- TFLOP/s: `28.890791 TFLOP/s`
+- previous run id: `20260420_190726_bf16_gemm_v1_cc89c17`
+- runtime delta vs previous measured run: `+0.011472 ms`
+- TFLOP/s delta vs previous measured run: `-0.013177 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Specialize The Peeled 64x384 Residual Band On The New Best Sibling Base`
+- implemented direction name: `Trim The Fixed 64x96 Tail On The Restored 1181247 Base`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_190726_bf16_gemm_v1_cc89c17/summary.json`
-- measured commit: `cc89c17e6a132b1cb1d738be8a684e53f821fc66`
+- raw summary json: `runs/20260420_191351_bf16_gemm_v1_69f60e6/summary.json`
+- measured commit: `69f60e616da5be56d1786504c06088f10b6eaa46`
 - new best custom: `no`
-- generated at: `2026-04-20T19:07:33-07:00`
+- generated at: `2026-04-20T19:13:58-07:00`
