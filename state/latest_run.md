@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_010044_bf16_gemm_v1_ab3bbb2`
-- run dir: `runs/20260421_010044_bf16_gemm_v1_ab3bbb2`
-- kernel tag: `bf16_gemm_v1_ab3bbb2`
-- round label: `round 23/100`
+- run id: `20260421_010424_bf16_gemm_v1_f6d1219`
+- run dir: `runs/20260421_010424_bf16_gemm_v1_f6d1219`
+- kernel tag: `bf16_gemm_v1_f6d1219`
+- round label: `round 24/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
-- correctness: `FAIL`
-- correctness cases: `0/3`
+- correctness: `PASS`
+- correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.081952 ms`
-- p10 runtime: `29.872672 ms`
-- p90 runtime: `30.628960 ms`
-- TFLOP/s: `24.167960 TFLOP/s`
-- previous run id: `20260421_005653_bf16_gemm_v1_0c534cb`
-- runtime delta vs previous measured run: `+0.262528 ms`
-- TFLOP/s delta vs previous measured run: `-0.212773 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.176016 ms`
+- p10 runtime: `24.159846 ms`
+- p90 runtime: `24.859209 ms`
+- TFLOP/s: `30.071929 TFLOP/s`
+- previous run id: `20260421_010044_bf16_gemm_v1_ab3bbb2`
+- runtime delta vs previous measured run: `-5.905936 ms`
+- TFLOP/s delta vs previous measured run: `+5.903968 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Single-Source Warp Ownership End To End On The Half-Panel Branch`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_010044_bf16_gemm_v1_ab3bbb2/summary.json`
-- measured commit: `ab3bbb20c3decc5c173a0fbada0eba99b61bfff5`
+- raw summary json: `runs/20260421_010424_bf16_gemm_v1_f6d1219/summary.json`
+- measured commit: `f6d1219a34005d5ad19676734d636b07fa356b87`
 - new best custom: `no`
-- generated at: `2026-04-21T01:00:50-07:00`
+- generated at: `2026-04-21T01:04:30-07:00`

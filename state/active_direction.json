@@ -1,67 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-  "candidate_id": "diagnosis_20260421_010129:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-  "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-  "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-  "selection_priority": 2.515,
-  "base_run_id": "20260421_010044_bf16_gemm_v1_ab3bbb2",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T01:03:54-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_010129",
-  "status": "implemented_pending_measurement",
-  "implemented_action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-  "semantic_delta_tags": [
-    "historical_surface_restore",
-    "ptx_best_surface",
-    "baseline_recovery"
-  ],
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-    "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-    "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
-    "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
-    "mode": "restore",
-    "hypothesis": "Round 22 and round 23 were the right aggressive probe on the half-panel family, but the result is now decisive enough to step back. Both rehydrated snapshots failed correctness 0/3 and stayed around 30 ms even though they preserved the high-warps signature. That means the branch is not one bounded fix away from replacing the current best. The immediate next move should therefore be to restore the exact 489574e PTX winner surface so the loop returns to the best correct baseline before it spends more budget on other aggressive families.",
-    "expected_bottleneck": "No new bottleneck is being attacked here; this is an exact recovery of the best-known implementation surface.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:153-156",
-      "src/kernels/bf16_gemm_v1.cu:1970-2060",
-      "src/kernels/bf16_gemm_v1.cu:2093-2117"
-    ],
-    "risk": "Low. This is the exact best measured correct surface.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime",
-      "correctness pass rate across all 3 cases",
-      "hot-band gpu__time_duration.sum",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "launch__occupancy_limit_registers"
-    ],
-    "search_score_v1": 2.28,
-    "score_breakdown": {
-      "policy_id": "manual_round100_node_b_v24",
-      "rank_score": 1.58,
-      "recovery_bonus": 0.46,
-      "measured_win_bonus": 0.36,
-      "risk_penalty": 0.12,
-      "formula": "rank_score + recovery_bonus + measured_win_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 5.92,
-    "predicted_fail_risk": 0.06,
-    "ranking_notes": [
-      "This now ranks first because the aggressive half-panel family has consumed enough budget to justify a hard reset to the best correct surface.",
-      "Returning to the PTX best preserves the search discipline: aggressive probes are allowed, but they do not replace the accepted base unless node_a actually proves them.",
-      "Once restored, the loop can pick the next structural family from a clean, correct anchor."
-    ],
-    "stop_condition": "Stop once the exact PTX best surface is restored or if a remeasurement shows it no longer reproduces the prior 24.16-24.18 ms band.",
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
