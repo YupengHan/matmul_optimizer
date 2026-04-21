@@ -4,20 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage`
-- candidate id: `diagnosis_20260420_232331:dir_01`
+- direction id: `dir_02`
+- direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
+- candidate id: `diagnosis_20260420_232331:dir_02`
 - base run id: `20260420_232254_bf16_gemm_v1_78421da`
-- primary family id: `legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage`
-- planned action fingerprint: `739689f47db8e67a`
-- selection mode: `recommended`
+- primary family id: `legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path`
+- planned action fingerprint: `8e91e546243f09ff`
+- selection mode: `approved`
 - source diagnosis id: `diagnosis_20260420_232331`
 - round loop: `round 10/100`
-- hypothesis: `Round 9 turned the grouped-row non-PTX 128x128 sibling from a historical escape hatch into a directly measured live branch: switching the default hot-band dispatch onto that sibling measured 24.18073654 ms, which is only 0.00008011 ms slower than the accepted-base run at 24.18065643 ms and therefore effectively PASS_FLAT on the active search anchor. The NCU headline signature also stayed in the same band instead of collapsing: active warps held at 16.62, long-scoreboard stayed at 7.26, and barrier only moved to 5.48. That means the branch validation step is done. The cleanest next move is the historically positive follow-on inside that family: replace the sibling's heavier generic export scratch lifetime with the PTX-style single-stage per-warp scratch path that previously improved the sibling branch from 24.449024 ms to 24.422464 ms. Now that the sibling route is live in the current tree, this bounded export-side trim is the highest-upside next step without reopening a broader family pivot.`
-- expected bottleneck: `Shared export and writeback overhead inside the grouped-row non-PTX 128x128 sibling, especially the sibling branch's heavier export scratch lifetime after the hot-band dispatch has already moved onto that family.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:110-137, src/kernels/bf16_gemm_v1.cu:936-1068, src/kernels/bf16_gemm_v1.cu:1843-1948`
-- risk: `Medium. The family is bounded and historically positive, but it still leaves the absolute best-known PTX run behind unless the sibling export trim converts the newly validated flat branch into a real win.`
-- metrics to re-check: `end-to-end median runtime versus the 24.164352 ms best-known PTX run, end-to-end median runtime versus the 24.180656 ms accepted-base run, hot-band gpu__time_duration.sum, shared-memory footprint or allocation on the sibling path, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, correctness pass rate across all 3 cases`
+- hypothesis: `The active PTX branch still owns the best-known custom runtime at 24.16435242 ms, so it cannot be dropped from the queue just because the last two PTX-local tweaks flattened out. The right interpretation of rounds 7 through 9 is narrower: the export-address cleanup harvested a tiny writeback win, the follow-up issue-grouping retime flattened, and the sibling dispatch pivot then validated an off-branch alternative without beating the PTX best. That leaves one coherent PTX fallback alive: a bounded control-path exploit that stays on the best-known PTX surface but avoids simply replaying the same export cleanup or handoff micro-change. If the sibling export trim fails to convert its flat branch into a win, this remains the strongest on-surface family to revisit.`
+- expected bottleneck: `Residual PTX hot-band control-path overhead on the best-known 128x128 PTX surface, especially helper lifetime and consume-order friction that the export-address cleanup did not remove.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:719-860, src/kernels/bf16_gemm_v1.cu:1010-1075, src/kernels/bf16_gemm_v1.cu:1957-2061`
+- risk: `Moderate. The family has one historical PASS_WIN and multiple later PASS_FLAT outcomes, so another attempt must be materially different from the already-baked control-order tweaks or it will likely collapse back into noise.`
+- metrics to re-check: `end-to-end median runtime versus the 24.164352 ms best-known PTX run, launch__registers_per_thread, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, hot-band gpu__time_duration.sum`
 
 ## Allowed edit surface
 
@@ -43,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no tracked dirty paths at prepare time
+- `src/kernels/bf16_gemm_v1.cu`

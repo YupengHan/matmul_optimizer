@@ -9,9 +9,9 @@
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "recommended_direction_id": "dir_01",
-  "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260420_232331:dir_01",
+  "approved_direction_id": "dir_02",
+  "selected_direction_id": "dir_02",
+  "selected_candidate_id": "diagnosis_20260420_232331:dir_02",
   "family_audit": [
     "accepted: legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage because round 9 validated the grouped-row non-PTX sibling as PASS_FLAT against the accepted base (24.18073654 ms versus 24.18065643 ms) and the next bounded cost on that branch is still the sibling export scratch lifetime.",
     "deferred: legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path because the active PTX branch still owns the best-known 24.16435242 ms run, but two recent PTX-local follow-ups already flattened enough that it should sit behind the now-validated sibling follow-on.",

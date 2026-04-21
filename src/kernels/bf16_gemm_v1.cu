@@ -1979,18 +1979,18 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   const __nv_bfloat16* a_block = a + block_row * kFixedBenchmarkK;
   const __nv_bfloat16* b_block = b + block_col;
 
-  stage_a_shared_tile_async<FixedHotBandTile128x128>(
-      a_shared[0], a_block, kFixedBenchmarkK);
   stage_b_shared_tile_async<FixedHotBandTile128x128>(
       b_shared[0], b_block, kFixedBenchmarkN);
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
+      a_shared[0], a_block, kFixedBenchmarkK);
   cp_async_commit_group();
 
-  stage_a_shared_tile_async<FixedHotBandTile128x128>(
-      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
   stage_b_shared_tile_async<FixedHotBandTile128x128>(
       b_shared[1],
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
+  stage_a_shared_tile_async<FixedHotBandTile128x128>(
+      a_shared[1], a_block + kWmmaK, kFixedBenchmarkK);
   cp_async_commit_group();
   cp_async_wait_group_1();
   __syncthreads();

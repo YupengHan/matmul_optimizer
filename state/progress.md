@@ -6,15 +6,15 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `78421da4dfba487599a691086ae54a1ec8197362`
 - plateau counter: `2`
 - round loop: `round 10/100`
 - rounds remaining: `91`
-- notes: `Node C is ready to implement diagnosis_20260420_232331:dir_01 via recommended selection for round 10/100.`
+- notes: `Node C build succeeded for round 10/100. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -31,7 +31,7 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 - diagnosis status: `completed`
 - diagnosis id: `diagnosis_20260420_232331`
 - recommended direction: `dir_01`
-- approved direction: `None`
+- approved direction: `dir_02`
 - diagnosis notes: `Round 10/100 audit: round 9 converted the grouped-row non-PTX 128x128 sibling from a queued family into a directly measured live branch. The dispatch switch measured 24.18073654 ms with correctness intact, which is only 0.00008011 ms slower than the accepted-base run at 24.18065643 ms and therefore effectively PASS_FLAT on the active search anchor, even though it still trails the 24.16435242 ms best-known PTX run by 0.01638412 ms. The right next move is no longer to recommend the sibling pivot itself, because that validation step is now complete. Instead, the diagnosis promotes the sibling export-scratch trim to rank 1 as the bounded follow-on on top of the newly validated sibling surface, while keeping two active-PTX fallback families alive behind it. The live queue rehydration remains in effect; these rankings intentionally follow the strongest currently open family representatives rather than only the newest diagnosis lineage.`
 - dir_01: Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage | bottleneck: Shared export and writeback overhead inside the grouped-row non-PTX 128x128 sibling, especially the sibling branch's heavier export scratch lifetime after the hot-band dispatch has already moved onto that family.
 - dir_02: Continue The Active PTX One-K 128x128 Control-Path Exploit | bottleneck: Residual PTX hot-band control-path overhead on the best-known 128x128 PTX surface, especially helper lifetime and consume-order friction that the export-address cleanup did not remove.
@@ -39,10 +39,10 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one candidate.`
+- direction id: `dir_02`
+- selection mode: `approved`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 

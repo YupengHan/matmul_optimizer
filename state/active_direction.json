@@ -1,59 +1,67 @@
 {
-  "direction_id": "dir_01",
-  "name": "Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage",
-  "candidate_id": "diagnosis_20260420_232331:dir_01",
+  "direction_id": "dir_02",
+  "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+  "candidate_id": "diagnosis_20260420_232331:dir_02",
   "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
-  "subfamily_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
-  "action_fingerprint": "739689f47db8e67a",
-  "selection_priority": 2.58,
+  "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+  "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+  "action_fingerprint": "8e91e546243f09ff",
+  "selection_priority": 2.125,
   "base_run_id": "20260420_232254_bf16_gemm_v1_78421da",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T23:26:50-07:00",
+  "selection_mode": "approved",
+  "selected_at": "2026-04-20T23:29:54-07:00",
   "source_diagnosis_id": "diagnosis_20260420_232331",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "ptx_b_first_prologue_staging",
+  "semantic_delta_tags": [
+    "ptx_control_path",
+    "prologue_stage_order",
+    "b_first_staging"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:1982-1994"
+  ],
   "summary": {
-    "direction_id": "dir_01",
-    "name": "Trim The Grouped-Row 128x128 Sibling Export Scratch To The PTX-Style Single Stage",
-    "family_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
-    "subfamily_id": "legacy::trim_the_grouped_row_128x128_sibling_export_scratch_to_the_ptx_style_single_stage",
-    "action_fingerprint": "739689f47db8e67a",
+    "direction_id": "dir_02",
+    "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
+    "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+    "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+    "action_fingerprint": "8e91e546243f09ff",
     "mode": "exploit",
-    "hypothesis": "Round 9 turned the grouped-row non-PTX 128x128 sibling from a historical escape hatch into a directly measured live branch: switching the default hot-band dispatch onto that sibling measured 24.18073654 ms, which is only 0.00008011 ms slower than the accepted-base run at 24.18065643 ms and therefore effectively PASS_FLAT on the active search anchor. The NCU headline signature also stayed in the same band instead of collapsing: active warps held at 16.62, long-scoreboard stayed at 7.26, and barrier only moved to 5.48. That means the branch validation step is done. The cleanest next move is the historically positive follow-on inside that family: replace the sibling's heavier generic export scratch lifetime with the PTX-style single-stage per-warp scratch path that previously improved the sibling branch from 24.449024 ms to 24.422464 ms. Now that the sibling route is live in the current tree, this bounded export-side trim is the highest-upside next step without reopening a broader family pivot.",
-    "expected_bottleneck": "Shared export and writeback overhead inside the grouped-row non-PTX 128x128 sibling, especially the sibling branch's heavier export scratch lifetime after the hot-band dispatch has already moved onto that family.",
+    "hypothesis": "The active PTX branch still owns the best-known custom runtime at 24.16435242 ms, so it cannot be dropped from the queue just because the last two PTX-local tweaks flattened out. The right interpretation of rounds 7 through 9 is narrower: the export-address cleanup harvested a tiny writeback win, the follow-up issue-grouping retime flattened, and the sibling dispatch pivot then validated an off-branch alternative without beating the PTX best. That leaves one coherent PTX fallback alive: a bounded control-path exploit that stays on the best-known PTX surface but avoids simply replaying the same export cleanup or handoff micro-change. If the sibling export trim fails to convert its flat branch into a win, this remains the strongest on-surface family to revisit.",
+    "expected_bottleneck": "Residual PTX hot-band control-path overhead on the best-known 128x128 PTX surface, especially helper lifetime and consume-order friction that the export-address cleanup did not remove.",
     "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:110-137",
-      "src/kernels/bf16_gemm_v1.cu:936-1068",
-      "src/kernels/bf16_gemm_v1.cu:1843-1948"
+      "src/kernels/bf16_gemm_v1.cu:719-860",
+      "src/kernels/bf16_gemm_v1.cu:1010-1075",
+      "src/kernels/bf16_gemm_v1.cu:1957-2061"
     ],
-    "risk": "Medium. The family is bounded and historically positive, but it still leaves the absolute best-known PTX run behind unless the sibling export trim converts the newly validated flat branch into a real win.",
+    "risk": "Moderate. The family has one historical PASS_WIN and multiple later PASS_FLAT outcomes, so another attempt must be materially different from the already-baked control-order tweaks or it will likely collapse back into noise.",
     "metrics_to_recheck": [
       "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
-      "end-to-end median runtime versus the 24.180656 ms accepted-base run",
-      "hot-band gpu__time_duration.sum",
-      "shared-memory footprint or allocation on the sibling path",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "launch__registers_per_thread",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
       "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "correctness pass rate across all 3 cases"
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "hot-band gpu__time_duration.sum"
     ],
-    "search_score_v1": 2.4,
+    "search_score_v1": 2.05,
     "score_breakdown": {
       "policy_id": "manual_round100_node_b_v10",
-      "rank_score": 3.0,
-      "validated_branch_bonus": 0.35,
-      "historical_win_bonus": 0.2,
-      "risk_penalty": 0.45,
-      "formula": "rank_score + validated_branch_bonus + historical_win_bonus - risk_penalty"
+      "rank_score": 2.0,
+      "best_known_surface_bonus": 0.25,
+      "recent_flat_penalty": 0.15,
+      "risk_penalty": 0.05,
+      "formula": "rank_score + best_known_surface_bonus - recent_flat_penalty - risk_penalty"
     },
-    "predicted_gain_ms": 0.03,
-    "predicted_fail_risk": 0.28,
+    "predicted_gain_ms": 0.02,
+    "predicted_fail_risk": 0.3,
     "ranking_notes": [
-      "Round 9 removed the main coherence objection to this family by proving the sibling dispatch itself is flat on the accepted surface rather than a real regression.",
-      "This is the highest-priority open frontier family after the live-queue rehydration and it now lines up with the latest measured evidence instead of only historical runs.",
-      "It ranks above the PTX-local fallbacks because it attacks the most concrete residual cost on the only newly validated off-branch surface."
+      "This remains the best active-PTX fallback because the branch still owns the absolute best runtime even after the sibling pivot validated as flat.",
+      "It stays below the sibling export trim because recent PTX-local follow-ups already spent two rounds for one tiny win and one slight regression.",
+      "Keeping it second preserves a live way back onto the best-known PTX surface if the sibling follow-on fails."
     ],
-    "stop_condition": "Stop if the sibling export-scratch trim cannot beat the accepted-base 24.180656 ms band or if it improves sibling-local counters without moving runtime enough to threaten the 24.164352 ms best-known PTX run.",
+    "stop_condition": "Stop if another bounded PTX control-path tweak again behaves like PASS_FLAT noise without improving the 24.164352 ms best-known PTX band.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }

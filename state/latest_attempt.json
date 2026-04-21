@@ -1,90 +1,76 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260420_225317:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260420_225317:dir_01",
-  "source_diagnosis_id": "diagnosis_20260420_225317",
-  "base_run_id": "20260420_225251_bf16_gemm_v1_306839d",
-  "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
-  "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
-  "direction_id": "dir_01",
-  "direction_name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
+  "attempt_id": "diagnosis_20260420_232331:dir_02",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260420_232331:dir_02",
+  "source_diagnosis_id": "diagnosis_20260420_232331",
+  "base_run_id": "20260420_232254_bf16_gemm_v1_78421da",
+  "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+  "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
+  "direction_id": "dir_02",
+  "direction_name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
   "mode": "exploit",
-  "commit": "78421da4dfba487599a691086ae54a1ec8197362",
-  "commit_short": "78421da",
-  "subject": "node_c: round 9/100 implement dir_01 Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-20T22:57:14-07:00",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 10/100 implement dir_02 Continue The Active PTX One-K 128x128 Control-Path Exploit",
+  "selection_mode": "approved",
+  "selected_at": "2026-04-20T23:29:54-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260420_225251_bf16_gemm_v1_306839d",
-  "selection_score": 2.4875,
-  "planned_action_fingerprint": "50dacc5cc17f8c60",
-  "implemented_action_fingerprint": "switch_default_hot_band_dispatch_to_non_ptx_128x128_sibling",
+  "source_run_id": "20260420_232254_bf16_gemm_v1_78421da",
+  "selection_score": 2.125,
+  "planned_action_fingerprint": "8e91e546243f09ff",
+  "implemented_action_fingerprint": "ptx_b_first_prologue_staging",
   "score_breakdown": {
-    "policy_id": "manual_round100_node_b_v9",
-    "rank_score": 3.0,
-    "ptx_saturation_bonus": 0.2,
-    "family_escape_bonus": 0.1,
-    "historical_gap_penalty": 0.45,
-    "risk_penalty": 0.5,
-    "formula": "rank_score + ptx_saturation_bonus + family_escape_bonus - historical_gap_penalty - risk_penalty"
+    "policy_id": "manual_round100_node_b_v10",
+    "rank_score": 2.0,
+    "best_known_surface_bonus": 0.25,
+    "recent_flat_penalty": 0.15,
+    "risk_penalty": 0.05,
+    "formula": "rank_score + best_known_surface_bonus - recent_flat_penalty - risk_penalty"
   },
   "semantic_delta_tags": [
-    "dispatch_switch",
-    "hot_band_default_route",
-    "reuse_existing_grouped_row_sibling"
+    "ptx_control_path",
+    "prologue_stage_order",
+    "b_first_staging"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2084-2091"
+    "src/kernels/bf16_gemm_v1.cu:1982-1994"
   ],
   "implementation": {
-    "commit": "78421da4dfba487599a691086ae54a1ec8197362",
-    "commit_short": "78421da",
-    "subject": "node_c: round 9/100 implement dir_01 Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 10/100 implement dir_02 Continue The Active PTX One-K 128x128 Control-Path Exploit",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu:2084-2091"
+      "src/kernels/bf16_gemm_v1.cu:1982-1994"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 1,
-      "deletions": 1
+      "insertions": 4,
+      "deletions": 4
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 1,
-    "deletions": 1
+    "insertions": 4,
+    "deletions": 4
   },
   "measurement": {
-    "run_id": "20260420_232254_bf16_gemm_v1_78421da",
-    "measurement_commit": "78421da4dfba487599a691086ae54a1ec8197362",
-    "runtime_ms": 24.18073654,
-    "runtime_delta_ms": 0.010336870000003273,
-    "tflops": 30.06605777,
-    "correctness": true,
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.35",
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.83",
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.12",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.48",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.36",
-      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.62",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.48",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.26",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.24",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.57",
-      "launch__occupancy_limit_registers": "2"
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "headline_metrics": {},
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": "flat",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260420_232254_bf16_gemm_v1_78421da for candidate diagnosis_20260420_225317:dir_01; transition_label=PASS_FLAT.",
-  "transition_label": "PASS_FLAT"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

@@ -8,9 +8,9 @@
   "candidate_set_id": "candidate_set:diagnosis_20260420_232331",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": "diagnosis_20260420_232331:dir_01",
-  "selection_reason": "selected_via_recommended",
-  "selection_summary": "Selected diagnosis_20260420_232331:dir_01 -> dir_01 via mode=recommended.",
+  "selected_candidate_id": "diagnosis_20260420_232331:dir_02",
+  "selection_reason": "selected_via_approved",
+  "selection_summary": "Selected diagnosis_20260420_232331:dir_02 -> dir_02 via mode=approved.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -2444,7 +2444,7 @@
       "last_result_runtime_ms": 24.18073654,
       "last_runtime_delta_ms": 0.010336870000003273,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-20T23:26:50-07:00",
+      "last_closed_at": "2026-04-20T23:29:54-07:00",
       "last_closed_search_iteration": 14,
       "last_reopened_search_iteration": 14,
       "reopened_at": "2026-04-20T23:26:50-07:00",
@@ -2714,12 +2714,12 @@
         "hot-band gpu__time_duration.sum"
       ],
       "stop_condition": "Stop if another bounded PTX control-path tweak again behaves like PASS_FLAT noise without improving the 24.164352 ms best-known PTX band.",
-      "status": "open",
+      "status": "selected",
       "source_search_iteration": 14,
-      "selection_count": 0,
+      "selection_count": 1,
       "reopen_count": 0,
-      "last_selected_at": null,
-      "last_selected_selection_mode": null,
+      "last_selected_at": "2026-04-20T23:29:54-07:00",
+      "last_selected_selection_mode": "approved",
       "last_transition_label": null,
       "last_transition_class": null,
       "last_result_run_id": null,
@@ -2807,7 +2807,7 @@
     }
   ],
   "notes": "Persistent frontier tracks 41 historical candidates; 12 family representatives are currently active for selection.",
-  "updated_at": "2026-04-20T23:26:50-07:00",
+  "updated_at": "2026-04-20T23:29:54-07:00",
   "family_representative_count": 12,
   "reopened_candidate_ids": []
 }
