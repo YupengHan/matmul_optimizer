@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T22:05:42-07:00",
   "source_diagnosis_id": "diagnosis_20260420_220312",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
@@ -54,5 +54,13 @@
     "stop_condition": "Stop if the 256x128 pivot branch cannot beat the 24.419329 ms PTX base or if it lowers active warps / raises registers without improving hot-band time.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "538fb586502fa3b4"
 }
