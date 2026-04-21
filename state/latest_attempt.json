@@ -1,30 +1,32 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_150910_round02_clean_7496aff2",
-  "base_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-  "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
-  "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate",
+  "attempt_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_152228_round03_clean_2fbb368d:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_152228_round03_clean_2fbb368d",
+  "base_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+  "family_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops",
+  "subfamily_id": "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops::ptx_and_non_ptx_hot_band_paths",
   "direction_id": "dir_01",
-  "direction_name": "Swap To The Single-K 128x128 Non-Microkernel Sibling",
+  "direction_name": "Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
   "mode": "exploit",
-  "commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
-  "commit_short": "2fbb368",
-  "subject": "node_c: round 2/10 implement dir_01 Swap To The Single-K 128x128 Non-Microkernel Sibling",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 3/10 implement dir_01 Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T15:11:26-07:00",
+  "selected_at": "2026-04-21T15:29:22-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_150910_bf16_gemm_v1_7496aff2",
-  "selection_score": 0.9125,
-  "planned_action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
-  "implemented_action_fingerprint": "clean_ptx_hotband_baseline:microkernel->regular_128x128_single_k",
+  "source_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
+  "selection_score": 0.81,
+  "planned_action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops",
+  "implemented_action_fingerprint": "hoist_128x128_hot_band_warp_local_shared_offsets_out_of_steady_state_loops",
   "score_breakdown": {
-    "expected_gain": 0.26,
-    "implementation_risk": 0.24,
-    "evidence_strength": 0.15,
-    "code_reuse": 0.11
+    "policy_id": "manual_round03_diverse_family_refresh_v1",
+    "headroom_score": 0.34,
+    "evidence_score": 0.22,
+    "implementation_bonus": 0.18,
+    "risk_penalty": -0.07,
+    "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
   },
   "semantic_delta_tags": [
     "single_direction_attempt",
@@ -35,9 +37,9 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
-    "commit_short": "2fbb368",
-    "subject": "node_c: round 2/10 implement dir_01 Swap To The Single-K 128x128 Non-Microkernel Sibling",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 3/10 implement dir_01 Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
@@ -46,160 +48,31 @@
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 1,
-      "deletions": 1
+      "insertions": 26,
+      "deletions": 23
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 1,
-    "deletions": 1
+    "insertions": 26,
+    "deletions": 23
   },
   "measurement": {
-    "run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
-    "measurement_commit": "2fbb368dd19ae7df53b7f4dc6cee09c0a21666a4",
-    "runtime_ms": 24.39260769,
-    "runtime_delta_ms": -0.14448070000000257,
-    "tflops": 29.80490774,
-    "correctness": true,
-    "ncu_analysis_path": "runs/20260421_152228_bf16_gemm_v1_2fbb368d/ncu_analysis.json",
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 48.38,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 47.82,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 46.12,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 12.48,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 29.82,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 16.62,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 5.48,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 7.15,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 2.24,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 3.59,
-      "launch__occupancy_limit_registers": 2.0
-    },
-    "headline_metric_deltas_vs_previous_run": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 0.0800000000000054,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": -0.00999999999999801,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 0.0,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 2.710000000000001,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": -0.8399999999999999,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 0.030000000000001137,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 0.15000000000000036,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": -0.17999999999999972,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 0.07000000000000028,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": -0.16000000000000014,
-      "launch__occupancy_limit_registers": 0.0
-    },
-    "structured_bottleneck_deltas": [
-      {
-        "stall_group": "long_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "previous": 7.33,
-        "current": 7.15,
-        "delta": -0.17999999999999972,
-        "trend": "improved"
-      },
-      {
-        "stall_group": "mio_throttle",
-        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "previous": 3.75,
-        "current": 3.59,
-        "delta": -0.16000000000000014,
-        "trend": "improved"
-      },
-      {
-        "stall_group": "barrier",
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "previous": 5.33,
-        "current": 5.48,
-        "delta": 0.15000000000000036,
-        "trend": "regressed"
-      },
-      {
-        "stall_group": "short_scoreboard",
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "previous": 2.17,
-        "current": 2.24,
-        "delta": 0.07000000000000028,
-        "trend": "regressed"
-      }
-    ],
-    "top_hotspot_deltas": [
-      {
-        "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics",
-        "metric_name": "Registers Per Thread",
-        "previous": 200.0,
-        "current": 196.0,
-        "delta": -4.0,
-        "trend": "improved",
-        "importance_score": 205.0,
-        "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "DRAM Throughput",
-        "previous": 9.73,
-        "current": 12.46,
-        "delta": 2.7300000000000004,
-        "trend": "improved",
-        "importance_score": 95.27,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l2_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L2 Cache Throughput",
-        "previous": 30.65,
-        "current": 29.78,
-        "delta": -0.8699999999999974,
-        "trend": "regressed",
-        "importance_score": 75.22,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.",
-        "bucket": "regressed"
-      },
-      {
-        "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l1_tex_cache_throughput",
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput",
-        "metric_name": "L1/TEX Cache Throughput",
-        "previous": 46.59,
-        "current": 46.64,
-        "delta": 0.04999999999999716,
-        "trend": "improved",
-        "importance_score": 58.41,
-        "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput.",
-        "bucket": "improved"
-      },
-      {
-        "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy",
-        "metric_name": "Achieved Occupancy",
-        "previous": 16.59,
-        "current": 16.62,
-        "delta": 0.030000000000001137,
-        "trend": "improved",
-        "importance_score": 88.41,
-        "explanation": "Occupancy is carrying metric Achieved Occupancy.",
-        "bucket": "improved"
-      }
-    ]
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "ncu_analysis_path": null,
+    "headline_metrics": {},
+    "headline_metric_deltas_vs_previous_run": {},
+    "structured_bottleneck_deltas": [],
+    "top_hotspot_deltas": []
   },
-  "transition_class": "improved",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_152228_bf16_gemm_v1_2fbb368d for candidate diagnosis_20260421_150910_round02_clean_7496aff2:dir_01; transition_label=PASS_WIN.",
-  "transition_label": "PASS_WIN"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

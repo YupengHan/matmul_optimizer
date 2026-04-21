@@ -1771,26 +1771,27 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
   cp_async_wait_group_1();
   __syncthreads();
 
+  const int a_shared_row_offset =
+      warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+  const int b_shared_col_offset =
+      b_shared_col_from_logical<FixedHotBandTile128x128>(
+          warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+
   #pragma unroll 1
   for (int stage_idx = 0; stage_idx < FixedKStages; ++stage_idx) {
     const int curr_stage = stage_idx & 1;
     const int next_stage_idx = stage_idx + 1;
     const int future_stage_idx = stage_idx + 2;
 
-    const __nv_bfloat16* a_tile_0 =
-        a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+    const __nv_bfloat16* a_tile_0 = a_shared[curr_stage] + a_shared_row_offset;
     const __nv_bfloat16* a_tile_1 =
         a_shared[curr_stage] + FixedHotBandTile128x128::kASharedTileElems +
-        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+        a_shared_row_offset;
     const __nv_bfloat16* b_tile_0 =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<FixedHotBandTile128x128>(
-            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+        b_shared[curr_stage] + b_shared_col_offset;
     const __nv_bfloat16* b_tile_1 =
         b_shared[curr_stage] + FixedHotBandTile128x128::kBSharedTileElems +
-        b_shared_col_from_logical<FixedHotBandTile128x128>(
-            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+        b_shared_col_offset;
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile_0, b_tile_0);
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile_1, b_tile_1);
@@ -1907,19 +1908,20 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
   cp_async_wait_group_1();
   __syncthreads();
 
+  const int a_shared_row_offset =
+      warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+  const int b_shared_col_offset =
+      b_shared_col_from_logical<FixedHotBandTile128x128>(
+          warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+
   #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
     const int future_tile_idx = tile_idx + 2;
 
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<FixedHotBandTile128x128>(
-            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+    const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
+    const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_shared_col_offset;
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
 
@@ -2021,19 +2023,20 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   cp_async_wait_group_1();
   __syncthreads();
 
+  const int a_shared_row_offset =
+      warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
+  const int b_shared_col_offset =
+      b_shared_col_from_logical<FixedHotBandTile128x128>(
+          warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+
   #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
     const int curr_stage = tile_idx & 1;
     const int next_tile_idx = tile_idx + 1;
     const int future_tile_idx = tile_idx + 2;
 
-    const __nv_bfloat16* a_tile =
-        a_shared[curr_stage] +
-        warp_tile_m * FixedHotBandTile128x128::kWarpTileM * kWmmaK;
-    const __nv_bfloat16* b_tile =
-        b_shared[curr_stage] +
-        b_shared_col_from_logical<FixedHotBandTile128x128>(
-            warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+    const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
+    const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_shared_col_offset;
 
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
