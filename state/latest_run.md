@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_084530_bf16_gemm_v1_81595f4`
-- run dir: `runs/20260421_084530_bf16_gemm_v1_81595f4`
-- kernel tag: `bf16_gemm_v1_81595f4`
-- round label: `round 74/100`
+- run id: `20260421_084539_bf16_gemm_v1_cc89e2c`
+- run dir: `runs/20260421_084539_bf16_gemm_v1_cc89e2c`
+- kernel tag: `bf16_gemm_v1_cc89e2c`
+- round label: `round 75/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.419360 ms`
-- p10 runtime: `24.393725 ms`
-- p90 runtime: `25.587711 ms`
-- TFLOP/s: `29.772255 TFLOP/s`
-- previous run id: `20260421_084521_bf16_gemm_v1_a20af07`
-- runtime delta vs previous measured run: `-0.323472 ms`
-- TFLOP/s delta vs previous measured run: `+0.389223 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.670336 ms`
+- p10 runtime: `30.417510 ms`
+- p90 runtime: `31.705718 ms`
+- TFLOP/s: `23.704319 TFLOP/s`
+- previous run id: `20260421_084530_bf16_gemm_v1_81595f4`
+- runtime delta vs previous measured run: `+6.250976 ms`
+- TFLOP/s delta vs previous measured run: `-6.067936 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
+- implemented direction name: `Promote The Existing 256x128 Pivot Hot-Band Kernel`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_084530_bf16_gemm_v1_81595f4/summary.json`
-- measured commit: `81595f4d260c48977738ee09ac229be6b457c789`
+- raw summary json: `runs/20260421_084539_bf16_gemm_v1_cc89e2c/summary.json`
+- measured commit: `cc89e2cfe5cbbf37ab066a7eb0a8312d4490e019`
 - new best custom: `no`
-- generated at: `2026-04-21T08:45:36-07:00`
+- generated at: `2026-04-21T08:45:45-07:00`
