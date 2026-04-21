@@ -1,20 +1,20 @@
 # Round loop
 
-- active: `no`
-- status: `idle`
-- total rounds: `0`
+- active: `yes`
+- status: `round_in_progress`
+- total rounds: `10`
 - completed rounds: `0`
-- remaining rounds: `0`
-- current round label: `single-run`
-- auto use recommended: `no`
+- remaining rounds: `10`
+- current round label: `round 1/10`
+- auto use recommended: `yes`
 - auto select frontier: `no`
-- accepted base run id: `20260420_235922_bf16_gemm_v1_489574e`
-- accepted base measured commit: `489574ed5013268dbb79c634450d9a60155a294a`
-- accepted base runtime: `24.164272 ms`
-- started at: `None`
+- accepted base run id: `20260421_133418_bf16_gemm_v1_c859cd06`
+- accepted base measured commit: `c859cd06456e600a76778265983f0cd6da925481`
+- accepted base runtime: `24.407552 ms`
+- started at: `2026-04-21T13:56:25-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `No multi-round loop is active. Historical restore anchor is 20260420_235922_bf16_gemm_v1_489574e; run node_a to establish a fresh branch-local baseline before arming a new loop.`
+- notes: `Executing round 1/10.`
 
 ## Last completed round
 
