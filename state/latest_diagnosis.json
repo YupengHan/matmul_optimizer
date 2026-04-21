@@ -1,18 +1,153 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_011427",
+  "status": "completed",
+  "created_at": "2026-04-21T01:14:27-07:00",
   "source_run_id": "20260421_011200_bf16_gemm_v1_2d59c53",
   "source_run_dir": "runs/20260421_011200_bf16_gemm_v1_2d59c53",
   "source_summary_json": "runs/20260421_011200_bf16_gemm_v1_2d59c53/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_011427:dir_01",
+  "family_audit": [
+    "Closed legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule for now because round 25 regressed by 0.514671 ms while preserving the same low-warps plateau signature at 48.23% tensor activity and 16.57% warps active.",
+    "Kept historical::repair_the_256x128_half_panel_register_reuse_branch closed because its local occupancy signal still did not survive correctness repair.",
+    "Kept legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path deprioritized because the family is frozen after repeated flats and this round should spend budget on alternate surfaces, not on another micro-retime."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Grouped-Row Non-PTX 128x128 Sibling Surface",
+      "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+      "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling::exact_910beff_surface",
+      "action_fingerprint": "restore_grouped_row_non_ptx_128x128_sibling_surface_from_910beff68055b974cfdbb268cda1087c8b44d665",
+      "mode": "restore",
+      "hypothesis": "Round 25 gave the structural answer we needed from the auxiliary 256x128 family: the branch stayed correct, but runtime regressed to 24.690687 ms and the machine state stayed trapped at 48.23% tensor activity and 16.57% warps active. That is enough evidence to stop spending more immediate budget on this family. The best next move is therefore the strongest correctness-proven alternate surface already sitting in the frontier: the grouped-row non-PTX 128x128 sibling. It previously measured 24.178688 ms, which is inside the accepted-base noise band, while still replacing the PTX microkernel-specific control and export surface. That makes it the best round-26 recommendation: it recovers most of the round-25 loss without collapsing straight back into another same-surface PTX restore.",
+      "expected_bottleneck": "PTX-microkernel-specific control and export coupling on the current winner surface, while preserving grouped-row locality and the same broad 128x128 footprint.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1844-1952",
+        "src/kernels/bf16_gemm_v1.cu:2070-2138",
+        "src/kernels/bf16_gemm_v1.cu:1870-1880"
+      ],
+      "risk": "Low to medium. This is an exact restore of a measured-correct alternate surface, but its prior machine state was still plateau-like, so the main risk is spending one round to recover correctness and comparability without opening a new headroom signal.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "correctness pass rate across all 3 cases",
+        "hot-band gpu__time_duration.sum",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.29,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v26",
+        "rank_score": 1.52,
+        "frontier_leader_bonus": 0.28,
+        "measured_recovery_bonus": 0.26,
+        "alternate_surface_bonus": 0.24,
+        "user_guidance_bonus": 0.16,
+        "risk_penalty": 0.17,
+        "formula": "rank_score + frontier_leader_bonus + measured_recovery_bonus + alternate_surface_bonus + user_guidance_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.51,
+      "predicted_fail_risk": 0.18,
+      "ranking_notes": [
+        "This now ranks first because it is the top frontier family representative after the auxiliary 256x128 miss.",
+        "It gives back almost all of the round-25 regression while still keeping the search on a genuinely different execution surface from the PTX winner.",
+        "It is more aligned with the current policy than another frozen PTX micro-family replay."
+      ],
+      "stop_condition": "Stop if the sibling surface no longer lands inside the 24.16-24.19 ms band or if it reproduces the same plateau signature without any execution-surface advantage worth preserving."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
+      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface::exact_489574e_surface",
+      "action_fingerprint": "restore_best_measured_ptx_surface_from_489574ed5013268dbb79c634450d9a60155a294a",
+      "mode": "restore",
+      "hypothesis": "If the loop wants the fastest low-risk recovery from the current 24.690687 ms regression, the exact PTX winner is still the answer. That surface remains the best measured correct implementation at 24.164272 ms. It ranks second rather than first only because round 26 should still spend one slot on the best alternate surface before fully collapsing back onto the same PTX winner again.",
+      "expected_bottleneck": "No new bottleneck is being attacked here; this is the exact recovery path back to the best measured correct surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1956-2060",
+        "src/kernels/bf16_gemm_v1.cu:2110-2127",
+        "src/kernels/bf16_gemm_v1.cu:156"
+      ],
+      "risk": "Low. This is the exact best measured surface and the safest way to erase the current 0.51 ms regression.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "correctness pass rate across all 3 cases",
+        "hot-band gpu__time_duration.sum",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.14,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v26",
+        "rank_score": 1.34,
+        "measured_win_bonus": 0.34,
+        "recovery_bonus": 0.42,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + measured_win_bonus + recovery_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.53,
+      "predicted_fail_risk": 0.06,
+      "ranking_notes": [
+        "This remains the exact safety anchor after any aggressive miss.",
+        "It stays below dir_01 because the search should still test the highest-value alternate surface before spending another round on a same-surface PTX re-anchor.",
+        "If round 26 wants pure recovery rather than alternate-surface coverage, this becomes the immediate fallback."
+      ],
+      "stop_condition": "Stop once the exact PTX winner surface is restored or if a remeasurement shows that it no longer reproduces the prior 24.16-24.18 ms band."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering",
+      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
+      "action_fingerprint": "restore_grouped_rows_8_ptx_consumer_ordering_surface",
+      "mode": "restore",
+      "hypothesis": "Round 26 should keep one more historically promising alternate PTX surface alive so the frontier does not collapse into only two restore actions. The grouped_rows=8 consumer-ordering surface is weaker than dir_01 and dir_02, but it still changes CTA grouping and consumer locality more materially than another PTX helper retime, which makes it a better third-ranked queue-preservation branch under the current guidance.",
+      "expected_bottleneck": "Grouped-row traversal and consumer-order locality in the PTX hot-band path, not the same surface restore targeted by dir_02.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:153-156",
+        "src/kernels/bf16_gemm_v1.cu:1956-2060",
+        "src/kernels/bf16_gemm_v1.cu:1983-1993"
+      ],
+      "risk": "Medium. This is a historically slower PTX alternate and already has one measured loss, so it is being kept only as a low-rank breadth-preservation option.",
+      "metrics_to_recheck": [
+        "end-to-end median runtime",
+        "correctness pass rate across all 3 cases",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "hot-band gpu__time_duration.sum"
+      ],
+      "search_score_v1": 1.71,
+      "score_breakdown": {
+        "policy_id": "manual_round100_node_b_v26",
+        "rank_score": 1.08,
+        "queue_width_bonus": 0.24,
+        "alternate_surface_bonus": 0.2,
+        "historical_signal_bonus": 0.32,
+        "risk_penalty": 0.13,
+        "formula": "rank_score + queue_width_bonus + alternate_surface_bonus + historical_signal_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.16,
+      "predicted_fail_risk": 0.34,
+      "ranking_notes": [
+        "This stays in the set to preserve one more alternate PTX surface after the auxiliary 256x128 family closed negative.",
+        "It ranks below the first two directions because its prior measured runtime was clearly worse than the PTX winner and the non-PTX sibling.",
+        "It still outranks another frozen PTX micro-family because it changes the execution surface more materially."
+      ],
+      "stop_condition": "Stop if the grouped_rows=8 restore remains materially behind both dir_01 and dir_02 without offering any cleaner scheduler signature."
+    }
+  ],
+  "notes": "Round 26 treats round 25 as a clear negative on the auxiliary 256x128 structural probe. The ranking now returns to correctness-proven alternate surfaces rather than spending another round on a closed geometry family or a frozen PTX micro-retime family."
 }
