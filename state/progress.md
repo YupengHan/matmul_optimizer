@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `803e7499227b26770fccecb4b6d03f4079a5f06c`
-- plateau counter: `16`
-- round loop: `round 29/100`
-- rounds remaining: `72`
-- notes: `Node C build succeeded for round 29/100. Node A will now measure the new code path.`
+- latest measured commit: `bb69e9bb681f6dfb5b01e35965b180d20506fd3d`
+- plateau counter: `17`
+- round loop: `round 30/100`
+- rounds remaining: `71`
+- notes: `Node A completed round 29/100. Run node_b to continue round 30/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_012143_bf16_gemm_v1_803e749`
-- run dir: `runs/20260421_012143_bf16_gemm_v1_803e749`
+- run id: `20260421_013042_bf16_gemm_v1_bb69e9b`
+- run dir: `runs/20260421_013042_bf16_gemm_v1_bb69e9b`
 - correctness: `PASS`
-- median runtime: `24.517119 ms`
-- TFLOP/s: `29.653542 TFLOP/s`
+- median runtime: `25.911183 ms`
+- TFLOP/s: `28.058133 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_012211`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 29 switches the ranking rule from local plateau chasing to structure-first search. On the latest measured run, the hot-band PTX kernel still dominates at about 32.69 us with 200 registers per thread, 22,016 B shared memory per block, occupancy limit registers=2, and only 16.59% active warps. DRAM is only 9.77%, so the bottleneck is not bandwidth. The search therefore treats the 24.16-24.18 ms cluster as a noise-band plateau and ranks directions by whether they can break the residency wall instead of whether they can replay another small control-path delta.`
-- dir_01: Force 3-CTA Residency On The PTX 128x128 Hot Band | bottleneck: Register-limited occupancy and latency hiding in the 128x128 PTX hot-band kernel, not global bandwidth.
-- dir_02: Transplant The Half-Panel Register Budget Into The Correct 256x128 Pivot | bottleneck: Register footprint and steady-state staging efficiency inside the 256x128 hot-band path, plus barrier overhead created by the old half-panel ownership split.
-- dir_03: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Known register-limited plateau on the accepted PTX hot-band surface.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

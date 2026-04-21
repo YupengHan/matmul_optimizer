@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_012211:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_012211:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_012211",
   "base_run_id": "20260421_012143_bf16_gemm_v1_803e749",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Force 3-CTA Residency On The PTX 128x128 Hot Band",
   "mode": "explore",
-  "commit": null,
-  "commit_short": null,
+  "commit": "bb69e9bb681f6dfb5b01e35965b180d20506fd3d",
+  "commit_short": "bb69e9b",
   "subject": "node_c: round 29/100 implement dir_01 Force 3-CTA Residency On The PTX 128x128 Hot Band",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:29:41-07:00",
@@ -37,8 +37,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "bb69e9bb681f6dfb5b01e35965b180d20506fd3d",
+    "commit_short": "bb69e9b",
     "subject": "node_c: round 29/100 implement dir_01 Force 3-CTA Residency On The PTX 128x128 Hot Band",
     "build_status": "PASS",
     "failure_mode": null,
@@ -60,16 +60,29 @@
     "deletions": 2
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260421_013042_bf16_gemm_v1_bb69e9b",
+    "measurement_commit": "bb69e9bb681f6dfb5b01e35965b180d20506fd3d",
+    "runtime_ms": 25.91118336,
+    "runtime_delta_ms": 1.3940639499999996,
+    "tflops": 28.05813272,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "46.38",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "46.32",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "47.43",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "14.32",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "31.33",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "24.77",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "10.97",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "1.69",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "6.64",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "1.67",
+      "launch__occupancy_limit_registers": "3"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "regressed",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_013042_bf16_gemm_v1_bb69e9b for candidate diagnosis_20260421_012211:dir_01; transition_label=PASS_LOSS.",
+  "transition_label": "PASS_LOSS"
 }

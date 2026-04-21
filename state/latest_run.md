@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_012143_bf16_gemm_v1_803e749`
-- run dir: `runs/20260421_012143_bf16_gemm_v1_803e749`
-- kernel tag: `bf16_gemm_v1_803e749`
-- round label: `round 28/100`
+- run id: `20260421_013042_bf16_gemm_v1_bb69e9b`
+- run dir: `runs/20260421_013042_bf16_gemm_v1_bb69e9b`
+- kernel tag: `bf16_gemm_v1_bb69e9b`
+- round label: `round 29/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.517119 ms`
-- p10 runtime: `24.507390 ms`
-- p90 runtime: `25.414246 ms`
-- TFLOP/s: `29.653542 TFLOP/s`
-- previous run id: `20260421_011816_bf16_gemm_v1_20cad79`
-- runtime delta vs previous measured run: `+0.349696 ms`
-- TFLOP/s delta vs previous measured run: `-0.429079 TFLOP/s`
+- median runtime: `25.911183 ms`
+- p10 runtime: `25.901863 ms`
+- p90 runtime: `27.290221 ms`
+- TFLOP/s: `28.058133 TFLOP/s`
+- previous run id: `20260421_012143_bf16_gemm_v1_803e749`
+- runtime delta vs previous measured run: `+1.394064 ms`
+- TFLOP/s delta vs previous measured run: `-1.595409 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering`
+- implemented direction name: `Force 3-CTA Residency On The PTX 128x128 Hot Band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_012143_bf16_gemm_v1_803e749/summary.json`
-- measured commit: `803e7499227b26770fccecb4b6d03f4079a5f06c`
+- raw summary json: `runs/20260421_013042_bf16_gemm_v1_bb69e9b/summary.json`
+- measured commit: `bb69e9bb681f6dfb5b01e35965b180d20506fd3d`
 - new best custom: `no`
-- generated at: `2026-04-21T01:21:49-07:00`
+- generated at: `2026-04-21T01:30:48-07:00`
