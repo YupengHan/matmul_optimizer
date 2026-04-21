@@ -1,14 +1,14 @@
 {
-  "current_node": "node_a",
-  "previous_node": "node_c",
-  "status": "ready_for_node_a",
-  "latest_run_dir": "runs/20260421_084511_bf16_gemm_v1_634ee7b",
+  "current_node": "node_b",
+  "previous_node": "node_a",
+  "status": "ready_for_node_b",
+  "latest_run_dir": "runs/20260421_084521_bf16_gemm_v1_a20af07",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
-  "latest_commit": "634ee7b5da2e86c379ce3c7e90da488951c4e97a",
+  "latest_commit": "a20af07b6253a53e2029a8b3c9f7325bbefb9e37",
   "approved_direction_id": null,
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "plateau_counter": 60,
-  "notes": "Node C build succeeded for round 73/100. Node A will now measure the new code path."
+  "plateau_counter": 61,
+  "notes": "Node A completed round 73/100. Run node_b to continue round 74/100."
 }
