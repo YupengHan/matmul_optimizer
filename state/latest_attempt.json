@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_002435:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_002435:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_002435",
   "base_run_id": "20260421_002405_bf16_gemm_v1_95723fb",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
   "mode": "restore",
-  "commit": null,
-  "commit_short": null,
+  "commit": "a471728dccf675859934e8afab163929c08171be",
+  "commit_short": "a471728",
   "subject": "node_c: round 17/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:27:28-07:00",
@@ -40,8 +40,8 @@
     "src/kernels/bf16_gemm_v1.cu:2042-2054"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "a471728dccf675859934e8afab163929c08171be",
+    "commit_short": "a471728",
     "subject": "node_c: round 17/100 implement dir_01 Restore The Best Measured PTX Grouping Window On The Accepted Surface",
     "build_status": "PASS",
     "failure_mode": null,
@@ -64,16 +64,29 @@
     "deletions": 4
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260421_002817_bf16_gemm_v1_a471728",
+    "measurement_commit": "a471728dccf675859934e8afab163929c08171be",
+    "runtime_ms": 24.17296028,
+    "runtime_delta_ms": -0.01790332999999933,
+    "tflops": 30.07572979,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.41",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.84",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.14",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.48",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.56",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.63",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.52",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.13",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.16",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.67",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "flat",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_002817_bf16_gemm_v1_a471728 for candidate diagnosis_20260421_002435:dir_01; transition_label=PASS_FLAT.",
+  "transition_label": "PASS_FLAT"
 }

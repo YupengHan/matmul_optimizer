@@ -1,174 +1,18 @@
 {
-  "diagnosis_id": "diagnosis_20260421_002435",
-  "status": "completed",
-  "created_at": "2026-04-21T00:24:35-07:00",
-  "source_run_id": "20260421_002405_bf16_gemm_v1_95723fb",
-  "source_run_dir": "runs/20260421_002405_bf16_gemm_v1_95723fb",
-  "source_summary_json": "runs/20260421_002405_bf16_gemm_v1_95723fb/summary.json",
+  "diagnosis_id": null,
+  "status": "pending_generation",
+  "created_at": null,
+  "source_run_id": "20260421_002817_bf16_gemm_v1_a471728",
+  "source_run_dir": "runs/20260421_002817_bf16_gemm_v1_a471728",
+  "source_summary_json": "runs/20260421_002817_bf16_gemm_v1_a471728/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260421_002435:dir_01",
-  "family_audit": [
-    {
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "status": "accepted",
-      "reason": "Round 16 measured a direct regression to 24.19086361 ms on a source that differs from the best PTX surface by exactly two bounded hot-band hunks: the prologue wait retime at src/kernels/bf16_gemm_v1.cu:2018-2022 and the future_tile_k hoist at src/kernels/bf16_gemm_v1.cu:2042-2054. Barrier improved slightly to 5.16%, but long-scoreboard widened back to 7.16% and end-to-end runtime got worse, so the branch should re-anchor to the best measured PTX surface before compounding more changes."
-    },
-    {
-      "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-      "status": "deferred_but_live",
-      "reason": "The active PTX control family is no longer the top recommendation after the wait-window miss, but it stays live in the frontier as a lower-priority family rather than being deleted."
-    },
-    {
-      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
-      "status": "deferred_but_live",
-      "reason": "This remains the strongest alternate PTX state recovered from round_history and should remain in the live queue now that the latest wait-retime variant regressed."
-    },
-    {
-      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-      "status": "deferred_but_live",
-      "reason": "This stays in the live queue as the main geometry-side escape hatch so the search does not collapse into only PTX-local restore/retime variants."
-    },
-    {
-      "family_id": "legacy::apply_only_a_minimal_ptx_export_address_cleanup",
-      "status": "rejected_this_round",
-      "reason": "That family remains absorbed on the current PTX source lineage and should not consume another round while the current drift is entirely in the wait/hoist hot-band seam."
-    }
-  ],
-  "directions": [
-    {
-      "direction_id": "dir_01",
-      "rank": 1,
-      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
-      "family_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "subfamily_id": "legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface",
-      "action_fingerprint": "restore_ptx_surface_from_wait_and_hoist_drift",
-      "mode": "restore",
-      "hypothesis": "Round 16 turned the current PTX control branch back into a net negative. The implementation changed only one new hot-band seam, but a source diff versus the best measured PTX commit `489574e` now shows two bounded drifts on the PTX winner surface: the round-15 future_tile_k hoist and the round-16 prologue wait retime. The latest run regressed from 24.17100811 ms to 24.19086361 ms even though barrier dipped slightly from 5.21% to 5.16%, because long-scoreboard widened back from 7.08% to 7.16% and the end-to-end result moved away from both the 24.17859173 ms accepted base and the 24.16427231 ms best-known run. The next move should therefore be to restore the best measured PTX surface before spending more rounds on alternate families.",
-      "expected_bottleneck": "Source drift away from the proven PTX winner surface, specifically the prologue wait window and refill-address hot-band seam, not a need for another fresh PTX control experiment on top of the regressed variant.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:2014-2022",
-        "src/kernels/bf16_gemm_v1.cu:2042-2054",
-        "src/kernels/bf16_gemm_v1.cu:2110-2117"
-      ],
-      "risk": "Low to moderate. This is a small, auditable restore onto the best measured PTX surface rather than a new speculative optimization.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.190864 ms current run, the 24.178592 ms accepted base, and the 24.164272 ms best-known run",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "hot-band gpu__time_duration.sum",
-        "correctness pass rate across all 3 cases"
-      ],
-      "search_score_v1": 2.3,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v17",
-        "rank_score": 2.0,
-        "measured_regression_recovery_bonus": 0.35,
-        "surface_reanchor_bonus": 0.2,
-        "implementation_certainty_bonus": 0.1,
-        "risk_penalty": 0.35,
-        "formula": "rank_score + measured_regression_recovery_bonus + surface_reanchor_bonus + implementation_certainty_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.02,
-      "predicted_fail_risk": 0.2,
-      "ranking_notes": [
-        "This ranks first because the current source is a clearly isolated negative drift away from the PTX winner surface rather than a promising new branch.",
-        "The restore is small, auditable, and immediately re-anchors future comparisons after the failed wait-window retime.",
-        "It also preserves optionality, because grouped_rows=8 and 256x128 families can still be explored from a known-good surface afterward."
-      ],
-      "stop_condition": "Stop if the source already matches the best PTX surface exactly or if the restore fails to recover a cleaner runtime signature on re-measurement."
-    },
-    {
-      "direction_id": "dir_02",
-      "rank": 2,
-      "name": "Restore accepted grouped_rows=8 hot-band consumer ordering",
-      "family_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
-      "subfamily_id": "legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering",
-      "action_fingerprint": "restore_grouped_rows_8_ptx_consumer_ordering_surface",
-      "mode": "restore",
-      "hypothesis": "The latest negative wait-retime result weakens the case for staying inside the current grouped_rows=4 PTX control branch as the immediate next experimental family. The strongest alternate PTX state in the repopulated live queue remains the grouped_rows=8 consumer-ordering surface from round_history. It keeps the search inside the PTX microkernel family while materially changing grouped-row locality and warp consumption order, which makes it the cleanest second-ranked fallback once the current source is restored or if the restore family is judged exhausted.",
-      "expected_bottleneck": "Grouped-row traversal and consumer locality in the PTX hot-band microkernel, not the same prologue wait seam that just regressed.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:153-156",
-        "src/kernels/bf16_gemm_v1.cu:1979-1993",
-        "src/kernels/bf16_gemm_v1.cu:2110-2117"
-      ],
-      "risk": "Moderate. This is a fallback onto a non-default PTX surface that remains promising, but it should not outrank the direct recovery restore after a one-hunk wait-window miss.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime versus the 24.178592 ms accepted base and the 24.164272 ms best-known run",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "correctness pass rate across all 3 cases"
-      ],
-      "search_score_v1": 2.05,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v17",
-        "rank_score": 1.7,
-        "round_history_bonus": 0.25,
-        "alternate_surface_bonus": 0.25,
-        "queue_preservation_bonus": 0.2,
-        "risk_penalty": 0.35,
-        "formula": "rank_score + round_history_bonus + alternate_surface_bonus + queue_preservation_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.01,
-      "predicted_fail_risk": 0.38,
-      "ranking_notes": [
-        "This stays second because it is still the best alternate PTX representative in the repopulated frontier.",
-        "It ranks behind dir_01 because the current regression is a small isolated drift, so a direct surface restore is the cleaner immediate move.",
-        "Keeping it second preserves the user's requested live queue breadth without forcing the next round onto a broader branch jump."
-      ],
-      "stop_condition": "Stop if the grouped_rows=8 restore remains materially behind the grouped_rows=4 PTX winner without producing a cleaner barrier or scoreboard signature."
-    },
-    {
-      "direction_id": "dir_03",
-      "rank": 3,
-      "name": "Promote The Existing 256x128 Pivot Hot-Band Kernel",
-      "family_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-      "subfamily_id": "legacy::promote_the_existing_256x128_pivot_hot_band_kernel",
-      "action_fingerprint": "promote_existing_256x128_pivot_hot_band_dispatch",
-      "mode": "explore",
-      "hypothesis": "The live queue still needs one non-PTX or geometry-side family to avoid collapsing entirely into the current PTX winner lineage. The in-tree 256x128 pivot hot-band kernel remains the highest-ranked such branch in the frontier and is backed by prior round_history signal. Promoting that kernel would test whether a larger hot-band reuse tile can amortize control overhead better than the current 128x128 PTX path. It remains third because the latest regression is still better handled by a direct PTX-surface restore first, and because grouped_rows=8 is the closer like-for-like alternate within PTX.",
-      "expected_bottleneck": "Geometry-level latency hiding and control amortization on the 256x128 hot-band path rather than another narrow PTX wait/commit change.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1580-1670",
-        "src/kernels/bf16_gemm_v1.cu:2108-2128",
-        "src/kernels/bf16_gemm_v1.cu:2130-2135"
-      ],
-      "risk": "Medium to high. This is a broader hot-band dispatch swap onto a non-default geometry, so it has more surface-change risk than the two restore options above.",
-      "metrics_to_recheck": [
-        "end-to-end median runtime",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "launch__occupancy_limit_registers",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "search_score_v1": 1.68,
-      "score_breakdown": {
-        "policy_id": "manual_round100_node_b_v17",
-        "rank_score": 1.25,
-        "family_coverage_bonus": 0.2,
-        "round_history_bonus": 0.25,
-        "queue_preservation_bonus": 0.2,
-        "risk_penalty": 0.22,
-        "formula": "rank_score + family_coverage_bonus + round_history_bonus + queue_preservation_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 0.006,
-      "predicted_fail_risk": 0.42,
-      "ranking_notes": [
-        "This remains the main geometry-side escape hatch in the live queue after the search-policy reset.",
-        "It ranks third because the immediate problem is still source drift off the PTX winner, not exhaustion of every PTX-side fallback.",
-        "Keeping it in the diagnosis preserves family breadth for later rounds without making it the immediate next move."
-      ],
-      "stop_condition": "Stop if the 256x128 promotion cannot get materially closer to the 24.16-24.18 ms PTX band or if it opens a broad hot-band regression without counter improvements."
-    }
-  ],
-  "notes": "Round 17 explicitly treats the latest PTX wait-window retime as negative evidence. The current source no longer matches the best measured PTX surface: it differs by the round-15 future_tile_k hoist and the round-16 prologue wait retime, and the latter pushed runtime back up to 24.190864 ms. The immediate recommendation is therefore a direct PTX-surface restore, while grouped_rows=8 and the 256x128 pivot branch remain live because the user asked to repopulate promising round_history families into the active search queue."
+  "selected_direction_id": null,
+  "selected_candidate_id": null,
+  "family_audit": [],
+  "directions": [],
+  "notes": "Run node_b to produce exactly three directions from the latest measured run."
 }

@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `95723fb3a7d1c934573fd5a2c38d3705e46bd2c2`
-- plateau counter: `4`
-- round loop: `round 17/100`
-- rounds remaining: `84`
-- notes: `Node C build succeeded for round 17/100. Node A will now measure the new code path.`
+- latest measured commit: `a471728dccf675859934e8afab163929c08171be`
+- plateau counter: `5`
+- round loop: `round 18/100`
+- rounds remaining: `83`
+- notes: `Node A completed round 17/100. Run node_b to continue round 18/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_002405_bf16_gemm_v1_95723fb`
-- run dir: `runs/20260421_002405_bf16_gemm_v1_95723fb`
+- run id: `20260421_002817_bf16_gemm_v1_a471728`
+- run dir: `runs/20260421_002817_bf16_gemm_v1_a471728`
 - correctness: `PASS`
-- median runtime: `24.190864 ms`
-- TFLOP/s: `30.053471 TFLOP/s`
+- median runtime: `24.172960 ms`
+- TFLOP/s: `30.075730 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_002435`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 17 explicitly treats the latest PTX wait-window retime as negative evidence. The current source no longer matches the best measured PTX surface: it differs by the round-15 future_tile_k hoist and the round-16 prologue wait retime, and the latter pushed runtime back up to 24.190864 ms. The immediate recommendation is therefore a direct PTX-surface restore, while grouped_rows=8 and the 256x128 pivot branch remain live because the user asked to repopulate promising round_history families into the active search queue.`
-- dir_01: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Source drift away from the proven PTX winner surface, specifically the prologue wait window and refill-address hot-band seam, not a need for another fresh PTX control experiment on top of the regressed variant.
-- dir_02: Restore accepted grouped_rows=8 hot-band consumer ordering | bottleneck: Grouped-row traversal and consumer locality in the PTX hot-band microkernel, not the same prologue wait seam that just regressed.
-- dir_03: Promote The Existing 256x128 Pivot Hot-Band Kernel | bottleneck: Geometry-level latency hiding and control amortization on the 256x128 hot-band path rather than another narrow PTX wait/commit change.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
