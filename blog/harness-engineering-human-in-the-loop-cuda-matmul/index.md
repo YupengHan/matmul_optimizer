@@ -253,7 +253,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the repo, which now spans **241 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
+The tree below is regenerated from the latest tracked round history in the repo, which now spans **246 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
 Because the search has already moved below the local CUTLASS baseline, the chart now places the CUTLASS marker at the point where that threshold was first crossed instead of pinning it to the bottom as a future target. In the current history, that first sub-CUTLASS run is round **46**, version **`22b4466`**, at **25.68 ms**.
 
