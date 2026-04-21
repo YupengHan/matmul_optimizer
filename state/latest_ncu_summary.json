@@ -1,81 +1,81 @@
 {
   "schema_version": 2,
   "status": "available",
-  "source_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
-  "source_run_dir": "runs/20260421_142317_bf16_gemm_v1_5ea07e35",
-  "analysis_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.json",
-  "kernel_name": "void matmul_optimizer::<unnamed>::bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel<(int)226>(const __nv_bfloat16 *, const __nv_bfloat16 *, __nv_bfloat16 *)",
+  "source_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+  "source_run_dir": "runs/20260421_145629_bf16_gemm_v1_5383596d",
+  "analysis_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.json",
+  "kernel_name": "void matmul_optimizer::<unnamed>::bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<(int)452>(const __nv_bfloat16 *, const __nv_bfloat16 *, __nv_bfloat16 *)",
   "block_size": "(128, 1, 1)",
-  "grid_size": "(60, 50, 1)",
-  "registers_per_thread": 212.0,
-  "shared_mem_per_block_allocated": 43008.0,
+  "grid_size": "(60, 48, 1)",
+  "registers_per_thread": 198.0,
+  "shared_mem_per_block_allocated": 22016.0,
   "launch": {
-    "kernel_name": "void matmul_optimizer::<unnamed>::bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel<(int)226>(const __nv_bfloat16 *, const __nv_bfloat16 *, __nv_bfloat16 *)",
+    "kernel_name": "void matmul_optimizer::<unnamed>::bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<(int)452>(const __nv_bfloat16 *, const __nv_bfloat16 *, __nv_bfloat16 *)",
     "block_size": "(128, 1, 1)",
-    "grid_size": "(60, 50, 1)",
-    "registers_per_thread": 212.0,
-    "shared_mem_per_block_allocated": 43008.0
+    "grid_size": "(60, 48, 1)",
+    "registers_per_thread": 198.0,
+    "shared_mem_per_block_allocated": 22016.0
   },
   "headline_metrics": {
-    "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 40.12,
-    "sm__throughput.avg.pct_of_peak_sustained_elapsed": 39.72,
-    "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 40.73,
-    "dram__throughput.avg.pct_of_peak_sustained_elapsed": 15.27,
-    "lts__throughput.avg.pct_of_peak_sustained_elapsed": 26.45,
-    "sm__warps_active.avg.pct_of_peak_sustained_active": 16.58,
-    "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 10.09,
-    "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 5.57,
-    "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 2.7,
-    "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 4.84,
+    "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 48.45,
+    "sm__throughput.avg.pct_of_peak_sustained_elapsed": 48.4,
+    "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 46.67,
+    "dram__throughput.avg.pct_of_peak_sustained_elapsed": 14.23,
+    "lts__throughput.avg.pct_of_peak_sustained_elapsed": 29.8,
+    "sm__warps_active.avg.pct_of_peak_sustained_active": 16.67,
+    "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 5.98,
+    "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 6.88,
+    "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 2.25,
+    "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 3.71,
     "launch__occupancy_limit_registers": 2.0
   },
   "stall_breakdown": [
     {
-      "finding_id": "stall::barrier",
-      "stall_group": "barrier",
-      "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "metric_value": 10.09,
-      "importance_score": 10.09,
-      "explanation": "barrier stalls are consuming 10.09% of active warp issue slots."
-    },
-    {
       "finding_id": "stall::long_scoreboard",
       "stall_group": "long_scoreboard",
       "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "metric_value": 5.57,
-      "importance_score": 5.57,
-      "explanation": "long scoreboard stalls are consuming 5.57% of active warp issue slots."
+      "metric_value": 6.88,
+      "importance_score": 6.88,
+      "explanation": "long scoreboard stalls are consuming 6.88% of active warp issue slots."
+    },
+    {
+      "finding_id": "stall::barrier",
+      "stall_group": "barrier",
+      "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "metric_value": 5.98,
+      "importance_score": 5.98,
+      "explanation": "barrier stalls are consuming 5.98% of active warp issue slots."
     },
     {
       "finding_id": "stall::mio_throttle",
       "stall_group": "mio_throttle",
       "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "metric_value": 4.84,
-      "importance_score": 4.84,
-      "explanation": "mio throttle stalls are consuming 4.84% of active warp issue slots."
+      "metric_value": 3.71,
+      "importance_score": 3.71,
+      "explanation": "mio throttle stalls are consuming 3.71% of active warp issue slots."
     },
     {
       "finding_id": "stall::short_scoreboard",
       "stall_group": "short_scoreboard",
       "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "metric_value": 2.7,
-      "importance_score": 2.7,
-      "explanation": "short scoreboard stalls are consuming 2.70% of active warp issue slots."
+      "metric_value": 2.25,
+      "importance_score": 2.25,
+      "explanation": "short scoreboard stalls are consuming 2.25% of active warp issue slots."
     }
   ],
   "bottleneck_classes": [
     {
       "class_id": "occupancy_latency_hiding_issue",
       "rank": 1,
-      "severity_score": 45.22,
+      "severity_score": 42.33,
       "summary": "Low active-warps and occupancy limits point to a latency-hiding problem rather than pure bandwidth saturation.",
       "evidence": [
         {
           "kind": "headline_metric",
           "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
           "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "metric_value": 16.58,
-          "summary": "Active warps are only 16.58% of peak sustained active."
+          "metric_value": 16.67,
+          "summary": "Active warps are only 16.67% of peak sustained active."
         },
         {
           "kind": "headline_metric",
@@ -96,28 +96,28 @@
     {
       "class_id": "tensor_core_underutilization",
       "rank": 2,
-      "severity_score": 40.616,
-      "summary": "Tensor activity (40.12%) is low relative to available memory bandwidth, and active warps (16.58%) are not hiding latency.",
+      "severity_score": 32.214,
+      "summary": "Tensor activity (48.45%) is low relative to available memory bandwidth, and active warps (16.67%) are not hiding latency.",
       "evidence": [
         {
           "kind": "headline_metric",
           "ref_id": "metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "metric_value": 40.12,
-          "summary": "Tensor pipe activity is only 40.12% of peak sustained active."
+          "metric_value": 48.45,
+          "summary": "Tensor pipe activity is only 48.45% of peak sustained active."
         },
         {
           "kind": "headline_metric",
           "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
           "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "metric_value": 16.58,
-          "summary": "Active warps are only 16.58% of peak sustained active."
+          "metric_value": 16.67,
+          "summary": "Active warps are only 16.67% of peak sustained active."
         },
         {
           "kind": "source_hotspot",
           "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
           "metric_name": "Registers Per Thread",
-          "metric_value": 212.0,
+          "metric_value": 198.0,
           "summary": "Launch Statistics is carrying metric Registers Per Thread."
         }
       ]
@@ -125,15 +125,15 @@
     {
       "class_id": "synchronization_barrier_issue",
       "rank": 3,
-      "severity_score": 10.09,
+      "severity_score": 5.98,
       "summary": "Barrier or synchronization evidence suggests CTA-level handoff overhead is interrupting the steady-state issue flow.",
       "evidence": [
         {
           "kind": "stall_breakdown",
           "ref_id": "stall::barrier",
           "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "metric_value": 10.09,
-          "summary": "barrier stalls are consuming 10.09% of active warp issue slots."
+          "metric_value": 5.98,
+          "summary": "barrier stalls are consuming 5.98% of active warp issue slots."
         }
       ]
     }
@@ -143,13 +143,13 @@
       "finding_id": "finding::hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
       "finding_type": "source_hotspot",
       "summary": "Launch Statistics is carrying metric Registers Per Thread.",
-      "importance_score": 217.0,
+      "importance_score": 203.0,
       "evidence": [
         {
           "kind": "source_hotspot",
           "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
           "metric_name": "Registers Per Thread",
-          "metric_value": 212.0,
+          "metric_value": 198.0,
           "summary": "Launch Statistics is carrying metric Registers Per Thread."
         }
       ]
@@ -158,13 +158,13 @@
       "finding_id": "finding::hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
       "finding_type": "source_hotspot",
       "summary": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
-      "importance_score": 90.42,
+      "importance_score": 90.76,
       "evidence": [
         {
           "kind": "source_hotspot",
           "ref_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
           "metric_name": "DRAM Throughput",
-          "metric_value": 14.58,
+          "metric_value": 14.24,
           "summary": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput."
         }
       ]
@@ -173,14 +173,14 @@
       "finding_id": "finding::occupancy_latency_hiding_issue",
       "finding_type": "bottleneck_class",
       "summary": "Low active-warps and occupancy limits point to a latency-hiding problem rather than pure bandwidth saturation.",
-      "importance_score": 45.22,
+      "importance_score": 42.33,
       "evidence": [
         {
           "kind": "headline_metric",
           "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
           "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "metric_value": 16.58,
-          "summary": "Active warps are only 16.58% of peak sustained active."
+          "metric_value": 16.67,
+          "summary": "Active warps are only 16.67% of peak sustained active."
         },
         {
           "kind": "headline_metric",
@@ -199,39 +199,10 @@
       ]
     },
     {
-      "finding_id": "finding::tensor_core_underutilization",
-      "finding_type": "bottleneck_class",
-      "summary": "Tensor activity (40.12%) is low relative to available memory bandwidth, and active warps (16.58%) are not hiding latency.",
-      "importance_score": 40.616,
-      "evidence": [
-        {
-          "kind": "headline_metric",
-          "ref_id": "metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "metric_value": 40.12,
-          "summary": "Tensor pipe activity is only 40.12% of peak sustained active."
-        },
-        {
-          "kind": "headline_metric",
-          "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
-          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "metric_value": 16.58,
-          "summary": "Active warps are only 16.58% of peak sustained active."
-        },
-        {
-          "kind": "source_hotspot",
-          "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-          "metric_name": "Registers Per Thread",
-          "metric_value": 212.0,
-          "summary": "Launch Statistics is carrying metric Registers Per Thread."
-        }
-      ]
-    },
-    {
       "finding_id": "finding::delta::hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
       "finding_type": "hotspot_delta",
-      "summary": "regressed hotspot delta at Launch Statistics: regressed.",
-      "importance_score": 37.0,
+      "summary": "improved hotspot delta at Launch Statistics: improved.",
+      "importance_score": 39.0,
       "evidence": [
         {
           "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
@@ -239,21 +210,21 @@
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "previous": 200.0,
-          "current": 212.0,
-          "delta": 12.0,
-          "trend": "regressed",
+          "previous": 212.0,
+          "current": 198.0,
+          "delta": -14.0,
+          "trend": "improved",
           "importance_score": 217.0,
           "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
-          "bucket": "regressed"
+          "bucket": "improved"
         }
       ]
     },
     {
       "finding_id": "finding::delta::hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
       "finding_type": "hotspot_delta",
-      "summary": "regressed hotspot delta at GPU Speed Of Light Throughput: regressed.",
-      "importance_score": 33.160000000000004,
+      "summary": "improved hotspot delta at GPU Speed Of Light Throughput: improved.",
+      "importance_score": 33.73,
       "evidence": [
         {
           "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
@@ -261,13 +232,42 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "Compute (SM) Throughput",
-          "previous": 47.84,
-          "current": 39.68,
-          "delta": -8.160000000000004,
-          "trend": "regressed",
+          "previous": 39.68,
+          "current": 48.41,
+          "delta": 8.729999999999997,
+          "trend": "improved",
           "importance_score": 65.32,
           "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
-          "bucket": "regressed"
+          "bucket": "improved"
+        }
+      ]
+    },
+    {
+      "finding_id": "finding::tensor_core_underutilization",
+      "finding_type": "bottleneck_class",
+      "summary": "Tensor activity (48.45%) is low relative to available memory bandwidth, and active warps (16.67%) are not hiding latency.",
+      "importance_score": 32.214,
+      "evidence": [
+        {
+          "kind": "headline_metric",
+          "ref_id": "metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "metric_value": 48.45,
+          "summary": "Tensor pipe activity is only 48.45% of peak sustained active."
+        },
+        {
+          "kind": "headline_metric",
+          "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "metric_value": 16.67,
+          "summary": "Active warps are only 16.67% of peak sustained active."
+        },
+        {
+          "kind": "source_hotspot",
+          "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 198.0,
+          "summary": "Launch Statistics is carrying metric Registers Per Thread."
         }
       ]
     }
@@ -279,9 +279,9 @@
       "scope_name": "Launch Statistics",
       "location": "Launch Statistics",
       "metric_name": "Registers Per Thread",
-      "metric_value": 212.0,
+      "metric_value": 198.0,
       "metric_unit": "register/thread",
-      "importance_score": 217.0,
+      "importance_score": 203.0,
       "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
       "section_name": "Launch Statistics",
       "source_row_index": 14
@@ -292,25 +292,12 @@
       "scope_name": "GPU Speed Of Light Throughput",
       "location": "GPU Speed Of Light Throughput",
       "metric_name": "DRAM Throughput",
-      "metric_value": 14.58,
+      "metric_value": 14.24,
       "metric_unit": "%",
-      "importance_score": 90.42,
+      "importance_score": 90.76,
       "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
       "section_name": "GPU Speed Of Light Throughput",
       "source_row_index": 4
-    },
-    {
-      "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
-      "scope_type": "section",
-      "scope_name": "Occupancy",
-      "location": "Occupancy",
-      "metric_name": "Achieved Occupancy",
-      "metric_value": 16.56,
-      "metric_unit": "%",
-      "importance_score": 88.44,
-      "explanation": "Occupancy is carrying metric Achieved Occupancy.",
-      "section_name": "Occupancy",
-      "source_row_index": 29
     },
     {
       "hotspot_id": "hotspot::section::occupancy::occupancy::theoretical_occupancy",
@@ -326,30 +313,30 @@
       "source_row_index": 28
     },
     {
+      "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+      "scope_type": "section",
+      "scope_name": "Occupancy",
+      "location": "Occupancy",
+      "metric_name": "Achieved Occupancy",
+      "metric_value": 16.67,
+      "metric_unit": "%",
+      "importance_score": 88.33,
+      "explanation": "Occupancy is carrying metric Achieved Occupancy.",
+      "section_name": "Occupancy",
+      "source_row_index": 29
+    },
+    {
       "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l2_cache_throughput",
       "scope_type": "section",
       "scope_name": "GPU Speed Of Light Throughput",
       "location": "GPU Speed Of Light Throughput",
       "metric_name": "L2 Cache Throughput",
-      "metric_value": 26.48,
+      "metric_value": 29.79,
       "metric_unit": "%",
-      "importance_score": 78.52,
+      "importance_score": 75.21000000000001,
       "explanation": "GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.",
       "section_name": "GPU Speed Of Light Throughput",
       "source_row_index": 7
-    },
-    {
-      "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
-      "scope_type": "section",
-      "scope_name": "GPU Speed Of Light Throughput",
-      "location": "GPU Speed Of Light Throughput",
-      "metric_name": "Compute (SM) Throughput",
-      "metric_value": 39.68,
-      "metric_unit": "%",
-      "importance_score": 65.32,
-      "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
-      "section_name": "GPU Speed Of Light Throughput",
-      "source_row_index": 9
     },
     {
       "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::memory_throughput",
@@ -357,9 +344,9 @@
       "scope_name": "GPU Speed Of Light Throughput",
       "location": "GPU Speed Of Light Throughput",
       "metric_name": "Memory Throughput",
-      "metric_value": 40.57,
+      "metric_value": 46.68,
       "metric_unit": "%",
-      "importance_score": 64.43,
+      "importance_score": 58.32,
       "explanation": "GPU Speed Of Light Throughput is carrying metric Memory Throughput.",
       "section_name": "GPU Speed Of Light Throughput",
       "source_row_index": 3
@@ -370,12 +357,25 @@
       "scope_name": "GPU Speed Of Light Throughput",
       "location": "GPU Speed Of Light Throughput",
       "metric_name": "L1/TEX Cache Throughput",
-      "metric_value": 41.04,
+      "metric_value": 46.72,
       "metric_unit": "%",
-      "importance_score": 63.96,
+      "importance_score": 58.28,
       "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput.",
       "section_name": "GPU Speed Of Light Throughput",
       "source_row_index": 6
+    },
+    {
+      "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
+      "scope_type": "section",
+      "scope_name": "GPU Speed Of Light Throughput",
+      "location": "GPU Speed Of Light Throughput",
+      "metric_name": "Compute (SM) Throughput",
+      "metric_value": 48.41,
+      "metric_unit": "%",
+      "importance_score": 56.59,
+      "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
+      "section_name": "GPU Speed Of Light Throughput",
+      "source_row_index": 9
     }
   ],
   "handoff": {
@@ -385,13 +385,13 @@
           "finding_id": "finding::hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
           "finding_type": "source_hotspot",
           "summary": "Launch Statistics is carrying metric Registers Per Thread.",
-          "importance_score": 217.0,
+          "importance_score": 203.0,
           "evidence": [
             {
               "kind": "source_hotspot",
               "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
               "metric_name": "Registers Per Thread",
-              "metric_value": 212.0,
+              "metric_value": 198.0,
               "summary": "Launch Statistics is carrying metric Registers Per Thread."
             }
           ]
@@ -400,13 +400,13 @@
           "finding_id": "finding::hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
           "finding_type": "source_hotspot",
           "summary": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
-          "importance_score": 90.42,
+          "importance_score": 90.76,
           "evidence": [
             {
               "kind": "source_hotspot",
               "ref_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
               "metric_name": "DRAM Throughput",
-              "metric_value": 14.58,
+              "metric_value": 14.24,
               "summary": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput."
             }
           ]
@@ -415,14 +415,14 @@
           "finding_id": "finding::occupancy_latency_hiding_issue",
           "finding_type": "bottleneck_class",
           "summary": "Low active-warps and occupancy limits point to a latency-hiding problem rather than pure bandwidth saturation.",
-          "importance_score": 45.22,
+          "importance_score": 42.33,
           "evidence": [
             {
               "kind": "headline_metric",
               "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
               "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-              "metric_value": 16.58,
-              "summary": "Active warps are only 16.58% of peak sustained active."
+              "metric_value": 16.67,
+              "summary": "Active warps are only 16.67% of peak sustained active."
             },
             {
               "kind": "headline_metric",
@@ -441,39 +441,10 @@
           ]
         },
         {
-          "finding_id": "finding::tensor_core_underutilization",
-          "finding_type": "bottleneck_class",
-          "summary": "Tensor activity (40.12%) is low relative to available memory bandwidth, and active warps (16.58%) are not hiding latency.",
-          "importance_score": 40.616,
-          "evidence": [
-            {
-              "kind": "headline_metric",
-              "ref_id": "metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-              "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-              "metric_value": 40.12,
-              "summary": "Tensor pipe activity is only 40.12% of peak sustained active."
-            },
-            {
-              "kind": "headline_metric",
-              "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
-              "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-              "metric_value": 16.58,
-              "summary": "Active warps are only 16.58% of peak sustained active."
-            },
-            {
-              "kind": "source_hotspot",
-              "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
-              "metric_name": "Registers Per Thread",
-              "metric_value": 212.0,
-              "summary": "Launch Statistics is carrying metric Registers Per Thread."
-            }
-          ]
-        },
-        {
           "finding_id": "finding::delta::hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
           "finding_type": "hotspot_delta",
-          "summary": "regressed hotspot delta at Launch Statistics: regressed.",
-          "importance_score": 37.0,
+          "summary": "improved hotspot delta at Launch Statistics: improved.",
+          "importance_score": 39.0,
           "evidence": [
             {
               "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
@@ -481,21 +452,21 @@
               "scope_name": "Launch Statistics",
               "location": "Launch Statistics",
               "metric_name": "Registers Per Thread",
-              "previous": 200.0,
-              "current": 212.0,
-              "delta": 12.0,
-              "trend": "regressed",
+              "previous": 212.0,
+              "current": 198.0,
+              "delta": -14.0,
+              "trend": "improved",
               "importance_score": 217.0,
               "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
-              "bucket": "regressed"
+              "bucket": "improved"
             }
           ]
         },
         {
           "finding_id": "finding::delta::hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
           "finding_type": "hotspot_delta",
-          "summary": "regressed hotspot delta at GPU Speed Of Light Throughput: regressed.",
-          "importance_score": 33.160000000000004,
+          "summary": "improved hotspot delta at GPU Speed Of Light Throughput: improved.",
+          "importance_score": 33.73,
           "evidence": [
             {
               "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
@@ -503,13 +474,42 @@
               "scope_name": "GPU Speed Of Light Throughput",
               "location": "GPU Speed Of Light Throughput",
               "metric_name": "Compute (SM) Throughput",
-              "previous": 47.84,
-              "current": 39.68,
-              "delta": -8.160000000000004,
-              "trend": "regressed",
+              "previous": 39.68,
+              "current": 48.41,
+              "delta": 8.729999999999997,
+              "trend": "improved",
               "importance_score": 65.32,
               "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
-              "bucket": "regressed"
+              "bucket": "improved"
+            }
+          ]
+        },
+        {
+          "finding_id": "finding::tensor_core_underutilization",
+          "finding_type": "bottleneck_class",
+          "summary": "Tensor activity (48.45%) is low relative to available memory bandwidth, and active warps (16.67%) are not hiding latency.",
+          "importance_score": 32.214,
+          "evidence": [
+            {
+              "kind": "headline_metric",
+              "ref_id": "metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+              "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+              "metric_value": 48.45,
+              "summary": "Tensor pipe activity is only 48.45% of peak sustained active."
+            },
+            {
+              "kind": "headline_metric",
+              "ref_id": "metric::sm__warps_active.avg.pct_of_peak_sustained_active",
+              "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+              "metric_value": 16.67,
+              "summary": "Active warps are only 16.67% of peak sustained active."
+            },
+            {
+              "kind": "source_hotspot",
+              "ref_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+              "metric_name": "Registers Per Thread",
+              "metric_value": 198.0,
+              "summary": "Launch Statistics is carrying metric Registers Per Thread."
             }
           ]
         }
@@ -530,11 +530,11 @@
           "reason": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput."
         },
         {
-          "region_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+          "region_id": "hotspot::section::occupancy::occupancy::theoretical_occupancy",
           "scope_type": "section",
           "scope_name": "Occupancy",
           "location": "Occupancy",
-          "reason": "Occupancy is carrying metric Achieved Occupancy."
+          "reason": "Occupancy is carrying metric Theoretical Occupancy."
         },
         {
           "region_id": "rule::solbottleneck::10",
@@ -560,9 +560,9 @@
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "metric_value": 212.0,
+          "metric_value": 198.0,
           "metric_unit": "register/thread",
-          "importance_score": 217.0,
+          "importance_score": 203.0,
           "explanation": "Launch Statistics is carrying metric Registers Per Thread.",
           "section_name": "Launch Statistics",
           "source_row_index": 14
@@ -573,25 +573,12 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "DRAM Throughput",
-          "metric_value": 14.58,
+          "metric_value": 14.24,
           "metric_unit": "%",
-          "importance_score": 90.42,
+          "importance_score": 90.76,
           "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput.",
           "section_name": "GPU Speed Of Light Throughput",
           "source_row_index": 4
-        },
-        {
-          "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
-          "scope_type": "section",
-          "scope_name": "Occupancy",
-          "location": "Occupancy",
-          "metric_name": "Achieved Occupancy",
-          "metric_value": 16.56,
-          "metric_unit": "%",
-          "importance_score": 88.44,
-          "explanation": "Occupancy is carrying metric Achieved Occupancy.",
-          "section_name": "Occupancy",
-          "source_row_index": 29
         },
         {
           "hotspot_id": "hotspot::section::occupancy::occupancy::theoretical_occupancy",
@@ -607,30 +594,30 @@
           "source_row_index": 28
         },
         {
+          "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy",
+          "metric_name": "Achieved Occupancy",
+          "metric_value": 16.67,
+          "metric_unit": "%",
+          "importance_score": 88.33,
+          "explanation": "Occupancy is carrying metric Achieved Occupancy.",
+          "section_name": "Occupancy",
+          "source_row_index": 29
+        },
+        {
           "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l2_cache_throughput",
           "scope_type": "section",
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "L2 Cache Throughput",
-          "metric_value": 26.48,
+          "metric_value": 29.79,
           "metric_unit": "%",
-          "importance_score": 78.52,
+          "importance_score": 75.21000000000001,
           "explanation": "GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.",
           "section_name": "GPU Speed Of Light Throughput",
           "source_row_index": 7
-        },
-        {
-          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
-          "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput",
-          "metric_name": "Compute (SM) Throughput",
-          "metric_value": 39.68,
-          "metric_unit": "%",
-          "importance_score": 65.32,
-          "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
-          "section_name": "GPU Speed Of Light Throughput",
-          "source_row_index": 9
         },
         {
           "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::memory_throughput",
@@ -638,9 +625,9 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "Memory Throughput",
-          "metric_value": 40.57,
+          "metric_value": 46.68,
           "metric_unit": "%",
-          "importance_score": 64.43,
+          "importance_score": 58.32,
           "explanation": "GPU Speed Of Light Throughput is carrying metric Memory Throughput.",
           "section_name": "GPU Speed Of Light Throughput",
           "source_row_index": 3
@@ -651,38 +638,51 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "L1/TEX Cache Throughput",
-          "metric_value": 41.04,
+          "metric_value": 46.72,
           "metric_unit": "%",
-          "importance_score": 63.96,
+          "importance_score": 58.28,
           "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput.",
           "section_name": "GPU Speed Of Light Throughput",
           "source_row_index": 6
+        },
+        {
+          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::compute_sm_throughput",
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput",
+          "metric_name": "Compute (SM) Throughput",
+          "metric_value": 48.41,
+          "metric_unit": "%",
+          "importance_score": 56.59,
+          "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.",
+          "section_name": "GPU Speed Of Light Throughput",
+          "source_row_index": 9
         }
       ],
       "guardrail_metrics": [
         {
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "current_value": 40.12,
+          "current_value": 48.45,
           "guardrail": "non_decreasing",
           "reason": "Tensor activity is part of the active bottleneck picture and should not drop after the next code edit."
         },
         {
           "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "current_value": 16.58,
+          "current_value": 16.67,
           "guardrail": "non_decreasing",
           "reason": "Latency-hiding is already weak; active warps should not regress."
         },
         {
-          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "current_value": 10.09,
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "current_value": 6.88,
           "guardrail": "non_increasing",
-          "reason": "barrier stalls are consuming 10.09% of active warp issue slots."
+          "reason": "long scoreboard stalls are consuming 6.88% of active warp issue slots."
         },
         {
-          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "current_value": 5.57,
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "current_value": 5.98,
           "guardrail": "non_increasing",
-          "reason": "long scoreboard stalls are consuming 5.57% of active warp issue slots."
+          "reason": "barrier stalls are consuming 5.98% of active warp issue slots."
         }
       ],
       "expected_recheck_points": [
@@ -704,82 +704,82 @@
           "scope_type": "section",
           "scope_name": "Occupancy",
           "location": "Occupancy",
-          "metric_name": "Achieved Occupancy",
-          "reason": "Occupancy is carrying metric Achieved Occupancy."
+          "metric_name": "Theoretical Occupancy",
+          "reason": "Occupancy is carrying metric Theoretical Occupancy."
         },
         {
           "scope_type": "section",
           "scope_name": "Occupancy",
           "location": "Occupancy",
-          "metric_name": "Theoretical Occupancy",
-          "reason": "Occupancy is carrying metric Theoretical Occupancy."
+          "metric_name": "Achieved Occupancy",
+          "reason": "Occupancy is carrying metric Achieved Occupancy."
         },
         {
           "scope_type": "section",
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "reason": "Previous delta was regressed in the regressed bucket."
+          "reason": "Previous delta was improved in the improved bucket."
         },
         {
           "scope_type": "section",
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "Compute (SM) Throughput",
-          "reason": "Previous delta was regressed in the regressed bucket."
+          "reason": "Previous delta was improved in the improved bucket."
         }
       ]
     }
   },
   "delta_vs_previous_run": {
-    "baseline_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
+    "baseline_run_id": "20260421_142317_bf16_gemm_v1_5ea07e35",
     "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": {
-        "previous": 48.38,
-        "current": 40.12,
-        "delta": -8.260000000000005,
-        "trend": "regressed"
-      },
       "sm__throughput.avg.pct_of_peak_sustained_elapsed": {
-        "previous": 47.84,
-        "current": 39.72,
-        "delta": -8.120000000000005,
-        "trend": "regressed"
+        "previous": 39.72,
+        "current": 48.4,
+        "delta": 8.68,
+        "trend": "improved"
+      },
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": {
+        "previous": 40.12,
+        "current": 48.45,
+        "delta": 8.330000000000005,
+        "trend": "improved"
       },
       "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": {
-        "previous": 46.14,
-        "current": 40.73,
-        "delta": -5.410000000000004,
-        "trend": "regressed"
+        "previous": 40.73,
+        "current": 46.67,
+        "delta": 5.940000000000005,
+        "trend": "improved"
       },
       "smsp__warp_issue_stalled_barrier_per_warp_active.pct": {
-        "previous": 5.49,
-        "current": 10.09,
-        "delta": 4.6,
-        "trend": "regressed"
+        "previous": 10.09,
+        "current": 5.98,
+        "delta": -4.109999999999999,
+        "trend": "improved"
       },
       "lts__throughput.avg.pct_of_peak_sustained_elapsed": {
-        "previous": 29.94,
-        "current": 26.45,
-        "delta": -3.490000000000002,
-        "trend": "regressed"
-      },
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": {
-        "previous": 12.48,
-        "current": 15.27,
-        "delta": 2.789999999999999,
+        "previous": 26.45,
+        "current": 29.8,
+        "delta": 3.3500000000000014,
         "trend": "improved"
       },
       "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": {
-        "previous": 7.19,
-        "current": 5.57,
-        "delta": -1.62,
-        "trend": "improved"
+        "previous": 5.57,
+        "current": 6.88,
+        "delta": 1.3099999999999996,
+        "trend": "regressed"
       },
       "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": {
-        "previous": 3.64,
-        "current": 4.84,
-        "delta": 1.1999999999999997,
+        "previous": 4.84,
+        "current": 3.71,
+        "delta": -1.13,
+        "trend": "improved"
+      },
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": {
+        "previous": 15.27,
+        "current": 14.23,
+        "delta": -1.0399999999999991,
         "trend": "regressed"
       }
     },
@@ -787,63 +787,48 @@
       {
         "stall_group": "barrier",
         "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "previous": 5.49,
-        "current": 10.09,
-        "delta": 4.6,
-        "trend": "regressed"
+        "previous": 10.09,
+        "current": 5.98,
+        "delta": -4.109999999999999,
+        "trend": "improved"
       },
       {
         "stall_group": "long_scoreboard",
         "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "previous": 7.19,
-        "current": 5.57,
-        "delta": -1.62,
-        "trend": "improved"
+        "previous": 5.57,
+        "current": 6.88,
+        "delta": 1.3099999999999996,
+        "trend": "regressed"
       },
       {
         "stall_group": "mio_throttle",
         "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "previous": 3.64,
-        "current": 4.84,
-        "delta": 1.1999999999999997,
-        "trend": "regressed"
+        "previous": 4.84,
+        "current": 3.71,
+        "delta": -1.13,
+        "trend": "improved"
       },
       {
         "stall_group": "short_scoreboard",
         "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "previous": 2.16,
-        "current": 2.7,
-        "delta": 0.54,
-        "trend": "regressed"
+        "previous": 2.7,
+        "current": 2.25,
+        "delta": -0.4500000000000002,
+        "trend": "improved"
       }
     ],
     "source_hotspots": {
       "improved": [
-        {
-          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
-          "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput",
-          "metric_name": "DRAM Throughput",
-          "previous": 12.5,
-          "current": 14.58,
-          "delta": 2.08,
-          "trend": "improved",
-          "importance_score": 92.5,
-          "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput."
-        }
-      ],
-      "regressed": [
         {
           "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
           "scope_type": "section",
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics",
           "metric_name": "Registers Per Thread",
-          "previous": 200.0,
-          "current": 212.0,
-          "delta": 12.0,
-          "trend": "regressed",
+          "previous": 212.0,
+          "current": 198.0,
+          "delta": -14.0,
+          "trend": "improved",
           "importance_score": 217.0,
           "explanation": "Launch Statistics is carrying metric Registers Per Thread."
         },
@@ -853,25 +838,12 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "Compute (SM) Throughput",
-          "previous": 47.84,
-          "current": 39.68,
-          "delta": -8.160000000000004,
-          "trend": "regressed",
+          "previous": 39.68,
+          "current": 48.41,
+          "delta": 8.729999999999997,
+          "trend": "improved",
           "importance_score": 65.32,
           "explanation": "GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput."
-        },
-        {
-          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l1_tex_cache_throughput",
-          "scope_type": "section",
-          "scope_name": "GPU Speed Of Light Throughput",
-          "location": "GPU Speed Of Light Throughput",
-          "metric_name": "L1/TEX Cache Throughput",
-          "previous": 46.67,
-          "current": 41.04,
-          "delta": -5.630000000000003,
-          "trend": "regressed",
-          "importance_score": 63.96,
-          "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput."
         },
         {
           "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::memory_throughput",
@@ -879,57 +851,85 @@
           "scope_name": "GPU Speed Of Light Throughput",
           "location": "GPU Speed Of Light Throughput",
           "metric_name": "Memory Throughput",
-          "previous": 46.14,
-          "current": 40.57,
-          "delta": -5.57,
-          "trend": "regressed",
+          "previous": 40.57,
+          "current": 46.68,
+          "delta": 6.109999999999999,
+          "trend": "improved",
           "importance_score": 64.43,
           "explanation": "GPU Speed Of Light Throughput is carrying metric Memory Throughput."
+        },
+        {
+          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::l1_tex_cache_throughput",
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput",
+          "metric_name": "L1/TEX Cache Throughput",
+          "previous": 41.04,
+          "current": 46.72,
+          "delta": 5.68,
+          "trend": "improved",
+          "importance_score": 63.96,
+          "explanation": "GPU Speed Of Light Throughput is carrying metric L1/TEX Cache Throughput."
+        }
+      ],
+      "regressed": [
+        {
+          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::dram_throughput",
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput",
+          "metric_name": "DRAM Throughput",
+          "previous": 14.58,
+          "current": 14.24,
+          "delta": -0.33999999999999986,
+          "trend": "regressed",
+          "importance_score": 90.76,
+          "explanation": "GPU Speed Of Light Throughput is carrying metric DRAM Throughput."
         }
       ],
       "new": [],
       "disappeared": []
     }
   },
-  "raw_csv_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_metrics.csv",
-  "raw_rep_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_profile.ncu-rep",
-  "raw_details_csv_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_details.csv",
-  "import_raw_csv_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_import_raw.csv",
-  "details_page_csv_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_details_page.csv",
-  "source_csv_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_source.csv",
+  "raw_csv_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_metrics.csv",
+  "raw_rep_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_profile.ncu-rep",
+  "raw_details_csv_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_details.csv",
+  "import_raw_csv_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_import_raw.csv",
+  "details_page_csv_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_details_page.csv",
+  "source_csv_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_source.csv",
   "artifacts": {
     "ncu_rep": {
       "artifact_kind": "report",
-      "path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_profile.ncu-rep",
+      "path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_profile.ncu-rep",
       "status": "available",
       "return_code": 0,
       "best_effort": false
     },
     "headline_csv": {
       "artifact_kind": "headline_raw_page",
-      "path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_metrics.csv",
+      "path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_metrics.csv",
       "status": "available",
       "return_code": 0,
       "best_effort": false
     },
     "import_raw_page": {
       "artifact_kind": "import_raw_page",
-      "path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_import_raw.csv",
+      "path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_import_raw.csv",
       "status": "available",
       "return_code": 0,
       "best_effort": false,
-      "legacy_alias_path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_details.csv"
+      "legacy_alias_path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_details.csv"
     },
     "details_page": {
       "artifact_kind": "details_page",
-      "path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_details_page.csv",
+      "path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_details_page.csv",
       "status": "available",
       "return_code": 0,
       "best_effort": false
     },
     "source_page": {
       "artifact_kind": "source_page",
-      "path": "runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_source.csv",
+      "path": "runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_source.csv",
       "status": "available",
       "return_code": 0,
       "best_effort": true,
@@ -937,5 +937,5 @@
       "structured_hotspots_available": false
     }
   },
-  "generated_at": "2026-04-21T14:23:29-07:00"
+  "generated_at": "2026-04-21T14:56:48-07:00"
 }

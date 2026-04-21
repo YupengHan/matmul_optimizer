@@ -8,20 +8,20 @@
         - `state/node_b_context.md`
         - `state/latest_run.md`
         - `state/latest_ncu_summary.md`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.md`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.json`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.md`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.json`
         - `docs/heuristics.md`
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
         - `src/kernels/bf16_gemm_v1.cu`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/summary.json`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_details_page.csv`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_source.csv`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_import_raw.csv`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_details.csv`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_metrics.csv`
-        - `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_profile.ncu-rep`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/summary.json`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_details_page.csv`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_source.csv`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_import_raw.csv`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_details.csv`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_metrics.csv`
+        - `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_profile.ncu-rep`
 
 - `state/autotune_round18_main_tiles.json`
 - `state/autotune_round18_main_tiles.md`
@@ -83,12 +83,12 @@
 
         ## Current source snapshot
 
-        - round loop: `round 2/10`
-        - rounds remaining after this one: `8`
-        - latest run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
-        - median runtime: `30.007680 ms`
-        - TFLOP/s: `24.227778 TFLOP/s`
-        - measured commit: `5ea07e356339f761e5361611762dceb0273a84b6`
-        - existing diagnosis status: `completed`
+        - round loop: `round 3/10`
+        - rounds remaining after this one: `7`
+        - latest run id: `20260421_145629_bf16_gemm_v1_5383596d`
+        - median runtime: `47.290880 ms`
+        - TFLOP/s: `15.373354 TFLOP/s`
+        - measured commit: `5383596d7276d7daebbe92c3dc04bea84a505aac`
+        - existing diagnosis status: `pending_generation`
         - top bottleneck class: `occupancy_latency_hiding_issue`
         - top finding: `Launch Statistics is carrying metric Registers Per Thread.`

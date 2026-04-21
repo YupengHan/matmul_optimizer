@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `10`
-- completed rounds: `1`
-- remaining rounds: `9`
-- current round label: `round 2/10`
+- completed rounds: `2`
+- remaining rounds: `8`
+- current round label: `round 3/10`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_133418_bf16_gemm_v1_c859cd06`
@@ -14,15 +14,15 @@
 - started at: `2026-04-21T13:56:25-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 2/10. Node A will measure the result next.`
+- notes: `Completed round 2/10. Continue with node_b for round 3/10. Accepted base: 20260421_133418_bf16_gemm_v1_c859cd06 at 24.407552 ms.`
 
 ## Last completed round
 
-- round: `1/10`
+- round: `2/10`
 - direction: `dir_01`
-- direction name: `Promote The Existing 128x128x32 Staged Hot-Band Kernel`
+- direction name: `Restore The Accepted Base And Expand The 64x384 Row Band`
 - verdict: `regressed`
-- runtime delta: `+5.600128 ms`
-- TFLOP/s delta: `-5.558881 TFLOP/s`
-- run dir: `runs/20260421_142317_bf16_gemm_v1_5ea07e35`
-- ncu rep path: `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_profile.ncu-rep`
+- runtime delta: `+17.283200 ms`
+- TFLOP/s delta: `-8.854425 TFLOP/s`
+- run dir: `runs/20260421_145629_bf16_gemm_v1_5383596d`
+- ncu rep path: `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_profile.ncu-rep`

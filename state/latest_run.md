@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
-- run dir: `runs/20260421_142317_bf16_gemm_v1_5ea07e35`
-- kernel tag: `bf16_gemm_v1_5ea07e35`
-- round label: `round 1/10`
+- run id: `20260421_145629_bf16_gemm_v1_5383596d`
+- run dir: `runs/20260421_145629_bf16_gemm_v1_5383596d`
+- kernel tag: `bf16_gemm_v1_5383596d`
+- round label: `round 2/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.007680 ms`
-- p10 runtime: `29.572915 ms`
-- p90 runtime: `31.207092 ms`
-- TFLOP/s: `24.227778 TFLOP/s`
-- previous run id: `20260421_133418_bf16_gemm_v1_c859cd06`
-- runtime delta vs previous measured run: `+5.600128 ms`
-- TFLOP/s delta vs previous measured run: `-5.558881 TFLOP/s`
+- median runtime: `47.290880 ms`
+- p10 runtime: `46.778265 ms`
+- p90 runtime: `56.647064 ms`
+- TFLOP/s: `15.373354 TFLOP/s`
+- previous run id: `20260421_142317_bf16_gemm_v1_5ea07e35`
+- runtime delta vs previous measured run: `+17.283200 ms`
+- TFLOP/s delta vs previous measured run: `-8.854425 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Promote The Existing 128x128x32 Staged Hot-Band Kernel`
+- implemented direction name: `Restore The Accepted Base And Expand The 64x384 Row Band`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_142317_bf16_gemm_v1_5ea07e35/summary.json`
-- ncu analysis path: `runs/20260421_142317_bf16_gemm_v1_5ea07e35/ncu_analysis.json`
-- measured commit: `5ea07e356339f761e5361611762dceb0273a84b6`
+- raw summary json: `runs/20260421_145629_bf16_gemm_v1_5383596d/summary.json`
+- ncu analysis path: `runs/20260421_145629_bf16_gemm_v1_5383596d/ncu_analysis.json`
+- measured commit: `5383596d7276d7daebbe92c3dc04bea84a505aac`
 - new best custom: `no`
-- generated at: `2026-04-21T14:23:29-07:00`
+- generated at: `2026-04-21T14:56:48-07:00`
