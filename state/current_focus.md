@@ -1,13 +1,13 @@
 # Current focus
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- latest run id: `20260421_083834_bf16_gemm_v1_ded7933`
-- latest kernel tag: `bf16_gemm_v1_ded7933`
-- median runtime: `24.265152 ms`
+- next node: `node_b`
+- status: `ready_for_node_b`
+- latest run id: `20260421_083843_bf16_gemm_v1_b026bf4`
+- latest kernel tag: `bf16_gemm_v1_b026bf4`
+- median runtime: `30.384064 ms`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- round loop: `round 43/100`
-- rounds remaining: `58`
-- recommended direction: `dir_01`
-- selected direction: `dir_01`
-- immediate next action: `Node C build succeeded for round 43/100. Node A will now measure the new code path.`
+- round loop: `round 44/100`
+- rounds remaining: `57`
+- recommended direction: `None`
+- selected direction: `None`
+- immediate next action: `Node A completed round 43/100. Run node_b to continue round 44/100.`
