@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_164612_bf16_gemm_v1_da1a5bb`
-- run dir: `runs/20260420_164612_bf16_gemm_v1_da1a5bb`
-- kernel tag: `bf16_gemm_v1_da1a5bb`
-- round label: `round 17/17`
+- run id: `20260420_175429_bf16_gemm_v1_134ec64`
+- run dir: `runs/20260420_175429_bf16_gemm_v1_134ec64`
+- kernel tag: `bf16_gemm_v1_134ec64`
+- round label: `round 1/50`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.476608 ms`
-- p10 runtime: `25.208205 ms`
-- p90 runtime: `26.410291 ms`
-- TFLOP/s: `28.536743 TFLOP/s`
-- previous run id: `20260420_164223_bf16_gemm_v1_436e9ff`
-- runtime delta vs previous measured run: `-0.147456 ms`
-- TFLOP/s delta vs previous measured run: `+0.164217 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `30.297600 ms`
+- p10 runtime: `29.905815 ms`
+- p90 runtime: `31.094663 ms`
+- TFLOP/s: `23.995941 TFLOP/s`
+- previous run id: `20260420_164612_bf16_gemm_v1_da1a5bb`
+- runtime delta vs previous measured run: `+4.820992 ms`
+- TFLOP/s delta vs previous measured run: `-4.540802 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Keep The Initial Prime Retime But Restore The Future Refill To B-Then-A`
+- implemented direction name: `Activate The Dormant 128x128x32 Hot-Band Branch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_164612_bf16_gemm_v1_da1a5bb/summary.json`
-- measured commit: `da1a5bbd4af452569659b4db75fff988f44084e0`
+- raw summary json: `runs/20260420_175429_bf16_gemm_v1_134ec64/summary.json`
+- measured commit: `134ec64690b95b0a420b5463414213e1ecff17f7`
 - new best custom: `no`
-- generated at: `2026-04-20T16:46:21-07:00`
+- generated at: `2026-04-20T17:54:37-07:00`
