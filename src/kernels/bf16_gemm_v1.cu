@@ -2093,50 +2093,22 @@ bool launch_bf16_gemm_v1(
       return false;
     }
 
-    if (fixed_main_tile_n > 0) {
-      if (!launch_fixed_hot_band_by_tile_n(fixed_main_tile_n, a, b, c, m, n, k, stream)) {
-        return false;
-      }
-
-      launch_tensor_core_region<TensorCoreTile96>(
-          a,
-          b + kFixedHotBandN,
-          c + kFixedHotBandN,
-          m,
-          n,
-          k,
-          kFixedTailRegionN,
-          stream);
-    } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
-          kFixedBenchmarkKTiles><<<
-              dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
-                   kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
-                   1),
-              dim3(FixedHotBandTile128x128::kWarpsPerBlock * kWarpSize, 1, 1),
-              0,
-              stream>>>(a, b, c);
-
-      launch_fixed_peeled_hot_band_row_band<
-          TensorCoreTile384,
-          kFixedBenchmarkKTiles>(
-              a,
-              b,
-              c,
-              kFixedPivotHotRows / TensorCoreTile384::kTensorBlockM,
-              kFixedResidualHotRows / TensorCoreTile384::kTensorBlockM,
-              stream);
-
-      launch_tensor_core_region<TensorCoreTile96>(
-          a,
-          b + kFixedHotBandN,
-          c + kFixedHotBandN,
-          m,
-          n,
-          k,
-          kFixedTailRegionN,
-          stream);
+    const int selected_fixed_main_tile_n =
+        fixed_main_tile_n > 0 ? fixed_main_tile_n : kDefaultFixedMainTileN;
+    if (!launch_fixed_hot_band_by_tile_n(
+            selected_fixed_main_tile_n, a, b, c, m, n, k, stream)) {
+      return false;
     }
+
+    launch_tensor_core_region<TensorCoreTile96>(
+        a,
+        b + kFixedHotBandN,
+        c + kFixedHotBandN,
+        m,
+        n,
+        k,
+        kFixedTailRegionN,
+        stream);
   } else if ((m % TensorCoreTile96::kTensorBlockM) == 0 &&
              (n % TensorCoreTile96::kTensorBlockN) == 0 &&
              (k % kWmmaK) == 0) {
