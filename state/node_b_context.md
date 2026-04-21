@@ -27,8 +27,15 @@
 
         - write exactly 3 directions
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
-        - keep top-level `family_audit` as a list, even if empty
+        - keep top-level `family_audit` as a list
         - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
+        - set `reasoning_source` to `main_codex_agent` or `codex_sub_agent`
+        - set `reasoning_mode` to `manual_reasoned_best_model`
+        - write a non-empty `reasoning_summary` with concrete ranking rationale
+        - write `evidence_refs` as a non-empty list of concrete files reviewed
+        - the diagnosis must come from live reasoning, not from a repo-external scripted helper
+        - all 3 direction `name` fields must be distinct
+        - all 3 direction `action_fingerprint` values must be distinct
         - each direction must include:
           - `family_id`
           - `subfamily_id`
@@ -56,4 +63,4 @@
         - median runtime: `24.427104 ms`
         - TFLOP/s: `29.762817 TFLOP/s`
         - measured commit: `8b1af08daa22015817d74711dfdc12ec910d69a6`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`

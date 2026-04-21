@@ -4,16 +4,16 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Current dispatch
 
-- dispatch node: `node_b`
+- dispatch node: `node_c`
 - dispatch mode: `sub_agent`
-- graph status: `ready_for_node_b`
+- graph status: `awaiting_direction_selection_for_node_c`
 - round label: `single-run`
 - round loop active: `no`
 - rounds remaining: `0`
 - auto-select frontier: `no`
 - latest run id: `20260421_084952_bf16_gemm_v1_8b1af08`
 - latest runtime: `24.427104 ms`
-- recommended direction: `None`
+- recommended direction: `dir_01`
 - active direction: `None`
 - display update due at current checkpoint: `yes`
 - watchdog status: `idle`
@@ -25,10 +25,11 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 ## Supervisor protocol
 
 - read `docs/supervisor_protocol.md` first
-- node-specific protocol: `docs/node_b_protocol.md`
-- node context file: `state/node_b_context.md`
-- prepare command: `python scripts/graph.py node_b`
-- finalize command: `python scripts/graph.py node_b --finalize`
+- node-specific protocol: `docs/node_c_protocol.md`
+- node context file: `state/node_c_context.md`
+- prepare command: `python scripts/graph.py node_c`
+- selection command: `python scripts/graph.py use-recommended-direction`
+- finalize command: `python scripts/graph.py node_c --finalize`
 - current dispatch requires direct GPU access: `no`
 
 ## Dispatch rule
@@ -46,11 +47,11 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 ## Watchdog
 
 - timeout: `10` minutes without workflow changes
-- latest observed progress: `2026-04-21T08:49:58-07:00` via `state/graph_state.json`
+- latest observed progress: `2026-04-21T09:40:59-07:00` via `state/active_direction.json`
 - idle minutes: `N/A`
 - watchdog status: `idle`
 - continue instruction: `No watchdog action is currently required.`
 
 ## Notes
 
-- `Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.`
+- `Ensure exactly one direction is selected, spawn an implementation sub-agent for a real code edit, and do not replace node_c with a scripted helper before finalizing from the main Codex agent.`
