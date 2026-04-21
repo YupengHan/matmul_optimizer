@@ -1,69 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Steady-state Barrier / Handoff Retime",
-  "candidate_id": "diagnosis_20260420_235953:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::steady_state_barrier_handoff_retime",
-  "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
-  "action_fingerprint": "8f8b5eca1122e2da",
-  "selection_priority": 2.525,
-  "base_run_id": "20260420_235922_bf16_gemm_v1_489574e",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T00:02:42-07:00",
-  "source_diagnosis_id": "diagnosis_20260420_235953",
-  "status": "implemented_pending_measurement",
-  "implemented_action_fingerprint": "retime_future_tile_refill_to_a_then_b",
-  "semantic_delta_tags": [
-    "ptx_handoff_retime",
-    "future_tile_refill_order",
-    "a_then_b_refill"
-  ],
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
   "secondary_family_ids": [],
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2041-2053"
-  ],
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Steady-state Barrier / Handoff Retime",
-    "family_id": "legacy::steady_state_barrier_handoff_retime",
-    "subfamily_id": "legacy::steady_state_barrier_handoff_retime",
-    "action_fingerprint": "8f8b5eca1122e2da",
-    "mode": "exploit",
-    "hypothesis": "Round 12 repaired the search-surface mismatch and restored the PTX microkernel as the dominant hot-band launch. The new best run at 24.16427231 ms slightly improved the exact scheduler-facing counters that still matter on this branch: active warps rose to 16.63%, barrier eased to 5.43%, and long-scoreboard eased to 7.17%, while DRAM stayed low at 12.44%. A source diff against `df5bac2` is now comment-only, so the restore and export-cleanup families are absorbed again and should be filtered out. The highest-value unabsorbed follow-on on the active PTX surface is therefore the narrow handoff seam around `cp_async_wait_group_0`, `__syncthreads()`, and the future-tile refill order. The prior barrier/handoff attempt should not be treated as negative evidence here because it was measured on the non-PTX sibling dispatch, not on the restored PTX microkernel that now owns the runtime.",
-    "expected_bottleneck": "Residual wait-group and barrier cadence in the active PTX hot-band steady-state loop, especially the handoff between MMA issue completion and future-tile refill.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:2008-2022",
-      "src/kernels/bf16_gemm_v1.cu:2024-2053",
-      "src/kernels/bf16_gemm_v1.cu:2110-2117"
-    ],
-    "risk": "Moderate. The family is bounded and now truly acts on the live PTX surface, but it still trades scheduler timing at the margin and can easily reshape barrier versus scoreboard without producing a measurable end-to-end win.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime versus the 24.164272 ms current best run",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "hot-band gpu__time_duration.sum"
-    ],
-    "search_score_v1": 2.35,
-    "score_breakdown": {
-      "policy_id": "manual_round100_node_b_v13",
-      "rank_score": 2.0,
-      "active_surface_bonus": 0.3,
-      "previous_measurement_invalidated_bonus": 0.25,
-      "absorbed_family_filter_bonus": 0.1,
-      "risk_penalty": 0.3,
-      "formula": "rank_score + active_surface_bonus + previous_measurement_invalidated_bonus + absorbed_family_filter_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 0.012,
-    "predicted_fail_risk": 0.3,
-    "ranking_notes": [
-      "Now that the PTX microkernel is back on the measured hot path, this family becomes a real active-branch probe again instead of a stale idea on the wrong surface.",
-      "Restore and export-cleanup families are filtered out because the current source is already semantically aligned with the best-known PTX surface.",
-      "It ranks first because it is the highest-confidence unabsorbed scheduler lever on the branch that just produced the new best custom run."
-    ],
-    "stop_condition": "Stop if another bounded handoff retime again only trades barrier against scoreboard without improving runtime on the restored PTX surface.",
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next."
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
