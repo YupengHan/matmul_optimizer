@@ -31,9 +31,10 @@ Read these in order:
 5. `state/progress.md`
 6. `state/current_focus.md`
 7. `state/human_review.md`
-8. current kernel source
-9. raw run files referenced from `state/node_b_context.md`
-10. optional cuBLAS reference artifacts from `state/node_b_context.md` when the latest custom profile does not imply a clear next move
+8. `state/human_guidance.md`
+9. current kernel source
+10. raw run files referenced from `state/node_b_context.md`
+11. optional cuBLAS reference artifacts from `state/node_b_context.md` when the latest custom profile does not imply a clear next move
 
 The supervisor should also read:
 
@@ -116,7 +117,7 @@ That means each direction should carry:
 
 Do not fake precision. Keep the numeric score coarse and use `ranking_notes` to preserve the reasoning that a later fuzzy reranker may need.
 
-From round 5 onward, diagnosis must also explicitly reflect the user-provided human ideas from `state/human_review.md` instead of treating them as soft background context only.
+From round 5 onward, diagnosis must also explicitly reflect the user-provided human ideas from `state/human_review.md` and `state/human_guidance.md` instead of treating them as soft background context only.
 
 That reflection must:
 

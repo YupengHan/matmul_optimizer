@@ -1,0 +1,10 @@
+- `Tiling`: `256 x 128` for block tiling size and `64 x 64` for warp tiling size
+- `Coalescing Access`: use wide-instruction access to global memory
+- `Data Reuse`: use shared memory to reuse data from matrix `A` and matrix `B`
+- `Async Copy`: use asynchronous copy operations with non-blocking instructions
+- `Bank Conflict`: use padding for the WMMA API and a permuted layout for MMA PTX instructions to eliminate bank conflicts
+- `L2 Cache`: use swizzle access mode to increase the L2 cache hit ratio
+- `Register Reuse`: calculate the internal warp tile as `Right Left Right Left`
+- `Pg2s`: use a double-buffer algorithm that prefetches global memory into shared memory
+- `Ps2r`: use a double-buffer algorithm that prefetches shared memory into registers
+- `Stage`: use a multi-buffer algorithm that prefetches global memory into shared memory

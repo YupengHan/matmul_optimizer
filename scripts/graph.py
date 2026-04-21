@@ -86,6 +86,7 @@ NODE_C_CONTEXT_PATH = STATE_DIR / 'node_c_context.md'
 PROGRESS_MD_PATH = STATE_DIR / 'progress.md'
 CURRENT_FOCUS_MD_PATH = STATE_DIR / 'current_focus.md'
 HUMAN_REVIEW_MD_PATH = STATE_DIR / 'human_review.md'
+HUMAN_GUIDANCE_MD_PATH = STATE_DIR / 'human_guidance.md'
 BENCHMARK_BASELINES_MD_PATH = STATE_DIR / 'benchmark_baselines.md'
 ROUNDS_MD_PATH = STATE_DIR / 'rounds.md'
 NODE_A_BUILD_LOG_PATH = STATE_DIR / 'node_a_last_build.log'
@@ -1838,6 +1839,7 @@ def render_current_focus_md(
     search_state: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
+    human_guidance_present = HUMAN_GUIDANCE_MD_PATH.exists() and bool(HUMAN_GUIDANCE_MD_PATH.read_text(encoding='utf-8').strip())
     lines = ['# Current focus', '']
     lines.append(f"- branch goal: `{project_goal_summary(search_state)}`")
     lines.append(f"- next node: `{graph_state.get('current_node', 'node_a')}`")
@@ -1850,6 +1852,11 @@ def render_current_focus_md(
     lines.append(f"- rounds remaining: `{round_loop.get('remaining_rounds', 0)}`")
     lines.append(f"- recommended direction: `{diagnosis.get('recommended_direction_id', 'N/A')}`")
     lines.append(f"- selected direction: `{active_direction.get('direction_id', 'N/A')}`")
+    lines.append(
+        f"- persistent human guidance: `{repo_rel(HUMAN_GUIDANCE_MD_PATH)}`"
+        if human_guidance_present
+        else '- persistent human guidance: `none recorded`'
+    )
     lines.append(f"- immediate next action: `{graph_state.get('notes', 'Run status to inspect the current node')}`")
     return '\n'.join(lines) + '\n'
 
@@ -1860,6 +1867,9 @@ def render_human_review_md(
     active_direction: Dict[str, Any],
     round_loop: Dict[str, Any],
 ) -> str:
+    human_guidance = ''
+    if HUMAN_GUIDANCE_MD_PATH.exists():
+        human_guidance = HUMAN_GUIDANCE_MD_PATH.read_text(encoding='utf-8').strip()
     lines = ['# Human review queue', '', '## Current workflow gate', '']
     lines.append(f"- next node: `{graph_state.get('current_node', 'node_a')}`")
     lines.append(f"- status: `{graph_state.get('status', 'unknown')}`")
@@ -1891,6 +1901,15 @@ def render_human_review_md(
     lines.append(f"- selection mode: `{active_direction.get('selection_mode', 'N/A')}`")
     lines.append(f"- status: `{active_direction.get('status', 'idle')}`")
     lines.append(f"- notes: `{active_direction.get('notes', 'N/A')}`")
+    lines.append('')
+    lines.append('## Persistent human guidance')
+    lines.append('')
+    lines.append('Read these items on every frontier-search / node_b ranking pass and map them into `family_audit`, diagnosis notes, or direction ranking when relevant.')
+    lines.append('')
+    if human_guidance:
+        lines.extend(human_guidance.splitlines())
+    else:
+        lines.append('- no persistent human guidance recorded yet')
     return '\n'.join(lines) + '\n'
 
 
@@ -1904,6 +1923,10 @@ def render_node_b_context(
 ) -> str:
     analysis_json_path = latest_run.get('ncu_analysis_path') or ncu_summary.get('analysis_path')
     analysis_md_path = sibling_repo_path(analysis_json_path, suffix='.md')
+    human_guidance = ''
+    if HUMAN_GUIDANCE_MD_PATH.exists():
+        human_guidance = HUMAN_GUIDANCE_MD_PATH.read_text(encoding='utf-8').strip()
+    human_guidance_block = human_guidance if human_guidance else '- no persistent human guidance recorded yet'
     cublas_baseline = benchmark_state.get('cublas_baseline') or {}
     cublas_ref_paths = [
         cublas_baseline.get('ncu_analysis_md'),
@@ -1939,6 +1962,7 @@ def render_node_b_context(
         - `state/progress.md`
         - `state/current_focus.md`
         - `state/human_review.md`
+        - `state/human_guidance.md`
         - `{graph_state.get('current_kernel_path', current_kernel_path())}`
         - `{latest_run.get('raw_summary_json', 'N/A')}`
         - `{ncu_summary.get('details_page_csv_path', 'N/A')}`
@@ -1962,6 +1986,12 @@ def render_node_b_context(
         - `delta_vs_previous_run` tells you what changed after the last code edit
         Use the raw exports only when the structured findings are not enough to explain pipeline, memory, synchronization, or source-level behavior.
         Use the autotune sweep summaries when present to anchor direction ranking in measured tile-width data instead of only one run snapshot.
+
+        ## Persistent human guidance
+
+        Review these items on every frontier-search / node_b ranking pass and map them explicitly into `family_audit`, diagnosis notes, or direction ranking when relevant.
+
+{human_guidance_block}
 
         ## Output contract
 
@@ -2760,6 +2790,7 @@ def node_state_paths_for_commit(extra_paths: Optional[Sequence[Path | str]] = No
         PROGRESS_MD_PATH,
         CURRENT_FOCUS_MD_PATH,
         HUMAN_REVIEW_MD_PATH,
+        HUMAN_GUIDANCE_MD_PATH,
         BENCHMARK_BASELINES_MD_PATH,
         NODE_B_CONTEXT_PATH,
         NODE_C_CONTEXT_PATH,
