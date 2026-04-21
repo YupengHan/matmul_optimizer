@@ -1,28 +1,34 @@
 {
   "schema_version": 1,
-  "attempt_id": "restore_base:20260421_133418_bf16_gemm_v1_c859cd06:20260421_150146",
-  "status": "restore_completed",
-  "candidate_id": "restore_base:20260421_133418_bf16_gemm_v1_c859cd06",
-  "source_diagnosis_id": null,
-  "base_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
-  "family_id": "restore_base",
-  "subfamily_id": "restore_base.exact",
-  "direction_id": "restore_base",
-  "direction_name": "Restore implementation surface from 20260421_133418_bf16_gemm_v1_c859cd06",
-  "mode": "restore",
+  "attempt_id": "diagnosis_20260421_145629_round03_5383596d:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_145629_round03_5383596d:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_145629_round03_5383596d",
+  "base_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+  "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+  "subfamily_id": "launch_order::grouped_rows_4_to_8_for_b_reuse",
+  "direction_id": "dir_01",
+  "direction_name": "Restore The Accepted Base And Increase PTX Grouped-Row Depth",
+  "mode": "exploit",
   "commit": null,
   "commit_short": null,
-  "subject": null,
-  "selection_mode": "restore",
-  "selected_at": "2026-04-21T15:01:46-07:00",
-  "selected_from_frontier_id": null,
-  "source_run_id": "20260421_133418_bf16_gemm_v1_c859cd06",
-  "selection_score": null,
-  "planned_action_fingerprint": "restore_base:c859cd06456e600a76778265983f0cd6da925481",
-  "implemented_action_fingerprint": "restore_base:c859cd06456e600a76778265983f0cd6da925481",
-  "score_breakdown": {},
+  "subject": "node_c: round 3/10 implement dir_01 Restore The Accepted Base And Increase PTX Grouped-Row Depth",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T15:01:38-07:00",
+  "selected_from_frontier_id": "frontier:global",
+  "source_run_id": "20260421_145629_bf16_gemm_v1_5383596d",
+  "selection_score": 0.97,
+  "planned_action_fingerprint": "restore_ptx_hotband_baseline:grouped_rows_4->8",
+  "implemented_action_fingerprint": "restore_ptx_hotband_baseline:grouped_rows_4->8",
+  "score_breakdown": {
+    "expected_gain": 0.26,
+    "implementation_risk": 0.15,
+    "evidence_strength": 0.15,
+    "code_reuse": 0.22
+  },
   "semantic_delta_tags": [
-    "restore_base"
+    "single_direction_attempt",
+    "kernel_code"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
@@ -31,30 +37,30 @@
   "implementation": {
     "commit": null,
     "commit_short": null,
-    "subject": null,
-    "build_status": null,
+    "subject": "node_c: round 3/10 implement dir_01 Restore The Accepted Base And Increase PTX Grouped-Row Depth",
+    "build_status": "PASS",
     "failure_mode": null,
-    "build_log_path": null,
+    "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
       "src/kernels/bf16_gemm_v1.cu"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 0,
-      "deletions": 0
+      "insertions": 3,
+      "deletions": 1
     }
   },
-  "build_status": null,
+  "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 0,
-    "deletions": 0
+    "insertions": 3,
+    "deletions": 1
   },
   "measurement": {
     "run_id": null,
-    "measurement_commit": "c859cd06456e600a76778265983f0cd6da925481",
-    "runtime_ms": 24.40755177,
+    "measurement_commit": null,
+    "runtime_ms": null,
     "runtime_delta_ms": null,
     "tflops": null,
     "correctness": null,
@@ -64,8 +70,7 @@
     "structured_bottleneck_deltas": [],
     "top_hotspot_deltas": []
   },
-  "transition_label": null,
   "transition_class": null,
-  "close_reason": "restore_base",
-  "notes": "Restored implementation surface from run_id=20260421_133418_bf16_gemm_v1_c859cd06 using c859cd06456e600a76778265983f0cd6da925481."
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }

@@ -153,7 +153,9 @@ constexpr int kDefaultFixedMainTileN = TensorCoreTile384::kTensorBlockN;
 constexpr int kFixedPivotHotRows = 6400;
 constexpr int kFixedResidualHotRows = kFixedBenchmarkM - kFixedPivotHotRows;
 [[maybe_unused]] constexpr int kFixedHotBandGroupedRows = 4;
-constexpr int kFixedHotBandPtxGroupedRows = 4;
+// Traverse a deeper row group before advancing the hot-band column so the PTX
+// hot-band path can reuse each B tile across more adjacent row tiles.
+constexpr int kFixedHotBandPtxGroupedRows = 8;
 constexpr int kLegacyFixedMainRegionN = 7296;
 constexpr int kLegacyFixedMiddleRegionN = 384;
 constexpr const char* kFixedMainTileEnvVar = "MATMUL_FIXED_MAIN_TILE_N";
