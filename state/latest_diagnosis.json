@@ -1,15 +1,84 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260420_175514",
+  "status": "completed",
+  "created_at": "2026-04-20T17:55:14-07:00",
   "source_run_id": "20260420_175429_bf16_gemm_v1_134ec64",
   "source_run_dir": "runs/20260420_175429_bf16_gemm_v1_134ec64",
   "source_summary_json": "runs/20260420_175429_bf16_gemm_v1_134ec64/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Best Measured PTX Grouping Window On The Accepted Surface",
+      "hypothesis": "Round 2/50 starts from a clear negative result: the latest measured K32 hot-band branch at run `20260420_175429_bf16_gemm_v1_134ec64` regressed end-to-end runtime from 25.47660828 ms to 30.29759979 ms. The dominant hot-band kernel itself got markedly worse versus the restored accepted PTX branch: kernel time rose from 32.97 ms to 39.57 ms, registers climbed from 200 to 212, shared memory rose from 22.016 KiB to 43.008 KiB, tensor activity fell from 47.72% to 40.05%, and barrier stall jumped from 5.52% to 10.04%. That closes the K32 family for now. Because the implementation surface has already been restored to the accepted `da1a5bb` PTX microkernel, the best next move is not another structural hot-band rewrite but the strongest already-measured PTX-adjacent fallback on that surface: restore the 4-row grouped traversal window, which earlier beat the current restored base at 25.40644836 ms while staying inside the same hot-band kernel family.",
+      "expected_bottleneck": "CTA grouping and orchestration overhead around the accepted PTX hot-band grouped-row mapping, not the hot-band inner K-stage itself.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1967-1979",
+        "src/kernels/bf16_gemm_v1.cu:2097-2104"
+      ],
+      "risk": "Medium. This is a narrow and already measured control on the restored surface, but it still changes launch-order locality and can regress if the current hybrid-prefetch base interacts differently with the older 4-row window.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the 4-row PTX grouping fails to beat the restored 25.47660828 ms control or if it reopens the old barrier/DRAM loss pattern."
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The 6144 Hot-Band / Peeled Seam As The Best Launch-Split Fallback",
+      "hypothesis": "The latest regression says the K32 hot-band family should be closed, so the next alternatives should stay on the restored accepted PTX microkernel rather than reopen a new inner-kernel branch immediately. The cleanest non-grouping fallback already measured on this surface is the 6144 seam variant: shifting the pivot away from 6400 and into the peeled follow-on path previously recovered to 25.65470409 ms, while the deeper 5888 shift regressed again. That makes the 6144 seam the best bounded launch-split family left after the K32 miss, even though it is still slower than the restored accepted base.",
+      "expected_bottleneck": "Boundary cost between the accepted 128x128 PTX hot-band launch and the peeled 64x384 row-band path, especially whether the fixed 6400-row split leaves a small but repeatable handoff penalty.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:153-154",
+        "src/kernels/bf16_gemm_v1.cu:1150-1179",
+        "src/kernels/bf16_gemm_v1.cu:2097-2114"
+      ],
+      "risk": "Medium. The family is narrow and already measured, but its known local best still trails the current restored source, so it should stay behind the stronger grouping fallback.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "runs/*/ncu_metrics.csv hot-band gpu__time_duration.sum",
+        "runs/*/ncu_metrics.csv peeled kernel gpu__time_duration.sum",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "stop_condition": "Only revisit the seam at the known 6144 local best; stop immediately if it remains slower than 25.47660828 ms or if it simply shifts more work into the peeled kernel without reducing total runtime."
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep The 64x384 Fixed-Main Control Only As A Broad Audit Branch",
+      "hypothesis": "The round-18 autotune files still show that `64x384` was the best broad tile-width candidate in the old fixed-main sweep, so it remains the only materially different non-PTX control family with real measurement ancestry. But the current loop already produced decisive negative evidence against broadly routing the accepted branch back through that control: a prior `64x384` reopen regressed to 33.96454430 ms. The latest K32 miss does not overturn that. So this family should remain only a tertiary audit branch if the tighter PTX grouping and seam fallbacks both stall.",
+      "expected_bottleneck": "Broader hot-band path selection and arithmetic-intensity tradeoff across the fixed-shape launch, not PTX hot-band orchestration on the restored accepted surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:152",
+        "src/kernels/bf16_gemm_v1.cu:1201-1248",
+        "src/kernels/bf16_gemm_v1.cu:2083-2118"
+      ],
+      "risk": "High. The family has strong autotune ancestry but already showed a catastrophic regression against the current accepted PTX base.",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Treat this as an audit-only control; stop immediately if it again opens a broad-family regression or inflates runtime well above the restored 25.47660828 ms surface."
+    }
+  ],
+  "notes": "Round 2/50 diagnosis for run `20260420_175429_bf16_gemm_v1_134ec64`. No new explicit human-review idea family is queued in `state/human_review.md`, so the ranking is driven by the latest measured regression and the already-measured fallback evidence on this loop. The key fact is that the regressed run came from the K32 hot-band branch, while the implementation surface has already been restored to the accepted `da1a5bb` PTX microkernel before this diagnosis. The latest run therefore acts as negative evidence: the K32 hot-band kernel drove the dominant kernel time from 32.97 ms to 39.57 ms, raised registers from 200 to 212, doubled hot-band shared memory from 22.016 KiB to 43.008 KiB, cut tensor activity from 47.72% to 40.05%, and pushed barrier stall from 5.52% to 10.04%. That closes the K32 family for the next round. The next directions should stay on the restored accepted surface and rank the surviving measured fallback families by upside versus risk: first the 4-row PTX grouping window as the best measured PTX-adjacent fallback, then the known 6144 seam as the best launch-split fallback, and only then the broad 64x384 fixed-main control because its local autotune evidence is outweighed by its catastrophic regression on the current PTX base."
 }
