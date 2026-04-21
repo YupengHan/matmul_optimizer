@@ -100,8 +100,6 @@ RESTORE_IMPLEMENTATION_PATHS = [
     REPO_ROOT / 'include',
     REPO_ROOT / 'CMakeLists.txt',
 ]
-if SWEEP_FIXED_MAIN_TILES_PATH.exists():
-    RESTORE_IMPLEMENTATION_PATHS.append(SWEEP_FIXED_MAIN_TILES_PATH)
 
 
 def fmt_value(value: Any, suffix: str = '') -> str:
@@ -3390,6 +3388,10 @@ def perform_restore_implementation(
     reason: Optional[str],
     skip_commit: bool,
 ) -> Dict[str, Any]:
+    # Restore only the compiled implementation surface. Keep workflow/workload
+    # support files such as graph orchestration or sweep scripts on the current
+    # HEAD so a historical family restore cannot silently downgrade the active
+    # loop mode or the latest workload driver.
     tracked_non_state = [
         path for path in tracked_dirty_paths()
         if not path.startswith('state/')

@@ -408,6 +408,16 @@ class NcuRichHandoffTests(unittest.TestCase):
         self.assertTrue(hydrated['top_findings'])
         self.assertTrue(hydrated['handoff']['node_b']['top_findings'])
 
+    def test_restore_scope_preserves_workflow_and_workload_support_files(self) -> None:
+        self.assertTrue(graph.path_is_allowed('src/kernels/bf16_gemm_v1.cu', graph.RESTORE_IMPLEMENTATION_PATHS))
+        self.assertTrue(graph.path_is_allowed('src/runner/main.cpp', graph.RESTORE_IMPLEMENTATION_PATHS))
+        self.assertFalse(graph.path_is_allowed('scripts/graph.py', graph.RESTORE_IMPLEMENTATION_PATHS))
+        self.assertFalse(graph.path_is_allowed('scripts/sweep_fixed_main_tiles.py', graph.RESTORE_IMPLEMENTATION_PATHS))
+
+        attempt_surface = graph.node_c_attempt_surface_paths()
+        self.assertTrue(graph.path_is_allowed('scripts/graph.py', attempt_surface))
+        self.assertTrue(graph.path_is_allowed('scripts/sweep_fixed_main_tiles.py', attempt_surface))
+
 
 if __name__ == '__main__':
     unittest.main()
