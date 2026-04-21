@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260420_223553:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260420_223553:dir_01",
   "source_diagnosis_id": "diagnosis_20260420_223553",
   "base_run_id": "20260420_223530_bf16_gemm_v1_82c8e60",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Apply Only A Minimal PTX Export Address Cleanup",
   "mode": "exploit",
-  "commit": null,
-  "commit_short": null,
+  "commit": "df5bac281a2efef7f02478947a334a51b6510138",
+  "commit_short": "df5bac2",
   "subject": "node_c: round 7/100 implement dir_01 Apply Only A Minimal PTX Export Address Cleanup",
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T22:38:30-07:00",
@@ -38,8 +38,8 @@
     "src/kernels/bf16_gemm_v1.cu:1005-1054"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "df5bac281a2efef7f02478947a334a51b6510138",
+    "commit_short": "df5bac2",
     "subject": "node_c: round 7/100 implement dir_01 Apply Only A Minimal PTX Export Address Cleanup",
     "build_status": "PASS",
     "failure_mode": null,
@@ -62,16 +62,29 @@
     "deletions": 17
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
-    "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "run_id": "20260420_224147_bf16_gemm_v1_df5bac2",
+    "measurement_commit": "df5bac281a2efef7f02478947a334a51b6510138",
+    "runtime_ms": 24.16435242,
+    "runtime_delta_ms": -0.016304009999998925,
+    "tflops": 30.08644342,
+    "correctness": true,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "48.39",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "47.84",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "46.13",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "12.50",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "30.32",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "16.62",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "5.42",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "7.26",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "2.16",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "3.64",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "flat",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260420_224147_bf16_gemm_v1_df5bac2 for candidate diagnosis_20260420_223553:dir_01; transition_label=PASS_FLAT.",
+  "transition_label": "PASS_FLAT"
 }

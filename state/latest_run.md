@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260420_223530_bf16_gemm_v1_82c8e60`
-- run dir: `runs/20260420_223530_bf16_gemm_v1_82c8e60`
-- kernel tag: `bf16_gemm_v1_82c8e60`
-- round label: `round 6/100`
+- run id: `20260420_224147_bf16_gemm_v1_df5bac2`
+- run dir: `runs/20260420_224147_bf16_gemm_v1_df5bac2`
+- kernel tag: `bf16_gemm_v1_df5bac2`
+- round label: `round 7/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.180656 ms`
-- p10 runtime: `24.165370 ms`
-- p90 runtime: `25.037721 ms`
-- TFLOP/s: `30.066157 TFLOP/s`
-- previous run id: `20260420_222846_bf16_gemm_v1_8ba4496`
-- runtime delta vs previous measured run: `-0.354383 ms`
-- TFLOP/s delta vs previous measured run: `+0.434275 TFLOP/s`
+- median runtime: `24.164352 ms`
+- p10 runtime: `24.046081 ms`
+- p90 runtime: `25.054618 ms`
+- TFLOP/s: `30.086443 TFLOP/s`
+- previous run id: `20260420_223530_bf16_gemm_v1_82c8e60`
+- runtime delta vs previous measured run: `-0.016304 ms`
+- TFLOP/s delta vs previous measured run: `+0.020286 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `dir_03`
-- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- implemented selection mode: `approved`
+- implemented direction id: `dir_01`
+- implemented direction name: `Apply Only A Minimal PTX Export Address Cleanup`
+- implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260420_223530_bf16_gemm_v1_82c8e60/summary.json`
-- measured commit: `82c8e608fba26a9b0398984dd20ce199bb1d46f6`
-- new best custom: `no`
-- generated at: `2026-04-20T22:35:37-07:00`
+- raw summary json: `runs/20260420_224147_bf16_gemm_v1_df5bac2/summary.json`
+- measured commit: `df5bac281a2efef7f02478947a334a51b6510138`
+- new best custom: `yes`
+- generated at: `2026-04-20T22:41:53-07:00`
