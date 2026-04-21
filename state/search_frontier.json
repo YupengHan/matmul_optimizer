@@ -8,9 +8,9 @@
   "candidate_set_id": "candidate_set:diagnosis_20260421_093739",
   "generated_at": "2026-04-20T20:49:03-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate auto_diagnosis_round_100:dir_01 closed via pass_win after selection.",
+  "selected_candidate_id": "diagnosis_20260421_093739:dir_01",
+  "selection_reason": "selected_via_recommended",
+  "selection_summary": "Selected diagnosis_20260421_093739:dir_01 -> dir_01 via mode=recommended.",
   "candidates": [
     {
       "candidate_id": "diagnosis_20260420_200135:dir_01",
@@ -21171,8 +21171,8 @@
       "last_result_runtime_ms": 24.427104,
       "last_runtime_delta_ms": -6.2790718000000005,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T09:40:59-07:00",
-      "last_closed_search_iteration": 104,
+      "last_closed_at": "2026-04-21T09:41:16-07:00",
+      "last_closed_search_iteration": 105,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -21363,12 +21363,12 @@
         "sm__warps_active.avg.pct_of_peak_sustained_active"
       ],
       "stop_condition": "Stop if the implementation needs to change CTA geometry, cp.async stage count, or the dispatch map instead of remaining a local offset-hoist cleanup.",
-      "status": "open",
+      "status": "selected",
       "source_search_iteration": 105,
-      "selection_count": 0,
+      "selection_count": 1,
       "reopen_count": 0,
-      "last_selected_at": null,
-      "last_selected_selection_mode": null,
+      "last_selected_at": "2026-04-21T09:41:16-07:00",
+      "last_selected_selection_mode": "recommended",
       "last_transition_label": null,
       "last_transition_class": null,
       "last_result_run_id": null,
@@ -21519,7 +21519,7 @@
     }
   ],
   "notes": "Persistent frontier tracks 314 historical candidates; 18 family representatives are currently active for selection.",
-  "updated_at": "2026-04-21T09:40:59-07:00",
+  "updated_at": "2026-04-21T09:41:16-07:00",
   "family_representative_count": 18,
   "reopened_candidate_ids": []
 }

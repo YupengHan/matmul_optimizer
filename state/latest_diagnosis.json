@@ -25,8 +25,8 @@
   ],
   "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_093739:dir_01",
   "family_audit": [
     "reject exact restore as the primary move because HEAD, 8b1af08, and 489574e already share the same kernel blob; another replay would only duplicate the old helper failure mode.",
     "accept low-risk hot-band control-path tightening in the active 128x128 PTX and non-PTX kernels because the run still shows low tensor utilization with room to trim integer/shared address work.",
