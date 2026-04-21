@@ -321,13 +321,15 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `8` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
+The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `13` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
 - custom kernel: `24.164272 ms`
 - local CUTLASS baseline: `25.917889 ms`
 - result: `1.753616 ms` faster than CUTLASS, or `6.766049%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
+
+The latest 10-round refactor loop rebuilt a clean accepted base at `24.195072 ms` and finished with a final PTX wait-group retime at `24.691072 ms`, so the public best remains unchanged even though the new branch now has a cleaner cuBLASLt reference and a narrower active search frontier.
 
 ## Major Workflow Updates
 
