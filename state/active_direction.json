@@ -1,21 +1,59 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Single-Source Warp Ownership End To End On The Half-Panel Branch",
+  "candidate_id": "diagnosis_20260421_005735:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "historical::repair_the_256x128_half_panel_register_reuse_branch",
+  "subfamily_id": "historical::repair_the_256x128_half_panel_register_reuse_branch::restore_76622e3_single_sourced_ownership_snapshot",
+  "action_fingerprint": "restore_half_panel_single_sourced_ownership_snapshot_from_76622e3953ae33585df08f275e54bdd27fad9860",
+  "selection_priority": 2.02,
+  "base_run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T01:00:07-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_005735",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Single-Source Warp Ownership End To End On The Half-Panel Branch",
+    "family_id": "historical::repair_the_256x128_half_panel_register_reuse_branch",
+    "subfamily_id": "historical::repair_the_256x128_half_panel_register_reuse_branch::restore_76622e3_single_sourced_ownership_snapshot",
+    "action_fingerprint": "restore_half_panel_single_sourced_ownership_snapshot_from_76622e3953ae33585df08f275e54bdd27fad9860",
+    "mode": "explore",
+    "hypothesis": "Round 22 confirmed that the half-panel branch still attacks the right wall on the current machine. The result was bad overall, but the machine state moved exactly where the plateaued 24.16-24.18 ms surfaces do not: active warps rose to 32.92%, register occupancy stayed at limit=2, and long scoreboard dropped to 0.62%. The remaining blockers are now very explicit: correctness failed 0/3 and barrier climbed to 21.27%. That makes the next best move a precise continuation inside the same family, not a fresh family jump. The historical 76622e3 snapshot is that continuation: it single-sources warp ownership and panel identity end to end so the branch can keep the occupancy breakthrough while attacking the remaining overlapping-writer / ownership mismatch.",
+    "expected_bottleneck": "Half-panel ownership and export correctness on top of a branch that already solved the live-state wall but still pays excessive synchronization.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:345-1066",
+      "src/kernels/bf16_gemm_v1.cu:1580-1676",
+      "src/kernels/bf16_gemm_v1.cu:1676-1813"
+    ],
+    "risk": "High. This branch still fails correctness and the next step is another broad historical surface restore, but now the key occupancy signal has been reproduced locally.",
+    "metrics_to_recheck": [
+      "correctness pass rate across all 3 cases",
+      "launch__registers_per_thread",
+      "launch__occupancy_limit_registers",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "end-to-end median runtime"
+    ],
+    "search_score_v1": 2.14,
+    "score_breakdown": {
+      "policy_id": "manual_round100_node_b_v23",
+      "rank_score": 1.18,
+      "confirmed_local_signal_bonus": 0.54,
+      "occupancy_breakthrough_bonus": 0.48,
+      "user_guidance_bonus": 0.22,
+      "risk_penalty": 0.28,
+      "formula": "rank_score + confirmed_local_signal_bonus + occupancy_breakthrough_bonus + user_guidance_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.7,
+    "predicted_fail_risk": 0.68,
+    "ranking_notes": [
+      "This stays on top because the current run reproduced the same high-warps, low-scoreboard signature that justified reopening the family.",
+      "A one-round continuation is defensible because there is now local confirmation of the signal, not just historical memory.",
+      "If this targeted repair still fails, the family can be closed with much stronger evidence."
+    ],
+    "stop_condition": "Stop if the 76622e3 continuation still fails correctness and does not materially reduce the branch's 21% barrier stall while preserving the occupancy breakthrough.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
