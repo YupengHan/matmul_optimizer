@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `9cac32cbd567419bdc7204b46a812665da0cc865`
 - plateau counter: `11`
 - round loop: `round 7/10`
 - rounds remaining: `4`
-- notes: `Node A completed round 6/10. Run node_b to continue round 7/10.`
+- notes: `Node C is ready to implement diagnosis_20260421_155253:dir_01 via recommended selection for round 7/10.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_155253`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human guidance review for round 7: the latest run validated the choice to leave the losing 256x128 surface, but it did not validate staying on the PTX family as the main branch. The recovered PTX run became a good fallback surface, not the new winner. That is why the ranking now prefers the accepted non-PTX sibling plus one bounded occupancy probe, keeps one PTX wait/sync-collapse refinement in reserve, and leaves the 256x128 family queued rather than deleting it.`
+- dir_01: Force 3-CTA Residency On The Non-PTX 128x128 Sibling | bottleneck: Register-limited occupancy and latency hiding on the accepted non-PTX 128x128 hot-band surface.
+- dir_02: Collapse PTX Wait-Group Handoff Without Extra Export Scratch | bottleneck: The seam between cp.async wait-group release, __syncthreads(), and future-stage refill ordering on the PTX 128x128 microkernel.
+- dir_03: Reopen The 256x128 Half-Panel Register-Reuse Branch Later | bottleneck: Register reuse, fragment lifetime, and writer-ownership constraints on the correctness-safe 256x128 pivot.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Force 3-CTA Residency On The Non-PTX 128x128 Sibling`
+- candidate id: `diagnosis_20260421_155253:dir_01`
+- base run id: `20260421_155210_bf16_gemm_v1_9cac32cb`
+- primary family id: `aggressive::force_three_cta_residency_on_the_non_ptx_128x128_sibling`
+- planned action fingerprint: `restore_non_ptx_128x128_sibling_surface_then_raise_launch_bounds_to_three_cta_residency`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_155253`
 - round loop: `round 7/10`
+- hypothesis: `Round 6 proved that recovering from the losing 256x128 branch was the right call, but it also showed that the PTX-local export batching variant is still not the best 128x128 surface. The accepted base remains the non-PTX 128x128 sibling at 24.195072 ms. The cleanest next probe is therefore to restore that sibling and test whether a 3-CTA launch-bounds target can improve latency hiding there without paying the PTX microkernel export tax that kept round 6 slightly above the accepted base.`
+- expected bottleneck: `Register-limited occupancy and latency hiding on the accepted non-PTX 128x128 hot-band surface.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1869-1981, src/kernels/bf16_gemm_v1.cu:2139-2147`
+- risk: `Moderate. The restore surface is correctness-safe and already faster than the current run, but the 3-CTA budget can still trade registers for spills or barrier regressions.`
+- metrics to re-check: `correctness on all 3 dataset cases before trusting runtime, median runtime versus the 24.195072 ms accepted base, launch__registers_per_thread, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, gpu__time_duration.sum`
 - latest run id: `20260421_155210_bf16_gemm_v1_9cac32cb`
 - latest runtime: `24.346112 ms`
 - latest NCU analysis: `runs/20260421_155210_bf16_gemm_v1_9cac32cb/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `200.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `12.46` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.61` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `29.89` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.11` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
+- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,14 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `48.38` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.63` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `7.09` | long scoreboard stalls are consuming 7.09% of active warp issue slots.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `5.61` | barrier stalls are consuming 5.61% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `N/A` | N/A
+- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Restore the accepted non-PTX 128x128 sibling launch path.`
+- `Raise the non-PTX sibling launch-bounds target to probe whether 3-CTA residency is viable on the accepted base.`
 
 ## Delta vs previous run
 
@@ -94,4 +95,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
