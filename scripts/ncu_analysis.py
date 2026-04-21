@@ -43,6 +43,37 @@ LOWER_IS_BETTER_TOKENS = (
     'replay',
 )
 
+PERCENT_LIKE_UNITS = {'%'}
+RAW_TOTAL_UNITS = {
+    'cycle',
+    'thread',
+    'warp',
+    'block',
+    'byte',
+    'kbyte',
+    'kbyte/block',
+    'byte/block',
+}
+
+LOW_SIGNAL_SECTION_METRICS = {
+    'block size',
+    'grid size',
+    'threads',
+    '# sms',
+    'waves per sm',
+    'elapsed cycles',
+    'total dram elapsed cycles',
+    'total l1 elapsed cycles',
+    'total l2 elapsed cycles',
+    'total sm elapsed cycles',
+    'total smsp elapsed cycles',
+    'average dram active cycles',
+    'average l1 active cycles',
+    'average l2 active cycles',
+    'average sm active cycles',
+    'average smsp active cycles',
+}
+
 
 def _relativize_path(path: Optional[Path], base: Optional[Path]) -> Optional[str]:
     if path is None:
@@ -130,6 +161,14 @@ def read_filtered_csv_lines(path: Optional[Path]) -> List[str]:
             continue
         filtered.append(raw)
     return filtered
+
+
+def source_page_is_disassembly(path: Optional[Path]) -> bool:
+    rows = read_csv_matrix(path)
+    if len(rows) < 2:
+        return False
+    header = [str(cell).strip() for cell in rows[1]]
+    return header == ['Address', 'Source']
 
 
 def read_csv_matrix(path: Optional[Path]) -> List[List[str]]:
@@ -440,8 +479,12 @@ def build_hotspot_from_row(row: Dict[str, str], *, index: int) -> Optional[Dict[
         return None
     metric_value = parse_float(find_first(row, ('Metric Value', 'Value', 'metric_value')))
     importance_override = parse_float(find_first(row, ('Importance Score', 'Importance', 'Contribution', 'importance_score')))
+    metric_unit = (find_first(row, ('Metric Unit', 'Unit', 'metric_unit')) or '').strip()
     scope_type, scope_name, location = hotspot_scope(row)
     section_name = find_first(row, ('Section Name', 'Section', 'section_name'))
+    lowered_metric = metric_name.lower()
+    if scope_type == 'section' and lowered_metric in LOW_SIGNAL_SECTION_METRICS:
+        return None
     explanation = (
         find_first(row, ('Description', 'Rule Message', 'Message', 'Advice'))
         or f'{scope_name} is carrying metric {metric_name}.'
@@ -450,6 +493,14 @@ def build_hotspot_from_row(row: Dict[str, str], *, index: int) -> Optional[Dict[
     importance_score = importance_override
     if importance_score is None:
         importance_score = problem_score(metric_name, metric_value)
+        normalized_unit = metric_unit.lower()
+        if normalized_unit in RAW_TOTAL_UNITS:
+            if any(token in lowered_metric for token in ('total ', 'average ', 'elapsed cycles', 'active cycles', 'threads', 'grid size')):
+                importance_score = min(importance_score, 6.0)
+            else:
+                importance_score = min(importance_score, 15.0)
+        elif normalized_unit not in PERCENT_LIKE_UNITS and metric_value is not None and abs(metric_value) > 1000:
+            importance_score = min(importance_score, 15.0)
         if section_name:
             importance_score += 5.0
     return {
@@ -459,6 +510,7 @@ def build_hotspot_from_row(row: Dict[str, str], *, index: int) -> Optional[Dict[
         'location': location,
         'metric_name': metric_name,
         'metric_value': metric_value if metric_value is not None else numeric_or_text(find_first(row, ('Metric Value', 'Value', 'metric_value'))),
+        'metric_unit': metric_unit or None,
         'importance_score': float(importance_score),
         'explanation': explanation,
         'section_name': section_name,
@@ -961,8 +1013,19 @@ def top_hotspot_deltas(delta_summary: Dict[str, Any]) -> List[Dict[str, Any]]:
             enriched = dict(item)
             enriched['bucket'] = bucket_name
             buckets.append(enriched)
-    buckets.sort(key=lambda item: abs(parse_float(item.get('delta')) or item.get('importance_score') or 0.0), reverse=True)
+    buckets.sort(key=hotspot_delta_rank_score, reverse=True)
     return buckets[:TOP_HOTSPOT_LIMIT]
+
+
+def hotspot_delta_rank_score(item: Dict[str, Any]) -> float:
+    delta = abs(parse_float(item.get('delta')) or 0.0)
+    importance = min(float(item.get('importance_score') or 0.0), 25.0)
+    bucket = str(item.get('bucket') or '')
+    if delta > 0:
+        return delta + importance
+    if bucket in {'new', 'disappeared'}:
+        return min(importance, 10.0)
+    return importance
 
 
 def build_top_findings(
@@ -1006,7 +1069,7 @@ def build_top_findings(
                 'finding_id': f'finding::delta::{delta_item.get("hotspot_id")}',
                 'finding_type': 'hotspot_delta',
                 'summary': f'{delta_item.get("bucket")} hotspot delta at {delta_item.get("scope_name") or delta_item.get("location")}: {delta_item.get("trend", "changed")}.',
-                'importance_score': abs(parse_float(delta_item.get('delta')) or 0.0) + (delta_item.get('importance_score') or 0.0),
+                'importance_score': hotspot_delta_rank_score(delta_item),
                 'evidence': [delta_item],
             }
         )
@@ -1331,11 +1394,12 @@ def default_artifacts(
     source_unavailable_reason: Optional[str],
     details_unavailable_reason: Optional[str],
     import_raw_unavailable_reason: Optional[str],
+    source_structured_hotspots_available: bool = True,
     return_codes: Optional[Dict[str, Optional[int]]] = None,
 ) -> Dict[str, Any]:
     return_codes = return_codes or {}
     base_dir = run_dir.parent
-    return {
+    artifacts = {
         'ncu_rep': artifact_entry(
             kind='report',
             path=rep_path,
@@ -1378,6 +1442,9 @@ def default_artifacts(
             best_effort=True,
         ),
     }
+    source_page = artifacts['source_page']
+    source_page['structured_hotspots_available'] = bool(source_structured_hotspots_available)
+    return artifacts
 
 
 def analyze_run(
@@ -1402,6 +1469,7 @@ def analyze_run(
     details_rows = parse_generic_rows(details_page_path)
     source_rows = parse_generic_rows(source_csv_path)
     headline_metrics_kv = parse_name_value_metrics(headline_csv_path)
+    source_export_is_disassembly = source_page_is_disassembly(source_csv_path)
 
     primary_headline = select_primary_record(headline_records) or (headline_records[0] if headline_records else None)
     primary_raw = select_primary_record(import_raw_records) or primary_headline
@@ -1414,6 +1482,18 @@ def analyze_run(
 
     filtered_details = [row for row in details_rows if row_matches_kernel(row, kernel_name)]
     filtered_source = [row for row in source_rows if row_matches_kernel(row, kernel_name)]
+    source_structured_hotspots_available = bool(filtered_source)
+    if source_csv_path and source_csv_path.exists() and not source_structured_hotspots_available:
+        if source_export_is_disassembly:
+            source_unavailable_reason = (
+                source_unavailable_reason
+                or 'source export resolved to SASS/disassembly without correlated metric rows; falling back to details/section findings'
+            )
+        else:
+            source_unavailable_reason = (
+                source_unavailable_reason
+                or 'source export did not contain structured metric rows for the dominant kernel; falling back to details/section findings'
+            )
 
     stall_breakdown = build_stall_breakdown(primary_headline or primary_raw)
     memory_hierarchy = build_memory_hierarchy(primary_headline or primary_raw)
@@ -1442,6 +1522,7 @@ def analyze_run(
         source_unavailable_reason=source_unavailable_reason,
         details_unavailable_reason=details_unavailable_reason,
         import_raw_unavailable_reason=import_raw_unavailable_reason,
+        source_structured_hotspots_available=source_structured_hotspots_available,
         return_codes=return_codes,
     )
 
