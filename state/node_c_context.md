@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore Accepted Grouped-Rows-8 Hot-Band Consumer Ordering`
+- candidate id: `diagnosis_20260421_012002:dir_01`
+- base run id: `20260421_011816_bf16_gemm_v1_20cad79`
+- primary family id: `legacy::restore_accepted_grouped_rows_8_hot_band_consumer_ordering`
+- planned action fingerprint: `restore_grouped_rows_8_ptx_consumer_ordering_surface`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_012002`
 - round loop: `round 28/100`
+- hypothesis: `The exact PTX restore and the non-PTX sibling have now both been remeasured on fresh rounds and both landed back in the same plateau regime. That means round 28 should stop spending budget on those two anchors alone and instead use the restored PTX winner to evaluate the last materially different PTX grouping surface that is still sitting in the frontier: grouped_rows=8 consumer ordering. This branch already has one older loss, but it changes CTA grouping and consumer locality more materially than another frozen micro-retime. Running it once from the clean anchor is the fastest way to decide whether it deserves to stay in the live queue at all.`
+- expected bottleneck: `Grouped-row traversal and consumer-order locality in the PTX hot-band path, not the already-replayed exact PTX restore and not another same-plateau alternate-surface A/B.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:153-156, src/kernels/bf16_gemm_v1.cu:1956-2060, src/kernels/bf16_gemm_v1.cu:1983-1993`
+- risk: `Medium. This family already has one measured loss, so the main risk is spending a round to confirm that the alternate grouping surface is still inferior. That confirmation is still useful because it would let the loop close this branch with current evidence instead of leaving it half-open in the frontier.`
+- metrics to re-check: `end-to-end median runtime, correctness pass rate across all 3 cases, hot-band gpu__time_duration.sum, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
