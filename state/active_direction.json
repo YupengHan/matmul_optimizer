@@ -4,7 +4,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-20T18:00:20-07:00",
   "source_diagnosis_id": "diagnosis_20260420_175514",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "rank": 1,
@@ -28,5 +28,5 @@
     ],
     "stop_condition": "Stop if the 4-row PTX grouping fails to beat the restored 25.47660828 ms control or if it reopens the old barrier/DRAM loss pattern."
   },
-  "notes": "Node C may now implement this one direction."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
