@@ -11,7 +11,16 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T00:55:36-07:00",
   "source_diagnosis_id": "diagnosis_20260421_005324",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
+  "implemented_action_fingerprint": "restore_half_panel_register_reuse_repair_surface_from_778a0b475a3fbcfd5a0f3fecc8381784fa832256",
+  "semantic_delta_tags": [
+    "historical_surface_restore",
+    "half_panel_register_reuse",
+    "occupancy_breakthrough_probe"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
   "summary": {
     "direction_id": "dir_01",
     "name": "Repair The 256x128 Half-Panel Register-Reuse Branch",
@@ -55,5 +64,5 @@
     "stop_condition": "Stop if the rehydrated branch loses the low-register, high-active-warps signature that justified reopening it, or if correctness still fails without any retained occupancy advantage.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next."
 }
