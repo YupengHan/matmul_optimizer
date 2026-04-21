@@ -1,0 +1,4 @@
+Kernel Name,Section Name,Metric Name,Metric Value,Function Name,Source File,Line,Importance Score,Description
+bf16_gemm_kernel,Memory Workload Analysis,dram__throughput.avg.pct_of_peak_sustained_elapsed,58.0,gemm_mainloop,src/kernels/bf16_gemm_v1.cu,412,79,Mainloop global loads were already heavy.
+bf16_gemm_kernel,Scheduler Statistics,smsp__warp_issue_stalled_barrier_per_warp_active.pct,22.0,epilogue_store,src/kernels/bf16_gemm_v1.cu,615,55,Epilogue barrier waits were stalling scheduler issue slots.
+bf16_gemm_kernel,Scheduler Statistics,smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct,28.0,shared_tile_exchange,src/kernels/bf16_gemm_v1.cu,488,61,Shared-tile exchange already showed long scoreboard pressure.

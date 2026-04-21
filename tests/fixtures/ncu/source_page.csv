@@ -1,0 +1,5 @@
+Kernel Name,Section Name,Metric Name,Metric Value,Function Name,Source File,Line,Importance Score,Description
+bf16_gemm_kernel,Memory Workload Analysis,dram__throughput.avg.pct_of_peak_sustained_elapsed,67.0,gemm_mainloop,src/kernels/bf16_gemm_v1.cu,412,91,Mainloop global loads saturate DRAM.
+bf16_gemm_kernel,Scheduler Statistics,smsp__warp_issue_stalled_barrier_per_warp_active.pct,18.0,epilogue_store,src/kernels/bf16_gemm_v1.cu,615,49,Epilogue barrier waits serialize store completion.
+bf16_gemm_kernel,Scheduler Statistics,smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct,41.0,shared_tile_exchange,src/kernels/bf16_gemm_v1.cu,488,77,Shared-tile exchange is waiting on long scoreboard dependencies.
+bf16_gemm_kernel,Memory Workload Analysis,gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed,72.0,epilogue_vector_store,src/kernels/bf16_gemm_v1.cu,702,33,Epilogue vector stores add extra compute-memory pressure.

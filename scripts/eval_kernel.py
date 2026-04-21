@@ -54,6 +54,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import ncu_analysis
+
 
 def load_json(path: Path) -> Dict:
     with path.open('r', encoding='utf-8') as f:
@@ -126,8 +128,13 @@ def render_markdown_summary(summary: Dict) -> str:
         ncu = summary['ncu']
         lines.append(f"- rep path: `{ncu.get('rep_path', 'N/A')}`")
         lines.append(f"- csv path: `{ncu.get('csv_path', 'N/A')}`")
+        lines.append(f"- imported raw csv path: `{ncu.get('import_raw_csv_path', 'N/A')}`")
+        lines.append(f"- details page csv path: `{ncu.get('details_page_csv_path', 'N/A')}`")
+        lines.append(f"- source page csv path: `{ncu.get('source_csv_path', 'N/A')}`")
         lines.append(f"- ncu summary json: `{ncu.get('summary_json_path', 'N/A')}`")
         lines.append(f"- ncu summary md: `{ncu.get('summary_md_path', 'N/A')}`")
+        lines.append(f"- ncu analysis json: `{ncu.get('analysis_json_path', 'N/A')}`")
+        lines.append(f"- ncu analysis md: `{ncu.get('analysis_md_path', 'N/A')}`")
         if ncu.get('headline_metrics'):
             lines.append('')
             lines.append('### Headline metrics')
@@ -137,18 +144,77 @@ def render_markdown_summary(summary: Dict) -> str:
     return '\n'.join(lines) + '\n'
 
 
-def build_ncu_summary(metrics: Dict[str, str], csv_path: Path, rep_path: Path) -> Dict:
+def build_ncu_summary(
+    *,
+    full_metrics: Dict[str, object],
+    headline_metrics: Dict[str, object],
+    csv_path: Path,
+    rep_path: Path,
+    import_raw_path: Optional[Path],
+    details_page_path: Optional[Path],
+    source_csv_path: Optional[Path],
+    legacy_import_raw_alias: Optional[Path],
+    analysis: Optional[Dict[str, object]],
+    analysis_json_path: Optional[Path],
+) -> Dict:
+    if analysis:
+        summary = ncu_analysis.build_rich_summary_from_analysis(analysis)
+        summary['analysis_path'] = analysis_json_path.name if analysis_json_path else None
+        return summary
+
+    launch = {
+        'kernel_name': full_metrics.get('Kernel Name'),
+        'block_size': full_metrics.get('Block Size') or full_metrics.get('launch__block_size'),
+        'grid_size': full_metrics.get('Grid Size') or full_metrics.get('launch__grid_size'),
+        'registers_per_thread': full_metrics.get('launch__registers_per_thread'),
+        'shared_mem_per_block_allocated': full_metrics.get('launch__shared_mem_per_block_allocated'),
+    }
     return {
-        'status': 'available' if metrics else 'available_without_parsed_metrics',
-        'kernel_name': metrics.get('Kernel Name'),
-        'block_size': metrics.get('Block Size') or metrics.get('launch__block_size'),
-        'grid_size': metrics.get('Grid Size') or metrics.get('launch__grid_size'),
-        'registers_per_thread': metrics.get('launch__registers_per_thread'),
-        'shared_mem_per_block_allocated': metrics.get('launch__shared_mem_per_block_allocated'),
-        'headline_metrics': metrics,
+        'schema_version': 2,
+        'status': 'available' if headline_metrics or full_metrics else 'available_without_parsed_metrics',
+        'source_run_id': None,
+        'source_run_dir': None,
+        'analysis_path': analysis_json_path.name if analysis_json_path else None,
+        'kernel_name': launch.get('kernel_name'),
+        'block_size': launch.get('block_size'),
+        'grid_size': launch.get('grid_size'),
+        'registers_per_thread': launch.get('registers_per_thread'),
+        'shared_mem_per_block_allocated': launch.get('shared_mem_per_block_allocated'),
+        'launch': launch,
+        'headline_metrics': headline_metrics,
+        'stall_breakdown': [],
+        'bottleneck_classes': [],
+        'top_findings': [],
+        'top_source_hotspots': [],
+        'delta_vs_previous_run': {
+            'baseline_run_id': None,
+            'headline_metrics': {},
+            'stall_breakdown': [],
+            'source_hotspots': {
+                'improved': [],
+                'regressed': [],
+                'new': [],
+                'disappeared': [],
+            },
+        },
+        'handoff': {
+            'node_b': {
+                'top_findings': [],
+                'code_regions_to_investigate': [],
+            },
+            'node_c': {
+                'target_hotspots': [],
+                'guardrail_metrics': [],
+                'expected_recheck_points': [],
+            },
+        },
         'raw_csv_path': csv_path.name if csv_path.exists() else None,
         'raw_rep_path': rep_path.name if rep_path.exists() else None,
-        'raw_details_csv_path': None,
+        'raw_details_csv_path': legacy_import_raw_alias.name if legacy_import_raw_alias and legacy_import_raw_alias.exists() else None,
+        'import_raw_csv_path': import_raw_path.name if import_raw_path and import_raw_path.exists() else None,
+        'details_page_csv_path': details_page_path.name if details_page_path and details_page_path.exists() else None,
+        'source_csv_path': source_csv_path.name if source_csv_path and source_csv_path.exists() else None,
+        'artifacts': {},
     }
 
 
@@ -156,10 +222,15 @@ def render_markdown_ncu_summary(summary: Dict) -> str:
     lines: List[str] = []
     lines.append('# Nsight Compute summary')
     lines.append('')
+    lines.append(f"- schema version: `{summary.get('schema_version', 'N/A')}`")
     lines.append(f"- status: `{summary.get('status', 'unknown')}`")
     lines.append(f"- raw csv path: `{summary.get('raw_csv_path', 'N/A')}`")
     lines.append(f"- raw rep path: `{summary.get('raw_rep_path', 'N/A')}`")
     lines.append(f"- raw detailed csv path: `{summary.get('raw_details_csv_path', 'N/A')}`")
+    lines.append(f"- imported raw csv path: `{summary.get('import_raw_csv_path', 'N/A')}`")
+    lines.append(f"- details page csv path: `{summary.get('details_page_csv_path', 'N/A')}`")
+    lines.append(f"- source csv path: `{summary.get('source_csv_path', 'N/A')}`")
+    lines.append(f"- analysis path: `{summary.get('analysis_path', 'N/A')}`")
     lines.append(f"- kernel name: `{summary.get('kernel_name', 'N/A')}`")
     lines.append(f"- block size: `{summary.get('block_size', 'N/A')}`")
     lines.append(f"- grid size: `{summary.get('grid_size', 'N/A')}`")
@@ -176,6 +247,14 @@ def render_markdown_ncu_summary(summary: Dict) -> str:
         for key, value in headline_metrics.items():
             lines.append(f"- `{key}`: `{value}`")
 
+    top_findings = summary.get('top_findings') or []
+    if top_findings:
+        lines.append('')
+        lines.append('## Top findings')
+        lines.append('')
+        for item in top_findings[:4]:
+            lines.append(f"- `{item.get('finding_type', 'finding')}`: {item.get('summary', 'N/A')}")
+
     return '\n'.join(lines) + '\n'
 
 
@@ -185,67 +264,13 @@ def parse_ncu_csv(csv_path: Path) -> Dict[str, str]:
 
     If parsing fails, return an empty dict. This is fine for an initial scaffold.
     """
-    try:
-        with csv_path.open('r', encoding='utf-8', newline='') as f:
-            rows = list(csv.reader(f))
-    except Exception:
+    metrics = ncu_analysis.parse_name_value_metrics(csv_path)
+    if metrics:
+        return {key: value for key, value in metrics.items() if value is not None}
+    record = ncu_analysis.select_primary_record(ncu_analysis.parse_wide_csv_records(csv_path))
+    if not record:
         return {}
-
-    normalized_rows = [[cell.strip() for cell in row] for row in rows]
-
-    header_idx = None
-    metric_name_idx = None
-    metric_value_idx = None
-
-    for i, row in enumerate(normalized_rows):
-        if 'Metric Name' in row and 'Metric Value' in row:
-            header_idx = i
-            metric_name_idx = row.index('Metric Name')
-            metric_value_idx = row.index('Metric Value')
-            break
-
-    if header_idx is not None and metric_name_idx is not None and metric_value_idx is not None:
-        metrics: Dict[str, str] = {}
-        for row in normalized_rows[header_idx + 1:]:
-            if not row:
-                continue
-            if metric_name_idx >= len(row) or metric_value_idx >= len(row):
-                continue
-            name = row[metric_name_idx]
-            value = row[metric_value_idx]
-            if not name:
-                continue
-            metrics[name] = value
-        return metrics
-
-    # Nsight Compute `--csv --page raw` also emits a wide table after a pair of
-    # `==PROF==` banner lines. In that layout, row N is the header, row N+1 is
-    # mostly units, and row N+2 holds the values for a single kernel launch.
-    for i, row in enumerate(normalized_rows):
-        if 'ID' not in row:
-            continue
-        if not any('__' in cell or cell.startswith('launch__') for cell in row):
-            continue
-
-        data_row = None
-        for candidate in normalized_rows[i + 1:]:
-            if len(candidate) != len(row):
-                continue
-            if candidate and candidate[0]:
-                data_row = candidate
-                break
-
-        if data_row is None:
-            return {}
-
-        metrics = {}
-        for name, value in zip(row, data_row):
-            if not name or not value:
-                continue
-            metrics[name] = value
-        return metrics
-
-    return {}
+    return {key: value for key, value in record.items() if value not in (None, '')}
 
 
 def pick_headline_metrics(metrics: Dict[str, str], wanted: List[str]) -> Dict[str, str]:
@@ -254,6 +279,19 @@ def pick_headline_metrics(metrics: Dict[str, str], wanted: List[str]) -> Dict[st
         if key in metrics:
             out[key] = metrics[key]
     return out
+
+
+def summarize_command_failure(stderr_path: Path, fallback: str) -> str:
+    if stderr_path.exists():
+        lines = [line.strip() for line in stderr_path.read_text(encoding='utf-8', errors='replace').splitlines() if line.strip()]
+        if lines:
+            return lines[-1]
+    return fallback
+
+
+def cleanup_failed_artifact(path: Path) -> None:
+    if path.exists():
+        path.unlink()
 
 
 def run_command(cmd: List[str], cwd: Optional[Path] = None, stdout_path: Optional[Path] = None, stderr_path: Optional[Path] = None) -> int:
@@ -342,7 +380,10 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
     rep_prefix = run_dir / 'ncu_profile'
     rep_path = Path(f"{rep_prefix}.ncu-rep")
     csv_path = run_dir / 'ncu_metrics.csv'
-    detailed_csv_path = run_dir / 'ncu_details.csv'
+    import_raw_csv_path = run_dir / 'ncu_import_raw.csv'
+    legacy_import_raw_alias = run_dir / 'ncu_details.csv'
+    details_page_csv_path = run_dir / 'ncu_details_page.csv'
+    source_csv_path = run_dir / 'ncu_source.csv'
 
     runner_cmd = (
         runner_base_command(args)
@@ -385,29 +426,117 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
         if csv_rc == 0 and csv_path.exists():
             csv_metrics = parse_ncu_csv(csv_path)
 
-    details_rc = None
+    import_raw_rc = None
+    details_page_rc = None
+    source_rc = None
+    import_raw_unavailable_reason = None
+    details_unavailable_reason = None
+    source_unavailable_reason = None
     if rep_path.exists():
-        details_cmd = [
+        import_raw_cmd = [
             args.ncu_bin,
             '--import',
             str(rep_path),
             '--csv',
             '--page', 'raw',
         ]
-        details_rc = run_command(
-            details_cmd,
+        import_raw_rc = run_command(
+            import_raw_cmd,
             cwd=args.workdir,
-            stdout_path=detailed_csv_path,
+            stdout_path=import_raw_csv_path,
             stderr_path=run_dir / 'ncu_details.stderr.log',
         )
-        if details_rc != 0 and detailed_csv_path.exists():
-            detailed_csv_path.unlink()
+        if import_raw_rc == 0 and import_raw_csv_path.exists():
+            shutil.copyfile(import_raw_csv_path, legacy_import_raw_alias)
+        else:
+            cleanup_failed_artifact(import_raw_csv_path)
+            cleanup_failed_artifact(legacy_import_raw_alias)
+            import_raw_unavailable_reason = summarize_command_failure(
+                run_dir / 'ncu_details.stderr.log',
+                'failed to export imported raw page from the Nsight Compute report',
+            )
+
+        details_page_cmd = [
+            args.ncu_bin,
+            '--import',
+            str(rep_path),
+            '--csv',
+            '--page', 'details',
+        ]
+        details_page_rc = run_command(
+            details_page_cmd,
+            cwd=args.workdir,
+            stdout_path=details_page_csv_path,
+            stderr_path=run_dir / 'ncu_details_page.stderr.log',
+        )
+        if details_page_rc != 0:
+            cleanup_failed_artifact(details_page_csv_path)
+            details_unavailable_reason = summarize_command_failure(
+                run_dir / 'ncu_details_page.stderr.log',
+                'failed to export the details page from the Nsight Compute report',
+            )
+
+        source_cmd = [
+            args.ncu_bin,
+            '--import',
+            str(rep_path),
+            '--csv',
+            '--page', 'source',
+        ]
+        source_rc = run_command(
+            source_cmd,
+            cwd=args.workdir,
+            stdout_path=source_csv_path,
+            stderr_path=run_dir / 'ncu_source.stderr.log',
+        )
+        if source_rc != 0:
+            cleanup_failed_artifact(source_csv_path)
+            source_unavailable_reason = summarize_command_failure(
+                run_dir / 'ncu_source.stderr.log',
+                'source page export is unavailable; source correlation or line info may be missing',
+            )
 
     ncu_summary = None
+    analysis_json_path = None
+    analysis_md_path = None
     if csv_path.exists() or rep_path.exists():
-        picked_metrics = pick_headline_metrics(csv_metrics, headline_metrics) if csv_metrics else {}
-        ncu_summary = build_ncu_summary(picked_metrics, csv_path, rep_path)
-        ncu_summary['raw_details_csv_path'] = detailed_csv_path.name if detailed_csv_path.exists() else None
+        full_metrics = parse_ncu_csv(csv_path) if csv_path.exists() else {}
+        picked_metrics = pick_headline_metrics(full_metrics, headline_metrics) if full_metrics else {}
+        analysis = ncu_analysis.analyze_run(
+            run_dir=run_dir,
+            source_run_id=run_dir.name,
+            headline_csv_path=csv_path if csv_path.exists() else None,
+            import_raw_path=import_raw_csv_path if import_raw_csv_path.exists() else None,
+            details_page_path=details_page_csv_path if details_page_csv_path.exists() else None,
+            source_csv_path=source_csv_path if source_csv_path.exists() else None,
+            rep_path=rep_path if rep_path.exists() else None,
+            wanted_headline_metrics=headline_metrics,
+            previous_analysis_path=args.previous_ncu_analysis,
+            source_unavailable_reason=source_unavailable_reason,
+            details_unavailable_reason=details_unavailable_reason,
+            import_raw_unavailable_reason=import_raw_unavailable_reason,
+            legacy_import_raw_alias=legacy_import_raw_alias if legacy_import_raw_alias.exists() else None,
+            return_codes={
+                'rep': rep_rc,
+                'headline_csv': csv_rc,
+                'import_raw': import_raw_rc,
+                'details_page': details_page_rc,
+                'source_page': source_rc,
+            },
+        )
+        analysis_json_path, analysis_md_path = ncu_analysis.write_analysis_outputs(run_dir=run_dir, analysis=analysis)
+        ncu_summary = build_ncu_summary(
+            full_metrics=full_metrics,
+            headline_metrics=picked_metrics,
+            csv_path=csv_path,
+            rep_path=rep_path,
+            import_raw_path=import_raw_csv_path if import_raw_csv_path.exists() else None,
+            details_page_path=details_page_csv_path if details_page_csv_path.exists() else None,
+            source_csv_path=source_csv_path if source_csv_path.exists() else None,
+            legacy_import_raw_alias=legacy_import_raw_alias if legacy_import_raw_alias.exists() else None,
+            analysis=analysis,
+            analysis_json_path=analysis_json_path,
+        )
         ncu_summary_json_path = run_dir / 'ncu_summary.json'
         ncu_summary_md_path = run_dir / 'ncu_summary.md'
         write_json(ncu_summary_json_path, ncu_summary)
@@ -421,11 +550,19 @@ def run_ncu(args: argparse.Namespace, run_dir: Path, dataset_dir: Path, case_id:
         'rep_path': rep_path.name if rep_path.exists() else None,
         'csv_return_code': csv_rc,
         'csv_path': csv_path.name if csv_path.exists() else None,
-        'details_csv_return_code': details_rc,
-        'details_csv_path': detailed_csv_path.name if detailed_csv_path.exists() else None,
+        'details_csv_return_code': import_raw_rc,
+        'details_csv_path': legacy_import_raw_alias.name if legacy_import_raw_alias.exists() else None,
+        'import_raw_csv_return_code': import_raw_rc,
+        'import_raw_csv_path': import_raw_csv_path.name if import_raw_csv_path.exists() else None,
+        'details_page_csv_return_code': details_page_rc,
+        'details_page_csv_path': details_page_csv_path.name if details_page_csv_path.exists() else None,
+        'source_csv_return_code': source_rc,
+        'source_csv_path': source_csv_path.name if source_csv_path.exists() else None,
         'headline_metrics': pick_headline_metrics(csv_metrics, headline_metrics) if csv_metrics else {},
         'summary_json_path': ncu_summary_json_path.name if ncu_summary_json_path else None,
         'summary_md_path': ncu_summary_md_path.name if ncu_summary_md_path else None,
+        'analysis_json_path': analysis_json_path.name if analysis_json_path else None,
+        'analysis_md_path': analysis_md_path.name if analysis_md_path else None,
     }
 
 
@@ -445,6 +582,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--skip-ncu', action='store_true', help='Skip Nsight Compute')
     parser.add_argument('--ncu-bin', default='ncu', help='Nsight Compute CLI binary')
     parser.add_argument('--ncu-metrics-file', type=Path, default=Path('configs/ncu_metrics_core.txt'), help='Text file with one metric name per line')
+    parser.add_argument('--previous-ncu-analysis', type=Path, default=None, help='Optional previous ncu_analysis.json for delta-vs-previous-run computation')
     parser.add_argument('--extra-runner-arg', action='append', default=[], help='Extra arg appended to the runner command; may be passed multiple times')
     return parser.parse_args()
 
