@@ -2108,7 +2108,7 @@ bool launch_bf16_gemm_v1(
           kFixedTailRegionN,
           stream);
     } else {
-      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel<
+      bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel<
           kFixedBenchmarkKTiles><<<
               dim3(kFixedHotBandN / FixedHotBandTile128x128::kTensorBlockN,
                    kFixedPivotHotRows / FixedHotBandTile128x128::kTensorBlockM,
