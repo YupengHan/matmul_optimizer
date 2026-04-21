@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe`
+- candidate id: `diagnosis_20260421_010737:dir_01`
+- base run id: `20260421_010424_bf16_gemm_v1_f6d1219`
+- primary family id: `legacy::retune_the_auxiliary_256x128_hot_band_k_loop_schedule`
+- planned action fingerprint: `rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_010737`
 - round loop: `round 25/100`
+- hypothesis: `The restored PTX winner is correct again, but it is still trapped in the same plateau signature that now defines the whole 24.16-24.19 ms cluster: tensor activity is only 48.39%, achieved warps are only 16.62%, DRAM is just 12.48%, and occupancy is still register-limited. That means round 25 should explicitly stop prioritizing another frozen PTX micro-retime and instead spend budget on the cleanest remaining structural family. The half-panel branch already consumed its grace budget and stays closed on correctness. The direct 256x128 pivot family is also closed-negative. The remaining bounded geometry-side branch is the auxiliary 256x128 schedule family: it changes hot-band control amortization and reuse shape without reopening the broken half-panel export path. Node C should therefore treat this as a real family re-entry rather than a timid one-line replay and use the recovered 256x128 surface as the base for an aggressive within-family implementation.`
+- expected bottleneck: `Hot-band CTA geometry, control amortization, and latency hiding on the wide 256x128 schedule family, not another PTX-local barrier or scoreboard seam on the already plateaued 128x128 winner surface.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1580-1676, src/kernels/bf16_gemm_v1.cu:2070-2138, src/kernels/bf16_gemm_v1.cu:150-156`
+- risk: `Medium to high. Historical support for this family is materially weaker than the PTX winner, and a too-broad dispatch swap can replay the closed 256x128 regression. It remains the best live structural probe only because the higher-ceiling half-panel family is now decisively closed on correctness.`
+- metrics to re-check: `end-to-end median runtime, correctness pass rate across all 3 cases, hot-band gpu__time_duration.sum, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
