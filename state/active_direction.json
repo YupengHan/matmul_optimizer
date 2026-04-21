@@ -1,65 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
-  "candidate_id": "diagnosis_20260421_082126:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-  "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-  "action_fingerprint": "ptx_wait_commit_window_retime_without_replaying_closed_variants",
-  "selection_priority": 2.385,
-  "base_run_id": "20260421_081904_bf16_gemm_v1_d327dee",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T08:20:19-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_082126",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Continue The Active PTX One-K 128x128 Control-Path Exploit",
-    "family_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-    "subfamily_id": "legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path",
-    "action_fingerprint": "ptx_wait_commit_window_retime_without_replaying_closed_variants",
-    "mode": "exploit",
-    "hypothesis": "Round 38 restored the exact accepted PTX surface and improved the runtime back to 24.17151993 ms, but it still finished about 0.007 ms behind the accepted best. That puts the loop back on the correct anchor and reopens the tight PTX exploit family that already showed the cleanest near-best evidence: retiming the initial wait/commit window on the same 128x128 PTX microkernel. Because the restore did not fully recover the best measurement, the next budget unit should be spent on this bounded reopen rather than immediately restoring again.",
-    "expected_bottleneck": "Residual cp.async wait-group timing and control-path latency in the PTX 128x128 hot-band microkernel after the exact restore surface has been re-established.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:2008-2022",
-      "src/kernels/bf16_gemm_v1.cu:2042-2054",
-      "src/kernels/bf16_gemm_v1.cu:2110-2117"
-    ],
-    "risk": "Moderate. This family stays on the dominant PTX surface and historically built cleanly, but its upside is measured in hundredths of a millisecond and it is easy to replay a closed negative variant if the change grows beyond one bounded wait/commit-window retime.",
-    "metrics_to_recheck": [
-      "end-to-end median runtime versus 24.17151993 ms and the accepted 24.16427231 ms anchor",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 2.18,
-    "score_breakdown": {
-      "policy_id": "manual_round39_node_b_v1",
-      "rank_score": 2.0,
-      "recommended_bonus": 0.25,
-      "risk_penalty": 0.17,
-      "evidence_bonus": 0.1,
-      "formula": "rank_score + recommended_bonus - risk_penalty + evidence_bonus"
-    },
-    "predicted_gain_ms": 0.007,
-    "predicted_fail_risk": 0.18,
-    "ranking_notes": [
-      "The restore branch recovered the anchor but still did not reclaim the accepted best, which makes one bounded PTX reopen the highest-value next test.",
-      "This family has near-best historical evidence and can be replayed with a single scheduler-facing change on the exact restored surface.",
-      "It now ranks ahead of another immediate restore because the current source already is the restore anchor."
-    ],
-    "stop_condition": "Stop if the reopen does not beat the restored anchor or if it broadens beyond a single prologue wait/commit-window retime.",
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "ptx_wait_commit_window_retime_without_replaying_closed_variants"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
