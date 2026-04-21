@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_084340_bf16_gemm_v1_d5925ef`
-- run dir: `runs/20260421_084340_bf16_gemm_v1_d5925ef`
-- kernel tag: `bf16_gemm_v1_d5925ef`
-- round label: `round 63/100`
+- run id: `20260421_084349_bf16_gemm_v1_7353805`
+- run dir: `runs/20260421_084349_bf16_gemm_v1_7353805`
+- kernel tag: `bf16_gemm_v1_7353805`
+- round label: `round 64/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.425984 ms`
-- p10 runtime: `24.411034 ms`
-- p90 runtime: `25.557504 ms`
-- TFLOP/s: `29.764181 TFLOP/s`
-- previous run id: `20260421_084331_bf16_gemm_v1_8ad35c4`
-- runtime delta vs previous measured run: `+0.033280 ms`
-- TFLOP/s delta vs previous measured run: `-0.040609 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.405503 ms`
+- p10 runtime: `24.388237 ms`
+- p90 runtime: `25.659203 ms`
+- TFLOP/s: `29.789159 TFLOP/s`
+- previous run id: `20260421_084340_bf16_gemm_v1_d5925ef`
+- runtime delta vs previous measured run: `-0.020481 ms`
+- TFLOP/s delta vs previous measured run: `+0.024978 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Continue The Active PTX One-K 128x128 Control-Path Exploit`
+- implemented direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_084340_bf16_gemm_v1_d5925ef/summary.json`
-- measured commit: `d5925ef1564f9276b795e3128e398df0e6bbde1a`
+- raw summary json: `runs/20260421_084349_bf16_gemm_v1_7353805/summary.json`
+- measured commit: `73538057b3407f9d2c532c6575080b9c4b4ab031`
 - new best custom: `no`
-- generated at: `2026-04-21T08:43:47-07:00`
+- generated at: `2026-04-21T08:43:56-07:00`
