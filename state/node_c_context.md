@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling`
+- candidate id: `diagnosis_20260420_225317:dir_01`
+- base run id: `20260420_225251_bf16_gemm_v1_306839d`
+- primary family id: `legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling`
+- planned action fingerprint: `50dacc5cc17f8c60`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_225317`
 - round loop: `round 9/100`
+- hypothesis: `Rounds 7 and 8 on the restored grouped-rows-4 PTX surface produced the clearest saturation signal yet for the active PTX-local micro families. The export-address cleanup established a new best custom at 24.164352 ms, but only by 0.016304 ms and still as PASS_FLAT; the follow-up control-path issue-grouping tweak then regressed slightly to 24.170400 ms, again as PASS_FLAT. Across both runs the signature barely moved: active warps stayed pinned at 16.61-16.62, barrier stayed in the 5.42-5.45 band, and long-scoreboard stayed in the 7.24-7.26 band. That is enough evidence to stop spending the next round on another tiny PTX-local retime. The best next family is to preserve grouped-row locality but pivot off the active PTX microkernel onto the non-PTX 128x128 sibling, which historically stayed reasonably close to the best PTX surface while materially changing the hot-band control/export path.`
+- expected bottleneck: `The active PTX control/export surface looks saturated; the next opportunity is preserving grouped-row locality while changing the hot-band control/export implementation family away from the PTX microkernel.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:153-156, src/kernels/bf16_gemm_v1.cu:1843-1948, src/kernels/bf16_gemm_v1.cu:2091-2139`
+- risk: `Medium. This changes the dominant hot-band family rather than another micro-tweak, but it still stays inside the existing grouped-row 128x128 geometry instead of reopening the more disruptive 256x128 or full-band families.`
+- metrics to re-check: `end-to-end median runtime versus the 24.164352 ms best-known PTX run, correctness pass rate across all 3 cases, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, hot-band gpu__time_duration.sum`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

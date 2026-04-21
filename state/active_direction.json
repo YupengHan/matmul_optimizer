@@ -1,21 +1,59 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
+  "candidate_id": "diagnosis_20260420_225317:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+  "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+  "action_fingerprint": "50dacc5cc17f8c60",
+  "selection_priority": 2.4875,
+  "base_run_id": "20260420_225251_bf16_gemm_v1_306839d",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-20T22:57:14-07:00",
+  "source_diagnosis_id": "diagnosis_20260420_225317",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Port Grouped-Row Traversal Into The Non-PTX 128x128 Sibling",
+    "family_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+    "subfamily_id": "legacy::port_grouped_row_traversal_into_the_non_ptx_128x128_sibling",
+    "action_fingerprint": "50dacc5cc17f8c60",
+    "mode": "exploit",
+    "hypothesis": "Rounds 7 and 8 on the restored grouped-rows-4 PTX surface produced the clearest saturation signal yet for the active PTX-local micro families. The export-address cleanup established a new best custom at 24.164352 ms, but only by 0.016304 ms and still as PASS_FLAT; the follow-up control-path issue-grouping tweak then regressed slightly to 24.170400 ms, again as PASS_FLAT. Across both runs the signature barely moved: active warps stayed pinned at 16.61-16.62, barrier stayed in the 5.42-5.45 band, and long-scoreboard stayed in the 7.24-7.26 band. That is enough evidence to stop spending the next round on another tiny PTX-local retime. The best next family is to preserve grouped-row locality but pivot off the active PTX microkernel onto the non-PTX 128x128 sibling, which historically stayed reasonably close to the best PTX surface while materially changing the hot-band control/export path.",
+    "expected_bottleneck": "The active PTX control/export surface looks saturated; the next opportunity is preserving grouped-row locality while changing the hot-band control/export implementation family away from the PTX microkernel.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:153-156",
+      "src/kernels/bf16_gemm_v1.cu:1843-1948",
+      "src/kernels/bf16_gemm_v1.cu:2091-2139"
+    ],
+    "risk": "Medium. This changes the dominant hot-band family rather than another micro-tweak, but it still stays inside the existing grouped-row 128x128 geometry instead of reopening the more disruptive 256x128 or full-band families.",
+    "metrics_to_recheck": [
+      "end-to-end median runtime versus the 24.164352 ms best-known PTX run",
+      "correctness pass rate across all 3 cases",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "hot-band gpu__time_duration.sum"
+    ],
+    "search_score_v1": 2.35,
+    "score_breakdown": {
+      "policy_id": "manual_round100_node_b_v9",
+      "rank_score": 3.0,
+      "ptx_saturation_bonus": 0.2,
+      "family_escape_bonus": 0.1,
+      "historical_gap_penalty": 0.45,
+      "risk_penalty": 0.5,
+      "formula": "rank_score + ptx_saturation_bonus + family_escape_bonus - historical_gap_penalty - risk_penalty"
+    },
+    "predicted_gain_ms": 0.05,
+    "predicted_fail_risk": 0.45,
+    "ranking_notes": [
+      "The active PTX-local families have now consumed two consecutive rounds for one sub-threshold gain and one slight regression, which is enough evidence to demote them below a real family pivot.",
+      "This is the cleanest off-branch move that still preserves grouped-row locality and the 128x128 hot-band geometry instead of reopening larger geometry pivots.",
+      "It is ranked ahead of the sibling export-scratch trim because the sibling path itself should be validated before spending another round trimming its export surface."
+    ],
+    "stop_condition": "Stop if the non-PTX sibling still trails the active PTX best by a clearly material margin without improving correctness or the stall mix enough to justify staying off the active PTX branch.",
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
