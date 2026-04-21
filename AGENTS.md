@@ -120,6 +120,7 @@ Supervisor checkpoint rule:
    - update `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`
    - refresh the rendered optimization tree image
    - commit only the doc/image files touched by that display refresh
+   - run `git push origin master` after the checkpoint doc/image commit so the current loop state is published remotely
 3. the checkpoint must refresh `state/supervisor_context.md` with the latest dispatch state, active round, accepted base, current selected direction or candidate, display-refresh checkpoint state, and watchdog state
 4. the checkpoint is a continue point, not a stop point
 5. after the checkpoint, the main agent must immediately re-read `state/supervisor_task.json` and keep dispatching unless one of the no-stop-rule stop conditions is met
@@ -186,7 +187,7 @@ When the user says `开始运行N圈`:
    - performance delta
    - profile paths
 9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
-10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, and then continue the loop without treating that checkpoint as a completion point
+10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, run `git push origin master`, and then continue the loop without treating that checkpoint as a completion point
 11. if the loop is still active, and `state/supervisor_task.json` later reports a 10-minute watchdog stall without reaching the target round count, issue the continue instruction and keep dispatching
 12. once the loop is armed, treat every `ready_for_node_*` state as a continue point until the round budget is exhausted or the user explicitly redirects the conversation
 

@@ -1683,7 +1683,8 @@ def compute_supervisor_task(
         'display_update_instruction': (
             'Use the matmul-doc-sync skill or an equivalent narrow doc-refresh pass to update '
             '`README.md`, `blog/harness-engineering-human-in-the-loop-cuda-matmul/index.md`, '
-            'and the rendered optimization tree, then commit only those doc/image files.'
+            'and the rendered optimization tree, then commit only those doc/image files and run '
+            '`git push origin master`.'
         ),
         'watchdog_timeout_minutes': supervisor_watchdog_timeout_minutes(),
         'watchdog_status': 'idle',
