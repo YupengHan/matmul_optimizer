@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "attempt_id": "diagnosis_20260421_005735:dir_01",
-  "status": "build_passed_pending_measurement",
+  "status": "measured",
   "candidate_id": "diagnosis_20260421_005735:dir_01",
   "source_diagnosis_id": "diagnosis_20260421_005735",
   "base_run_id": "20260421_005653_bf16_gemm_v1_0c534cb",
@@ -10,8 +10,8 @@
   "direction_id": "dir_01",
   "direction_name": "Single-Source Warp Ownership End To End On The Half-Panel Branch",
   "mode": "explore",
-  "commit": null,
-  "commit_short": null,
+  "commit": "ab3bbb20c3decc5c173a0fbada0eba99b61bfff5",
+  "commit_short": "ab3bbb2",
   "subject": "node_c: round 23/100 implement dir_01 Single-Source Warp Ownership End To End On The Half-Panel Branch",
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:00:07-07:00",
@@ -39,8 +39,8 @@
     "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": null,
-    "commit_short": null,
+    "commit": "ab3bbb20c3decc5c173a0fbada0eba99b61bfff5",
+    "commit_short": "ab3bbb2",
     "subject": "node_c: round 23/100 implement dir_01 Single-Source Warp Ownership End To End On The Half-Panel Branch",
     "build_status": "PASS",
     "failure_mode": null,
@@ -62,16 +62,29 @@
     "deletions": 39
   },
   "measurement": {
-    "run_id": null,
-    "measurement_commit": null,
-    "runtime_ms": null,
+    "run_id": "20260421_010044_bf16_gemm_v1_ab3bbb2",
+    "measurement_commit": "ab3bbb20c3decc5c173a0fbada0eba99b61bfff5",
+    "runtime_ms": 30.0819521,
     "runtime_delta_ms": null,
-    "tflops": null,
-    "correctness": null,
-    "headline_metrics": {},
+    "tflops": 24.16796022,
+    "correctness": false,
+    "headline_metrics": {
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": "43.02",
+      "sm__throughput.avg.pct_of_peak_sustained_elapsed": "42.45",
+      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": "60.43",
+      "dram__throughput.avg.pct_of_peak_sustained_elapsed": "19.46",
+      "lts__throughput.avg.pct_of_peak_sustained_elapsed": "35.81",
+      "sm__warps_active.avg.pct_of_peak_sustained_active": "32.93",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": "19.38",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": "1.01",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": "9.48",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": "0.80",
+      "launch__occupancy_limit_registers": "2"
+    },
     "headline_metric_deltas_vs_previous_run": {}
   },
-  "transition_class": null,
-  "close_reason": null,
-  "notes": "Build passed. Node A must measure this implementation next."
+  "transition_class": "correctness_failed",
+  "close_reason": "measured_by_node_a",
+  "notes": "Node A measured 20260421_010044_bf16_gemm_v1_ab3bbb2 for candidate diagnosis_20260421_005735:dir_01; transition_label=CORRECTNESS_FAIL.",
+  "transition_label": "CORRECTNESS_FAIL"
 }

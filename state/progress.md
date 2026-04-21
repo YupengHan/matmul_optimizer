@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `0c534cb56c1dcf9b48171528ba70bb2028aef44e`
-- plateau counter: `10`
-- round loop: `round 23/100`
-- rounds remaining: `78`
-- notes: `Node C build succeeded for round 23/100. Node A will now measure the new code path.`
+- latest measured commit: `ab3bbb20c3decc5c173a0fbada0eba99b61bfff5`
+- plateau counter: `11`
+- round loop: `round 24/100`
+- rounds remaining: `77`
+- notes: `Node A completed round 23/100. Run node_b to continue round 24/100.`
 
 ## Latest measured custom run
 
-- run id: `20260421_005653_bf16_gemm_v1_0c534cb`
-- run dir: `runs/20260421_005653_bf16_gemm_v1_0c534cb`
+- run id: `20260421_010044_bf16_gemm_v1_ab3bbb2`
+- run dir: `runs/20260421_010044_bf16_gemm_v1_ab3bbb2`
 - correctness: `FAIL`
-- median runtime: `29.819424 ms`
-- TFLOP/s: `24.380734 TFLOP/s`
+- median runtime: `30.081952 ms`
+- TFLOP/s: `24.167960 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_005735`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 23 interprets the half-panel result as partial signal, not a total miss. The branch remained wrong and too slow, but it reproduced the historical occupancy breakthrough on the current environment. That justifies one final targeted continuation before mechanically restoring to a plateau surface.`
-- dir_01: Single-Source Warp Ownership End To End On The Half-Panel Branch | bottleneck: Half-panel ownership and export correctness on top of a branch that already solved the live-state wall but still pays excessive synchronization.
-- dir_02: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: No new bottleneck is being attacked; this is an exact recovery of the best-known implementation surface.
-- dir_03: Restore The Grouped-Row Non-PTX 128x128 Sibling Surface | bottleneck: This is a safe alternate-surface recovery, not a new bottleneck attack.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

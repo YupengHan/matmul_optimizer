@@ -1,26 +1,26 @@
 # Latest run
 
-- run id: `20260421_005653_bf16_gemm_v1_0c534cb`
-- run dir: `runs/20260421_005653_bf16_gemm_v1_0c534cb`
-- kernel tag: `bf16_gemm_v1_0c534cb`
-- round label: `round 22/100`
+- run id: `20260421_010044_bf16_gemm_v1_ab3bbb2`
+- run dir: `runs/20260421_010044_bf16_gemm_v1_ab3bbb2`
+- kernel tag: `bf16_gemm_v1_ab3bbb2`
+- round label: `round 23/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `FAIL`
 - correctness cases: `0/3`
 - perf status: `PASS`
-- median runtime: `29.819424 ms`
-- p10 runtime: `29.457798 ms`
-- p90 runtime: `31.099495 ms`
-- TFLOP/s: `24.380734 TFLOP/s`
-- previous run id: `20260421_005058_bf16_gemm_v1_910beff`
-- runtime delta vs previous measured run: `+5.640736 ms`
-- TFLOP/s delta vs previous measured run: `-5.687872 TFLOP/s`
+- median runtime: `30.081952 ms`
+- p10 runtime: `29.872672 ms`
+- p90 runtime: `30.628960 ms`
+- TFLOP/s: `24.167960 TFLOP/s`
+- previous run id: `20260421_005653_bf16_gemm_v1_0c534cb`
+- runtime delta vs previous measured run: `+0.262528 ms`
+- TFLOP/s delta vs previous measured run: `-0.212773 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Repair The 256x128 Half-Panel Register-Reuse Branch`
+- implemented direction name: `Single-Source Warp Ownership End To End On The Half-Panel Branch`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_005653_bf16_gemm_v1_0c534cb/summary.json`
-- measured commit: `0c534cb56c1dcf9b48171528ba70bb2028aef44e`
+- raw summary json: `runs/20260421_010044_bf16_gemm_v1_ab3bbb2/summary.json`
+- measured commit: `ab3bbb20c3decc5c173a0fbada0eba99b61bfff5`
 - new best custom: `no`
-- generated at: `2026-04-21T00:57:00-07:00`
+- generated at: `2026-04-21T01:00:50-07:00`
