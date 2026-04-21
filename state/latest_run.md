@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_114455_bf16_gemm_v1_aaf076e`
-- run dir: `runs/20260421_114455_bf16_gemm_v1_aaf076e`
-- kernel tag: `bf16_gemm_v1_aaf076e`
-- round label: `round 5/100`
+- run id: `20260421_122240_bf16_gemm_v1_b79a9bf`
+- run dir: `runs/20260421_122240_bf16_gemm_v1_b79a9bf`
+- kernel tag: `bf16_gemm_v1_b79a9bf`
+- round label: `round 6/100`
 - runner: `/home/aice/Desktop/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `46.532095 ms`
-- p10 runtime: `46.045230 ms`
-- p90 runtime: `55.963955 ms`
-- TFLOP/s: `15.624042 TFLOP/s`
-- previous run id: `20260421_114147_bf16_gemm_v1_4784c8d`
-- runtime delta vs previous measured run: `+0.023039 ms`
-- TFLOP/s delta vs previous measured run: `-0.007740 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `46.021631 ms`
+- p10 runtime: `45.964596 ms`
+- p90 runtime: `54.324428 ms`
+- TFLOP/s: `15.797341 TFLOP/s`
+- previous run id: `20260421_114455_bf16_gemm_v1_aaf076e`
+- runtime delta vs previous measured run: `-0.510464 ms`
+- TFLOP/s delta vs previous measured run: `+0.173299 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Re-anchor on the best measured PTX surface under the current workload`
-- implemented selection mode: `recommended`
+- implemented direction name: `Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure`
+- implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_114455_bf16_gemm_v1_aaf076e/summary.json`
-- ncu analysis path: `runs/20260421_114455_bf16_gemm_v1_aaf076e/ncu_analysis.json`
-- measured commit: `aaf076e228985145a4fa9736167899e6c710d1be`
+- raw summary json: `runs/20260421_122240_bf16_gemm_v1_b79a9bf/summary.json`
+- ncu analysis path: `runs/20260421_122240_bf16_gemm_v1_b79a9bf/ncu_analysis.json`
+- measured commit: `b79a9bff2c5466a7cdd23c591f7eda181f319daf`
 - new best custom: `no`
-- generated at: `2026-04-21T11:45:05-07:00`
+- generated at: `2026-04-21T12:22:51-07:00`
