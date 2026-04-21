@@ -1,22 +1,316 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_123024",
+  "status": "completed",
+  "created_at": "2026-04-21T12:30:24-07:00",
   "source_run_id": "20260421_122942_bf16_gemm_v1_3eed315",
   "source_run_dir": "runs/20260421_122942_bf16_gemm_v1_3eed315",
   "source_summary_json": "runs/20260421_122942_bf16_gemm_v1_3eed315/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_codex_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "For live run 20260421_122942_bf16_gemm_v1_3eed315 at 43.250160 ms, the round-7 PTX writer cleanup is not a generic regression to discard. It exposed a materially better performance surface: registers collapsed from 198 to 104, active warps jumped from 16.64% to 33.20%, occupancy_limit_registers moved from 2 to 4, and end-to-end time improved by 2.77 ms. The reason it cannot be trusted yet is correctness, not speed. The direct code evidence is in the PTX export path: the new explicit store sweep only emits TileRow 0 and 1 even though `FixedHotBandTile128x128::kWarpMmaTilesM` is 4, so round 8 should focus first on repairing that writer coverage bug while preserving the new low-register surface. Only after that should the loop spend budget on barrier retiming. A full revert becomes the guardrail fallback, not the main recommendation, because this is exactly the kind of correctness-fail that can hide a real performance step forward.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_analysis.md",
+    "runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_analysis.json",
+    "runs/20260421_122942_bf16_gemm_v1_3eed315/summary.json",
+    "state/latest_attempt.json",
+    "docs/heuristics.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "recommended_direction_id": "dir_01",
+  "recommended_idea_origin": "auto-analysis",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_123024:dir_01",
+  "family_audit": [
+    {
+      "family_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface",
+      "decision": "accept",
+      "score": 3.34,
+      "reason": "The latest run exposed a potentially high-value 104-register / 33.2%-active-warps surface. The primary job is to make that writer shape correct before considering any rollback."
+    },
+    {
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "decision": "keep_live",
+      "score": 2.08,
+      "reason": "Once correctness is repaired, the new surface is barrier-heavy at 12.28% and likely worth a bounded seam retime. It is second only because correctness remains the blocking gate."
+    },
+    {
+      "family_id": "legacy::restore_current_workload_correct_ptx_writer_surface",
+      "decision": "defer_to_guardrail",
+      "score": 1.72,
+      "reason": "Reverting to the last correct writer is the safety net if the low-register repair cannot be made correct, but it should not outrank the chance to preserve the new faster surface."
+    },
+    {
+      "family_id": "exploit::trim_ptx_export_address_math_in_hot_band_epilogue",
+      "decision": "accept_as_signal_not_as_final_form",
+      "score": 2.41,
+      "reason": "Round 7 already validated that this family can unlock a large occupancy jump; the current task is to make that family correctness-safe rather than abandon it."
+    },
+    {
+      "family_id": "aggressive::transplant_half_panel_register_budget_into_the_correct_256x128_pivot",
+      "decision": "defer",
+      "score": 1.2,
+      "reason": "The current 128x128 PTX path just showed it can reach a much better register budget, so the loop should harvest that before paying the cost of a broader geometry change."
+    }
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Repair the PTX writer row sweep while preserving the 104-register surface",
+      "family_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface",
+      "subfamily_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface::emit_missing_tile_rows_2_and_3",
+      "action_fingerprint": "repair_missing_ptx_writer_tile_rows_2_and_3_without_giving_back_104reg_surface",
+      "mode": "exploit",
+      "hypothesis": "The new PTX export helper shape is likely directionally correct for performance, but the writer coverage is wrong. `FixedHotBandTile128x128::kWarpMmaTilesM` is 4 while the explicit `ptx_wmma_store_tile_pairs_64x64_ptx_microkernel()` sweep currently emits only TileRow 0 and 1, so half of the warp tile never reaches global memory. Restoring full tile-row coverage or an equivalent correctness-safe row sweep should recover correctness while keeping most of the new 104-register / 33.2%-active-warps surface intact.",
+      "expected_bottleneck": "correctness recovery on the PTX export/store path first; if preserved, the new steady-state signature becomes barrier-heavy and more memory-active rather than occupancy-limited",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:107-116",
+        "src/kernels/bf16_gemm_v1.cu:934-975",
+        "src/kernels/bf16_gemm_v1.cu:1034-1069"
+      ],
+      "risk": "medium",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 3.34,
+      "score_breakdown": {
+        "correctness_recovery_value": 1.45,
+        "performance_upside": 1.08,
+        "evidence_strength": 1.01,
+        "risk_penalty": -0.2,
+        "reason": "Highest-priority move because it turns a fast but wrong low-register writer into a candidate real win."
+      },
+      "predicted_gain_ms": 2.1,
+      "predicted_fail_risk": 0.18,
+      "ranking_notes": [
+        "This is a direct code-level correctness bug with an unusually strong performance signature behind it.",
+        "Do not revert the whole family before testing whether the missing row sweep is the only blocker.",
+        "A correctness-safe 104-register surface would materially change the search frontier."
+      ],
+      "stop_condition": "Stop if repairing writer coverage necessarily restores the old 198-register surface or if correctness still fails after full tile-row emission is restored.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "state/latest_attempt.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 104.0,
+          "importance_score": 203.0,
+          "explanation": "The new writer shape cut the kernel to 104 registers per thread, which is worth preserving if correctness can be recovered."
+        },
+        {
+          "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy",
+          "metric_name": "Achieved Occupancy",
+          "metric_value": 33.19,
+          "importance_score": 66.81,
+          "explanation": "Achieved occupancy doubled, so the repair should protect this new regime."
+        }
+      ],
+      "expected_local_changes": [
+        "Restore full PTX tile-row emission for TileRow 0..3 or an equivalent correctness-safe sweep.",
+        "Keep the new per-tile export helper structure instead of reverting wholesale to the old recursive writer.",
+        "Preserve the current shared scratch size and late address arithmetic shape as much as correctness allows."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "current_value": 4.0,
+          "guardrail": "non_increasing",
+          "reason": "The repair should not throw away the new four-CTA register budget."
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "current_value": 33.2,
+          "guardrail": "non_decreasing",
+          "reason": "The main opportunity is the new active-warps regime; keep it if at all possible."
+        },
+        {
+          "metric_name": "correctness",
+          "current_value": 0.0,
+          "guardrail": "must_pass",
+          "reason": "This is the blocking failure that must be cleared before treating the speedup as real."
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "After the writer repair, retime the barrier seam on the 104-register anchor",
+      "family_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup",
+      "subfamily_id": "aggressive::trim_microkernel_barriers_without_x32_shared_blowup::on_104reg_corrected_writer_anchor",
+      "action_fingerprint": "retime_wait_group_after_preserving_104reg_writer_anchor",
+      "mode": "exploit",
+      "hypothesis": "If the writer repair preserves anything close to the new 104-register surface, the bottleneck picture changes immediately: barrier rises to 12.28%, long-scoreboard to 10.4%, and memory throughput to 69.06%. That makes the wait-group / __syncthreads seam the next bounded exploit on top of the repaired low-register anchor.",
+      "expected_bottleneck": "synchronization_barrier_issue with secondary global_memory_bound behavior on the corrected 104-register PTX surface",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1955-2066",
+        "src/kernels/bf16_gemm_v1.cu:2023-2056",
+        "src/kernels/bf16_gemm_v1.cu:338-359"
+      ],
+      "risk": "medium",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.08,
+      "score_breakdown": {
+        "bottleneck_alignment": 0.9,
+        "surface_value": 0.74,
+        "correctness_dependency_penalty": -0.22,
+        "risk_penalty": -0.14,
+        "reason": "Best follow-on exploit if dir_01 succeeds, because the new faster surface is now barrier-limited rather than register-limited."
+      },
+      "predicted_gain_ms": 0.22,
+      "predicted_fail_risk": 0.36,
+      "ranking_notes": [
+        "This should not go first because the current low-register surface is still incorrect.",
+        "The barrier seam matters more now than it did before because occupancy doubled and memory traffic rose sharply.",
+        "Keep the shared-memory footprint fixed."
+      ],
+      "stop_condition": "Stop if barrier retiming requires giving back the repaired 104-register surface or if barrier improves without any runtime or correctness benefit.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_122942_bf16_gemm_v1_3eed315/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "stall::barrier",
+          "scope_type": "section",
+          "scope_name": "Warp Stall Sampling",
+          "location": "Warp Stall Sampling",
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "metric_value": 12.28,
+          "importance_score": 62.28,
+          "explanation": "Barrier stalls more than doubled on the new low-register surface."
+        },
+        {
+          "hotspot_id": "hotspot::section::gpu_speed_of_light_throughput::gpu_speed_of_light_throughput::memory_throughput",
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput",
+          "metric_name": "Memory Throughput",
+          "metric_value": 69.08,
+          "importance_score": 58.9,
+          "explanation": "Once occupancy is unlocked, the next seam will be synchronization plus memory movement."
+        }
+      ],
+      "expected_local_changes": [
+        "Leave the repaired low-register writer in place and retime only the cp.async wait-group / CTA sync seam.",
+        "Keep the shared-memory budget fixed at the current 22016-byte level.",
+        "Do not reintroduce extra writer temporaries while tuning the handoff."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "current_value": 4.0,
+          "guardrail": "non_increasing",
+          "reason": "The barrier follow-up should retain the new occupancy headroom."
+        },
+        {
+          "metric_name": "correctness",
+          "current_value": 0.0,
+          "guardrail": "must_pass",
+          "reason": "Any barrier follow-up only matters on a corrected writer surface."
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Fallback: restore the last correct PTX writer semantics if the low-register repair collapses",
+      "family_id": "legacy::restore_current_workload_correct_ptx_writer_surface",
+      "subfamily_id": "legacy::restore_current_workload_correct_ptx_writer_surface::exact_b79a9bf_writer_semantics",
+      "action_fingerprint": "restore_last_correct_ptx_writer_semantics_if_104reg_repair_fails",
+      "mode": "restore",
+      "hypothesis": "If restoring full tile-row coverage on the new writer shape forces registers back up or keeps failing correctness, the loop still needs a correctness-safe fallback. In that case, recover the last correct PTX writer semantics from b79a9bf while preserving the latest workflow/workload support code on HEAD.",
+      "expected_bottleneck": "fallback recovery to the last correctness-safe current-workload PTX writer surface",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:934-1069",
+        "restore source commit: b79a9bff2c5466a7cdd23c591f7eda181f319daf"
+      ],
+      "risk": "low",
+      "metrics_to_recheck": [
+        "correctness",
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 1.72,
+      "score_breakdown": {
+        "correctness_recovery_value": 0.92,
+        "surface_loss_penalty": -0.41,
+        "implementation_scope": 0.76,
+        "reason": "Necessary fallback if the high-value low-register surface cannot be made correct, but it should not outrank the chance to preserve that new surface."
+      },
+      "predicted_gain_ms": 0.0,
+      "predicted_fail_risk": 0.08,
+      "ranking_notes": [
+        "This is the guardrail fallback, not the preferred next move.",
+        "Use it only if dir_01 cannot recover correctness without collapsing the new occupancy gain.",
+        "Keep workflow and workload support files on HEAD even if the implementation surface is restored."
+      ],
+      "stop_condition": "Stop if this restore is selected before trying the direct writer repair, unless new evidence shows the low-register surface cannot be made correct.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_attempt.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics",
+          "metric_name": "Registers Per Thread",
+          "metric_value": 104.0,
+          "importance_score": 203.0,
+          "explanation": "This restore is only a fallback because the current faster surface is too valuable to drop casually."
+        }
+      ],
+      "expected_local_changes": [
+        "Reinstate the last correctness-safe PTX writer semantics from b79a9bf if the direct low-register repair fails.",
+        "Preserve current workflow/workload support files on HEAD.",
+        "Treat this as guardrail recovery, not as a new optimization family."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "current_value": 0.0,
+          "guardrail": "must_pass",
+          "reason": "The whole point of the fallback is to recover correctness quickly."
+        }
+      ]
+    }
+  ],
+  "notes": "Round 8/100 diagnosis emitted after a correctness-failing but highly promising 104-register PTX writer surface appeared."
 }

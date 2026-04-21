@@ -80,6 +80,6 @@
         - median runtime: `43.250160 ms`
         - TFLOP/s: `16.809635 TFLOP/s`
         - measured commit: `3eed315e7f97652818bc8a8b129b4f977ac7613c`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`
         - top bottleneck class: `tensor_core_underutilization`
         - top finding: `improved hotspot delta at Launch Statistics: improved.`

@@ -1,21 +1,110 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Repair the PTX writer row sweep while preserving the 104-register surface",
+  "candidate_id": "diagnosis_20260421_123024:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface",
+  "subfamily_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface::emit_missing_tile_rows_2_and_3",
+  "action_fingerprint": "repair_missing_ptx_writer_tile_rows_2_and_3_without_giving_back_104reg_surface",
+  "selection_priority": 3.545,
+  "base_run_id": "20260421_122942_bf16_gemm_v1_3eed315",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T12:33:41-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_123024",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Repair the PTX writer row sweep while preserving the 104-register surface",
+    "family_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface",
+    "subfamily_id": "exploit::repair_ptx_export_writer_correctness_on_low_register_surface::emit_missing_tile_rows_2_and_3",
+    "action_fingerprint": "repair_missing_ptx_writer_tile_rows_2_and_3_without_giving_back_104reg_surface",
+    "mode": "exploit",
+    "hypothesis": "The new PTX export helper shape is likely directionally correct for performance, but the writer coverage is wrong. `FixedHotBandTile128x128::kWarpMmaTilesM` is 4 while the explicit `ptx_wmma_store_tile_pairs_64x64_ptx_microkernel()` sweep currently emits only TileRow 0 and 1, so half of the warp tile never reaches global memory. Restoring full tile-row coverage or an equivalent correctness-safe row sweep should recover correctness while keeping most of the new 104-register / 33.2%-active-warps surface intact.",
+    "expected_bottleneck": "correctness recovery on the PTX export/store path first; if preserved, the new steady-state signature becomes barrier-heavy and more memory-active rather than occupancy-limited",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:107-116",
+      "src/kernels/bf16_gemm_v1.cu:934-975",
+      "src/kernels/bf16_gemm_v1.cu:1034-1069"
+    ],
+    "risk": "medium",
+    "metrics_to_recheck": [
+      "correctness",
+      "median runtime",
+      "launch__occupancy_limit_registers",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+    ],
+    "search_score_v1": 3.34,
+    "score_breakdown": {
+      "correctness_recovery_value": 1.45,
+      "performance_upside": 1.08,
+      "evidence_strength": 1.01,
+      "risk_penalty": -0.2,
+      "reason": "Highest-priority move because it turns a fast but wrong low-register writer into a candidate real win."
+    },
+    "predicted_gain_ms": 2.1,
+    "predicted_fail_risk": 0.18,
+    "ranking_notes": [
+      "This is a direct code-level correctness bug with an unusually strong performance signature behind it.",
+      "Do not revert the whole family before testing whether the missing row sweep is the only blocker.",
+      "A correctness-safe 104-register surface would materially change the search frontier."
+    ],
+    "stop_condition": "Stop if repairing writer coverage necessarily restores the old 198-register surface or if correctness still fails after full tile-row emission is restored.",
+    "evidence_refs": [
+      "state/latest_run.md",
+      "state/latest_ncu_summary.md",
+      "state/latest_attempt.json",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "hotspot_id": "hotspot::section::launch_statistics::launch_statistics::registers_per_thread",
+        "scope_type": "section",
+        "scope_name": "Launch Statistics",
+        "location": "Launch Statistics",
+        "metric_name": "Registers Per Thread",
+        "metric_value": 104.0,
+        "importance_score": 203.0,
+        "explanation": "The new writer shape cut the kernel to 104 registers per thread, which is worth preserving if correctness can be recovered."
+      },
+      {
+        "hotspot_id": "hotspot::section::occupancy::occupancy::achieved_occupancy",
+        "scope_type": "section",
+        "scope_name": "Occupancy",
+        "location": "Occupancy",
+        "metric_name": "Achieved Occupancy",
+        "metric_value": 33.19,
+        "importance_score": 66.81,
+        "explanation": "Achieved occupancy doubled, so the repair should protect this new regime."
+      }
+    ],
+    "expected_local_changes": [
+      "Restore full PTX tile-row emission for TileRow 0..3 or an equivalent correctness-safe sweep.",
+      "Keep the new per-tile export helper structure instead of reverting wholesale to the old recursive writer.",
+      "Preserve the current shared scratch size and late address arithmetic shape as much as correctness allows."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "launch__occupancy_limit_registers",
+        "current_value": 4.0,
+        "guardrail": "non_increasing",
+        "reason": "The repair should not throw away the new four-CTA register budget."
+      },
+      {
+        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "current_value": 33.2,
+        "guardrail": "non_decreasing",
+        "reason": "The main opportunity is the new active-warps regime; keep it if at all possible."
+      },
+      {
+        "metric_name": "correctness",
+        "current_value": 0.0,
+        "guardrail": "must_pass",
+        "reason": "This is the blocking failure that must be cleared before treating the speedup as real."
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
