@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T01:10:53-07:00",
   "source_diagnosis_id": "diagnosis_20260421_010737",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Reopen The Auxiliary 256x128 Hot-Band Schedule As The Next Structural Probe",
@@ -58,5 +58,13 @@
     "stop_condition": "Stop if the 256x128 family fails to move warps-active or tensor utilization away from the current plateau, or if it reopens another broad regression without any counter improvement that would justify a follow-on repair.",
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "rehydrate_auxiliary_256x128_schedule_surface_from_9a4bb85409600456179030fc1eb1e59eb5ea3722"
 }
