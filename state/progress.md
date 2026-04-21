@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `6cc462c46b05712b972773911a1a7f31892ddcb2`
-- plateau counter: `5`
-- round loop: `round 1/10`
-- rounds remaining: `10`
-- notes: `Node C build succeeded for round 1/10. Node A will now measure the new code path.`
+- latest measured commit: `7496aff21c8de79011caa26978ba7dd249179f64`
+- plateau counter: `6`
+- round loop: `round 2/10`
+- rounds remaining: `9`
+- notes: `Node A completed round 1/10. Run node_b to continue round 2/10.`
 
 ## Latest measured custom run
 
-- run id: `20260421_150626_bf16_gemm_v1_6cc462c4`
-- run dir: `runs/20260421_150626_bf16_gemm_v1_6cc462c4`
+- run id: `20260421_150910_bf16_gemm_v1_7496aff2`
+- run dir: `runs/20260421_150910_bf16_gemm_v1_7496aff2`
 - correctness: `PASS`
-- median runtime: `24.323521 ms`
-- TFLOP/s: `29.889564 TFLOP/s`
+- median runtime: `24.537088 ms`
+- TFLOP/s: `29.629409 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_150626_round01_clean_6cc462c4`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `This diagnosis starts the fresh clean 10-round loop. The earlier contaminated absolute timings are excluded from ranking except as weak structural hints.`
-- dir_01: Increase PTX Grouped-Row Depth On The Clean Baseline | bottleneck: launch-order and B-tile reuse inefficiency inside the accepted PTX hot-band traversal
-- dir_02: Swap To The Single-K 128x128 Non-Microkernel Sibling | bottleneck: microkernel-specific accumulate ordering is contributing to scoreboard overhead on the accepted hot-band split
-- dir_03: Retune PTX Launch Bounds As A Fallback | bottleneck: register pressure and low CTA residency on the accepted PTX hot-band path
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

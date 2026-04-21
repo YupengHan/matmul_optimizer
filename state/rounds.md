@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `10`
-- completed rounds: `0`
-- remaining rounds: `10`
-- current round label: `round 1/10`
+- completed rounds: `1`
+- remaining rounds: `9`
+- current round label: `round 2/10`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_150626_bf16_gemm_v1_6cc462c4`
@@ -14,8 +14,15 @@
 - started at: `2026-04-21T15:07:19-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 1/10. Node A will measure the result next.`
+- notes: `Completed round 1/10. Continue with node_b for round 2/10. Accepted base: 20260421_150626_bf16_gemm_v1_6cc462c4 at 24.323521 ms.`
 
 ## Last completed round
 
-- no completed round recorded yet
+- round: `1/10`
+- direction: `dir_01`
+- direction name: `Increase PTX Grouped-Row Depth On The Clean Baseline`
+- verdict: `regressed`
+- runtime delta: `+0.213568 ms`
+- TFLOP/s delta: `-0.260155 TFLOP/s`
+- run dir: `runs/20260421_150910_bf16_gemm_v1_7496aff2`
+- ncu rep path: `runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_profile.ncu-rep`

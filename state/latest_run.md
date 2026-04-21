@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_150626_bf16_gemm_v1_6cc462c4`
-- run dir: `runs/20260421_150626_bf16_gemm_v1_6cc462c4`
-- kernel tag: `bf16_gemm_v1_6cc462c4`
-- round label: `single-run`
+- run id: `20260421_150910_bf16_gemm_v1_7496aff2`
+- run dir: `runs/20260421_150910_bf16_gemm_v1_7496aff2`
+- kernel tag: `bf16_gemm_v1_7496aff2`
+- round label: `round 1/10`
 - runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.323521 ms`
-- p10 runtime: `24.169369 ms`
-- p90 runtime: `24.407766 ms`
-- TFLOP/s: `29.889564 TFLOP/s`
-- previous run id: `20260421_150200_bf16_gemm_v1_f4fa1bbe`
-- runtime delta vs previous measured run: `-22.246975 ms`
-- TFLOP/s delta vs previous measured run: `+14.278405 TFLOP/s`
-- perf verdict: `improved`
-- implemented direction id: `None`
-- implemented direction name: `None`
-- implemented selection mode: `None`
+- median runtime: `24.537088 ms`
+- p10 runtime: `24.521729 ms`
+- p90 runtime: `25.787290 ms`
+- TFLOP/s: `29.629409 TFLOP/s`
+- previous run id: `20260421_150626_bf16_gemm_v1_6cc462c4`
+- runtime delta vs previous measured run: `+0.213568 ms`
+- TFLOP/s delta vs previous measured run: `-0.260155 TFLOP/s`
+- perf verdict: `regressed`
+- implemented direction id: `dir_01`
+- implemented direction name: `Increase PTX Grouped-Row Depth On The Clean Baseline`
+- implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_150626_bf16_gemm_v1_6cc462c4/summary.json`
-- ncu analysis path: `runs/20260421_150626_bf16_gemm_v1_6cc462c4/ncu_analysis.json`
-- measured commit: `6cc462c46b05712b972773911a1a7f31892ddcb2`
+- raw summary json: `runs/20260421_150910_bf16_gemm_v1_7496aff2/summary.json`
+- ncu analysis path: `runs/20260421_150910_bf16_gemm_v1_7496aff2/ncu_analysis.json`
+- measured commit: `7496aff21c8de79011caa26978ba7dd249179f64`
 - new best custom: `no`
-- generated at: `2026-04-21T15:06:37-07:00`
+- generated at: `2026-04-21T15:09:21-07:00`
