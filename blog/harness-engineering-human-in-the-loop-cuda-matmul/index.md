@@ -255,6 +255,8 @@ I am not trying to claim a general matmul breakthrough. I am trying to test how 
 
 The tree below is regenerated from the latest tracked round history in the repo, which now spans **301 recorded measurement rounds**, so it shows the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
+> **Data quality note:** the resumed loop interval labeled **round 37/100 through round 100/100** was later identified as a buggy execution path. Those rounds were driven by an invalid supervisor/helper path rather than the intended deep-reasoning `node_b` + real implementation `node_c` workflow. They remain in raw history for auditability, but **future historical optimization evaluation, scorer fitting, search-policy learning, or any other retrospective performance analysis must exclude this interval** instead of treating it as valid optimization evidence.
+
 Because the search has already moved below the local CUTLASS baseline, the chart now places the CUTLASS marker at the point where that threshold was first crossed instead of pinning it to the bottom as a future target. In the current history, that first sub-CUTLASS run is round **46**, version **`22b4466`**, at **25.68 ms**.
 
 At the moment, the official benchmark snapshot in the repo is:

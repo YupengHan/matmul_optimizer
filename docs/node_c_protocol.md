@@ -84,6 +84,7 @@ The implementation `sub-agent` should:
 
 - read the selected direction and its code locations
 - edit only the files required for that one direction
+- make a real compiled-code edit in `src/kernels/*`, `include/*`, `src/runner/main.cpp`, or `CMakeLists.txt`
 - keep the implementation aligned with the planned action fingerprint when possible
 - if the implementation drifts semantically, update `implemented_action_fingerprint`,
   `semantic_delta_tags`, and `actual_code_regions` in `state/active_direction.json`
@@ -104,6 +105,8 @@ It must:
 
 - configure the repo for the main loop without requiring CUTLASS
 - build `custom_runner`
+- force a rebuild during node_c finalize instead of relying on the incremental skip path
+- fail if there is no compiled-code diff before the build gate runs
 - stop immediately if the build fails
 - write `state/latest_attempt.json` even when the build fails, with `build_status=FAIL`
   and a structured `failure_mode`

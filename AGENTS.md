@@ -148,8 +148,10 @@ When the user says `开始运行 node_b`:
 1. run `python scripts/graph.py node_b`
 2. read `docs/supervisor_protocol.md`, `docs/node_b_protocol.md`, and `state/node_b_context.md`
 3. main Codex supervisor spawns one diagnosis `sub-agent` for node_b
-4. the sub-agent reads the files listed there and edits `state/latest_diagnosis.json` so it contains exactly 3 directions
-5. after the sub-agent returns, the main agent runs `python scripts/graph.py node_b --finalize`
+4. the sub-agent reads the files listed there and edits `state/latest_diagnosis.json` so it contains exactly 3 directions, plus live-reasoning provenance fields
+5. the diagnosis must come from real best-model reasoning, not a repo-external scripted helper or template emitter
+6. the diagnosis must include concrete evidence refs for the live run context and distinct direction names / action fingerprints
+7. after the sub-agent returns, the main agent runs `python scripts/graph.py node_b --finalize`
 
 When the user says `开始运行 node_c`:
 
@@ -161,8 +163,9 @@ When the user says `开始运行 node_c`:
 3. run `python scripts/graph.py node_c`
 4. read `docs/supervisor_protocol.md`, `docs/node_c_protocol.md`, and `state/node_c_context.md`
 5. main Codex supervisor spawns one implementation `sub-agent` for node_c
-6. the sub-agent implements exactly one direction
-7. after the sub-agent returns, the main agent runs `python scripts/graph.py node_c --finalize`
+6. the sub-agent implements exactly one direction with a real compiled-code edit in the allowed build surface
+7. the implementation must not be a repo-external scripted history replay or a no-op state-only change
+8. after the sub-agent returns, the main agent runs `python scripts/graph.py node_c --finalize`
 
 When the user says `批准使用推荐方向`:
 
@@ -190,6 +193,7 @@ When the user says `开始运行N圈`:
 10. after every 5 completed rounds, refresh `state/supervisor_context.md`, refresh the public display snapshot, commit only the doc/image refresh, run `git push origin master`, and then continue the loop without treating that checkpoint as a completion point
 11. if the loop is still active, and `state/supervisor_task.json` later reports a 10-minute watchdog stall without reaching the target round count, issue the continue instruction and keep dispatching
 12. once the loop is armed, treat every `ready_for_node_*` state as a continue point until the round budget is exhausted or the user explicitly redirects the conversation
+13. any resident supervisor or external helper may keep dispatch alive, but it must not replace the actual `node_b` reasoning work or the actual `node_c` implementation work
 
 If the user explicitly asks to prefer frontier-based selection for the loop, use:
 
@@ -277,6 +281,10 @@ Must output:
 
 - exactly 3 directions in `state/latest_diagnosis.json`
 - one `recommended_direction_id`
+- `reasoning_source` set to `main_codex_agent` or `codex_sub_agent`
+- `reasoning_mode` set to `manual_reasoned_best_model`
+- a non-trivial `reasoning_summary`
+- `evidence_refs` that include the live run context files
 
 Each direction must contain:
 
@@ -291,6 +299,8 @@ Must also:
 - update the human-review state via `python scripts/graph.py node_b --finalize`
 - commit only lightweight state
 - include the active round label when a multi-round loop is running
+- use distinct direction names and distinct `action_fingerprint` values across the 3 directions
+- reject repo-external scripted helpers, template emitters, and auto-generated diagnoses as invalid node_b output
 - end with `current_node = node_c`
 
 ### node_c
@@ -305,7 +315,8 @@ Must:
 - read `state/latest_diagnosis.json`, `state/active_direction.json`, and `state/node_c_context.md`
 - implement exactly one direction
 - keep edits inside the allowed surface unless the protocol explicitly requires a minimal glue change
-- build before claiming success
+- make at least one real compiled-code edit in `src/kernels/*`, `include/*`, `src/runner/main.cpp`, or `CMakeLists.txt`
+- force a rebuild before claiming success
 - stop on build failure, update failure state, and avoid a success commit
 - commit code plus lightweight state only after the build passes
 - include the active round label when a multi-round loop is running
@@ -316,6 +327,7 @@ Must not:
 - implement multiple directions in one loop
 - auto-merge anything
 - claim a performance win before node_a measures it
+- treat a repo-external scripted replay, historical `git restore`, or state-only edit as valid node_c work
 
 ## Allowed vs disallowed edits
 

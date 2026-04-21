@@ -1545,8 +1545,15 @@ def render_node_b_context(
 
         - write exactly 3 directions
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
-        - keep top-level `family_audit` as a list, even if empty
+        - keep top-level `family_audit` as a list
         - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
+        - set `reasoning_source` to `main_codex_agent` or `codex_sub_agent`
+        - set `reasoning_mode` to `manual_reasoned_best_model`
+        - write a non-empty `reasoning_summary` with concrete ranking rationale
+        - write `evidence_refs` as a non-empty list of concrete files reviewed
+        - the diagnosis must come from live reasoning, not from a repo-external scripted helper
+        - all 3 direction `name` fields must be distinct
+        - all 3 direction `action_fingerprint` values must be distinct
         - each direction must include:
           - `family_id`
           - `subfamily_id`
@@ -1720,7 +1727,7 @@ def compute_supervisor_task(
                 'finalize_command': 'python scripts/graph.py node_b --finalize',
                 'protocol_doc': 'docs/node_b_protocol.md',
                 'context_file': repo_rel(NODE_B_CONTEXT_PATH),
-                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent, then finalize node_b from the main Codex agent.',
+                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent for live reasoning, and do not replace node_b with a scripted helper before finalizing from the main Codex agent.',
             }
         )
     elif current_node == 'node_c':
@@ -1742,7 +1749,7 @@ def compute_supervisor_task(
                 'finalize_command': 'python scripts/graph.py node_c --finalize',
                 'protocol_doc': 'docs/node_c_protocol.md',
                 'context_file': repo_rel(NODE_C_CONTEXT_PATH),
-                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent, then finalize node_c from the main Codex agent.',
+                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent for a real code edit, and do not replace node_c with a scripted helper before finalizing from the main Codex agent.',
             }
         )
     else:
@@ -2148,6 +2155,10 @@ def diagnosis_history_entry(diagnosis: Dict[str, Any], latest_run: Dict[str, Any
         'source_run_dir': latest_run.get('run_dir'),
         'source_measured_commit': latest_run.get('measured_commit'),
         'diagnosis_id': diagnosis.get('diagnosis_id'),
+        'reasoning_source': diagnosis.get('reasoning_source'),
+        'reasoning_mode': diagnosis.get('reasoning_mode'),
+        'reasoning_summary': diagnosis.get('reasoning_summary'),
+        'evidence_refs': diagnosis.get('evidence_refs', []),
         'notes': diagnosis.get('notes'),
         'recommended_direction_id': diagnosis.get('recommended_direction_id'),
         'recommended_idea_origin': recommended.get('idea_origin', 'auto-analysis') if recommended else 'auto-analysis',
@@ -2447,6 +2458,19 @@ def normalize_string_list(values: Any) -> List[str]:
     if not isinstance(values, list):
         return []
     return [str(value).strip() for value in values if str(value).strip()]
+
+
+def is_compiled_node_c_path(rel_path: str) -> bool:
+    return (
+        rel_path.startswith('src/kernels/')
+        or rel_path.startswith('include/')
+        or rel_path == 'src/runner/main.cpp'
+        or rel_path == 'CMakeLists.txt'
+    )
+
+
+def compiled_node_c_regions(actual_code_regions: Sequence[str]) -> List[str]:
+    return [rel_path for rel_path in actual_code_regions if is_compiled_node_c_path(rel_path)]
 
 
 def derive_semantic_delta_tags(actual_code_regions: Sequence[str], build_status: str) -> List[str]:
@@ -3386,6 +3410,10 @@ def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) 
     diagnosis['source_summary_json'] = latest_run.get('raw_summary_json')
     diagnosis['source_ncu_summary_json'] = repo_rel(LATEST_NCU_SUMMARY_PATH)
     diagnosis['current_kernel_path'] = graph_state.get('current_kernel_path', current_kernel_path())
+    diagnosis['reasoning_source'] = None
+    diagnosis['reasoning_mode'] = None
+    diagnosis['reasoning_summary'] = None
+    diagnosis['evidence_refs'] = []
     diagnosis['selected_direction_id'] = None
     diagnosis['family_audit'] = []
     diagnosis['directions'] = [
@@ -3624,6 +3652,22 @@ def normalize_diagnosis_for_finalize(diagnosis: Dict[str, Any]) -> Dict[str, Any
     normalized = dict(diagnosis)
     if not isinstance(normalized.get('family_audit'), list):
         normalized['family_audit'] = []
+    normalized['reasoning_source'] = (
+        str(normalized.get('reasoning_source')).strip()
+        if normalized.get('reasoning_source') is not None
+        else None
+    )
+    normalized['reasoning_mode'] = (
+        str(normalized.get('reasoning_mode')).strip()
+        if normalized.get('reasoning_mode') is not None
+        else None
+    )
+    normalized['reasoning_summary'] = (
+        str(normalized.get('reasoning_summary')).strip()
+        if normalized.get('reasoning_summary') is not None
+        else None
+    )
+    normalized['evidence_refs'] = normalize_string_list(normalized.get('evidence_refs'))
     if not normalized.get('recommended_direction_id'):
         directions = normalized.get('directions', [])
         if directions:
@@ -3640,11 +3684,50 @@ def validate_diagnosis(diagnosis: Dict[str, Any]) -> None:
     diagnosis_id = diagnosis.get('diagnosis_id')
     if not isinstance(diagnosis_id, str) or not diagnosis_id.strip():
         raise RuntimeError('node_b diagnosis requires a non-empty diagnosis_id')
+    if diagnosis_id.startswith('auto_diagnosis_'):
+        raise RuntimeError('node_b diagnosis ids must not be auto-generated helper ids')
+    reasoning_source = diagnosis.get('reasoning_source')
+    if reasoning_source not in {'main_codex_agent', 'codex_sub_agent'}:
+        raise RuntimeError('node_b diagnosis requires reasoning_source=main_codex_agent or codex_sub_agent')
+    reasoning_mode = diagnosis.get('reasoning_mode')
+    if reasoning_mode != 'manual_reasoned_best_model':
+        raise RuntimeError('node_b diagnosis requires reasoning_mode=manual_reasoned_best_model')
+    reasoning_summary = diagnosis.get('reasoning_summary')
+    if not isinstance(reasoning_summary, str) or len(reasoning_summary.strip()) < 80:
+        raise RuntimeError('node_b diagnosis requires a non-trivial reasoning_summary')
+    evidence_refs = set(normalize_string_list(diagnosis.get('evidence_refs')))
+    required_evidence_refs = {
+        'state/node_b_context.md',
+        'state/latest_run.md',
+        'state/latest_ncu_summary.md',
+        'state/human_review.md',
+    }
+    missing_evidence_refs = sorted(required_evidence_refs.difference(evidence_refs))
+    if missing_evidence_refs:
+        raise RuntimeError(
+            'node_b diagnosis is missing required evidence_refs: ' + ', '.join(missing_evidence_refs)
+        )
     if not isinstance(diagnosis.get('family_audit'), list):
         raise RuntimeError('node_b diagnosis requires family_audit to be a list')
+    if not diagnosis.get('family_audit'):
+        raise RuntimeError('node_b diagnosis requires family_audit to document accept/defer/reject reasoning')
     directions = diagnosis.get('directions', [])
     if len(directions) != 3:
         raise RuntimeError('node_b requires exactly 3 directions')
+    direction_names = {
+        str(direction.get('name') or '').strip()
+        for direction in directions
+        if str(direction.get('name') or '').strip()
+    }
+    if len(direction_names) != 3:
+        raise RuntimeError('node_b requires three distinct direction names')
+    fingerprints = {
+        str(direction.get('action_fingerprint') or '').strip()
+        for direction in directions
+        if str(direction.get('action_fingerprint') or '').strip()
+    }
+    if len(fingerprints) != 3:
+        raise RuntimeError('node_b requires three distinct action_fingerprint values')
     seen_ids = set()
     for direction in directions:
         direction_id = direction.get('direction_id')
@@ -4262,11 +4345,44 @@ def run_node_c(args: argparse.Namespace) -> int:
     attempt_scope_paths = node_c_attempt_surface_paths()
     commit_message = node_c_commit_message(active_direction, direction, round_loop)
     commit_subject = commit_subject_from_message(commit_message)
-    build_ok = maybe_run_build(runner_path, force=args.force_build, log_path=NODE_C_BUILD_LOG_PATH)
     actual_code_regions = diff_name_only_against_head(attempt_scope_paths)
     diff_stats = diff_stats_against_head(attempt_scope_paths)
+    compiled_regions = compiled_node_c_regions(actual_code_regions)
     if not active_direction.get('actual_code_regions'):
         active_direction['actual_code_regions'] = actual_code_regions
+    if not compiled_regions:
+        latest_attempt = build_latest_attempt_payload(
+            active_direction,
+            build_status='FAIL',
+            failure_mode='no_compiled_code_change',
+            diff_stats=diff_stats,
+            actual_code_regions=actual_code_regions,
+            commit_sha=None,
+            commit_subject=commit_subject,
+        )
+        write_latest_attempt_payload(latest_attempt)
+        graph_state['current_node'] = 'node_c'
+        graph_state['previous_node'] = 'node_b'
+        graph_state['status'] = 'node_c_invalid_no_code_change'
+        graph_state['notes'] = (
+            'Node C finalize requires a real compiled-code edit in src/kernels/, include/, '
+            'src/runner/main.cpp, or CMakeLists.txt before build.'
+        )
+        active_direction['status'] = 'invalid_no_code_change'
+        active_direction['notes'] = graph_state['notes']
+        write_json(GRAPH_STATE_PATH, graph_state)
+        write_json(ACTIVE_DIRECTION_PATH, active_direction)
+        record_build_failure_into_search_memory(latest_attempt, active_direction)
+        if round_loop.get('active'):
+            round_loop['status'] = 'paused_on_invalid_node_c'
+            round_loop['notes'] = f'Paused {round_label(round_loop)} because node_c made no compiled code change.'
+            write_json(ROUND_LOOP_STATE_PATH, round_loop)
+        refresh_all_views()
+        raise RuntimeError(
+            'node_c finalize requires at least one compiled-code change before build '
+            '(src/kernels/, include/, src/runner/main.cpp, or CMakeLists.txt)'
+        )
+    build_ok = maybe_run_build(runner_path, force=True, log_path=NODE_C_BUILD_LOG_PATH)
     if not active_direction.get('semantic_delta_tags'):
         active_direction['semantic_delta_tags'] = derive_semantic_delta_tags(
             actual_code_regions,

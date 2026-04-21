@@ -37,6 +37,7 @@ The main Codex agent does **not**:
 - skip build validation for `node_c`
 - bypass the machine-readable state
 - let a `sub-agent` mutate the loop policy
+- replace `node_b` or `node_c` with a repo-external scripted helper that synthesizes diagnosis or implementation work
 
 ## Dispatch rule
 
@@ -161,6 +162,7 @@ Operational consequences:
 - main agent runs `python scripts/graph.py node_b`
 - main agent spawns one diagnosis `sub-agent`
 - the `sub-agent` follows `docs/node_b_protocol.md`
+- the supervisor must not replace this reasoning step with a template emitter or repo-external helper
 - after the `sub-agent` returns, the main agent runs `python scripts/graph.py node_b --finalize`
 
 ### `node_c`
@@ -171,6 +173,7 @@ Operational consequences:
 - main agent runs `python scripts/graph.py node_c`
 - main agent spawns one implementation `sub-agent`
 - the `sub-agent` follows `docs/node_c_protocol.md`
+- the supervisor must require a real compiled-code edit and must not treat a scripted history replay loop as valid implementation work
 - after the `sub-agent` returns, the main agent runs `python scripts/graph.py node_c --finalize`
 
 ## Multi-round loop rule

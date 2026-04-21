@@ -52,6 +52,10 @@ It must contain:
 - `source_summary_json`
 - `source_ncu_summary_json`
 - `current_kernel_path`
+- `reasoning_source`
+- `reasoning_mode`
+- `reasoning_summary`
+- `evidence_refs`
 - `recommended_direction_id`
 - `family_audit`
 - `selected_direction_id`
@@ -79,12 +83,22 @@ It must contain:
 - `stop_condition`
 
 The top-level `notes` field should be used when useful to record human-guided ranking rationale.
-The top-level `family_audit` field should remain a list and can summarize which idea families were accepted, deferred, or rejected this round.
+The top-level `family_audit` field should remain a list and should summarize which idea families were accepted, deferred, or rejected this round.
 `selected_direction_id` may remain `null` at diagnosis time because finalize now emits candidates into the frontier without automatically selecting one.
+`reasoning_source` must be `main_codex_agent` or `codex_sub_agent`.
+`reasoning_mode` must be `manual_reasoned_best_model`.
+`reasoning_summary` must be a concrete prose explanation of the ranking, not a template stub.
+`evidence_refs` must be a non-empty list of the concrete files reviewed, including:
+
+- `state/node_b_context.md`
+- `state/latest_run.md`
+- `state/latest_ncu_summary.md`
+- `state/human_review.md`
 
 ## Direction quality bar
 
 The three directions should be materially different. Do not submit three small variants of the same idea.
+Do not submit duplicate direction names or duplicate `action_fingerprint` values.
 
 The recommended direction should be the best expected upside / implementation-risk tradeoff for the next loop.
 
@@ -134,6 +148,7 @@ The diagnosis `sub-agent` should:
 
 - read the required inputs
 - edit only lightweight state for the diagnosis
+- perform real reasoning instead of using a repo-external template/helper emitter
 - avoid running the finalize command by itself
 
 After the `sub-agent` returns, the main Codex supervisor must run:
