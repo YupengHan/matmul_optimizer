@@ -17,9 +17,9 @@ The goal is not to solve general matmul. The goal is to see how far a single eng
 - benchmark target: `fixed_bf16_gemm_v1`
 - shape: `m=6464`, `n=7776`, `k=7232`
 - dtype: BF16 inputs, FP32 accumulation, BF16 output reference
-- current official best custom runtime: `24.570881 ms`
+- current official best custom runtime: `24.177664 ms`
 - current local CUTLASS baseline: `25.917889 ms`
-- current gap vs CUTLASS: `-1.347008 ms`, with custom at `0.948028x` the CUTLASS runtime / `5.197213%` faster than CUTLASS
+- current gap vs CUTLASS: `-1.740225 ms`, with custom at `0.932856x` the CUTLASS runtime / `6.714378%` faster than CUTLASS
 - execution model: local and script-first, with Codex used for diagnosis and implementation
 - runtime dependencies: no OpenAI API key, cloud service, or LangGraph runtime required
 
@@ -34,7 +34,7 @@ For local operator work, start from the lightweight state entrypoints instead of
 - [state/progress.md](state/progress.md)
 - [state/supervisor_task.json](state/supervisor_task.json)
 
-The repo is currently paused on purpose before `node_c` of round `16/50` so the next terminal can focus on the `heuristic-search-migration` workflow update.
+The live loop state changes over time, so use [state/supervisor_task.json](state/supervisor_task.json) and [state/round_loop_state.json](state/round_loop_state.json) as the source of truth for the current dispatch step instead of relying on a hard-coded status line in this README.
 
 ## Quick Start
 
@@ -83,7 +83,7 @@ This started as a weekend project, but it was really a concrete question I wante
 
 I am a GPU performance engineer, not part of NVIDIA, and I did not start by reading CUTLASS internals. I wanted to try something narrower and more practical: pick one fixed BF16 GEMM, on one RTX 3070 Laptop GPU, build a reproducible human-in-the-loop optimization loop, and see how close I could get to a strong reference implementation with limited weekend time.
 
-So far, the result is already interesting enough to share. The custom kernel moved from roughly `800 ms` at the beginning to under `25 ms` on the official benchmark snapshot, with the current best custom run at `24.570881 ms`, while the current local CUTLASS baseline on the same benchmark is `25.917889 ms`. That puts the official snapshot `1.347008 ms` ahead of the local CUTLASS baseline, or `5.197213%` faster in runtime.
+So far, the result is already interesting enough to share. The custom kernel moved from roughly `800 ms` at the beginning to under `25 ms` on the official benchmark snapshot, with the current best custom run at `24.177664 ms`, while the current local CUTLASS baseline on the same benchmark is `25.917889 ms`. That puts the official snapshot `1.740225 ms` ahead of the local CUTLASS baseline, or `6.714378%` faster in runtime.
 
 That is still not a general "we beat CUTLASS" story. It is one fixed-shape local result, and a proof of concept about harness engineering: with a strong evaluation loop, good profiling, short-context iteration, and human steering at the right moments, a single engineer can move surprisingly far, surprisingly fast.
 
@@ -305,13 +305,13 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in the repo, currently through round `83/100`, so it reflects the latest exploratory commits while keeping the official best snapshot anchored to the round-58 best run.
+The tree asset below is regenerated from the latest tracked round history in the repo, which now spans `205` recorded measurement rounds, so it reflects the latest exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `68c21ac`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
-- custom kernel: `24.570881 ms`
+- custom kernel: `24.177664 ms`
 - local CUTLASS baseline: `25.917889 ms`
-- result: `1.347008 ms` faster than CUTLASS, or `5.197213%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
+- result: `1.740225 ms` faster than CUTLASS, or `6.714378%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
 
 ## Document Map
 
