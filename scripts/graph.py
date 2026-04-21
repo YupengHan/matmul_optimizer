@@ -129,6 +129,35 @@ def round_label(round_loop: Dict[str, Any]) -> str:
     return f'round {idx}/{total}'
 
 
+def context_compression_interval() -> int:
+    return 5
+
+
+def latest_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
+    completed = int(round_loop.get('completed_rounds', 0) or 0)
+    interval = context_compression_interval()
+    if completed < interval:
+        return None
+    return completed - (completed % interval)
+
+
+def next_context_checkpoint_round(round_loop: Dict[str, Any]) -> Optional[int]:
+    if not round_loop.get('active'):
+        return None
+    total = int(round_loop.get('total_rounds', 0) or 0)
+    if total <= 0:
+        return None
+    completed = int(round_loop.get('completed_rounds', 0) or 0)
+    interval = context_compression_interval()
+    if completed > 0 and completed % interval == 0:
+        checkpoint = completed
+    else:
+        checkpoint = ((completed // interval) + 1) * interval
+    if checkpoint > total:
+        return None
+    return checkpoint
+
+
 def compute_perf_delta(previous_run: Dict[str, Any], latest_run: Dict[str, Any]) -> tuple[Optional[float], Optional[float], str]:
     prev_runtime = previous_run.get('median_runtime_ms')
     curr_runtime = latest_run.get('median_runtime_ms')
@@ -1709,6 +1738,13 @@ def render_supervisor_context(
         lines.append(f"- active loop: `{round_label(round_loop)}` with `{round_loop.get('remaining_rounds', 0)}` rounds remaining")
         lines.append(f"- auto-use recommended: `{'yes' if round_loop.get('auto_use_recommended') else 'no'}`")
         lines.append(f"- auto-select frontier: `{'yes' if round_loop.get('auto_select_frontier') else 'no'}`")
+        lines.append(f"- context compression cadence: every `{context_compression_interval()}` completed rounds")
+        latest_checkpoint = latest_context_checkpoint_round(round_loop)
+        next_checkpoint = next_context_checkpoint_round(round_loop)
+        if latest_checkpoint is not None:
+            lines.append(f"- last context compression checkpoint: after `{latest_checkpoint}` completed rounds")
+        if next_checkpoint is not None:
+            lines.append(f"- next context compression checkpoint: after `{next_checkpoint}` completed rounds")
         lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
     else:
         lines.append('- no multi-round loop is active')

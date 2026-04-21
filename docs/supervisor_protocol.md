@@ -78,6 +78,20 @@ The supervisor may stop only when:
 - the graph enters a failure / paused state
 - a required permission or environment dependency blocks further execution
 
+## Context-compression checkpoint rule
+
+During an active multi-round loop, the supervisor must run a context-compression
+checkpoint after every 5 completed rounds.
+
+Operational consequences:
+
+- refresh `state/supervisor_context.md` before dispatching past that checkpoint
+- include the latest dispatch node, active round, remaining rounds, accepted base,
+  and active direction or candidate in that checkpoint summary
+- treat the checkpoint as a continue state, not a natural summary or stop point
+- after refreshing the checkpoint, re-read `state/supervisor_task.json` and keep
+  dispatching unless a real stop condition is present
+
 ## Node-specific sub-agent use
 
 ### `node_a`
@@ -134,6 +148,7 @@ Then the supervisor repeats this control flow:
    - `state/round_loop_state.json` reports `remaining_rounds = 0`, or
    - the graph enters a failure state that pauses the loop
 6. otherwise continue immediately into the next dispatch step instead of treating the round boundary as a natural stopping point
+7. after every 5 completed rounds, refresh `state/supervisor_context.md` as the required context-compression checkpoint and then continue immediately
 
 One completed round is always:
 

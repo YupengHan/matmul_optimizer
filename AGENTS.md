@@ -94,6 +94,13 @@ Supervisor no-stop rule:
    - the graph enters a failure / paused state, or
    - a required permission or environment dependency blocks further execution
 
+Supervisor checkpoint rule:
+
+1. during an active multi-round loop, the main agent must run a context-compression checkpoint after every 5 completed rounds
+2. the checkpoint must refresh `state/supervisor_context.md` with the latest dispatch state, active round, accepted base, and current selected direction or candidate
+3. the checkpoint is a continue point, not a stop point
+4. after the checkpoint, the main agent must immediately re-read `state/supervisor_task.json` and keep dispatching unless one of the no-stop-rule stop conditions is met
+
 ## Natural-language command mapping
 
 When the user says `开始运行 node_a`:
@@ -146,6 +153,7 @@ When the user says `开始运行N圈`:
    - performance delta
    - profile paths
 9. do not stop after a completed round just to summarize; if the loop is still active, proceed directly into the next `node_b`
+10. after every 5 completed rounds, refresh `state/supervisor_context.md` as a context-compression checkpoint and then continue the loop without treating that checkpoint as a completion point
 
 If the user explicitly asks to prefer frontier-based selection for the loop, use:
 
