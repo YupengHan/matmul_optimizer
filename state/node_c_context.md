@@ -4,20 +4,15 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `dir_03`
-- direction name: `Restore The Best Measured PTX Grouping Window On The Accepted Surface`
-- candidate id: `diagnosis_20260420_222929:dir_03`
-- base run id: `20260420_222846_bf16_gemm_v1_8ba4496`
-- primary family id: `legacy::restore_the_best_measured_ptx_grouping_window_on_the_accepted_surface`
-- planned action fingerprint: `3587455924361acf`
-- selection mode: `approved`
-- source diagnosis id: `diagnosis_20260420_222929`
-- round loop: `round 6/100`
-- hypothesis: `The current loop should keep one restore-style family active instead of repeatedly tunneling on the latest PTX-local micro-tunes. The best historical grouping-window restore still measured 24.444416 ms, close enough to the accepted base to remain meaningful, and it gives the search an auditable locality fallback if both the helper-flattening and export-cleanup families stall.`
-- expected bottleneck: `Inter-CTA locality and launch-order mapping on the accepted PTX surface, but explicitly as a restore fallback rather than the primary next attack.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:156, src/kernels/bf16_gemm_v1.cu:1957-1979, src/kernels/bf16_gemm_v1.cu:2097-2104`
-- risk: `Low to medium. The family has historical evidence, but the latest fresh grouped traversal probe also makes it a weaker primary bet than the two PTX-local cleanup families.`
-- metrics to re-check: `end-to-end median runtime versus the 24.177664 ms base and the historical 24.444416 ms restore run, hot-band gpu__time_duration.sum, lts__throughput.avg.pct_of_peak_sustained_elapsed, sm__warps_active.avg.pct_of_peak_sustained_active`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 7/100`
 
 ## Allowed edit surface
 
@@ -43,4 +38,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail

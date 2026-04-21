@@ -6,43 +6,41 @@ Beat the local CUTLASS baseline on the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `8ba4496bd875ded3332c99af47abbc3b9c3d464b`
-- plateau counter: `2`
-- round loop: `round 6/100`
-- rounds remaining: `95`
-- notes: `Node C build succeeded for round 6/100. Node A will now measure the new code path.`
+- latest measured commit: `82c8e608fba26a9b0398984dd20ce199bb1d46f6`
+- plateau counter: `3`
+- round loop: `round 7/100`
+- rounds remaining: `94`
+- notes: `Node A completed round 6/100. Run node_b to continue round 7/100.`
 
 ## Latest measured custom run
 
-- run id: `20260420_222846_bf16_gemm_v1_8ba4496`
-- run dir: `runs/20260420_222846_bf16_gemm_v1_8ba4496`
+- run id: `20260420_223530_bf16_gemm_v1_82c8e60`
+- run dir: `runs/20260420_223530_bf16_gemm_v1_82c8e60`
 - correctness: `PASS`
-- median runtime: `24.535040 ms`
-- TFLOP/s: `29.631883 TFLOP/s`
+- median runtime: `24.180656 ms`
+- TFLOP/s: `30.066157 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260420_222929`
-- recommended direction: `dir_01`
-- approved direction: `dir_03`
-- diagnosis notes: `Round 6/20 audit: the round-5 B-first prologue staging tweak measured 24.535040 ms, only 0.015872 ms slower than the previous run, but it moved the wrong counters: active warps slipped from 16.60% to 16.49%, barrier rose from 5.18% to 5.33%, and long-scoreboard rose from 7.28% to 7.50% while registers stayed pinned at the same occupancy ceiling. That is strong evidence that another copy-order micro-tune is not the best immediate use of budget. The diagnosis therefore promotes the rehydrated register-pressure family to rank 1, keeps a narrower PTX export cleanup as the active-branch fallback, and preserves one historical PTX grouping-window restore as the restore-style fallback family. This uses the live queue expansion from round_history instead of letting the loop collapse back to only one or two families.`
-- dir_01: Flatten PTX Hot-Band Compute Helpers To Reduce Register Pressure | bottleneck: Register-limited occupancy and weak latency hiding caused by helper-induced live ranges in the PTX hot-band compute path.
-- dir_02: Apply Only A Minimal PTX Export Address Cleanup | bottleneck: PTX export-side address/control overhead and scratch management after MMA, rather than another feed-order or traversal issue.
-- dir_03: Restore The Best Measured PTX Grouping Window On The Accepted Surface | bottleneck: Inter-CTA locality and launch-order mapping on the accepted PTX surface, but explicitly as a restore fallback rather than the primary next attack.
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
+- approved direction: `None`
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_03`
-- selection mode: `approved`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
