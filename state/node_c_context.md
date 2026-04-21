@@ -4,15 +4,20 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Retune The Active PTX One-K 128x128 Hot-Band Control Path`
+- candidate id: `diagnosis_20260420_220747:dir_01`
+- base run id: `20260420_220628_bf16_gemm_v1_676f10d`
+- primary family id: `legacy::retune_the_active_ptx_one_k_128x128_hot_band_control_path`
+- planned action fingerprint: `2ad5f5278d8d4a4c`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260420_220747`
 - round loop: `round 3/20`
+- hypothesis: `Round 2/20 falsified the 256x128 geometry pivot hard: end-to-end runtime regressed from the accepted 24.419329 ms PTX base to 30.286848 ms, and the hot-band kernel alone grew to 43.291456 ms even though registers fell to 168/thread. That means the best next move is not another wide family jump but a bounded exploit pass on top of the accepted PTX one-k 128x128 branch. The winning PTX base still had 200 registers per thread, only 16.62% active warps, 7.20% long-scoreboard stall, and 5.41% barrier stall, so there is still room to trim local control/export overhead without repeating the failed geometry experiment.`
+- expected bottleneck: `Residual control-path overhead and live-range pressure inside the accepted PTX one-k 128x128 hot-band branch.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:719-1068, src/kernels/bf16_gemm_v1.cu:1957-2061, src/kernels/bf16_gemm_v1.cu:2071-2137`
+- risk: `Moderate. PTX microkernel changes are correctness-sensitive, but this stays on the last measured winner instead of introducing another new geometry family.`
+- metrics to re-check: `end-to-end median runtime versus the accepted 24.419329 ms PTX base, hot-band gpu__time_duration.sum, hot-band launch__registers_per_thread, hot-band smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, hot-band smsp__warp_issue_stalled_barrier_per_warp_active.pct, hot-band sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active`
 
 ## Allowed edit surface
 
@@ -38,4 +43,4 @@ Node C is the implementation node. Implement exactly one approved or explicitly 
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
