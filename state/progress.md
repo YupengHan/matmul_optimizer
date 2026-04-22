@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `434ded2afbec179fb9d82954d80903a4907fc5e5`
 - plateau counter: `24`
 - round loop: `round 8/20`
 - rounds remaining: `13`
-- notes: `Node A completed round 7/20. Run node_b to continue round 8/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_185158:dir_01 via frontier selection for round 8/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_185158`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 8 diagnosis emitted after the compact two-stage grouped_rows=2 retest recovered registers but reintroduced a large long_scoreboard penalty.`
+- dir_01: Restore Grouped Rows From 2 Back To 4 On The Compact Two-Stage PTX Ring | bottleneck: Long-scoreboard pressure from the grouped_rows=2 launch order is now the most specific local bottleneck to remove.
+- dir_02: Trim The Compact Two-Stage PTX Wait-Sync Cadence Without Growing Shared Memory | bottleneck: Barrier and CTA handoff overhead are the likely next bottlenecks after grouped_rows is restored.
+- dir_03: Reopen The 256x128 64x64-Warp Hot-Band Branch From The Compact PTX Base | bottleneck: The 128x128 PTX surface may still be occupancy-limited by geometry and warp reuse even after local launch-order cleanup.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

@@ -1,170 +1,81 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_184831",
-  "source_run_id": "20260421_184622_bf16_gemm_v1_d51419e6",
-  "source_diagnosis_id": "diagnosis_20260421_184831",
-  "generated_at": "2026-04-21T18:49:57-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_185158",
+  "source_run_id": "20260421_185050_bf16_gemm_v1_434ded2a",
+  "source_diagnosis_id": "diagnosis_20260421_185158",
+  "generated_at": "2026-04-21T18:56:54-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_184831:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_185158:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_184831:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_184831",
-      "base_run_id": "20260421_184622_bf16_gemm_v1_d51419e6",
-      "base_measured_commit": "d51419e68ece25d501edff44e937b6f56053d97c",
-      "base_runtime_ms": 28.76766396,
+      "candidate_id": "diagnosis_20260421_185158:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_185158",
+      "base_run_id": "20260421_185050_bf16_gemm_v1_434ded2a",
+      "base_measured_commit": "434ded2afbec179fb9d82954d80903a4907fc5e5",
+      "base_runtime_ms": 25.46121597,
       "direction_id": "dir_01",
-      "direction_name": "Restore A Compact Two-Stage PTX Ring While Keeping Grouped Rows At 2",
-      "family_id": "sync_pipeline::ptx_two_stage_restore_keep_grouped_rows_2",
-      "subfamily_id": "sync_pipeline::ptx_hotband_two_stage_restore_keep_grouped_rows_2_after_failed_drain_split",
-      "action_fingerprint": "restore_compact_ptx_two_stage_ring_keep_grouped_rows_2_after_failed_drain_split",
+      "direction_name": "Restore Grouped Rows From 2 Back To 4 On The Compact Two-Stage PTX Ring",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::ptx_grouped_rows_2_to_4_on_two_stage_compact_ring",
+      "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_2->4_on_two_stage_compact_ring",
       "rank_in_diagnosis": 1,
       "recommended": true,
       "mode": "explore",
-      "priority": 2.84,
-      "search_score_v1": 2.84,
+      "priority": 2.93,
+      "search_score_v1": 2.93,
       "score_breakdown": {
-        "policy_id": "manual_round7_two_stage_grouped_rows2_reset_v1",
-        "rank_score": 2.24,
-        "evidence_bonus": 0.26,
-        "implementation_bonus": 0.4,
+        "policy_id": "manual_round8_restore_grouped_rows4_v1",
+        "rank_score": 2.33,
+        "evidence_bonus": 0.31,
+        "implementation_bonus": 0.35,
         "risk_penalty": 0.06,
         "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
       },
-      "predicted_gain_ms": 2.95,
-      "predicted_fail_risk": 0.22,
+      "predicted_gain_ms": 0.38,
+      "predicted_fail_risk": 0.08,
       "ranking_notes": [
-        "This is the best deconfounding move because the latest loss is clearly a register-budget failure, not a barrier failure.",
-        "Keeping grouped_rows=2 makes the next measurement informative instead of just replaying the exact old grouped_rows=4 anchor.",
-        "If this still loses, the data cleanly justifies falling back to the full grouped_rows=4 anchor next."
+        "This is the highest-confidence next move because it directly targets the one metric that snapped back hardest on the compact two-stage surface: long_scoreboard.",
+        "It preserves the recovered 202-register budget and 22,016 B shared-memory footprint instead of reopening broader pipeline surgery.",
+        "If it still cannot beat the current 25.46 ms accepted base, the compact PTX family is likely plateaued and the next branch should be either barrier trim or 256x128."
       ],
-      "hypothesis": "The latest regression is dominated by register-pressure and occupancy collapse from the duplicated 3-stage split loop, not by grouped_rows=2 itself. Dropping back to a compact two-stage PTX ring while keeping grouped_rows=2 should recover a large chunk of the 57-register spike and tell us whether the row-group retune can help once the hot path is lean again.",
-      "expected_bottleneck": "Registers-per-thread and occupancy are the first bottlenecks to remove; barrier cleanup is no longer the primary limiter after the round-6 regression.",
+      "hypothesis": "The grouped_rows=2 retest kept the recovered register budget but clearly reintroduced the long_scoreboard problem on the compact two-stage surface. Restoring grouped_rows to 4 should recover the better row-order reuse pattern from the earlier PTX anchor without reopening the losing round-6 split logic.",
+      "expected_bottleneck": "Long-scoreboard pressure from the grouped_rows=2 launch order is now the most specific local bottleneck to remove.",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:156",
-        "src/kernels/bf16_gemm_v1.cu:2005-2138"
+        "src/kernels/bf16_gemm_v1.cu:2020-2031"
       ],
-      "risk": "Low to moderate. This stays on the active PTX dispatch path, but it rewrites stage-count and drain control together and still has correctness risk if the two-stage wait cadence is restored incorrectly.",
+      "risk": "Low. This is a single-parameter launch-order restore on the currently healthy compact two-stage PTX surface.",
       "metrics_to_recheck": [
         "median runtime",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__registers_per_thread",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
       ],
-      "stop_condition": "Stop if recovering the two-stage ring requires reopening launch bounds, dispatch routing, or any multi-family rewrite outside the PTX hot-band kernel body.",
+      "stop_condition": "Stop if restoring grouped_rows to 4 requires any change beyond the hot-band launch-order constant and its immediate grouping math.",
       "evidence_refs": [
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
-        "runs/20260421_184622_bf16_gemm_v1_d51419e6/ncu_analysis.md",
+        "runs/20260421_185050_bf16_gemm_v1_434ded2a/ncu_analysis.md",
         "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
         {
-          "scope_type": "section",
-          "scope_name": "Launch Statistics",
-          "location": "Launch Statistics"
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
         },
-        {
-          "scope_type": "section",
-          "scope_name": "Occupancy",
-          "location": "Occupancy"
-        }
-      ],
-      "expected_local_changes": [
-        "Reduce the PTX hot-band ring from 3 stages back to 2.",
-        "Remove the split steady-state and drain loop duplication that inflated the live register set.",
-        "Keep kFixedHotBandPtxGroupedRows at 2 during the first two-stage reset."
-      ],
-      "guardrail_metrics": [
-        {
-          "metric_name": "correctness",
-          "guardrail": "must_pass"
-        },
-        {
-          "metric_name": "launch__registers_per_thread",
-          "guardrail": "non_increasing_vs_current_run"
-        },
-        {
-          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "guardrail": "non_decreasing"
-        },
-        {
-          "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-          "guardrail": "non_increasing_vs_current_run"
-        }
-      ],
-      "status": "open"
-    },
-    {
-      "candidate_id": "diagnosis_20260421_184831:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_184831",
-      "base_run_id": "20260421_184622_bf16_gemm_v1_d51419e6",
-      "base_measured_commit": "d51419e68ece25d501edff44e937b6f56053d97c",
-      "base_runtime_ms": 28.76766396,
-      "direction_id": "dir_02",
-      "direction_name": "Restore The Known Two-Stage PTX Anchor With Grouped Rows Back At 4",
-      "family_id": "restore_base::ptx_two_stage_anchor_after_failed_drain_split",
-      "subfamily_id": "restore_base::ptx_hotband_two_stage_grouped_rows_4_anchor_after_failed_drain_split",
-      "action_fingerprint": "restore_ptx_two_stage_anchor_grouped_rows_4_after_failed_drain_split",
-      "rank_in_diagnosis": 2,
-      "recommended": false,
-      "mode": "explore",
-      "priority": 2.46,
-      "search_score_v1": 2.46,
-      "score_breakdown": {
-        "policy_id": "manual_round7_restore_anchor_after_failed_split_v1",
-        "rank_score": 1.96,
-        "evidence_bonus": 0.25,
-        "implementation_bonus": 0.34,
-        "risk_penalty": 0.09,
-        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
-      },
-      "predicted_gain_ms": 3.55,
-      "predicted_fail_risk": 0.11,
-      "ranking_notes": [
-        "This remains the safest fallback because the two-stage grouped_rows=4 anchor is already measured and understood.",
-        "It ranks second only because replaying the exact old anchor teaches less than the grouped_rows=2 retest on the lean surface.",
-        "If dir_01 is blocked or noisy, this is the immediate recovery branch."
-      ],
-      "hypothesis": "If the grouped_rows=2 retest still carries avoidable launch-order cost, the clean fallback is to restore the already remeasured two-stage PTX anchor with grouped_rows=4. That anchor is the lowest-variance recent PTX surface and should remove both the extra stage and the row-group retune at once.",
-      "expected_bottleneck": "This is a restore family aimed at removing register and occupancy damage rather than discovering a new local bottleneck.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:156",
-        "src/kernels/bf16_gemm_v1.cu:2005-2138"
-      ],
-      "risk": "Low. This is the cleanest rollback path in the current family, though it likely offers less new information than the grouped_rows=2 retest.",
-      "metrics_to_recheck": [
-        "median runtime",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop if the restore requires touching non-PTX dispatch code or reintroducing broader family edits outside the hot-band kernel.",
-      "evidence_refs": [
-        "state/latest_run.md",
-        "runs/20260421_182631_bf16_gemm_v1_1f02b147/ncu_analysis.md",
-        "runs/20260421_184622_bf16_gemm_v1_d51419e6/ncu_analysis.md",
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "target_hotspots": [
         {
           "scope_type": "section",
           "scope_name": "Launch Statistics",
           "location": "Launch Statistics"
-        },
-        {
-          "scope_type": "section",
-          "scope_name": "Occupancy",
-          "location": "Occupancy"
         }
       ],
       "expected_local_changes": [
-        "Reduce the PTX hot-band ring from 3 stages back to 2.",
         "Restore kFixedHotBandPtxGroupedRows from 2 back to 4.",
-        "Return the PTX hot-band loop to the compact two-stage anchor shape."
+        "Leave the compact two-stage PTX ring unchanged.",
+        "Re-measure whether the long_scoreboard rebound disappears without giving back the recovered register budget."
       ],
       "guardrail_metrics": [
         {
@@ -173,54 +84,147 @@
         },
         {
           "metric_name": "launch__registers_per_thread",
-          "guardrail": "bounded_not_worse_than_round3_anchor"
+          "guardrail": "non_increasing_vs_current_run"
         },
         {
           "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "guardrail": "bounded_not_worse_than_round3_anchor"
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_worse_than_current_run"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_184831:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_184831",
-      "base_run_id": "20260421_184622_bf16_gemm_v1_d51419e6",
-      "base_measured_commit": "d51419e68ece25d501edff44e937b6f56053d97c",
-      "base_runtime_ms": 28.76766396,
+      "candidate_id": "diagnosis_20260421_185158:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_185158",
+      "base_run_id": "20260421_185050_bf16_gemm_v1_434ded2a",
+      "base_measured_commit": "434ded2afbec179fb9d82954d80903a4907fc5e5",
+      "base_runtime_ms": 25.46121597,
+      "direction_id": "dir_02",
+      "direction_name": "Trim The Compact Two-Stage PTX Wait-Sync Cadence Without Growing Shared Memory",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_wait_sync_cadence_with_22016b_shared_budget",
+      "action_fingerprint": "compact_two_stage_ptx_hotband:trim_wait_sync_cadence_after_grouped_rows_restore",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 2.04,
+      "search_score_v1": 2.04,
+      "score_breakdown": {
+        "policy_id": "manual_round8_two_stage_barrier_trim_v1",
+        "rank_score": 1.51,
+        "evidence_bonus": 0.23,
+        "implementation_bonus": 0.37,
+        "risk_penalty": 0.07,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.24,
+      "predicted_fail_risk": 0.34,
+      "ranking_notes": [
+        "This is the best local follow-up once grouped_rows is back at 4 because it attacks the remaining sync tax without changing stage depth.",
+        "It avoids the 30,464 B shared-memory blowup and 254-register failure mode from the round-6 split.",
+        "It stays below dir_01 because the current run is still more specifically explained by launch-order damage than by residual barrier cost."
+      ],
+      "hypothesis": "Once grouped_rows is restored, the remaining local gap on the compact 22,016 B PTX surface should again be CTA handoff overhead rather than launch-order damage. A narrow wait/sync cadence trim on the compact two-stage ring could reduce barrier stalls without reintroducing the shared-memory or register blowups seen in the larger stage experiments.",
+      "expected_bottleneck": "Barrier and CTA handoff overhead are the likely next bottlenecks after grouped_rows is restored.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2050-2096"
+      ],
+      "risk": "Moderate. This is still hot-loop PTX synchronization surgery, but it stays on the compact 22,016 B shared-memory surface rather than reopening the failed staged branch.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "launch__shared_mem_per_block_allocated",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the edit requires increasing shared memory above 22,016 B or materially increasing registers beyond the current 202-register budget.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "runs/20260421_185050_bf16_gemm_v1_434ded2a/ncu_analysis.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "mio_throttle",
+          "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Retune the compact two-stage wait_group and __syncthreads cadence without changing stage depth.",
+        "Keep the PTX microkernel on the 22,016 B shared-memory budget.",
+        "Do not change grouped_rows again in the same implementation."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "bounded_not_worse_than_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        }
+      ],
+      "status": "open"
+    },
+    {
+      "candidate_id": "diagnosis_20260421_185158:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_185158",
+      "base_run_id": "20260421_185050_bf16_gemm_v1_434ded2a",
+      "base_measured_commit": "434ded2afbec179fb9d82954d80903a4907fc5e5",
+      "base_runtime_ms": 25.46121597,
       "direction_id": "dir_03",
-      "direction_name": "Reopen The 256x128 64x64-Warp Hot-Band Branch After Resetting Register Pressure",
+      "direction_name": "Reopen The 256x128 64x64-Warp Hot-Band Branch From The Compact PTX Base",
       "family_id": "tiling::hotband_256x128_reopen",
       "subfamily_id": "tiling::hotband_256x128_reopen::writer_safe_right_left_right_left_warp_tile",
-      "action_fingerprint": "reopen_256x128_64x64_warp_hotband_after_round6_register_reset",
+      "action_fingerprint": "reopen_256x128_64x64_warp_hotband_after_compact_two_stage_grouped_rows_probe",
       "rank_in_diagnosis": 3,
       "recommended": false,
       "mode": "explore",
-      "priority": 1.87,
-      "search_score_v1": 1.87,
+      "priority": 1.88,
+      "search_score_v1": 1.88,
       "score_breakdown": {
-        "policy_id": "manual_round7_256x128_reopen_v1",
-        "rank_score": 1.29,
-        "evidence_bonus": 0.18,
-        "implementation_bonus": 0.49,
+        "policy_id": "manual_round8_256x128_reopen_v1",
+        "rank_score": 1.28,
+        "evidence_bonus": 0.19,
+        "implementation_bonus": 0.5,
         "risk_penalty": 0.09,
         "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
       },
-      "predicted_gain_ms": 0.82,
-      "predicted_fail_risk": 0.66,
+      "predicted_gain_ms": 0.79,
+      "predicted_fail_risk": 0.65,
       "ranking_notes": [
-        "This remains the highest-ceiling structural branch once the PTX surface is back under control.",
-        "The repo already contains the writer-safe 256x128 path, so this is a reopen rather than a greenfield rewrite.",
-        "It stays rank 3 because the immediate problem is the round-6 register explosion, not the long-term geometry ceiling."
+        "This remains the highest-ceiling structural branch after the local PTX launch-order work is exhausted.",
+        "The writer-safe 256x128 path is already present in the tree, so the reopen is bounded even though it is still risky.",
+        "It stays rank 3 because the immediate evidence still points to a smaller launch-order correction first."
       ],
-      "hypothesis": "Even the cleaner two-stage PTX family stays around 25 ms with only about 16.6% active warps. The persistent human guidance still points at a 256x128 CTA with 64x64 warp tiling and Right-Left-Right-Left reuse as the highest-ceiling structural branch, so it should remain queued once the branch is back on a sane register budget.",
-      "expected_bottleneck": "The 128x128 PTX surface may still be capped by geometry and warp-reuse limits even after register cleanup.",
+      "hypothesis": "If the compact PTX branch remains stuck near 25 ms even after grouped_rows is restored, the geometry ceiling is probably real. The repo already contains a writer-safe 256x128 / 64x64 path aligned with the persistent human guidance, so that structural branch should remain on deck.",
+      "expected_bottleneck": "The 128x128 PTX surface may still be occupancy-limited by geometry and warp reuse even after local launch-order cleanup.",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:80-105",
         "src/kernels/bf16_gemm_v1.cu:1616-1714",
-        "src/kernels/bf16_gemm_v1.cu:2180-2204"
+        "src/kernels/bf16_gemm_v1.cu:2178-2204"
       ],
-      "risk": "High. This is a broader geometry branch that touches dispatch, ownership, and the writer-safe export path together.",
+      "risk": "High. This is a broader structural reopen that touches geometry, ownership, and export path together.",
       "metrics_to_recheck": [
         "correctness on all dataset cases",
         "median runtime",
@@ -229,7 +233,7 @@
         "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
       ],
-      "stop_condition": "Stop if the reopen requires replaying a previously broken ownership or export path instead of the writer-safe 256x128 surface already in the tree.",
+      "stop_condition": "Stop if the reopen requires reviving a previously broken ownership or export path instead of the writer-safe 256x128 surface already present in the source.",
       "evidence_refs": [
         "state/human_guidance.md",
         "state/latest_ncu_summary.md",
@@ -249,9 +253,9 @@
         }
       ],
       "expected_local_changes": [
-        "Re-enable the 256x128 / 64x64 PTX hot-band branch on the writer-safe ownership path.",
-        "Keep wide async-copy staging and shared-memory reuse intact while reopening the larger CTA geometry.",
-        "Leave the non-hot-band and export glue unchanged in the first pass."
+        "Re-enable the writer-safe 256x128 / 64x64 PTX hot-band branch.",
+        "Keep async-copy staging and shared-memory reuse intact on the larger CTA geometry.",
+        "Leave non-hot-band routing unchanged in the first pass."
       ],
       "guardrail_metrics": [
         {
