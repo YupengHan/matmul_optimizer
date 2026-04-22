@@ -344,7 +344,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `19` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
+The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `24` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
@@ -352,7 +352,7 @@ At the moment, the official benchmark snapshot in the repo is:
 - local CUTLASS baseline: `25.917889 ms`
 - result: `1.753616 ms` faster than CUTLASS, or `6.766049%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
 
-The latest 5-round frontier-only refactor loop revalidated the compact PTX accepted base at `24.806945 ms`, then probed PTX launch-bounds, a 3-stage Pg2s ring, and grouped-row retunes between `25.063408 ms` and `25.755136 ms`. The public best therefore remains unchanged, but the tree now captures a live frontier-driven search on top of the cleaner cuBLASLt-backed refactor branch.
+The latest 5-round frontier-only refactor loop started from a failed 3-stage drain-split branch at `28.767664 ms`, recovered the compact two-stage PTX path, restored `grouped_rows=4`, and then trimmed the current frontier-accepted base to `24.689153 ms` with a small hot-band offset-hoist exploit. The public best still did not move, but the tree now shows a live frontier-driven search that has largely re-stabilized the compact PTX family on top of the cleaner cuBLASLt-backed refactor branch.
 
 ## Major Workflow Updates
 

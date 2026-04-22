@@ -253,11 +253,11 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **19 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
+The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **24 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
 This refactor checkpoint is intentionally separated from the older large-history search. The branch keeps the public benchmark snapshot fixed at the recorded best while the new queue/frontier loop rebuilds evidence on top of a smaller clean baseline and a local cuBLASLt reference.
 
-The latest 5-round frontier-only refactor loop revalidated the compact PTX accepted base at **24.81 ms**, then probed PTX launch-bounds, a 3-stage Pg2s ring, and grouped-row retunes between about **25.06 ms** and **25.76 ms**. So the public best still did not move, but the branch now shows a live frontier-driven search running on top of the cleaner cuBLASLt-backed refactor baseline instead of the older tangled large-history worktree.
+The latest 5-round frontier-only refactor loop started from a failed 3-stage drain-split branch at about **28.77 ms**, recovered the compact two-stage PTX path, restored **grouped_rows = 4**, and then trimmed the current frontier-accepted base to about **24.69 ms** with a small hot-band offset-hoist exploit. So the public best still did not move, but the branch now shows a live frontier-driven search that has largely re-stabilized the compact PTX family on top of the cleaner cuBLASLt-backed refactor baseline instead of the older tangled large-history worktree.
 
 At the moment, the official benchmark snapshot in the repo is:
 - custom kernel: **24.16 ms**
