@@ -3,7 +3,7 @@
 ## Current workflow gate
 
 - next node: `node_c`
-- status: `ready_for_node_c`
+- status: `node_c_context_ready`
 - round loop: `round 2/20` with `19` rounds remaining
 
 ## Direction approval policy
@@ -26,10 +26,10 @@
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one candidate.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use select-next for frontier-only loop execution.`
 
 ## Persistent human guidance
 

@@ -38,7 +38,7 @@ python scripts/graph.py restore-base --run-id <run_id>
 python scripts/graph.py rebootstrap --baseline-run-id <run_id> --goal-runtime-ms 18 --goal-competitor cuBLAS
 python scripts/graph.py cycle
 python scripts/graph.py rounds --status
-python scripts/graph.py rounds --count N --auto-use-recommended
+python scripts/graph.py rounds --count N
 python scripts/graph.py rounds --count N --auto-select-frontier
 python scripts/graph.py node_a
 python scripts/graph.py node_b
@@ -186,7 +186,7 @@ When the user says `批准使用推荐方向`:
 When the user says `开始运行N圈`:
 
 1. parse the requested positive integer round count `N` from the user message
-2. run `python scripts/graph.py rounds --count N --auto-use-recommended`
+2. run `python scripts/graph.py rounds --count N`
 3. read `state/supervisor_task.json`
 4. keep looping through `node_b -> node_c -> node_a`
 5. for `node_b` and `node_c`, use one `sub-agent` per node and let the main agent finalize after each sub-agent returns
@@ -205,13 +205,19 @@ When the user says `开始运行N圈`:
 12. once the loop is armed, treat every `ready_for_node_*` state as a continue point until the round budget is exhausted or the user explicitly redirects the conversation
 13. any resident supervisor or external helper may keep dispatch alive, but it must not replace the actual `node_b` reasoning work or the actual `node_c` implementation work
 
-If the user explicitly asks to prefer frontier-based selection for the loop, use:
+Frontier-based selection is the default loop mode. In that default mode, when node_c is entered with no selected direction, the main agent should run:
 
 ```bash
-python scripts/graph.py rounds --count N --auto-select-frontier
+python scripts/graph.py select-next
 ```
 
-In that mode, when node_c is entered with no selected direction, the main agent should try `python scripts/graph.py select-next` first and only fall back to the current recommended direction if the frontier has no selectable open candidate.
+If the frontier has no selectable open candidate, treat that as a blocked frontier-selection state; do not fall back to the current recommended direction.
+
+If the user explicitly asks for the legacy recommended-direction auto-select behavior instead, use:
+
+```bash
+python scripts/graph.py rounds --count N --auto-use-recommended
+```
 
 When the user says `连续工作N圈`:
 

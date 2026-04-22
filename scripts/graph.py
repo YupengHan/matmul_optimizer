@@ -2204,7 +2204,6 @@ def compute_supervisor_task(
     normalize_search_frontier(search_frontier)
     reconcile_frontier_with_latest_attempt(search_frontier)
     refresh_frontier_family_representatives(search_frontier, load_search_state(), load_family_ledger())
-    has_frontier_candidate = best_frontier_candidate(search_frontier, diagnosis) is not None
     task = {
         'supervisor_role': 'main_llm_agent',
         'dispatch_node': current_node,
@@ -2276,11 +2275,9 @@ def compute_supervisor_task(
     elif current_node == 'node_c':
         selection_command = None
         if not active_direction.get('direction_id'):
-            if round_loop.get('active') and round_loop.get('auto_select_frontier') and has_frontier_candidate:
+            if round_loop.get('active') and round_loop.get('auto_select_frontier'):
                 selection_command = 'python scripts/graph.py select-next'
-            elif diagnosis.get('recommended_direction_id') and (
-                round_loop.get('auto_use_recommended') or round_loop.get('auto_select_frontier')
-            ):
+            elif diagnosis.get('recommended_direction_id') and round_loop.get('auto_use_recommended'):
                 selection_command = 'python scripts/graph.py use-recommended-direction'
             else:
                 selection_command = 'python scripts/graph.py approve --direction dir_0X'
@@ -2392,7 +2389,7 @@ def render_supervisor_context(
         lines.append('- keep looping until `state/round_loop_state.json` reports `remaining_rounds = 0` or a failure pauses the loop')
     else:
         lines.append('- no multi-round loop is active')
-        lines.append('- to arm one, run `python scripts/graph.py rounds --count N --auto-use-recommended`')
+        lines.append('- to arm one, run `python scripts/graph.py rounds --count N`')
     lines.append('')
     lines.append('## Watchdog')
     lines.append('')
@@ -2524,7 +2521,7 @@ def start_round_loop(count: int, *, auto_use_recommended: bool, auto_select_fron
             'notes': (
                 f'Started a {count}-round loop. '
                 + (
-                    'Frontier top candidates will auto-select, with fallback to the current recommended direction.'
+                    'Frontier top candidates will auto-select. No recommended fallback runs inside the loop.'
                     if auto_select_frontier
                     else ('Recommended directions will auto-select.' if auto_use_recommended else 'Direction approval remains manual.')
                 )
@@ -4778,9 +4775,9 @@ def run_node_b(args: argparse.Namespace) -> int:
             except RuntimeError as exc:
                 if str(exc) != 'no selectable frontier candidate is available':
                     raise
-                recommended = diagnosis.get('recommended_direction_id')
-                if recommended:
-                    select_direction(recommended, 'recommended')
+                raise RuntimeError(
+                    'frontier-only loop could not select a node_c candidate; no recommended fallback is allowed'
+                ) from exc
             round_loop = load_round_loop_state()
         elif round_loop.get('active') and round_loop.get('auto_use_recommended'):
             select_direction(diagnosis.get('recommended_direction_id'), 'recommended')
@@ -5387,10 +5384,17 @@ def run_rounds(args: argparse.Namespace) -> int:
     if current.get('active') and not args.restart:
         raise RuntimeError('a round loop is already active; use --restart to replace it or --stop to end it')
 
+    if args.auto_use_recommended and args.auto_select_frontier:
+        raise RuntimeError('choose only one round-loop auto-selection mode')
+    auto_use_recommended = bool(args.auto_use_recommended)
+    auto_select_frontier = bool(args.auto_select_frontier)
+    if not auto_use_recommended and not auto_select_frontier:
+        auto_select_frontier = True
+
     start_round_loop(
         args.count,
-        auto_use_recommended=args.auto_use_recommended,
-        auto_select_frontier=args.auto_select_frontier,
+        auto_use_recommended=auto_use_recommended,
+        auto_select_frontier=auto_select_frontier,
     )
     graph_state = load_graph_state()
     graph_state['notes'] = (
@@ -5400,10 +5404,10 @@ def run_rounds(args: argparse.Namespace) -> int:
     refresh_all_views()
     print_step(
         f"started a {args.count}-round loop"
-        + (' with auto-select-frontier enabled' if args.auto_select_frontier else '')
+        + (' with auto-select-frontier enabled' if auto_select_frontier else '')
         + (
             ' with auto-use-recommended enabled'
-            if args.auto_use_recommended and not args.auto_select_frontier
+            if auto_use_recommended and not auto_select_frontier
             else ''
         )
     )
@@ -5426,10 +5430,9 @@ def run_cycle(args: argparse.Namespace) -> int:
                 except RuntimeError as exc:
                     if str(exc) != 'no selectable frontier candidate is available':
                         raise
-                    diagnosis = load_latest_diagnosis()
-                    recommended = diagnosis.get('recommended_direction_id')
-                    if recommended:
-                        select_direction(recommended, 'recommended')
+                    raise RuntimeError(
+                        'frontier-only loop could not select a node_c candidate; no recommended fallback is allowed'
+                    ) from exc
             elif round_loop.get('auto_use_recommended'):
                 diagnosis = load_latest_diagnosis()
                 recommended = diagnosis.get('recommended_direction_id')
@@ -5526,8 +5529,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     rounds = subparsers.add_parser('rounds', help='Manage a multi-round node_b -> node_c -> node_a loop budget')
     rounds.add_argument('--count', type=int, default=None)
-    rounds.add_argument('--auto-use-recommended', action='store_true')
-    rounds.add_argument('--auto-select-frontier', action='store_true')
+    rounds.add_argument(
+        '--auto-use-recommended',
+        action='store_true',
+        help='Legacy loop mode: auto-select the current diagnosis recommended direction instead of the default frontier selection.',
+    )
+    rounds.add_argument(
+        '--auto-select-frontier',
+        action='store_true',
+        help='Auto-select the top frontier candidate. This is already the default when no auto-selection flag is provided.',
+    )
     rounds.add_argument('--restart', action='store_true')
     rounds.add_argument('--status', action='store_true')
     rounds.add_argument('--stop', action='store_true')

@@ -142,7 +142,7 @@ The three directions do not need extra schema fields for this, but their `hypoth
 - prepare `state/node_c_context.md`
 - create the node_b git commit unless `--skip-commit` is passed
 
-If a multi-round loop is active with `--auto-use-recommended`, finalize also auto-selects the recommended direction so node_c can start immediately.
+If a multi-round loop is active with the default frontier policy, or with explicit `--auto-select-frontier`, finalize also auto-selects the next frontier candidate so node_c can start immediately. If `--auto-use-recommended` is explicitly active, finalize instead auto-selects the recommended direction.
 
 Detailed planner policy is maintained in `docs/search_policy.md`.
 

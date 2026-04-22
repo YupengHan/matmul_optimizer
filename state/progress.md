@@ -11,13 +11,13 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 - next node: `node_c`
 - previous node: `node_b`
-- status: `ready_for_node_c`
+- status: `node_c_context_ready`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `05086a14f8df006f564c0071ea7d60dbf5ddc156`
 - plateau counter: `18`
 - round loop: `round 2/20`
 - rounds remaining: `19`
-- notes: `Node C is ready to implement diagnosis_20260421_175735:dir_01 via recommended selection for round 2/20.`
+- notes: `Select the frontier candidate for round 2/20, then run node_c --finalize.`
 
 ## Latest measured custom run
 
@@ -42,10 +42,10 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one candidate.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use select-next for frontier-only loop execution.`
 
 ## Benchmark snapshot
 

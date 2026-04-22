@@ -72,7 +72,7 @@ Drive a multi-round loop:
 
 ```bash
 python scripts/graph.py rounds --status
-python scripts/graph.py rounds --count N --auto-use-recommended
+python scripts/graph.py rounds --count N
 ```
 
 Optional CUTLASS side-path:

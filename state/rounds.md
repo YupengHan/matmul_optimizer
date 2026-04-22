@@ -6,15 +6,15 @@
 - completed rounds: `1`
 - remaining rounds: `19`
 - current round label: `round 2/20`
-- auto use recommended: `yes`
-- auto select frontier: `no`
+- auto use recommended: `no`
+- auto select frontier: `yes`
 - accepted base run id: `20260421_172601_bf16_gemm_v1_117cd3e7`
 - accepted base measured commit: `117cd3e796a5742c1f15e040edf78cb668e1d5cf`
 - accepted base runtime: `24.806945 ms`
 - started at: `2026-04-21T17:51:34-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Executing round 2/20.`
+- notes: `Executing round 2/20 with frontier-only auto-selection.`
 
 ## Last completed round
 

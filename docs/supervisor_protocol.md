@@ -181,18 +181,18 @@ Operational consequences:
 To arm a planned loop:
 
 ```bash
+python scripts/graph.py rounds --count N
 python scripts/graph.py rounds --count N --auto-use-recommended
-python scripts/graph.py rounds --count N --auto-select-frontier
 ```
 
 Here `N` is the user-requested positive integer round budget.
 
 Selection preference during an active loop:
 
-- if `--auto-select-frontier` is active and node_c is entered with no selected direction, the supervisor should try `python scripts/graph.py select-next` first
+- if the loop is armed with the default frontier policy, or with explicit `--auto-select-frontier`, and node_c is entered with no selected direction, the supervisor must run `python scripts/graph.py select-next`
   - `select-next` now chooses the best active family representative from the persistent frontier, which may be a reopened historical candidate rather than one of the latest 3 diagnosis directions
-- if the frontier has no selectable open candidate, the supervisor may fall back to `python scripts/graph.py use-recommended-direction`
-- if `--auto-select-frontier` is not active but `--auto-use-recommended` is active, the supervisor uses the legacy recommended-direction auto-select path
+- if the frontier has no selectable open candidate, the supervisor should treat that as a blocked frontier-selection state rather than falling back to `python scripts/graph.py use-recommended-direction`
+- if `--auto-use-recommended` is explicitly active, the supervisor uses the legacy recommended-direction auto-select path instead
 
 Then the supervisor repeats this control flow:
 
