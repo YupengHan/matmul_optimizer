@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 1/1` with `1` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `single-run` with `0` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_171314`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Human-guidance audit for this round: keep Register Reuse as the primary family, but reject the just-measured `col_step_interleaved` subfamily because the live run contradicts its design claim. Keep Async Copy / Pg2s / Stage accepted as the secondary family on the same 128x128 PTX surface, and keep 256x128 Tiling / Data Reuse alive only as the high-ceiling reopen once the current localized regression has been unwound.`
-- dir_01: Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path | bottleneck: Register-pressure-driven occupancy collapse on the dominant hot-band PTX kernel: 241 registers/thread keeps the kernel at 2 CTAs/SM and leaves tensor utilization low despite unsaturated memory bandwidth.
-- dir_02: Port The PTX Hot-Band Path To The Existing 2-K Pg2s Stage Schedule | bottleneck: Wait-group, barrier, and refill cadence on the dominant hot-band path rather than raw global-memory bandwidth.
-- dir_03: Reopen 256x128 64x64-Warp Hot-Band Tiling For The Dominant Surface | bottleneck: Hot-band tiling and panel-reuse ceiling: the 128x128 hot-band surface is doing too much coordination per useful math tile and leaves too much work on the slowest profiled kernel.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 

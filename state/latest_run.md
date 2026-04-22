@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_170056_bf16_gemm_v1_13d24542`
-- run dir: `runs/20260421_170056_bf16_gemm_v1_13d24542`
-- kernel tag: `bf16_gemm_v1_13d24542`
-- round label: `single-run`
+- run id: `20260421_172601_bf16_gemm_v1_117cd3e7`
+- run dir: `runs/20260421_172601_bf16_gemm_v1_117cd3e7`
+- kernel tag: `bf16_gemm_v1_117cd3e7`
+- round label: `round 1/1`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.239679 ms`
-- p10 runtime: `30.600047 ms`
-- p90 runtime: `32.447692 ms`
-- TFLOP/s: `23.272307 TFLOP/s`
-- previous run id: `20260421_160557_bf16_gemm_v1_35400d35`
-- runtime delta vs previous measured run: `+6.548607 ms`
-- TFLOP/s delta vs previous measured run: `-6.172320 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.806945 ms`
+- p10 runtime: `24.693248 ms`
+- p90 runtime: `26.003748 ms`
+- TFLOP/s: `29.307092 TFLOP/s`
+- previous run id: `20260421_170056_bf16_gemm_v1_13d24542`
+- runtime delta vs previous measured run: `-6.432734 ms`
+- TFLOP/s delta vs previous measured run: `+6.034785 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class`
+- implemented direction name: `Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_170056_bf16_gemm_v1_13d24542/summary.json`
-- ncu analysis path: `runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_analysis.json`
-- measured commit: `13d245423db024e85562e537ddcb71b1b9e8d722`
+- raw summary json: `runs/20260421_172601_bf16_gemm_v1_117cd3e7/summary.json`
+- ncu analysis path: `runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.json`
+- measured commit: `117cd3e796a5742c1f15e040edf78cb668e1d5cf`
 - new best custom: `no`
-- generated at: `2026-04-21T17:01:09-07:00`
+- generated at: `2026-04-21T17:26:14-07:00`
