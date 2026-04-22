@@ -1,22 +1,287 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_182251",
+  "status": "completed",
+  "created_at": "2026-04-21T18:22:51-07:00",
   "source_run_id": "20260421_182124_bf16_gemm_v1_49dfa799",
   "source_run_dir": "runs/20260421_182124_bf16_gemm_v1_49dfa799",
   "source_summary_json": "runs/20260421_182124_bf16_gemm_v1_49dfa799/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_llm_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "For live run 20260421_182124_bf16_gemm_v1_49dfa799 at 26.306592 ms, round 2 restored the compact PTX hot-band body but not the accepted performance surface. Relative to the accepted PTX base 20260421_172601_bf16_gemm_v1_117cd3e7 at 24.806945 ms, registers and shared memory are unchanged at 168 regs/thread and 22016 B/block, while barrier rises from 6.39% to 9.73%, short-scoreboard rises from 1.86% to 7.32%, tensor activity drops from 48.36% to 46.63%, and the deliberate code delta on the hot path is the new __launch_bounds__(128, 3). That makes a launch-bounds rollback the highest-confidence next move. I rank a final-drain wait/sync split second because the PTX loop still pays a wait_group_0 plus __syncthreads handoff even when no future refill is issued, and I keep a grouped_rows=2 launch-order probe third as the next bounded alternative after the launch-bounds regression is isolated. I defer any 256x128 reopen or shared-memory stage growth until the compact PTX anchor is back near its accepted baseline.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "runs/20260421_182124_bf16_gemm_v1_49dfa799/summary.json",
+    "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+    "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.json",
+    "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
+    "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.json",
+    "state/search_frontier.json",
+    "state/search_closed.jsonl"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_182251:dir_01",
+  "family_audit": [
+    "accept: keep the compact PTX 128x128 hot-band family active because the latest regression versus 117cd3e7 is concentrated in launch-bounds and synchronization, not in the row-pair PTX kernel body itself.",
+    "defer: do not reopen the 256x128 or wider tiling families this round; the current loss is local to the PTX launch/sync surface and should be deconfounded before another large geometry branch.",
+    "reject_this_round: avoid any stage-depth or export-scratch growth because the current 22016 B shared-memory footprint is already the safer surface and prior larger shared-memory probes did not beat the accepted PTX base."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path",
+      "family_id": "register_pressure::ptx_microkernel_launch_bounds_restore",
+      "subfamily_id": "register_pressure::ptx_hot_band_min_blocks_3_to_2_keep_dispatch",
+      "action_fingerprint": "ptx_hotband_active:launch_bounds_min_blocks_3->2",
+      "mode": "exploit",
+      "hypothesis": "The current run already restored the compact PTX hot-band dispatch and preserved the 22016 B shared-memory footprint, but it still trails the accepted PTX base by about 1.50 ms while carrying the exact same 168 regs/thread. The main new lever is __launch_bounds__(128, 3), so rolling that back to 2 should recover scheduler freedom and remove the extra barrier plus short-scoreboard tax without touching grouped rows, stage depth, or the row-pair accumulator path.",
+      "expected_bottleneck": "The explicit 3-CTA minimum is over-constraining the PTX microkernel schedule, inflating barrier and short-scoreboard even though it does not reduce the measured register footprint.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1988-1993"
+      ],
+      "risk": "Low. This is a one-line rollback on the live PTX surface and keeps the current dispatch, shared-memory footprint, and row-pair math path intact.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.72,
+      "score_breakdown": {
+        "policy_id": "manual_round3_launch_bounds_rollback_v1",
+        "rank_score": 2.25,
+        "evidence_bonus": 0.35,
+        "implementation_bonus": 0.22,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 1.25,
+      "predicted_fail_risk": 0.12,
+      "ranking_notes": [
+        "This is the cleanest single-variable experiment because the accepted PTX base and the current run share the same 168 regs/thread and 22016 B/block footprint.",
+        "The accepted-base comparison points straight at launch policy: barrier is +3.34 pts, short-scoreboard is +5.46 pts, and tensor activity is lower even though occupancy_limit_registers improved to 3.",
+        "It preserves the row-pair PTX kernel body that already beat CUTLASS and only removes the new residency forcing lever."
+      ],
+      "stop_condition": "Stop if reverting launch_bounds to 2 does not materially recover barrier or short-scoreboard versus 49dfa799, or if more than the launch-bounds annotation has to change to build.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+        "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Retune the PTX hot-band __launch_bounds__ annotation from 3 back to 2.",
+        "Leave the active PTX dispatch in place.",
+        "Leave grouped rows, shared-memory stage depth, and export scratch untouched in this validation pass."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Split The Final PTX Wait/Sync Drain Out Of The Steady-State Loop",
+      "family_id": "sync_pipeline::ptx_microkernel_epilogue_drain_split",
+      "subfamily_id": "sync_pipeline::ptx_wait_group_final_drain_without_extra_shared",
+      "action_fingerprint": "ptx_microkernel:pull_final_wait_sync_out_of_steady_state_loop",
+      "mode": "explore",
+      "hypothesis": "The PTX steady-state loop always executes cp_async_wait_group_0 plus __syncthreads whenever next_tile_idx < FixedKTiles, even on the penultimate tile where future_tile_idx is already out of range and no refill is issued. Pulling that no-refill drain into a small epilogue case should cut one barrier seam without adding another shared-memory stage or touching the active PTX dispatch.",
+      "expected_bottleneck": "The final steady-state handoff is paying an unnecessary wait/sync pair that shows up as barrier and short-scoreboard tax on the PTX path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2055-2090"
+      ],
+      "risk": "Moderate. The change is still local, but it touches the PTX hot loop control flow and can introduce off-by-one or pipeline-drain correctness bugs if the epilogue split is wrong.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.18,
+      "score_breakdown": {
+        "policy_id": "manual_round3_epilogue_drain_split_v1",
+        "rank_score": 1.75,
+        "evidence_bonus": 0.25,
+        "implementation_bonus": 0.26,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.42,
+      "predicted_fail_risk": 0.31,
+      "ranking_notes": [
+        "Barrier is still 9.73% even after restoring the PTX surface, so the hottest remaining local lever is the steady-state wait/sync seam itself.",
+        "This idea preserves the 22016 B shared-memory budget and avoids reopening the failed two-K-stage x32 buffer family.",
+        "I rank it below the launch-bounds rollback because the accepted-base comparison says the current loss is still dominated by the newly introduced launch policy."
+      ],
+      "stop_condition": "Stop if splitting the drain requires another shared-memory stage, a wider launch rewrite, or extra hot-loop predicates beyond a tiny epilogue case.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "short_scoreboard",
+          "location": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Split the no-refill drain from the current steady-state wait/sync block.",
+        "Keep the active PTX dispatch and 22016 B shared-memory budget unchanged.",
+        "Leave grouped rows and the row-pair accumulator schedule untouched."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "unchanged_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Retune PTX Hot-Band Grouped Rows From 4 Down To 2",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::ptx_grouped_rows_4_to_2_after_launch_bounds_loss",
+      "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->2_after_launch_bounds_probe",
+      "mode": "explore",
+      "hypothesis": "With the PTX dispatch back on the hot band, the current run still shows high barrier plus short-scoreboard while DRAM and L2 throughput both climbed. That pattern is consistent with the grouped_rows=4 launch order batching too much work per CTA group. Cutting the PTX grouped-row depth to 2 is the bounded opposite-direction probe that trades a little B reuse for a shorter barrier seam and faster handoff cadence.",
+      "expected_bottleneck": "PTX grouped-row batching may be over-amortizing locality and paying too much synchronization and scheduler delay per group.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:155-156",
+        "src/kernels/bf16_gemm_v1.cu:2013-2027"
+      ],
+      "risk": "Moderate-high. This changes the launch-order geometry for the active PTX kernel and can easily lose locality if the grouped_rows reduction is too aggressive.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "search_score_v1": 1.92,
+      "score_breakdown": {
+        "policy_id": "manual_round3_grouped_rows_counterprobe_v1",
+        "rank_score": 1.55,
+        "evidence_bonus": 0.17,
+        "implementation_bonus": 0.28,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.28,
+      "predicted_fail_risk": 0.4,
+      "ranking_notes": [
+        "This is the cheapest launch-order counterprobe after the launch-bounds rollback because it moves only one constant and the corresponding PTX grouping math.",
+        "The current metrics show more memory traffic but worse synchronization than the accepted PTX base, which is the regime where smaller CTA groups are worth testing.",
+        "I rank it third because the older grouped_rows family already produced mixed evidence, so it should follow after the simpler launch-bounds isolation experiment."
+      ],
+      "stop_condition": "Stop if grouped_rows=2 reduces locality enough to spike DRAM or L2 pressure without a clear barrier improvement, or if it forces another dispatch-family rewrite.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Retune kFixedHotBandPtxGroupedRows from 4 to 2.",
+        "Keep the active PTX dispatch and row-pair math schedule unchanged.",
+        "Use the existing PTX grouping math with the new constant rather than reopening the regular 128x128 sibling."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "bounded_not_worse_than_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 3 treats 49dfa799 as a local launch-policy regression on top of the compact PTX base, not as a reason to abandon the PTX hot-band family. The next move should isolate launch_bounds before reopening larger geometry or shared-memory families."
 }

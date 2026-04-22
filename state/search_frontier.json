@@ -2,17 +2,17 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
-  "source_measured_commit": "05086a14f8df006f564c0071ea7d60dbf5ddc156",
-  "source_diagnosis_id": "diagnosis_20260421_175735",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_175735",
+  "source_run_id": "20260421_182124_bf16_gemm_v1_49dfa799",
+  "source_measured_commit": "49dfa799e322ba9331fa5ca20569d94830666c89",
+  "source_diagnosis_id": "diagnosis_20260421_182251",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_182251",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T18:21:38-07:00",
+  "updated_at": "2026-04-21T18:26:11-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate seed_master_history_round02_01:seed_01 closed via pass_win after selection.",
-  "family_representative_count": 16,
+  "selected_candidate_id": "diagnosis_20260421_182251:dir_01",
+  "selection_reason": "frontier_top_family_representative",
+  "selection_summary": "Selected diagnosis_20260421_182251:dir_01 -> dir_01 via mode=frontier.",
+  "family_representative_count": 18,
   "reopened_candidate_ids": [],
   "candidates": [
     {
@@ -464,7 +464,7 @@
           "guardrail": "non_decreasing"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 3,
       "selection_count": 0,
       "reopen_count": 0,
@@ -480,9 +480,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 0.555,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     },
@@ -1490,8 +1490,8 @@
       "last_result_runtime_ms": 26.30659199,
       "last_runtime_delta_ms": -0.07881640999999817,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T18:21:38-07:00",
-      "last_closed_search_iteration": 18,
+      "last_closed_at": "2026-04-21T18:26:11-07:00",
+      "last_closed_search_iteration": 19,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -4153,7 +4153,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.32,
+      "family_representative_score": 0.29,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -4378,7 +4378,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.645,
+      "family_representative_score": 0.615,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -4487,7 +4487,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.48,
+      "family_representative_score": 0.45,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -4719,7 +4719,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.6775,
+      "family_representative_score": 0.6475,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -4828,7 +4828,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.51,
+      "family_representative_score": 0.48,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -5277,7 +5277,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.995,
+      "family_representative_score": 0.965,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -5388,7 +5388,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.665,
+      "family_representative_score": 0.635,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -5502,7 +5502,334 @@
       "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_182251:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_182251",
+      "base_run_id": "20260421_182124_bf16_gemm_v1_49dfa799",
+      "base_measured_commit": "49dfa799e322ba9331fa5ca20569d94830666c89",
+      "base_runtime_ms": 26.30659199,
+      "direction_id": "dir_01",
+      "direction_name": "Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path",
+      "family_id": "register_pressure::ptx_microkernel_launch_bounds_restore",
+      "subfamily_id": "register_pressure::ptx_hot_band_min_blocks_3_to_2_keep_dispatch",
+      "action_fingerprint": "ptx_hotband_active:launch_bounds_min_blocks_3->2",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "exploit",
+      "priority": 2.72,
+      "search_score_v1": 2.72,
+      "score_breakdown": {
+        "policy_id": "manual_round3_launch_bounds_rollback_v1",
+        "rank_score": 2.25,
+        "evidence_bonus": 0.35,
+        "implementation_bonus": 0.22,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 1.25,
+      "predicted_fail_risk": 0.12,
+      "ranking_notes": [
+        "This is the cleanest single-variable experiment because the accepted PTX base and the current run share the same 168 regs/thread and 22016 B/block footprint.",
+        "The accepted-base comparison points straight at launch policy: barrier is +3.34 pts, short-scoreboard is +5.46 pts, and tensor activity is lower even though occupancy_limit_registers improved to 3.",
+        "It preserves the row-pair PTX kernel body that already beat CUTLASS and only removes the new residency forcing lever."
+      ],
+      "hypothesis": "The current run already restored the compact PTX hot-band dispatch and preserved the 22016 B shared-memory footprint, but it still trails the accepted PTX base by about 1.50 ms while carrying the exact same 168 regs/thread. The main new lever is __launch_bounds__(128, 3), so rolling that back to 2 should recover scheduler freedom and remove the extra barrier plus short-scoreboard tax without touching grouped rows, stage depth, or the row-pair accumulator path.",
+      "expected_bottleneck": "The explicit 3-CTA minimum is over-constraining the PTX microkernel schedule, inflating barrier and short-scoreboard even though it does not reduce the measured register footprint.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1988-1993"
+      ],
+      "risk": "Low. This is a one-line rollback on the live PTX surface and keeps the current dispatch, shared-memory footprint, and row-pair math path intact.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if reverting launch_bounds to 2 does not materially recover barrier or short-scoreboard versus 49dfa799, or if more than the launch-bounds annotation has to change to build.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+        "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Retune the PTX hot-band __launch_bounds__ annotation from 3 back to 2.",
+        "Leave the active PTX dispatch in place.",
+        "Leave grouped rows, shared-memory stage depth, and export scratch untouched in this validation pass."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 19,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T18:26:11-07:00",
+      "last_selected_selection_mode": "frontier",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 2.94,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_182251:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_182251",
+      "base_run_id": "20260421_182124_bf16_gemm_v1_49dfa799",
+      "base_measured_commit": "49dfa799e322ba9331fa5ca20569d94830666c89",
+      "base_runtime_ms": 26.30659199,
+      "direction_id": "dir_02",
+      "direction_name": "Split The Final PTX Wait/Sync Drain Out Of The Steady-State Loop",
+      "family_id": "sync_pipeline::ptx_microkernel_epilogue_drain_split",
+      "subfamily_id": "sync_pipeline::ptx_wait_group_final_drain_without_extra_shared",
+      "action_fingerprint": "ptx_microkernel:pull_final_wait_sync_out_of_steady_state_loop",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 2.18,
+      "search_score_v1": 2.18,
+      "score_breakdown": {
+        "policy_id": "manual_round3_epilogue_drain_split_v1",
+        "rank_score": 1.75,
+        "evidence_bonus": 0.25,
+        "implementation_bonus": 0.26,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.42,
+      "predicted_fail_risk": 0.31,
+      "ranking_notes": [
+        "Barrier is still 9.73% even after restoring the PTX surface, so the hottest remaining local lever is the steady-state wait/sync seam itself.",
+        "This idea preserves the 22016 B shared-memory budget and avoids reopening the failed two-K-stage x32 buffer family.",
+        "I rank it below the launch-bounds rollback because the accepted-base comparison says the current loss is still dominated by the newly introduced launch policy."
+      ],
+      "hypothesis": "The PTX steady-state loop always executes cp_async_wait_group_0 plus __syncthreads whenever next_tile_idx < FixedKTiles, even on the penultimate tile where future_tile_idx is already out of range and no refill is issued. Pulling that no-refill drain into a small epilogue case should cut one barrier seam without adding another shared-memory stage or touching the active PTX dispatch.",
+      "expected_bottleneck": "The final steady-state handoff is paying an unnecessary wait/sync pair that shows up as barrier and short-scoreboard tax on the PTX path.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2055-2090"
+      ],
+      "risk": "Moderate. The change is still local, but it touches the PTX hot loop control flow and can introduce off-by-one or pipeline-drain correctness bugs if the epilogue split is wrong.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if splitting the drain requires another shared-memory stage, a wider launch rewrite, or extra hot-loop predicates beyond a tiny epilogue case.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "short_scoreboard",
+          "location": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Split the no-refill drain from the current steady-state wait/sync block.",
+        "Keep the active PTX dispatch and 22016 B shared-memory budget unchanged.",
+        "Leave grouped rows and the row-pair accumulator schedule untouched."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "unchanged_vs_current_run"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 19,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 2.2525,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_182251:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_182251",
+      "base_run_id": "20260421_182124_bf16_gemm_v1_49dfa799",
+      "base_measured_commit": "49dfa799e322ba9331fa5ca20569d94830666c89",
+      "base_runtime_ms": 26.30659199,
+      "direction_id": "dir_03",
+      "direction_name": "Retune PTX Hot-Band Grouped Rows From 4 Down To 2",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::ptx_grouped_rows_4_to_2_after_launch_bounds_loss",
+      "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->2_after_launch_bounds_probe",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 1.92,
+      "search_score_v1": 1.92,
+      "score_breakdown": {
+        "policy_id": "manual_round3_grouped_rows_counterprobe_v1",
+        "rank_score": 1.55,
+        "evidence_bonus": 0.17,
+        "implementation_bonus": 0.28,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.28,
+      "predicted_fail_risk": 0.4,
+      "ranking_notes": [
+        "This is the cheapest launch-order counterprobe after the launch-bounds rollback because it moves only one constant and the corresponding PTX grouping math.",
+        "The current metrics show more memory traffic but worse synchronization than the accepted PTX base, which is the regime where smaller CTA groups are worth testing.",
+        "I rank it third because the older grouped_rows family already produced mixed evidence, so it should follow after the simpler launch-bounds isolation experiment."
+      ],
+      "hypothesis": "With the PTX dispatch back on the hot band, the current run still shows high barrier plus short-scoreboard while DRAM and L2 throughput both climbed. That pattern is consistent with the grouped_rows=4 launch order batching too much work per CTA group. Cutting the PTX grouped-row depth to 2 is the bounded opposite-direction probe that trades a little B reuse for a shorter barrier seam and faster handoff cadence.",
+      "expected_bottleneck": "PTX grouped-row batching may be over-amortizing locality and paying too much synchronization and scheduler delay per group.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:155-156",
+        "src/kernels/bf16_gemm_v1.cu:2013-2027"
+      ],
+      "risk": "Moderate-high. This changes the launch-order geometry for the active PTX kernel and can easily lose locality if the grouped_rows reduction is too aggressive.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if grouped_rows=2 reduces locality enough to spike DRAM or L2 pressure without a clear barrier improvement, or if it forces another dispatch-family rewrite.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Retune kFixedHotBandPtxGroupedRows from 4 to 2.",
+        "Keep the active PTX dispatch and row-pair math schedule unchanged.",
+        "Use the existing PTX grouping math with the new constant rather than reopening the regular 128x128 sibling."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "bounded_not_worse_than_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 19,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 1.89,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 55 historical candidates; 16 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 58 historical candidates; 18 family representatives are currently active for selection."
 }

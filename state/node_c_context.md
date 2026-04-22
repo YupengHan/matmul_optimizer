@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path`
+- candidate id: `diagnosis_20260421_182251:dir_01`
+- base run id: `20260421_182124_bf16_gemm_v1_49dfa799`
+- primary family id: `register_pressure::ptx_microkernel_launch_bounds_restore`
+- planned action fingerprint: `ptx_hotband_active:launch_bounds_min_blocks_3->2`
+- selection mode: `frontier`
+- source diagnosis id: `diagnosis_20260421_182251`
 - round loop: `round 3/20`
+- hypothesis: `The current run already restored the compact PTX hot-band dispatch and preserved the 22016 B shared-memory footprint, but it still trails the accepted PTX base by about 1.50 ms while carrying the exact same 168 regs/thread. The main new lever is __launch_bounds__(128, 3), so rolling that back to 2 should recover scheduler freedom and remove the extra barrier plus short-scoreboard tax without touching grouped rows, stage depth, or the row-pair accumulator path.`
+- expected bottleneck: `The explicit 3-CTA minimum is over-constraining the PTX microkernel schedule, inflating barrier and short-scoreboard even though it does not reduce the measured register footprint.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1988-1993`
+- risk: `Low. This is a one-line rollback on the live PTX surface and keeps the current dispatch, shared-memory footprint, and row-pair math path intact.`
+- metrics to re-check: `median runtime, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct, sm__warps_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers`
 - latest run id: `20260421_182124_bf16_gemm_v1_49dfa799`
 - latest runtime: `26.306592 ms`
 - latest NCU analysis: `runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `168.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `14.1` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `24.75` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `25.0` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `31.07` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` = `46.61` | GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
+- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -39,14 +40,16 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `46.63` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `24.74` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `9.73` | barrier stalls are consuming 9.73% of active warp issue slots.
-- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct` `non_increasing` from `7.32` | short scoreboard stalls are consuming 7.32% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing_vs_current_run` from `N/A` | N/A
+- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct` `non_increasing_vs_current_run` from `N/A` | N/A
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing_vs_current_run` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Retune the PTX hot-band __launch_bounds__ annotation from 3 back to 2.`
+- `Leave the active PTX dispatch in place.`
+- `Leave grouped rows, shared-memory stage depth, and export scratch untouched in this validation pass.`
 
 ## Delta vs previous run
 
@@ -93,4 +96,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
