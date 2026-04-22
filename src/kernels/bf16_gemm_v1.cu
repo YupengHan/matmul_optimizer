@@ -2105,8 +2105,8 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
 
     if (next_tile_idx < FixedKTiles) {
       cp_async_wait_group_0();
+      __syncthreads();
       if (future_tile_idx < FixedKTiles) {
-        __syncthreads();
         stage_a_shared_tile_async<FixedHotBandTile128x128>(
             a_shared[curr_stage],
             a_block + future_tile_idx * kWmmaK,
