@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Skip The Final No-Refill CTA Sync On The Compact PTX Anchor`
+- candidate id: `diagnosis_20260421_193031:dir_01`
+- base run id: `20260421_192933_bf16_gemm_v1_09758191`
+- primary family id: `sync_pipeline::trim_microkernel_barriers_without_shared_blowup`
+- planned action fingerprint: `compact_two_stage_ptx_hotband:skip_final_no_refill_sync_after_penultimate_tile`
+- selection mode: `frontier`
+- source diagnosis id: `diagnosis_20260421_193031`
 - round loop: `round 15/20`
+- hypothesis: `On the penultimate tile, the current compact PTX loop still pays cp_async_wait_group_0 plus __syncthreads even though future_tile_idx is already out of range and no shared stage will be overwritten. Skipping that final no-refill sync should remove one CTA barrier from the steady-state path without changing registers, stage depth, or the shared-memory budget.`
+- expected bottleneck: `The remaining local tax is unnecessary final-drain barrier overhead on the accepted compact PTX surface.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:2106-2119`
+- risk: `Low-to-moderate. This is a tiny control-path trim, but it still changes CTA synchronization semantics on the last steady-state handoff.`
+- metrics to re-check: `median runtime, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, launch__occupancy_limit_registers`
 - latest run id: `20260421_192933_bf16_gemm_v1_09758191`
 - latest runtime: `24.682431 ms`
 - latest NCU analysis: `runs/20260421_192933_bf16_gemm_v1_09758191/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `201.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `12.47` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.62` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `29.96` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.26` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
+- `stall_breakdown` `barrier` @ `smsp__warp_issue_stalled_barrier_per_warp_active.pct` | `unknown_metric` = `None` | N/A
+- `stall_breakdown` `long_scoreboard` @ `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,16 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `48.37` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.61` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `8.14` | barrier stalls are consuming 8.14% of active warp issue slots.
-- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `5.2` | long scoreboard stalls are consuming 5.20% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing_vs_current_run` from `N/A` | N/A
+- `launch__occupancy_limit_registers` `non_decreasing_vs_current_run` from `N/A` | N/A
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing_vs_current_run` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Special-case the penultimate-tile handoff so the loop skips the final no-refill __syncthreads.`
+- `Keep the compact 128x128 PTX dispatch, grouped_rows=4, and 22,016 B shared-memory footprint unchanged.`
+- `Do not combine this trim with any wait_group_1 or refill-before-wait rewrite.`
 
 ## Delta vs previous run
 
@@ -94,4 +97,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

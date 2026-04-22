@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `097581913eed49b85bf1043f45e2d165485732b1`
 - plateau counter: `31`
 - round loop: `round 15/20`
 - rounds remaining: `6`
-- notes: `Node A completed round 14/20. Run node_b to continue round 15/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_193031:dir_01 via frontier selection for round 15/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_193031`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 15/20 diagnosis emitted from the current accepted compact PTX base; frontier should try the smallest final-drain barrier trim before the checkpoint.`
+- dir_01: Skip The Final No-Refill CTA Sync On The Compact PTX Anchor | bottleneck: The remaining local tax is unnecessary final-drain barrier overhead on the accepted compact PTX surface.
+- dir_02: Keep The Guarded 2-K-Stage Pg2s Port As The Broader Fallback | bottleneck: If revisited later, the target remains compact-surface latency hiding and per-tile copy cadence.
+- dir_03: Leave The Wait-Sync-Collapse Family Parked Behind Smaller Compact Tweaks | bottleneck: If revisited later, the target would again be the compact loop's wait/refill seam, but not before smaller barrier trims flatten out.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

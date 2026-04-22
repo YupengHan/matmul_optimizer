@@ -1,22 +1,273 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_193031",
+  "status": "completed",
+  "created_at": "2026-04-21T19:30:31-07:00",
   "source_run_id": "20260421_192933_bf16_gemm_v1_09758191",
   "source_run_dir": "runs/20260421_192933_bf16_gemm_v1_09758191",
   "source_summary_json": "runs/20260421_192933_bf16_gemm_v1_09758191/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_llm_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "Run 20260421_192933_bf16_gemm_v1_09758191 at 24.682431 ms is the cleanest compact PTX anchor on the branch so far. It recovered the 201-register, 22,016 B shared-memory surface, restored barrier to 8.14%, and slightly improved runtime beyond the previous accepted 24.689153 ms base. That means the search should spend the pre-checkpoint round on a very narrow, high-information compact-surface tweak instead of another broad branch. The most defensible next move is to remove the final no-refill CTA sync on the penultimate tile: today the loop still executes cp_async_wait_group_0 plus __syncthreads when next_tile exists even if future_tile does not, which means the final handoff pays a barrier even though no stage overwrite happens afterward. I rank a guarded 2-K-stage Pg2s port second because it is still a live latency-hiding idea but materially broader. I keep the wait_sync_collapse family third as a parked fallback only, because two near-base variants already regressed on this surface.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "state/search_frontier.json",
+    "state/search_closed.jsonl",
+    "runs/20260421_192933_bf16_gemm_v1_09758191/summary.json",
+    "runs/20260421_192933_bf16_gemm_v1_09758191/ncu_analysis.json"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_193031:dir_01",
+  "family_audit": [
+    "accept: the compact 128x128 PTX grouped_rows=4 path at 24.682431 ms is the current accepted base and should remain the active surface.",
+    "promote: prefer the smallest high-signal compact-surface barrier trim before reopening any broader async-copy or geometry family.",
+    "defer: the wait_sync_collapse family stays open only as a fallback because two recent near-base variants lost on this surface."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Skip The Final No-Refill CTA Sync On The Compact PTX Anchor",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_skip_final_no_refill_sync_on_compact_anchor",
+      "action_fingerprint": "compact_two_stage_ptx_hotband:skip_final_no_refill_sync_after_penultimate_tile",
+      "mode": "explore",
+      "hypothesis": "On the penultimate tile, the current compact PTX loop still pays cp_async_wait_group_0 plus __syncthreads even though future_tile_idx is already out of range and no shared stage will be overwritten. Skipping that final no-refill sync should remove one CTA barrier from the steady-state path without changing registers, stage depth, or the shared-memory budget.",
+      "expected_bottleneck": "The remaining local tax is unnecessary final-drain barrier overhead on the accepted compact PTX surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2106-2119"
+      ],
+      "risk": "Low-to-moderate. This is a tiny control-path trim, but it still changes CTA synchronization semantics on the last steady-state handoff.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.96,
+      "score_breakdown": {
+        "policy_id": "manual_round15_final_drain_sync_skip_v1",
+        "rank_score": 2.28,
+        "evidence_bonus": 0.34,
+        "implementation_bonus": 0.43,
+        "risk_penalty": 0.09,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.08,
+      "predicted_fail_risk": 0.22,
+      "ranking_notes": [
+        "This is the highest-signal next move because it isolates one measurable barrier seam on the accepted anchor without reopening any broader family.",
+        "The edit is small enough to keep the checkpoint round interpretable even if the gain is modest.",
+        "If this does not move the 24.68 ms base, the compact PTX barrier family is likely close to exhausted."
+      ],
+      "stop_condition": "Stop if removing the final sync causes any correctness mismatch or if the change grows into a broader steady-state refactor.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "src/kernels/bf16_gemm_v1.cu",
+        "state/search_frontier.json"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Special-case the penultimate-tile handoff so the loop skips the final no-refill __syncthreads.",
+        "Keep the compact 128x128 PTX dispatch, grouped_rows=4, and 22,016 B shared-memory footprint unchanged.",
+        "Do not combine this trim with any wait_group_1 or refill-before-wait rewrite."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Keep The Guarded 2-K-Stage Pg2s Port As The Broader Fallback",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::ptx_hotband_two_k_stage_pg2s::guarded_from_24p682_compact_anchor",
+      "action_fingerprint": "compact_ptx_anchor_then_guarded_two_k_stage_pg2s_from_24p682_base",
+      "mode": "explore",
+      "hypothesis": "The 2-K-stage Pg2s family still targets latency hiding, but it is broader and less interpretable than a one-seam barrier trim. It should stay queued behind the compact final-drain experiment.",
+      "expected_bottleneck": "If revisited later, the target remains compact-surface latency hiding and per-tile copy cadence.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1724-1883",
+        "src/kernels/bf16_gemm_v1.cu:2059-2124"
+      ],
+      "risk": "High. This family still carries shared-memory and pipeline-structure risk relative to the accepted compact anchor.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.48,
+      "score_breakdown": {
+        "policy_id": "manual_round15_two_k_stage_guarded_v1",
+        "rank_score": 1.96,
+        "evidence_bonus": 0.2,
+        "implementation_bonus": 0.43,
+        "risk_penalty": 0.11,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.16,
+      "predicted_fail_risk": 0.52,
+      "ranking_notes": [
+        "This remains the broader fallback once the compact barrier seam is squeezed further.",
+        "It ranks second because the checkpoint round should prefer a smaller, more interpretable experiment first.",
+        "If the final-drain trim is flat, this family becomes more attractive again."
+      ],
+      "stop_condition": "Stop if the port implies another shared-budget increase or changes the accepted compact dispatch in the same round as another sync tweak.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the compact PTX dispatch active.",
+        "Only port the 2-K-stage preload and drain structure if the shared-memory budget remains tightly controlled.",
+        "Avoid coupling the port with another compact sync-family change."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Leave The Wait-Sync-Collapse Family Parked Behind Smaller Compact Tweaks",
+      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse_parked_after_two_near_base_losses",
+      "action_fingerprint": "park_wait_sync_collapse_family_after_two_near_base_losses",
+      "mode": "explore",
+      "hypothesis": "The wait_sync_collapse family is still conceptually related to the bottleneck, but two recent near-base losses mean it should remain parked until the smaller compact-surface trims are exhausted.",
+      "expected_bottleneck": "If revisited later, the target would again be the compact loop's wait/refill seam, but not before smaller barrier trims flatten out.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2092-2120"
+      ],
+      "risk": "Moderate-high. The family is clearly fragile on the current anchor and no longer deserves another immediate retry.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.12,
+      "score_breakdown": {
+        "policy_id": "manual_round15_wait_sync_collapse_parked_v1",
+        "rank_score": 1.63,
+        "evidence_bonus": 0.17,
+        "implementation_bonus": 0.4,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.05,
+      "predicted_fail_risk": 0.44,
+      "ranking_notes": [
+        "This family stays in the tree for completeness, but it no longer deserves immediate selection.",
+        "It ranks third because the last two concrete variants both regressed from near-base anchors.",
+        "Only revisit it after the smaller compact barrier trims and the guarded 2-K-stage family have been sampled."
+      ],
+      "stop_condition": "Stop if revisiting this family would simply replay the refill-before-wait or wait_group_1 patterns that already lost.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "state/search_closed.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the family parked unless smaller compact-surface trims fully flatten out.",
+        "Do not replay the refill-before-wait or wait_group_1 variants already measured on this anchor."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 15/20 diagnosis emitted from the current accepted compact PTX base; frontier should try the smallest final-drain barrier trim before the checkpoint."
 }
