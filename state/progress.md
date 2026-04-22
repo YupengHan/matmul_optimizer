@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `f42c93101ebc1d8ce622165a216d68ff55b0839e`
 - plateau counter: `34`
 - round loop: `round 18/20`
 - rounds remaining: `3`
-- notes: `Node A completed round 17/20. Run node_b to continue round 18/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_194243:dir_01 via frontier selection for round 18/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_194243`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 18/20 diagnosis emitted from the partial x32 recovery run; frontier should restore the true compact PTX wait-sync anchor before any further exploration.`
+- dir_01: Restore The Clean Compact PTX Wait-Sync Anchor After The Partial X32 Recovery | bottleneck: The immediate issue is a residual sync-seam regression inside the compact PTX loop, not a broader occupancy or staging family choice.
+- dir_02: Resume Compact Sync-Family Tuning Only After The Clean Anchor Returns | bottleneck: Residual barrier overhead on the true compact PTX anchor after the seam restore.
+- dir_03: Keep The Existing X32 Staged Family Closed Until Its Footprint Drops Materially | bottleneck: Occupancy and latency hiding would still dominate any reopen of the current staged family.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

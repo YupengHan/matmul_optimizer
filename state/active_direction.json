@@ -1,21 +1,90 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore The Clean Compact PTX Wait-Sync Anchor After The Partial X32 Recovery",
+  "candidate_id": "diagnosis_20260421_194243:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "restore_base::ptx_clean_anchor_after_partial_x32_recovery",
+  "subfamily_id": "restore_base::reinsert_unconditional_wait_group_sync_in_compact_ptx_loop",
+  "action_fingerprint": "restore_unconditional_wait_group_sync_after_partial_x32_recovery_in_compact_ptx_loop",
+  "selection_priority": 3.315,
+  "base_run_id": "20260421_194145_bf16_gemm_v1_f42c9310",
+  "selection_mode": "frontier",
+  "selected_at": "2026-04-21T19:43:54-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_194243",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Restore The Clean Compact PTX Wait-Sync Anchor After The Partial X32 Recovery",
+    "family_id": "restore_base::ptx_clean_anchor_after_partial_x32_recovery",
+    "subfamily_id": "restore_base::reinsert_unconditional_wait_group_sync_in_compact_ptx_loop",
+    "action_fingerprint": "restore_unconditional_wait_group_sync_after_partial_x32_recovery_in_compact_ptx_loop",
+    "mode": "restore",
+    "hypothesis": "The current run is not on the true accepted anchor yet. Reinstating the unconditional `__syncthreads()` after `cp_async_wait_group_0()` in the compact PTX loop should restore the clean round-14 anchor behavior and recover the missing ~0.20 ms without reopening any larger-footprint family.",
+    "expected_bottleneck": "The immediate issue is a residual sync-seam regression inside the compact PTX loop, not a broader occupancy or staging family choice.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:2054-2121"
+    ],
+    "risk": "Low. This is a one-site restore back to an already measured anchor behavior.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "launch__occupancy_limit_registers"
+    ],
+    "search_score_v1": 3.08,
+    "score_breakdown": {
+      "policy_id": "manual_round18_restore_clean_wait_sync_anchor_v1",
+      "rank_score": 2.37,
+      "evidence_bonus": 0.42,
+      "implementation_bonus": 0.39,
+      "risk_penalty": 0.1,
+      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.2,
+    "predicted_fail_risk": 0.06,
+    "ranking_notes": [
+      "This is top-ranked because the source and runtime together identify a specific residual regression that blocks the branch from reaching the accepted anchor.",
+      "It has better information value than opening a new family because the expected outcome is directly tied to a known-good prior measurement.",
+      "Frontier should prefer this over the older generic restore candidates because it encodes the exact remaining gap in the current branch state."
+    ],
+    "stop_condition": "Stop if the restore would require edits outside the compact PTX loop handoff or if the source already contains the unconditional sync.",
+    "evidence_refs": [
+      "state/latest_run.md",
+      "state/latest_ncu_summary.md",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "stall_breakdown",
+        "scope_name": "barrier",
+        "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      },
+      {
+        "scope_type": "stall_breakdown",
+        "scope_name": "long_scoreboard",
+        "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      }
+    ],
+    "expected_local_changes": [
+      "Reinsert the unconditional `__syncthreads()` immediately after `cp_async_wait_group_0()` in the compact PTX microkernel loop.",
+      "Leave the dispatch selection, grouped_rows=4 mapping, peeled row band, and tail path unchanged."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "correctness",
+        "guardrail": "must_pass"
+      },
+      {
+        "metric_name": "launch__occupancy_limit_registers",
+        "guardrail": "non_increasing_vs_current_run"
+      },
+      {
+        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "guardrail": "non_decreasing_vs_current_run"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }

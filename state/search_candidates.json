@@ -1,71 +1,63 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_193904",
-  "source_run_id": "20260421_193649_bf16_gemm_v1_fd009266",
-  "source_diagnosis_id": "diagnosis_20260421_193904",
-  "generated_at": "2026-04-21T19:41:24-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_194243",
+  "source_run_id": "20260421_194145_bf16_gemm_v1_f42c9310",
+  "source_diagnosis_id": "diagnosis_20260421_194243",
+  "generated_at": "2026-04-21T19:43:54-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_193904:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_194243:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_193904:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_193904",
-      "base_run_id": "20260421_193649_bf16_gemm_v1_fd009266",
-      "base_measured_commit": "fd0092669df3780c996e69e2f2236614caa3d2ec",
-      "base_runtime_ms": 31.61292839,
+      "candidate_id": "diagnosis_20260421_194243:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_194243",
+      "base_run_id": "20260421_194145_bf16_gemm_v1_f42c9310",
+      "base_measured_commit": "f42c93101ebc1d8ce622165a216d68ff55b0839e",
+      "base_runtime_ms": 24.88161564,
       "direction_id": "dir_01",
-      "direction_name": "Restore The Accepted Compact PTX Anchor After The Failed Existing X32 Probe",
-      "family_id": "restore_base::ptx_two_stage_anchor_after_failed_x32_stage_probe",
-      "subfamily_id": "restore_base::compact_128x128_ptx_anchor_after_existing_x32_kernel_probe",
-      "action_fingerprint": "restore_launch_fixed_hot_band_from_existing_128x128x32_probe_to_compact_128x128_ptx_anchor",
+      "direction_name": "Restore The Clean Compact PTX Wait-Sync Anchor After The Partial X32 Recovery",
+      "family_id": "restore_base::ptx_clean_anchor_after_partial_x32_recovery",
+      "subfamily_id": "restore_base::reinsert_unconditional_wait_group_sync_in_compact_ptx_loop",
+      "action_fingerprint": "restore_unconditional_wait_group_sync_after_partial_x32_recovery_in_compact_ptx_loop",
       "rank_in_diagnosis": 1,
       "recommended": true,
       "mode": "restore",
-      "priority": 3.12,
-      "search_score_v1": 3.12,
+      "priority": 3.08,
+      "search_score_v1": 3.08,
       "score_breakdown": {
-        "policy_id": "manual_round17_restore_after_existing_x32_failure_v1",
-        "rank_score": 2.46,
-        "evidence_bonus": 0.41,
-        "implementation_bonus": 0.36,
-        "risk_penalty": 0.11,
+        "policy_id": "manual_round18_restore_clean_wait_sync_anchor_v1",
+        "rank_score": 2.37,
+        "evidence_bonus": 0.42,
+        "implementation_bonus": 0.39,
+        "risk_penalty": 0.1,
         "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
       },
-      "predicted_gain_ms": 6.7,
-      "predicted_fail_risk": 0.08,
+      "predicted_gain_ms": 0.2,
+      "predicted_fail_risk": 0.06,
       "ranking_notes": [
-        "This is the highest-value move because the regression is large, causal, and localized to the hot-band dispatch choice.",
-        "The accepted compact anchor is already measured on this branch, so recovery is more valuable than searching inside the broken x32 branch.",
-        "Frontier should prefer this over older restore candidates because it is tied to the latest live regression and carries the strongest current evidence."
+        "This is top-ranked because the source and runtime together identify a specific residual regression that blocks the branch from reaching the accepted anchor.",
+        "It has better information value than opening a new family because the expected outcome is directly tied to a known-good prior measurement.",
+        "Frontier should prefer this over the older generic restore candidates because it encodes the exact remaining gap in the current branch state."
       ],
-      "hypothesis": "The current hot-band dispatch is sitting on a clearly regressed x32 staged branch. Restoring the accepted compact PTX microkernel should immediately recover occupancy, shared-memory footprint, and the known-good branch surface before the search spends another round on new ideas.",
-      "expected_bottleneck": "The immediate bottleneck is not an unresolved compact-surface seam; it is the residency and sync damage introduced by the x32 staged probe.",
+      "hypothesis": "The current run is not on the true accepted anchor yet. Reinstating the unconditional `__syncthreads()` after `cp_async_wait_group_0()` in the compact PTX loop should restore the clean round-14 anchor behavior and recover the missing ~0.20 ms without reopening any larger-footprint family.",
+      "expected_bottleneck": "The immediate issue is a residual sync-seam regression inside the compact PTX loop, not a broader occupancy or staging family choice.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1724-1887",
-        "src/kernels/bf16_gemm_v1.cu:2013-2125",
-        "src/kernels/bf16_gemm_v1.cu:2154-2203"
+        "src/kernels/bf16_gemm_v1.cu:2054-2121"
       ],
-      "risk": "Low. This is a bounded recovery back to the best-known refactor-path anchor rather than a fresh algorithmic change.",
+      "risk": "Low. This is a one-site restore back to an already measured anchor behavior.",
       "metrics_to_recheck": [
         "median runtime",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
       ],
-      "stop_condition": "Stop if restoring the compact anchor requires changes beyond the fixed hot-band dispatch and its directly paired kernel selection.",
+      "stop_condition": "Stop if the restore would require edits outside the compact PTX loop handoff or if the source already contains the unconditional sync.",
       "evidence_refs": [
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
         "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
-        {
-          "scope_type": "section",
-          "scope_name": "Launch Statistics",
-          "location": "Launch Statistics"
-        },
         {
           "scope_type": "stall_breakdown",
           "scope_name": "barrier",
@@ -78,9 +70,8 @@
         }
       ],
       "expected_local_changes": [
-        "Switch the fixed hot-band dispatch back from the existing 128x128x32 staged kernel to the compact 128x128 PTX microkernel.",
-        "Leave grouped_rows=4, the peeled hot-band row band, and the 64x96 tail path unchanged.",
-        "Do not bundle the restore with another sync or tiling experiment in the same round."
+        "Reinsert the unconditional `__syncthreads()` immediately after `cp_async_wait_group_0()` in the compact PTX microkernel loop.",
+        "Leave the dispatch selection, grouped_rows=4 mapping, peeled row band, and tail path unchanged."
       ],
       "guardrail_metrics": [
         {
@@ -92,61 +83,57 @@
           "guardrail": "non_increasing_vs_current_run"
         },
         {
-          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
           "guardrail": "non_decreasing_vs_current_run"
-        },
-        {
-          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "guardrail": "non_increasing_vs_current_run"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_193904:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_193904",
-      "base_run_id": "20260421_193649_bf16_gemm_v1_fd009266",
-      "base_measured_commit": "fd0092669df3780c996e69e2f2236614caa3d2ec",
-      "base_runtime_ms": 31.61292839,
+      "candidate_id": "diagnosis_20260421_194243:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_194243",
+      "base_run_id": "20260421_194145_bf16_gemm_v1_f42c9310",
+      "base_measured_commit": "f42c93101ebc1d8ce622165a216d68ff55b0839e",
+      "base_runtime_ms": 24.88161564,
       "direction_id": "dir_02",
-      "direction_name": "Reopen Compact Barrier Trims Only After The Anchor Is Back",
+      "direction_name": "Resume Compact Sync-Family Tuning Only After The Clean Anchor Returns",
       "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
-      "subfamily_id": "sync_pipeline::compact_wait_sync_and_final_sync_trims_after_x32_restore",
-      "action_fingerprint": "revisit_compact_wait_sync_and_final_sync_trims_only_after_restoring_anchor",
+      "subfamily_id": "sync_pipeline::compact_sync_tuning_after_true_anchor_restore",
+      "action_fingerprint": "resume_compact_sync_tuning_only_after_true_anchor_restore",
       "rank_in_diagnosis": 2,
       "recommended": false,
       "mode": "explore",
-      "priority": 2.41,
-      "search_score_v1": 2.41,
+      "priority": 2.36,
+      "search_score_v1": 2.36,
       "score_breakdown": {
-        "policy_id": "manual_round17_park_compact_barrier_trim_after_restore_v1",
-        "rank_score": 1.83,
-        "evidence_bonus": 0.24,
-        "implementation_bonus": 0.43,
+        "policy_id": "manual_round18_requeue_compact_sync_family_after_true_restore_v1",
+        "rank_score": 1.79,
+        "evidence_bonus": 0.22,
+        "implementation_bonus": 0.44,
         "risk_penalty": 0.09,
         "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
       },
-      "predicted_gain_ms": 0.08,
-      "predicted_fail_risk": 0.22,
+      "predicted_gain_ms": 0.06,
+      "predicted_fail_risk": 0.24,
       "ranking_notes": [
-        "This family still points at the right hotspot neighborhood, but the restore has higher value and lower ambiguity than another seam tweak on the broken branch.",
-        "The recent small-regression history means this should only be revisited once the anchor is back and remeasured.",
-        "Keeping it second preserves a low-footprint next step without reopening the failed large-footprint families."
+        "This family remains the best low-footprint follow-up, but it should not outrank the one-site anchor repair.",
+        "Keeping it second preserves search continuity without conflating anchor recovery with a fresh experiment.",
+        "Any revisit should explicitly avoid replaying the already measured refill-before-wait and final-no-refill-sync variants."
       ],
-      "hypothesis": "Once the accepted compact anchor is restored, the remaining optimization room is still most plausibly in small CTA-sync trims that avoid increasing the shared-memory or register footprint. Those ideas should stay behind the restore, not ahead of it.",
-      "expected_bottleneck": "Residual barrier overhead on the compact PTX surface after the broken x32 branch is removed.",
+      "hypothesis": "Once the unconditional sync is restored and remeasured, the remaining headroom is still most likely in a carefully bounded compact sync-family tweak that does not increase register or shared-memory footprint.",
+      "expected_bottleneck": "Residual barrier overhead on the true compact PTX anchor after the seam restore.",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:2054-2121"
       ],
-      "risk": "Moderate. The family targets the right hotspot class, but the branch already has evidence that tiny seam edits can flatten out quickly.",
+      "risk": "Moderate. The family targets the right hotspot, but recent tiny seam experiments have mostly flattened or regressed.",
       "metrics_to_recheck": [
         "median runtime",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
         "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
         "launch__occupancy_limit_registers"
       ],
-      "stop_condition": "Stop if the proposed trim would replay the same refill-before-wait or final-no-refill-sync skip variants already measured in rounds 13-15.",
+      "stop_condition": "Stop if the proposal would duplicate the round-13 or round-15 compact seam variants.",
       "evidence_refs": [
         "state/latest_ncu_summary.md",
         "state/search_frontier.json",
@@ -160,58 +147,53 @@
         }
       ],
       "expected_local_changes": [
-        "Keep any follow-up confined to the compact PTX loop sync cadence.",
-        "Do not change CTA geometry, grouped-row mapping, or tail launches when revisiting this family."
+        "Keep any follow-up confined to the compact PTX loop synchronization cadence after the clean anchor is re-established."
       ],
       "guardrail_metrics": [
         {
           "metric_name": "correctness",
           "guardrail": "must_pass"
-        },
-        {
-          "metric_name": "launch__occupancy_limit_registers",
-          "guardrail": "non_increasing_vs_restored_anchor"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_193904:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_193904",
-      "base_run_id": "20260421_193649_bf16_gemm_v1_fd009266",
-      "base_measured_commit": "fd0092669df3780c996e69e2f2236614caa3d2ec",
-      "base_runtime_ms": 31.61292839,
+      "candidate_id": "diagnosis_20260421_194243:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_194243",
+      "base_run_id": "20260421_194145_bf16_gemm_v1_f42c9310",
+      "base_measured_commit": "f42c93101ebc1d8ce622165a216d68ff55b0839e",
+      "base_runtime_ms": 24.88161564,
       "direction_id": "dir_03",
-      "direction_name": "Only Revisit X32 Staging If Its Register And Shared-Memory Footprint Is Cut Materially",
+      "direction_name": "Keep The Existing X32 Staged Family Closed Until Its Footprint Drops Materially",
       "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
-      "subfamily_id": "async_copy::x32_stage_salvage_requires_lower_reg_and_shared_footprint",
-      "action_fingerprint": "defer_existing_x32_stage_family_until_reg_and_shared_footprint_drop_materially",
+      "subfamily_id": "async_copy::existing_x32_stage_family_blocked_by_residency_cost",
+      "action_fingerprint": "keep_existing_x32_stage_family_closed_until_register_and_shared_footprint_drop",
       "rank_in_diagnosis": 3,
       "recommended": false,
       "mode": "explore",
-      "priority": 1.74,
-      "search_score_v1": 1.74,
+      "priority": 1.68,
+      "search_score_v1": 1.68,
       "score_breakdown": {
-        "policy_id": "manual_round17_defer_existing_x32_stage_family_v1",
-        "rank_score": 1.21,
+        "policy_id": "manual_round18_keep_existing_x32_closed_v1",
+        "rank_score": 1.17,
         "evidence_bonus": 0.18,
-        "implementation_bonus": 0.47,
+        "implementation_bonus": 0.45,
         "risk_penalty": 0.12,
         "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
       },
       "predicted_gain_ms": 0.0,
-      "predicted_fail_risk": 0.57,
+      "predicted_fail_risk": 0.58,
       "ranking_notes": [
-        "This stays in the set only to keep the search ledger honest about why the staged family is being deprioritized.",
-        "The family should not be selected again without a concrete plan to lower both registers per thread and shared memory materially versus the live failed probe.",
-        "It ranks last because the current branch already measured a decisive negative outcome for the existing x32 kernel."
+        "This stays listed only to document why the staged family is not being chosen again immediately.",
+        "Any future reopen must be tied to a concrete plan to lower both registers and shared memory, not another like-for-like probe.",
+        "It ranks last because the branch still has an unfinished clean-anchor restore ahead of any justified staged-family revisit."
       ],
-      "hypothesis": "The x32 idea is not categorically impossible, but the existing implementation is too expensive in residency terms. The only reason to reopen this family later would be a materially smaller register/shared-memory footprint, not another like-for-like probe.",
-      "expected_bottleneck": "Occupancy and latency hiding would remain the dominant failure mode unless the staged kernel's resident footprint is reduced substantially.",
+      "hypothesis": "The existing x32 staged family should remain deprioritized because the live data already showed a decisive occupancy and synchronization loss. It only becomes viable again if a future variant reduces its resident footprint materially.",
+      "expected_bottleneck": "Occupancy and latency hiding would still dominate any reopen of the current staged family.",
       "code_locations": [
         "src/kernels/bf16_gemm_v1.cu:1724-1887"
       ],
-      "risk": "High. The live evidence says the current staged branch is a large regression, so this family should stay dormant unless its footprint changes materially.",
+      "risk": "High. The current staged family is already proven bad on this branch.",
       "metrics_to_recheck": [
         "median runtime",
         "launch__occupancy_limit_registers",
@@ -220,7 +202,7 @@
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
         "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
       ],
-      "stop_condition": "Stop if the proposed x32 follow-up keeps the same launch footprint class or merely shuffles waits/barriers without reducing registers or shared memory.",
+      "stop_condition": "Stop if the proposed reopen keeps the same resident footprint class as the failed existing x32 kernel.",
       "evidence_refs": [
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
@@ -229,17 +211,17 @@
       "target_hotspots": [
         {
           "scope_type": "section",
-          "scope_name": "Occupancy",
-          "location": "Occupancy"
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
         },
         {
           "scope_type": "section",
-          "scope_name": "Launch Statistics",
-          "location": "Launch Statistics"
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
         }
       ],
       "expected_local_changes": [
-        "Keep the family closed until an x32 variant explicitly reduces its resident footprint relative to the current failed implementation."
+        "Do not reopen the existing x32 staged family without a concrete register/shared-memory budget reduction."
       ],
       "guardrail_metrics": [
         {
