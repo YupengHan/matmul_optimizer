@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `d51419e68ece25d501edff44e937b6f56053d97c`
-- plateau counter: `23`
-- round loop: `round 7/20`
-- rounds remaining: `14`
-- notes: `Node C build succeeded for round 7/20. Node A will now measure the new code path.`
+- latest measured commit: `434ded2afbec179fb9d82954d80903a4907fc5e5`
+- plateau counter: `24`
+- round loop: `round 8/20`
+- rounds remaining: `13`
+- notes: `Node A completed round 7/20. Run node_b to continue round 8/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_184622_bf16_gemm_v1_d51419e6`
-- run dir: `runs/20260421_184622_bf16_gemm_v1_d51419e6`
+- run id: `20260421_185050_bf16_gemm_v1_434ded2a`
+- run dir: `runs/20260421_185050_bf16_gemm_v1_434ded2a`
 - correctness: `PASS`
-- median runtime: `28.767664 ms`
-- TFLOP/s: `25.272105 TFLOP/s`
+- median runtime: `25.461216 ms`
+- TFLOP/s: `28.553995 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_184831`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 7 diagnosis emitted from live reasoning after the round-6 drain-split regression.`
-- dir_01: Restore A Compact Two-Stage PTX Ring While Keeping Grouped Rows At 2 | bottleneck: Registers-per-thread and occupancy are the first bottlenecks to remove; barrier cleanup is no longer the primary limiter after the round-6 regression.
-- dir_02: Restore The Known Two-Stage PTX Anchor With Grouped Rows Back At 4 | bottleneck: This is a restore family aimed at removing register and occupancy damage rather than discovering a new local bottleneck.
-- dir_03: Reopen The 256x128 64x64-Warp Hot-Band Branch After Resetting Register Pressure | bottleneck: The 128x128 PTX surface may still be capped by geometry and warp-reuse limits even after register cleanup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

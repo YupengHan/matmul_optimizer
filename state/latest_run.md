@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_184622_bf16_gemm_v1_d51419e6`
-- run dir: `runs/20260421_184622_bf16_gemm_v1_d51419e6`
-- kernel tag: `bf16_gemm_v1_d51419e6`
-- round label: `round 6/20`
+- run id: `20260421_185050_bf16_gemm_v1_434ded2a`
+- run dir: `runs/20260421_185050_bf16_gemm_v1_434ded2a`
+- kernel tag: `bf16_gemm_v1_434ded2a`
+- round label: `round 7/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `28.767664 ms`
-- p10 runtime: `28.341050 ms`
-- p90 runtime: `29.645311 ms`
-- TFLOP/s: `25.272105 TFLOP/s`
-- previous run id: `20260421_183606_bf16_gemm_v1_c03bcd3a`
-- runtime delta vs previous measured run: `+3.012528 ms`
-- TFLOP/s delta vs previous measured run: `-2.956029 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `25.461216 ms`
+- p10 runtime: `25.146266 ms`
+- p90 runtime: `26.732115 ms`
+- TFLOP/s: `28.553995 TFLOP/s`
+- previous run id: `20260421_184622_bf16_gemm_v1_d51419e6`
+- runtime delta vs previous measured run: `-3.306448 ms`
+- TFLOP/s delta vs previous measured run: `+3.281890 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop`
+- implemented direction name: `Restore A Compact Two-Stage PTX Ring While Keeping Grouped Rows At 2`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_184622_bf16_gemm_v1_d51419e6/summary.json`
-- ncu analysis path: `runs/20260421_184622_bf16_gemm_v1_d51419e6/ncu_analysis.json`
-- measured commit: `d51419e68ece25d501edff44e937b6f56053d97c`
+- raw summary json: `runs/20260421_185050_bf16_gemm_v1_434ded2a/summary.json`
+- ncu analysis path: `runs/20260421_185050_bf16_gemm_v1_434ded2a/ncu_analysis.json`
+- measured commit: `434ded2afbec179fb9d82954d80903a4907fc5e5`
 - new best custom: `no`
-- generated at: `2026-04-21T18:46:34-07:00`
+- generated at: `2026-04-21T18:51:02-07:00`

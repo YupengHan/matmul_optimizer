@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 7/20` with `14` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 8/20` with `13` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_184831`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 7 diagnosis emitted from live reasoning after the round-6 drain-split regression.`
-- dir_01: Restore A Compact Two-Stage PTX Ring While Keeping Grouped Rows At 2 | bottleneck: Registers-per-thread and occupancy are the first bottlenecks to remove; barrier cleanup is no longer the primary limiter after the round-6 regression.
-- dir_02: Restore The Known Two-Stage PTX Anchor With Grouped Rows Back At 4 | bottleneck: This is a restore family aimed at removing register and occupancy damage rather than discovering a new local bottleneck.
-- dir_03: Reopen The 256x128 64x64-Warp Hot-Band Branch After Resetting Register Pressure | bottleneck: The 128x128 PTX surface may still be capped by geometry and warp-reuse limits even after register cleanup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 
