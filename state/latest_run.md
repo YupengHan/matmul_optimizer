@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_191613_bf16_gemm_v1_9652b835`
-- run dir: `runs/20260421_191613_bf16_gemm_v1_9652b835`
-- kernel tag: `bf16_gemm_v1_9652b835`
-- round label: `round 11/20`
+- run id: `20260421_192024_bf16_gemm_v1_8fd88cb4`
+- run dir: `runs/20260421_192024_bf16_gemm_v1_8fd88cb4`
+- kernel tag: `bf16_gemm_v1_8fd88cb4`
+- round label: `round 12/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `30.174224 ms`
-- p10 runtime: `30.135098 ms`
-- p90 runtime: `31.168308 ms`
-- TFLOP/s: `24.094055 TFLOP/s`
-- previous run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
-- runtime delta vs previous measured run: `+5.485071 ms`
-- TFLOP/s delta vs previous measured run: `-5.352861 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.693696 ms`
+- p10 runtime: `24.659744 ms`
+- p90 runtime: `26.072474 ms`
+- TFLOP/s: `29.441499 TFLOP/s`
+- previous run id: `20260421_191613_bf16_gemm_v1_9652b835`
+- runtime delta vs previous measured run: `-5.480528 ms`
+- TFLOP/s delta vs previous measured run: `+5.347443 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Current Compact PTX Base`
+- implemented direction name: `Restore The Compact 128x128 PTX Grouped-Rows-4 Anchor After The Failed 256x128 Reopen`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_191613_bf16_gemm_v1_9652b835/summary.json`
-- ncu analysis path: `runs/20260421_191613_bf16_gemm_v1_9652b835/ncu_analysis.json`
-- measured commit: `9652b83550cd0d483328509f8a3f908c72a1e03a`
+- raw summary json: `runs/20260421_192024_bf16_gemm_v1_8fd88cb4/summary.json`
+- ncu analysis path: `runs/20260421_192024_bf16_gemm_v1_8fd88cb4/ncu_analysis.json`
+- measured commit: `8fd88cb415da428b274f41325006b803a7f795ae`
 - new best custom: `no`
-- generated at: `2026-04-21T19:16:25-07:00`
+- generated at: `2026-04-21T19:20:36-07:00`
