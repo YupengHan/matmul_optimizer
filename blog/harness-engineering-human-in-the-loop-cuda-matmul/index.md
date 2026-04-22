@@ -253,11 +253,11 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **29 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
+The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **34 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
 This refactor checkpoint is intentionally separated from the older large-history search. The branch keeps the public benchmark snapshot fixed at the recorded best while the new queue/frontier loop rebuilds evidence on top of a smaller clean baseline and a local cuBLASLt reference.
 
-The latest 5-round frontier-only refactor loop first reopened the writer-safe **256x128** hot-band branch and fell to about **30.17 ms**, then restored the compact two-stage PTX anchor to about **24.68 ms**, and finally sampled two compact sync-family trims that both regressed. So the public best still did not move, but the branch now shows a frontier-driven loop that can recover cleanly from a bad structural branch, hold the compact PTX family near its branch-local best, and continue searching from an auditable anchor instead of from hidden drift.
+The latest 5-round frontier-only refactor loop promoted the existing **128x128x32** two-K-stage hot-band kernel and immediately fell to about **31.61 ms**, then only partially recovered to about **24.88 ms** when the dispatch switched back but the compact PTX loop still carried the older skip-final-sync seam. After that, restoring the clean compact wait/sync anchor brought the branch back to about **24.69 ms**, a final **3-CTA** PTX launch-bounds probe cut registers sharply but still regressed to about **26.08 ms**, and the loop closed by restoring the clean anchor again at about **24.69 ms**. So the public best still did not move, but the branch now shows a frontier-driven loop that can take a bad structural branch, isolate a hidden partial-restore mistake, reject an occupancy-only probe that hurts the real schedule, and still finish on a clean auditable anchor instead of on a regressed end state.
 
 At the moment, the official benchmark snapshot in the repo is:
 - custom kernel: **24.16 ms**

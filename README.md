@@ -344,7 +344,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `29` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
+The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `34` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
@@ -352,7 +352,7 @@ At the moment, the official benchmark snapshot in the repo is:
 - local CUTLASS baseline: `25.917889 ms`
 - result: `1.753616 ms` faster than CUTLASS, or `6.766049%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
 
-The latest 5-round frontier-only refactor loop first reopened the writer-safe `256x128` hot-band branch and lost badly at `30.174224 ms`, then restored the compact two-stage PTX anchor to a slightly better `24.682431 ms`, and finally sampled two compact sync-family trims that both regressed. The public best still did not move, but the tree now shows a frontier loop that can recover quickly from a bad structural branch, hold the compact PTX family near its local branch best, and keep the search state clean enough to continue from an auditable anchor instead of accumulating hidden drift.
+The latest 5-round frontier-only refactor loop promoted the existing `128x128x32` two-K-stage hot-band kernel and immediately fell to `31.612928 ms`, then partially recovered to `24.881616 ms` when only the dispatch switched back to the PTX microkernel, restored the clean compact wait/sync anchor to `24.688641 ms`, tried a final `3`-CTA PTX launch-bounds probe that dropped registers to `168` but regressed to `26.079727 ms`, and closed by restoring the clean anchor again at `24.689665 ms`. The public best still did not move, but the tree now shows a frontier loop that can take a bad structural branch, diagnose the exact residual seam in the recovery path, reject a misleading occupancy-only win, and still finish on a clean auditable anchor instead of leaving the branch in a regressed state.
 
 ## Major Workflow Updates
 
