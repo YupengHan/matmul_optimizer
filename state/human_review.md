@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 14/20` with `7` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_192742`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 14/20 diagnosis emitted from a second compact-surface wait_sync_collapse loss; frontier should restore the clean compact seam before trying another family.`
+- dir_01: Restore The Compact Two-Stage PTX Anchor After The Failed Wait-Sync-Collapse Variant | bottleneck: The immediate problem is the regressing wait_sync_collapse variant itself, which raised barrier and registers on the active compact surface.
+- dir_02: Retry The Narrow Compact PTX Cadence Trim After Restoring The Anchor | bottleneck: Barrier remains the clearest unresolved compact-surface stall once the failed wait_sync_collapse variant is unwound.
+- dir_03: Keep The Guarded 2-K-Stage Pg2s Port As The Third Compact-Anchor Fallback | bottleneck: If revisited later, the target remains latency hiding on the compact PTX surface rather than another wide-tiling change.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 

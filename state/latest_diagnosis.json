@@ -1,22 +1,283 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_192742",
+  "status": "completed",
+  "created_at": "2026-04-21T19:27:42-07:00",
   "source_run_id": "20260421_192654_bf16_gemm_v1_40488b6e",
   "source_run_dir": "runs/20260421_192654_bf16_gemm_v1_40488b6e",
   "source_summary_json": "runs/20260421_192654_bf16_gemm_v1_40488b6e/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_llm_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "Run 20260421_192654_bf16_gemm_v1_40488b6e at 24.845312 ms confirms that the compact-surface wait_sync_collapse family is not paying off on the current restored anchor. The refill-before-wait variant cut long-scoreboard from 5.17% to 0.19% and trimmed short-scoreboard slightly, but it raised registers from 201 to 208, increased barrier from 8.20% to 8.84%, and still lost 0.151616 ms. Combined with the earlier round-9 regression on the same compact surface, that is enough evidence to demote the wait_sync_collapse family for now. The highest-value next move is to restore the compact two-stage PTX anchor exactly, so the branch is back on the clean 24.693696 ms surface before another family is tested. Once restored, the best remaining unresolved direction is the narrower compact cadence trim that stays inside the 22,016 B shared-memory budget without replaying the wait_group_1 pattern. I keep the 2-K-stage Pg2s port third as a guarded fallback, but the recent losses say compact-surface changes still deserve priority over another broader pipeline experiment.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "state/search_frontier.json",
+    "state/search_closed.jsonl",
+    "runs/20260421_192654_bf16_gemm_v1_40488b6e/summary.json",
+    "runs/20260421_192654_bf16_gemm_v1_40488b6e/ncu_analysis.json"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_192742:dir_01",
+  "family_audit": [
+    "accept: the compact 128x128 PTX grouped_rows=4 surface remains the only trustworthy live anchor on this branch.",
+    "demote: the wait_sync_collapse family has now produced two near-base regressions on compact PTX and should not stay at the top of the frontier until another anchor result justifies reopening it.",
+    "keep_open: bounded cadence trim and guarded 2-K-stage Pg2s remain the next two families once the compact anchor is restored."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Compact Two-Stage PTX Anchor After The Failed Wait-Sync-Collapse Variant",
+      "family_id": "restore_base::ptx_two_stage_anchor_after_failed_wait_sync_collapse",
+      "subfamily_id": "restore_base::compact_128x128_ptx_anchor_after_wait_group_1_refill_before_wait_loss",
+      "action_fingerprint": "restore_compact_two_stage_ptx_anchor_after_wait_group_1_refill_before_wait_loss",
+      "mode": "restore",
+      "hypothesis": "The latest wait-sync-collapse variant regressed from the restored compact anchor, so the next round should first return the code to the last known clean compact two-stage PTX seam before testing a different family.",
+      "expected_bottleneck": "The immediate problem is the regressing wait_sync_collapse variant itself, which raised barrier and registers on the active compact surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2092-2120"
+      ],
+      "risk": "Low. This is a narrow restore to the last clean compact PTX hot loop and does not change tiling, staging depth, or shared-memory budget.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.98,
+      "score_breakdown": {
+        "policy_id": "manual_round14_restore_after_wait_sync_loss_v1",
+        "rank_score": 2.32,
+        "evidence_bonus": 0.39,
+        "implementation_bonus": 0.37,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.15,
+      "predicted_fail_risk": 0.08,
+      "ranking_notes": [
+        "The current branch is only 0.15 ms off the restored anchor, so recovering the clean compact seam is the shortest path back to an interpretable search surface.",
+        "This is the right next move because the selected family, not the anchor itself, caused the regression.",
+        "A clean restore also sets up the round-15 checkpoint on a stable measured surface instead of a known regression."
+      ],
+      "stop_condition": "Stop if restoring the seam requires touching any code outside the compact PTX hot loop or if the restore does not bring the loop back to the known 201-register class.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "src/kernels/bf16_gemm_v1.cu",
+        "state/search_frontier.json"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the compact PTX hot loop from the refill-before-wait variant back to the last clean two-stage anchor.",
+        "Keep grouped_rows=4, the 128x128 dispatch, and the 22,016 B shared-memory footprint unchanged.",
+        "Do not combine the restore with another sync-family tweak in the same round."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Retry The Narrow Compact PTX Cadence Trim After Restoring The Anchor",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_wait_sync_cadence_after_wait_sync_collapse_loss",
+      "action_fingerprint": "compact_two_stage_ptx_hotband:retry_narrow_cadence_trim_after_wait_sync_collapse_loss",
+      "mode": "explore",
+      "hypothesis": "Once the clean compact anchor is back, the narrower cadence-trim family is still worth testing because it stays inside the 22,016 B shared-memory budget and does not require the more aggressive refill-before-wait restructuring that just regressed.",
+      "expected_bottleneck": "Barrier remains the clearest unresolved compact-surface stall once the failed wait_sync_collapse variant is unwound.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2106-2119"
+      ],
+      "risk": "Moderate. This still edits synchronization placement, but it is a smaller change than the just-measured wait_group_1 variant.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.74,
+      "score_breakdown": {
+        "policy_id": "manual_round14_cadence_trim_after_wait_sync_loss_v1",
+        "rank_score": 2.06,
+        "evidence_bonus": 0.26,
+        "implementation_bonus": 0.5,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.12,
+      "predicted_fail_risk": 0.28,
+      "ranking_notes": [
+        "This is now the strongest post-restore experiment because it attacks barrier without replaying the refill-before-wait structure that just lost.",
+        "It ranks behind dir_01 only because the current source is still on the regressing variant and needs to be cleaned up first.",
+        "It is a better next compact-surface probe than reopening the broader 2-K-stage family."
+      ],
+      "stop_condition": "Stop if the trim materially raises registers or looks structurally identical to the just-measured refill-before-wait variant.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "mio_throttle",
+          "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the clean compact PTX seam first if the source is still on the refill-before-wait variant.",
+        "Apply only a bounded wait_group and __syncthreads cadence trim on the compact PTX loop.",
+        "Keep shared-memory budget and stage depth unchanged."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep The Guarded 2-K-Stage Pg2s Port As The Third Compact-Anchor Fallback",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::ptx_hotband_two_k_stage_pg2s::guarded_after_wait_sync_collapse_loss",
+      "action_fingerprint": "compact_ptx_anchor_then_guarded_two_k_stage_pg2s_after_wait_sync_collapse_loss",
+      "mode": "explore",
+      "hypothesis": "The 2-K-stage Pg2s port still targets the right latency-hiding problem, but after two compact sync-family losses it remains safer to finish the compact-anchor cleanup first and keep this broader pipeline probe behind it.",
+      "expected_bottleneck": "If revisited later, the target remains latency hiding on the compact PTX surface rather than another wide-tiling change.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1724-1883",
+        "src/kernels/bf16_gemm_v1.cu:2059-2124"
+      ],
+      "risk": "High. This family still threatens higher shared-memory pressure and another less-interpretable surface change.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.21,
+      "score_breakdown": {
+        "policy_id": "manual_round14_two_k_stage_guarded_after_wait_sync_loss_v1",
+        "rank_score": 1.74,
+        "evidence_bonus": 0.18,
+        "implementation_bonus": 0.41,
+        "risk_penalty": 0.12,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.17,
+      "predicted_fail_risk": 0.55,
+      "ranking_notes": [
+        "This family stays open because the latency-hiding problem still exists, but it is not the next best move while the compact seam is still dirty.",
+        "It ranks behind dir_02 because the compact barrier/cadence family is still cheaper to test on the active anchor.",
+        "Only promote it again if the compact-anchor family fully flattens after restore."
+      ],
+      "stop_condition": "Stop if the port implies another shared-budget increase or drops the compact surface below the current two-CTA regime.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the compact PTX dispatch active.",
+        "Only port the 2-K-stage preload and drain structure if the shared-memory budget remains tightly controlled.",
+        "Do not combine the port with another tiling or sync-family rewrite."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 14/20 diagnosis emitted from a second compact-surface wait_sync_collapse loss; frontier should restore the clean compact seam before trying another family."
 }
