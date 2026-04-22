@@ -11,7 +11,7 @@
   "selection_mode": "frontier",
   "selected_at": "2026-04-21T19:22:44-07:00",
   "source_diagnosis_id": "diagnosis_20260421_192105",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance",
@@ -93,5 +93,14 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "implemented_action_fingerprint": "compact_two_stage_ptx_hotband:refill_before_wait_with_wait_group_1_after_round12_restore",
+  "semantic_delta_tags": [
+    "same_family_variant",
+    "refill_before_wait",
+    "wait_group_1_steady_state"
+  ],
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu:2092-2120"
+  ]
 }
