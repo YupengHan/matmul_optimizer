@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_160557_bf16_gemm_v1_35400d35`
-- run dir: `runs/20260421_160557_bf16_gemm_v1_35400d35`
-- kernel tag: `bf16_gemm_v1_35400d35`
-- round label: `round 10/10`
-- runner: `/tmp/matmul_optimizer_refactor/build/custom_runner`
+- run id: `20260421_170056_bf16_gemm_v1_13d24542`
+- run dir: `runs/20260421_170056_bf16_gemm_v1_13d24542`
+- kernel tag: `bf16_gemm_v1_13d24542`
+- round label: `single-run`
+- runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.691072 ms`
-- p10 runtime: `24.489546 ms`
-- p90 runtime: `25.398051 ms`
-- TFLOP/s: `29.444627 TFLOP/s`
-- previous run id: `20260421_160237_bf16_gemm_v1_404e8c44`
-- runtime delta vs previous measured run: `-1.305216 ms`
-- TFLOP/s delta vs previous measured run: `+1.478349 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `31.239679 ms`
+- p10 runtime: `30.600047 ms`
+- p90 runtime: `32.447692 ms`
+- TFLOP/s: `23.272307 TFLOP/s`
+- previous run id: `20260421_160557_bf16_gemm_v1_35400d35`
+- runtime delta vs previous measured run: `+6.548607 ms`
+- TFLOP/s delta vs previous measured run: `-6.172320 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Collapse PTX Wait-Group Handoff Without Extra Export Scratch`
+- implemented direction name: `Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class`
 - implemented selection mode: `recommended`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_160557_bf16_gemm_v1_35400d35/summary.json`
-- ncu analysis path: `runs/20260421_160557_bf16_gemm_v1_35400d35/ncu_analysis.json`
-- measured commit: `35400d356bf46fb91f112282fe39c8fa1960b391`
+- raw summary json: `runs/20260421_170056_bf16_gemm_v1_13d24542/summary.json`
+- ncu analysis path: `runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_analysis.json`
+- measured commit: `13d245423db024e85562e537ddcb71b1b9e8d722`
 - new best custom: `no`
-- generated at: `2026-04-21T16:06:08-07:00`
+- generated at: `2026-04-21T17:01:09-07:00`

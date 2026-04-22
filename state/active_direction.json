@@ -1,118 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class",
-  "candidate_id": "diagnosis_20260421_163733:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim",
-  "subfamily_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim::row_pair_interleave_right_left_right_left",
-  "action_fingerprint": "trim_ptx_microkernel_accumulate_register_budget_to_restore_three_cta_residency",
-  "selection_priority": 1.035,
-  "base_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-  "selection_mode": "recommended",
-  "selected_at": "2026-04-21T16:48:46-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_163733",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class",
-    "family_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim",
-    "subfamily_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim::row_pair_interleave_right_left_right_left",
-    "action_fingerprint": "trim_ptx_microkernel_accumulate_register_budget_to_restore_three_cta_residency",
-    "mode": "exploit",
-    "hypothesis": "The round-10 wait-group collapse restored the PTX anchor and fixed the barrier and short_scoreboard stalls, but it caused registers/thread to jump 168 -> 202 because the restored microkernel keeps 16 f32 accumulator fragments plus live A/B fragments across both 64x64 row pairs. By reordering ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel so the two row pairs are interleaved column-by-column (Right-Left-Right-Left across RowPairBase = 0 and 2) instead of sequentially, and by reducing the simultaneous live PtxWmmaBf16Fragment count, we should be able to hold registers/thread below ~180 and restore launch__occupancy_limit_registers = 3. That directly attacks the dominant occupancy_latency_hiding_issue (severity 43.22) without touching barrier wins.",
-    "expected_bottleneck": "Register-pressure-bound occupancy: 202 regs/thread caps SM residency at 2 CTAs, starving the long_scoreboard / mio_throttle latency hiding budget at 16.58% active warps.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:750-826 (ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel and ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel)",
-      "src/kernels/bf16_gemm_v1.cu:405-408 (PtxWmmaAccTileSet64x64)",
-      "src/kernels/bf16_gemm_v1.cu:1982-2095 (bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel)"
-    ],
-    "risk": "Moderate. The microkernel ordering is performance-sensitive but fully preserves the WMMA math; correctness risk is low and register pressure can be verified with ncu launch__registers_per_thread on the first compile.",
-    "metrics_to_recheck": [
-      "launch__registers_per_thread",
-      "launch__occupancy_limit_registers",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "gpu__time_duration.sum"
-    ],
-    "search_score_v1": 0.88,
-    "score_breakdown": {
-      "policy_id": "manual_round11_register_budget_first_v1",
-      "headroom_score": 0.32,
-      "evidence_score": 0.33,
-      "implementation_bonus": 0.27,
-      "risk_penalty": -0.04,
-      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-    },
-    "predicted_gain_ms": 0.9,
-    "predicted_fail_risk": 0.38,
-    "ranking_notes": [
-      "This is the single best upside/risk tradeoff: the dominant bottleneck class (occupancy_latency_hiding_issue, severity 43.22) is directly caused by the 34-register delta produced last round.",
-      "If registers fall back to the 168 class, occupancy_limit_registers returns to 3 and we regain most of the latency hiding lost this round, while keeping the barrier stall wins of round 10.",
-      "Maps onto the human guidance family Register Reuse (Right-Left-Right-Left warp tile) almost literally, so the direction is also audit-aligned with state/human_guidance.md."
-    ],
-    "stop_condition": "Stop if launch__registers_per_thread does not fall below 190 after the interleave rewrite, or if the rewrite regresses barrier above 8% or runtime above 25.5 ms.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "state/latest_run.md",
-      "src/kernels/bf16_gemm_v1.cu",
-      "state/human_guidance.md"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "GPU Speed Of Light Throughput",
-        "location": "GPU Speed Of Light Throughput"
-      }
-    ],
-    "expected_local_changes": [
-      "Rework ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel so the two row pairs are interleaved column-by-column instead of both sequentially materialized, shrinking the live A-fragment window.",
-      "Confirm nvcc does not inflate fragment state by adding --maxrregcount guard only if necessary, avoiding spills to local memory.",
-      "Leave wait_group_0 / wait_group_1 ordering from round 10 untouched so recovered barrier and short_scoreboard gains are preserved."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "guardrail": "non_decreasing"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "non_increasing"
-      },
-      {
-        "metric_name": "launch__registers_per_thread",
-        "guardrail": "non_increasing"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "implemented_action_fingerprint": "trim_ptx_microkernel_accumulate_register_budget_to_restore_three_cta_residency",
-  "semantic_delta_tags": [
-    "row_pair_interleave_right_left_right_left",
-    "column_outer_loop_refactor",
-    "new_helper_ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel",
-    "old_row_pair_helper_retained_but_unused"
-  ],
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu: new ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel helper (~lines 841-902)",
-    "src/kernels/bf16_gemm_v1.cu: rewritten ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel body to drive 4 column steps of interleaved Right-Left row-pair calls (~lines 904-922)",
-    "src/kernels/bf16_gemm_v1.cu: ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel left intact (lines 742-818) as __forceinline__ and is DCE'd since nothing calls it now"
-  ]
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

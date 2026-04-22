@@ -1,14 +1,14 @@
 {
-  "current_node": "node_a",
-  "previous_node": "node_c",
-  "status": "ready_for_node_a",
-  "latest_run_dir": "runs/20260421_160557_bf16_gemm_v1_35400d35",
+  "current_node": "node_b",
+  "previous_node": "node_a",
+  "status": "ready_for_node_b",
+  "latest_run_dir": "runs/20260421_170056_bf16_gemm_v1_13d24542",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
-  "latest_commit": "35400d356bf46fb91f112282fe39c8fa1960b391",
+  "latest_commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
   "approved_direction_id": null,
-  "recommended_direction_id": "dir_01",
+  "recommended_direction_id": null,
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "plateau_counter": 15,
-  "notes": "Node C build succeeded. Node A will now measure the new code path."
+  "plateau_counter": 16,
+  "notes": "Node A completed. Run node_b to produce exactly three directions from the latest measured summaries."
 }
