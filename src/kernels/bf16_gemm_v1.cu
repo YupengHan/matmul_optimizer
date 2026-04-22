@@ -2080,10 +2080,15 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
       b_shared_col_from_logical<FixedHotBandTile128x128>(
           warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
 
+  constexpr int kSteadyStateTiles =
+      (FixedKTiles > kPtxStageCount) ? (FixedKTiles - kPtxStageCount) : 0;
+
+  // Keep the steady-state path on a fixed 3-stage refill cadence, then drain the
+  // final no-refill handoff separately so the hot loop does not carry the late
+  // wait-group transition logic.
   #pragma unroll 2
-  for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
+  for (int tile_idx = 0; tile_idx < kSteadyStateTiles; ++tile_idx) {
     const int curr_stage = tile_idx % kPtxStageCount;
-    const int next_tile_idx = tile_idx + 1;
     const int future_tile_idx = tile_idx + kPtxStageCount;
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
@@ -2103,12 +2108,24 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
           kFixedBenchmarkN);
       cp_async_commit_group();
     }
+    cp_async_wait_group_2();
+    __syncthreads();
+  }
+
+  #pragma unroll
+  for (int tile_idx = kSteadyStateTiles; tile_idx < FixedKTiles; ++tile_idx) {
+    const int curr_stage = tile_idx % kPtxStageCount;
+    const int next_tile_idx = tile_idx + 1;
+
+    const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
+    const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_shared_col_offset;
+
+    ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
+        acc_tiles, a_tile, b_tile);
 
     if (next_tile_idx < FixedKTiles) {
       const int tiles_remaining_after_next = FixedKTiles - next_tile_idx - 1;
-      if (tiles_remaining_after_next >= 2) {
-        cp_async_wait_group_2();
-      } else if (tiles_remaining_after_next == 1) {
+      if (tiles_remaining_after_next > 0) {
         cp_async_wait_group_1();
       } else {
         cp_async_wait_group_0();
