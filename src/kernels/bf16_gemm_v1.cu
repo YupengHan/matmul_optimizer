@@ -817,12 +817,108 @@ __device__ __forceinline__ void ptx_wmma_accumulate_row_pair_64x64_ptx_microkern
   }
 }
 
+// Right-Left-Right-Left column-interleaved 64x64 microkernel.
+//
+// The prior tile-set sequenced two ptx_wmma_accumulate_row_pair_64x64
+// invocations (RowPairBase=2 then RowPairBase=0), and each invocation held a
+// pair of A fragments live across the full 4-column sweep. That forced nvcc to
+// keep two full A-fragment pairs simultaneously live across the second half of
+// the row-pair boundary, which pushed registers/thread from 168 up to 202 and
+// collapsed launch__occupancy_limit_registers from 3 to 2.
+//
+// The rewrite below pulls the inner column-step loop to the OUTER position and
+// walks the two 64x64 row-pair sides (Right: RowPairBase=2, Left: RowPairBase=0)
+// INSIDE each column step. Within one column step, only the currently-active
+// side's two A fragments are live, and the B fragment is shared by both sides
+// so exactly one B load is issued per column (instead of two separate loads
+// inside each row-pair helper). The A fragments used by the Right half are
+// released before the Left half's A fragments are declared, so nvcc can reuse
+// the same physical registers for both halves.
+//
+// Correctness is preserved exactly: the same set of wmma.mma.sync calls is
+// emitted, touching the same accumulator tiles with the same A/B inputs. Only
+// the scheduling order of the loads and mmas changes.
+template <int ColStep>
+__device__ __forceinline__ void ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel(
+    PtxWmmaAccTileSet64x64& acc_tiles,
+    const __nv_bfloat16* a_tile,
+    const __nv_bfloat16* b_tile) {
+  static_assert(ColStep >= 0 && ColStep < FixedHotBandTile128x128::kWarpMmaTilesN,
+                "PTX hot-band 64x64 interleaved column step out of range.");
+  constexpr int ColIdx = PtxWmmaHotBandTileIndex64x64<ColStep>::kValue;
+
+  PtxWmmaBf16Fragment b_frag;
+  ptx_wmma_load_b_row(
+      b_frag,
+      b_tile + ColIdx * kWmmaN,
+      FixedHotBandTile128x128::kBSharedStride);
+
+  // Right half first: RowPairBase = 2 uses accumulator rows 2 and 3.
+  // Its A fragments live only for this scope and die before the Left half
+  // declares its own A fragments.
+  {
+    constexpr int RowPairBase = 2;
+    PtxWmmaBf16Fragment a_frag0;
+    PtxWmmaBf16Fragment a_frag1;
+    ptx_wmma_load_a_row(
+        a_frag0,
+        a_tile + RowPairBase * kWmmaM * kWmmaK,
+        kWmmaK);
+    ptx_wmma_load_a_row(
+        a_frag1,
+        a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
+        kWmmaK);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
+                         a_frag0,
+                         b_frag);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
+                         a_frag1,
+                         b_frag);
+  }
+
+  // Left half: RowPairBase = 0 uses accumulator rows 0 and 1. Because the
+  // Right-half A fragments have gone out of scope, nvcc is free to reuse the
+  // same physical registers here, keeping the simultaneously-live A-fragment
+  // count at 2 instead of 4.
+  {
+    constexpr int RowPairBase = 0;
+    PtxWmmaBf16Fragment a_frag0;
+    PtxWmmaBf16Fragment a_frag1;
+    ptx_wmma_load_a_row(
+        a_frag0,
+        a_tile + RowPairBase * kWmmaM * kWmmaK,
+        kWmmaK);
+    ptx_wmma_load_a_row(
+        a_frag1,
+        a_tile + (RowPairBase + 1) * kWmmaM * kWmmaK,
+        kWmmaK);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase, ColIdx>(acc_tiles),
+                         a_frag0,
+                         b_frag);
+    ptx_wmma_mma_row_row(ptx_wmma_acc_tile<RowPairBase + 1, ColIdx>(acc_tiles),
+                         a_frag1,
+                         b_frag);
+  }
+}
+
 __device__ __forceinline__ void ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
     PtxWmmaAccTileSet64x64& acc_tiles,
     const __nv_bfloat16* a_tile,
     const __nv_bfloat16* b_tile) {
-  ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel<2>(acc_tiles, a_tile, b_tile);
-  ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel<0>(acc_tiles, a_tile, b_tile);
+  // Walk the 4 column steps as the OUTER loop, and interleave Right (RP=2)
+  // then Left (RP=0) inside each column step. This replaces the previous
+  // sequential two-row-pair invocation so that only one row pair's A
+  // fragments are live at a time, restoring the ~168 regs/thread / 3-CTA
+  // residency class while preserving the round-10 wait-group ordering in the
+  // outer kernel.
+  ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel<0>(
+      acc_tiles, a_tile, b_tile);
+  ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel<1>(
+      acc_tiles, a_tile, b_tile);
+  ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel<2>(
+      acc_tiles, a_tile, b_tile);
+  ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel<3>(
+      acc_tiles, a_tile, b_tile);
 }
 
 template <typename TileConfig, int TileIdx = 0>
