@@ -31,8 +31,8 @@
   ],
   "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": "dir_01",
-  "selected_candidate_id": "diagnosis_20260421_175735:dir_01",
+  "selected_direction_id": null,
+  "selected_candidate_id": "seed_master_history_round02_01:seed_01",
   "family_audit": [
     {
       "family": "Register Reuse",

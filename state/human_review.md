@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_c`
-- status: `node_c_context_ready`
+- next node: `node_a`
+- status: `ready_for_node_a`
 - round loop: `round 2/20` with `19` rounds remaining
 
 ## Direction approval policy
@@ -26,10 +26,10 @@
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use select-next for frontier-only loop execution.`
+- selected direction: `seed_01`
+- selection mode: `frontier`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Persistent human guidance
 
