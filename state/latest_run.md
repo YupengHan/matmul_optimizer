@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_194145_bf16_gemm_v1_f42c9310`
-- run dir: `runs/20260421_194145_bf16_gemm_v1_f42c9310`
-- kernel tag: `bf16_gemm_v1_f42c9310`
-- round label: `round 17/20`
+- run id: `20260421_194414_bf16_gemm_v1_ac1299d7`
+- run dir: `runs/20260421_194414_bf16_gemm_v1_ac1299d7`
+- kernel tag: `bf16_gemm_v1_ac1299d7`
+- round label: `round 18/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.881616 ms`
-- p10 runtime: `24.876889 ms`
-- p90 runtime: `26.218730 ms`
-- TFLOP/s: `29.219140 TFLOP/s`
-- previous run id: `20260421_193649_bf16_gemm_v1_fd009266`
-- runtime delta vs previous measured run: `-6.731313 ms`
-- TFLOP/s delta vs previous measured run: `+6.221606 TFLOP/s`
+- median runtime: `24.688641 ms`
+- p10 runtime: `24.677990 ms`
+- p90 runtime: `26.303693 ms`
+- TFLOP/s: `29.447527 TFLOP/s`
+- previous run id: `20260421_194145_bf16_gemm_v1_f42c9310`
+- runtime delta vs previous measured run: `-0.192975 ms`
+- TFLOP/s delta vs previous measured run: `+0.228387 TFLOP/s`
 - perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Accepted Compact PTX Anchor After The Failed Existing X32 Probe`
+- implemented direction name: `Restore The Clean Compact PTX Wait-Sync Anchor After The Partial X32 Recovery`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_194145_bf16_gemm_v1_f42c9310/summary.json`
-- ncu analysis path: `runs/20260421_194145_bf16_gemm_v1_f42c9310/ncu_analysis.json`
-- measured commit: `f42c93101ebc1d8ce622165a216d68ff55b0839e`
+- raw summary json: `runs/20260421_194414_bf16_gemm_v1_ac1299d7/summary.json`
+- ncu analysis path: `runs/20260421_194414_bf16_gemm_v1_ac1299d7/ncu_analysis.json`
+- measured commit: `ac1299d7d6b0b67e7eb323da7621c4511e79d6d8`
 - new best custom: `no`
-- generated at: `2026-04-21T19:41:57-07:00`
+- generated at: `2026-04-21T19:44:26-07:00`
