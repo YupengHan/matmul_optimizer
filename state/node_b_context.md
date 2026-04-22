@@ -99,12 +99,12 @@
 
         ## Current source snapshot
 
-        - round loop: `single-run`
-        - rounds remaining after this one: `0`
+        - round loop: `round 1/20`
+        - rounds remaining after this one: `19`
         - latest run id: `20260421_172601_bf16_gemm_v1_117cd3e7`
         - median runtime: `24.806945 ms`
         - TFLOP/s: `29.307092 TFLOP/s`
         - measured commit: `117cd3e796a5742c1f15e040edf78cb668e1d5cf`
-        - existing diagnosis status: `pending_generation`
+        - existing diagnosis status: `completed`
         - top bottleneck class: `occupancy_latency_hiding_issue`
         - top finding: `Launch Statistics is carrying metric Registers Per Thread.`

@@ -1,21 +1,102 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling",
+  "candidate_id": "diagnosis_20260421_175153:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+  "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate_from_compact_ptx_recovery",
+  "action_fingerprint": "compact_ptx_hotband_recovery:microkernel->regular_128x128_single_k_sibling",
+  "selection_priority": 1.02,
+  "base_run_id": "20260421_172601_bf16_gemm_v1_117cd3e7",
+  "selection_mode": "recommended",
+  "selected_at": "2026-04-21T17:56:21-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_175153",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling",
+    "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
+    "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate_from_compact_ptx_recovery",
+    "action_fingerprint": "compact_ptx_hotband_recovery:microkernel->regular_128x128_single_k_sibling",
+    "mode": "exploit",
+    "hypothesis": "The compact PTX row-pair reset removed the worst regression, but the current hot-band microkernel still sits at 202 registers/thread and only 16.59% active warps. The existing single-K 128x128 sibling keeps the same CTA geometry and one-K staging depth while using the regular 64x64 accumulate helper instead of the microkernel-specific consume order. Repo history already measured this sibling at a slightly lower register footprint (196 regs/thread) and a small win on the clean baseline, so it is the best next local exploit on the current branch.",
+    "expected_bottleneck": "Microkernel-specific consume ordering and residual accumulator live range on the dominant 128x128 hot-band path are still holding occupancy to the 2-CTA class.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:734-829",
+      "src/kernels/bf16_gemm_v1.cu:1876-1988",
+      "src/kernels/bf16_gemm_v1.cu:1990-2094",
+      "src/kernels/bf16_gemm_v1.cu:2144-2151"
+    ],
+    "risk": "Moderate. The sibling is already in-tree and has prior positive evidence, but the branch currently carries the compact PTX recovery rather than the old clean baseline, so the win size may be smaller than before.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "launch__registers_per_thread",
+      "launch__occupancy_limit_registers",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+    ],
+    "search_score_v1": 0.84,
+    "score_breakdown": {
+      "policy_id": "manual_round1_recovered_hotband_followup_v1",
+      "headroom_score": 0.31,
+      "evidence_score": 0.28,
+      "implementation_bonus": 0.31,
+      "risk_penalty": -0.06,
+      "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+    },
+    "predicted_gain_ms": 0.45,
+    "predicted_fail_risk": 0.28,
+    "ranking_notes": [
+      "This is the strongest evidence-backed follow-up because it stays on the current hot-band surface and already has an in-repo measured win on the clean baseline.",
+      "It directly attacks the current top hotspot, registers per thread, without reopening the staged-kernel family that already failed.",
+      "It is a better first move than grouped-row or launch-bounds retunes because the current bottleneck is still dominated by the hot-band consume path itself."
+    ],
+    "stop_condition": "Stop if the swap fails to lower registers or active warps stay flat while runtime does not improve by at least measurement noise.",
+    "evidence_refs": [
+      "state/latest_run.md",
+      "state/latest_ncu_summary.md",
+      "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
+      "state/search_closed.jsonl",
+      "state/search_frontier.json",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "section",
+        "scope_name": "Launch Statistics",
+        "location": "Launch Statistics"
+      },
+      {
+        "scope_type": "section",
+        "scope_name": "Occupancy",
+        "location": "Occupancy"
+      }
+    ],
+    "expected_local_changes": [
+      "Keep the current 128x128 hot-band launch region and one-K staging depth.",
+      "Route the dominant hot-band launch back to the regular 128x128 single-K sibling instead of the compact PTX microkernel wrapper.",
+      "Leave grouped rows, cp.async widths, and the 64x384 / 64x96 side paths unchanged for the first validation pass."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "correctness",
+        "guardrail": "must_pass"
+      },
+      {
+        "metric_name": "launch__registers_per_thread",
+        "guardrail": "non_increasing"
+      },
+      {
+        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "guardrail": "non_decreasing"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "guardrail": "non_increasing"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }

@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `117cd3e796a5742c1f15e040edf78cb668e1d5cf`
 - plateau counter: `17`
-- round loop: `single-run`
-- rounds remaining: `0`
-- notes: `Node A completed the final planned round. Review the results before starting another loop.`
+- round loop: `round 1/20`
+- rounds remaining: `20`
+- notes: `Node C is ready to implement diagnosis_20260421_175153:dir_01 via recommended selection for round 1/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_175153`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 1/20 maps the persistent guidance explicitly: register reuse stays primary, tiling stays alive but deferred, and deeper async-copy staging is deferred because the staged 128x128 family already regressed while the current run is still first-order register/occupancy bound.`
+- dir_01: Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling | bottleneck: Microkernel-specific consume ordering and residual accumulator live range on the dominant 128x128 hot-band path are still holding occupancy to the 2-CTA class.
+- dir_02: Retune The PTX Hot-Band Launch Bounds For Three-CTA Residency | bottleneck: Register-pressure-driven CTA residency cap on the current PTX hot-band microkernel.
+- dir_03: Reopen The 256x128 64x64-Warp Hot-Band Family After The PTX Recovery | bottleneck: Hot-band tiling and panel-reuse ceiling on the current 128x128 surface rather than pure bandwidth or tail overhead.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
