@@ -11,7 +11,7 @@
   "selection_mode": "frontier",
   "selected_at": "2026-04-21T18:59:51-07:00",
   "source_diagnosis_id": "diagnosis_20260421_185824",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Trim The Compact Two-Stage PTX Wait-Sync Cadence On The 22016B Shared Surface",
@@ -93,5 +93,13 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "compact_two_stage_ptx_hotband:trim_wait_sync_cadence_from_24p697_frontier_base"
 }

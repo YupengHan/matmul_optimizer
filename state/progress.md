@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_c`
-- previous node: `node_b`
-- status: `ready_for_node_c`
+- next node: `node_a`
+- previous node: `node_c`
+- status: `ready_for_node_a`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `823cbff48af806c5e9c80a6da9ea7087ef3c459b`
 - plateau counter: `25`
 - round loop: `round 9/20`
 - rounds remaining: `12`
-- notes: `Node C is ready to implement diagnosis_20260421_185824:dir_01 via frontier selection for round 9/20.`
+- notes: `Node C build succeeded for round 9/20. Node A will now measure the new code path.`
 
 ## Latest measured custom run
 
@@ -44,8 +44,8 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 - direction id: `dir_01`
 - selection mode: `frontier`
-- status: `ready_for_implementation`
-- notes: `Node C may now implement this one candidate.`
+- status: `implemented_pending_measurement`
+- notes: `Build passed. Node A must measure this implementation next.`
 
 ## Benchmark snapshot
 

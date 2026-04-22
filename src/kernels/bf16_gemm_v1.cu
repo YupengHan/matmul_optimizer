@@ -2080,20 +2080,25 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
 
+    if (future_tile_idx < FixedKTiles) {
+      stage_a_shared_tile_async<FixedHotBandTile128x128>(
+          a_shared[curr_stage],
+          a_block + future_tile_idx * kWmmaK,
+          kFixedBenchmarkK);
+      stage_b_shared_tile_async<FixedHotBandTile128x128>(
+          b_shared[curr_stage],
+          b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
+          kFixedBenchmarkN);
+      cp_async_commit_group();
+    }
+
     if (next_tile_idx < FixedKTiles) {
-      cp_async_wait_group_0();
-      __syncthreads();
       if (future_tile_idx < FixedKTiles) {
-        stage_a_shared_tile_async<FixedHotBandTile128x128>(
-            a_shared[curr_stage],
-            a_block + future_tile_idx * kWmmaK,
-            kFixedBenchmarkK);
-        stage_b_shared_tile_async<FixedHotBandTile128x128>(
-            b_shared[curr_stage],
-            b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
-            kFixedBenchmarkN);
-        cp_async_commit_group();
+        cp_async_wait_group_1();
+      } else {
+        cp_async_wait_group_0();
       }
+      __syncthreads();
     }
   }
 
