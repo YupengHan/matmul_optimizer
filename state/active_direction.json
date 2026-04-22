@@ -11,7 +11,7 @@
   "selection_mode": "frontier",
   "selected_at": "2026-04-21T19:20:02-07:00",
   "source_diagnosis_id": "diagnosis_20260421_191808",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Restore The Compact 128x128 PTX Grouped-Rows-4 Anchor After The Failed 256x128 Reopen",
@@ -93,5 +93,13 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "restore_compact_128x128_ptx_dispatch_after_writer_safe_256x128_reopen_loss"
 }
