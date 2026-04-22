@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `823cbff48af806c5e9c80a6da9ea7087ef3c459b`
-- plateau counter: `25`
-- round loop: `round 9/20`
-- rounds remaining: `12`
-- notes: `Node C build succeeded for round 9/20. Node A will now measure the new code path.`
+- latest measured commit: `9e21c98f50fb159e6c01b4fecbe86beaaacf569a`
+- plateau counter: `26`
+- round loop: `round 10/20`
+- rounds remaining: `11`
+- notes: `Node A completed round 9/20. Run node_b to continue round 10/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_185710_bf16_gemm_v1_823cbff4`
-- run dir: `runs/20260421_185710_bf16_gemm_v1_823cbff4`
+- run id: `20260421_190032_bf16_gemm_v1_9e21c98f`
+- run dir: `runs/20260421_190032_bf16_gemm_v1_9e21c98f`
 - correctness: `PASS`
-- median runtime: `24.697857 ms`
-- TFLOP/s: `29.436539 TFLOP/s`
+- median runtime: `24.841215 ms`
+- TFLOP/s: `29.266661 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_185824`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 9 diagnosis emitted from the new compact PTX accepted base after grouped_rows restoration.`
-- dir_01: Trim The Compact Two-Stage PTX Wait-Sync Cadence On The 22016B Shared Surface | bottleneck: Barrier and CTA handoff overhead are the clearest remaining local bottlenecks on the accepted compact PTX base.
-- dir_02: Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop | bottleneck: Warp-local shared-pointer arithmetic and hot-loop control overhead are small but still relevant on the accepted compact PTX base.
-- dir_03: Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Current PTX Base | bottleneck: The 128x128 PTX surface may still be capped by occupancy and warp-reuse geometry even after local loop cleanup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
