@@ -344,7 +344,7 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far harness engineering, profiling, human steering, and LLM assistance can go in a realistic constrained setup.
 
-The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `13` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
+The tree asset below is regenerated from the latest tracked round history in this refactor branch, which now spans `19` recorded measurement rounds, so it reflects the current exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit `489574e`.
 
 At the moment, the official benchmark snapshot in the repo is:
 
@@ -352,7 +352,7 @@ At the moment, the official benchmark snapshot in the repo is:
 - local CUTLASS baseline: `25.917889 ms`
 - result: `1.753616 ms` faster than CUTLASS, or `6.766049%` lower runtime, enough to show the harness can cross a strong local baseline on one fixed problem while still leaving room to validate and extend the win
 
-The latest 10-round refactor loop rebuilt a clean accepted base at `24.195072 ms` and finished with a final PTX wait-group retime at `24.691072 ms`, so the public best remains unchanged even though the new branch now has a cleaner cuBLASLt reference and a narrower active search frontier.
+The latest 5-round frontier-only refactor loop revalidated the compact PTX accepted base at `24.806945 ms`, then probed PTX launch-bounds, a 3-stage Pg2s ring, and grouped-row retunes between `25.063408 ms` and `25.755136 ms`. The public best therefore remains unchanged, but the tree now captures a live frontier-driven search on top of the cleaner cuBLASLt-backed refactor branch.
 
 ## Major Workflow Updates
 

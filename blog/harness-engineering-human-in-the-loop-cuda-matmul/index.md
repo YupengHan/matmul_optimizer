@@ -253,11 +253,11 @@ That narrowness is the point.
 
 I am not trying to claim a general matmul breakthrough. I am trying to test how far **harness engineering + profiling + human steering + LLM assistance** can go in a realistic constrained setup.
 
-The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **13 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
+The tree below is regenerated from the latest tracked round history in the current refactor branch, which now spans **19 recorded measurement rounds**, so it shows the live exploratory commits while keeping the official best snapshot anchored to the current recorded-best commit **`489574e`**.
 
 This refactor checkpoint is intentionally separated from the older large-history search. The branch keeps the public benchmark snapshot fixed at the recorded best while the new queue/frontier loop rebuilds evidence on top of a smaller clean baseline and a local cuBLASLt reference.
 
-The latest 10-round refactor loop recovered a clean accepted base at **24.20 ms** and finished with a final PTX wait-group retime at **24.69 ms**, so the public best did not change. What did change is the branch hygiene: the search is now running against a clean cuBLASLt reference and a much smaller active family queue instead of a tangled large-history worktree.
+The latest 5-round frontier-only refactor loop revalidated the compact PTX accepted base at **24.81 ms**, then probed PTX launch-bounds, a 3-stage Pg2s ring, and grouped-row retunes between about **25.06 ms** and **25.76 ms**. So the public best still did not move, but the branch now shows a live frontier-driven search running on top of the cleaner cuBLASLt-backed refactor baseline instead of the older tangled large-history worktree.
 
 At the moment, the official benchmark snapshot in the repo is:
 - custom kernel: **24.16 ms**
