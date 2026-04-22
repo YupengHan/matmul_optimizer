@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_190032_bf16_gemm_v1_9e21c98f`
-- run dir: `runs/20260421_190032_bf16_gemm_v1_9e21c98f`
-- kernel tag: `bf16_gemm_v1_9e21c98f`
-- round label: `round 9/20`
+- run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
+- run dir: `runs/20260421_190652_bf16_gemm_v1_88a8acfc`
+- kernel tag: `bf16_gemm_v1_88a8acfc`
+- round label: `round 10/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.841215 ms`
-- p10 runtime: `24.835993 ms`
-- p90 runtime: `26.184909 ms`
-- TFLOP/s: `29.266661 TFLOP/s`
-- previous run id: `20260421_185710_bf16_gemm_v1_823cbff4`
-- runtime delta vs previous measured run: `+0.143358 ms`
-- TFLOP/s delta vs previous measured run: `-0.169878 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Trim The Compact Two-Stage PTX Wait-Sync Cadence On The 22016B Shared Surface`
+- median runtime: `24.689153 ms`
+- p10 runtime: `24.680449 ms`
+- p90 runtime: `26.078208 ms`
+- TFLOP/s: `29.446917 TFLOP/s`
+- previous run id: `20260421_190032_bf16_gemm_v1_9e21c98f`
+- runtime delta vs previous measured run: `-0.152062 ms`
+- TFLOP/s delta vs previous measured run: `+0.180256 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `dir_02`
+- implemented direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_190032_bf16_gemm_v1_9e21c98f/summary.json`
-- ncu analysis path: `runs/20260421_190032_bf16_gemm_v1_9e21c98f/ncu_analysis.json`
-- measured commit: `9e21c98f50fb159e6c01b4fecbe86beaaacf569a`
+- raw summary json: `runs/20260421_190652_bf16_gemm_v1_88a8acfc/summary.json`
+- ncu analysis path: `runs/20260421_190652_bf16_gemm_v1_88a8acfc/ncu_analysis.json`
+- measured commit: `88a8acfc6a0c4389f714a79adad71b17558c09a6`
 - new best custom: `no`
-- generated at: `2026-04-21T19:00:44-07:00`
+- generated at: `2026-04-21T19:07:04-07:00`

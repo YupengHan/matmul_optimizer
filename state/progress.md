@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `9e21c98f50fb159e6c01b4fecbe86beaaacf569a`
-- plateau counter: `26`
-- round loop: `round 10/20`
-- rounds remaining: `11`
-- notes: `Node C build succeeded for round 10/20. Node A will now measure the new code path.`
+- latest measured commit: `88a8acfc6a0c4389f714a79adad71b17558c09a6`
+- plateau counter: `27`
+- round loop: `round 11/20`
+- rounds remaining: `10`
+- notes: `Node A completed round 10/20. Run node_b to continue round 11/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_190032_bf16_gemm_v1_9e21c98f`
-- run dir: `runs/20260421_190032_bf16_gemm_v1_9e21c98f`
+- run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
+- run dir: `runs/20260421_190652_bf16_gemm_v1_88a8acfc`
 - correctness: `PASS`
-- median runtime: `24.841215 ms`
-- TFLOP/s: `29.266661 TFLOP/s`
+- median runtime: `24.689153 ms`
+- TFLOP/s: `29.446917 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_190245`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 10 diagnosis emitted after the barrier-trim experiment regressed and should be cleared before the checkpoint.`
-- dir_01: Restore The Accepted Compact PTX Cadence After The Failed Barrier Trim | bottleneck: This is a recovery direction rather than a new bottleneck theory; its purpose is to remove a falsified sync variant and return to the accepted compact PTX surface.
-- dir_02: Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Accepted PTX Base | bottleneck: The 128x128 PTX surface may still be constrained by geometry and warp-reuse limits once the local cadence is back on the accepted base.
-- dir_03: Port The PTX Hot-Band Path To The Existing 2-K Pg2s Stage Schedule | bottleneck: Barrier, refill cadence, and latency hiding on the dominant hot-band path rather than raw DRAM bandwidth.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_02`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
