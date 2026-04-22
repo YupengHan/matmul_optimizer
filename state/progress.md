@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `257c9662ad79d8c40a9bd26f43d72ce39dc978f6`
-- plateau counter: `36`
-- round loop: `round 20/20`
-- rounds remaining: `1`
-- notes: `Node C build succeeded for round 20/20. Node A will now measure the new code path.`
+- latest measured commit: `6dd4c8bb3440703870e69b2889892192590014ef`
+- plateau counter: `37`
+- round loop: `single-run`
+- rounds remaining: `0`
+- notes: `Node A completed the final planned round. Review the results before starting another loop.`
 
 ## Latest measured custom run
 
-- run id: `20260421_194813_bf16_gemm_v1_257c9662`
-- run dir: `runs/20260421_194813_bf16_gemm_v1_257c9662`
+- run id: `20260421_195018_bf16_gemm_v1_6dd4c8bb`
+- run dir: `runs/20260421_195018_bf16_gemm_v1_6dd4c8bb`
 - correctness: `PASS`
-- median runtime: `26.079727 ms`
-- TFLOP/s: `27.876803 TFLOP/s`
+- median runtime: `24.689665 ms`
+- TFLOP/s: `29.446306 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_194853`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 20/20 diagnosis emitted from the failed 3-CTA PTX launch-bounds probe; frontier should restore the clean compact PTX anchor to close the loop.`
-- dir_01: Restore The Clean Compact PTX Anchor After The Failed Three-CTA Probe | bottleneck: The immediate problem is a failed register-budget probe, not an unresolved algorithmic bottleneck.
-- dir_02: Keep The Compact Barrier-Trim Family Parked After Its Earlier Losses | bottleneck: Residual synchronization cost on the compact PTX loop, but with weaker evidence than the immediate restore.
-- dir_03: Keep The Existing X32 Staged Family Closed On This Branch End State | bottleneck: Occupancy and synchronization tradeoffs on the staged family remain structurally unfavorable.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

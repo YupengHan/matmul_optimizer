@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_194813_bf16_gemm_v1_257c9662`
-- run dir: `runs/20260421_194813_bf16_gemm_v1_257c9662`
-- kernel tag: `bf16_gemm_v1_257c9662`
-- round label: `round 19/20`
+- run id: `20260421_195018_bf16_gemm_v1_6dd4c8bb`
+- run dir: `runs/20260421_195018_bf16_gemm_v1_6dd4c8bb`
+- kernel tag: `bf16_gemm_v1_6dd4c8bb`
+- round label: `round 20/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.079727 ms`
-- p10 runtime: `25.838490 ms`
-- p90 runtime: `27.497780 ms`
-- TFLOP/s: `27.876803 TFLOP/s`
-- previous run id: `20260421_194414_bf16_gemm_v1_ac1299d7`
-- runtime delta vs previous measured run: `+1.391087 ms`
-- TFLOP/s delta vs previous measured run: `-1.570724 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.689665 ms`
+- p10 runtime: `24.504672 ms`
+- p90 runtime: `26.078905 ms`
+- TFLOP/s: `29.446306 TFLOP/s`
+- previous run id: `20260421_194813_bf16_gemm_v1_257c9662`
+- runtime delta vs previous measured run: `-1.390062 ms`
+- TFLOP/s delta vs previous measured run: `+1.569503 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune The Clean Compact PTX Launch Bounds To Target Three-CTA Residency`
+- implemented direction name: `Restore The Clean Compact PTX Anchor After The Failed Three-CTA Probe`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_194813_bf16_gemm_v1_257c9662/summary.json`
-- ncu analysis path: `runs/20260421_194813_bf16_gemm_v1_257c9662/ncu_analysis.json`
-- measured commit: `257c9662ad79d8c40a9bd26f43d72ce39dc978f6`
+- raw summary json: `runs/20260421_195018_bf16_gemm_v1_6dd4c8bb/summary.json`
+- ncu analysis path: `runs/20260421_195018_bf16_gemm_v1_6dd4c8bb/ncu_analysis.json`
+- measured commit: `6dd4c8bb3440703870e69b2889892192590014ef`
 - new best custom: `no`
-- generated at: `2026-04-21T19:48:25-07:00`
+- generated at: `2026-04-21T19:50:30-07:00`
