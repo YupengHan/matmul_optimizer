@@ -1,109 +1,78 @@
 {
   "schema_version": 1,
-  "attempt_id": "diagnosis_20260421_163733:dir_01",
-  "status": "measured",
-  "candidate_id": "diagnosis_20260421_163733:dir_01",
-  "source_diagnosis_id": "diagnosis_20260421_163733",
-  "base_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-  "family_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim",
-  "subfamily_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim::row_pair_interleave_right_left_right_left",
+  "attempt_id": "diagnosis_20260421_171314:dir_01",
+  "status": "build_passed_pending_measurement",
+  "candidate_id": "diagnosis_20260421_171314:dir_01",
+  "source_diagnosis_id": "diagnosis_20260421_171314",
+  "base_run_id": "20260421_170056_bf16_gemm_v1_13d24542",
+  "family_id": "register_reuse::ptx_hotband_microkernel_live_range_reset",
+  "subfamily_id": "register_reuse::ptx_hotband_microkernel_live_range_reset::replace_colstep_interleave_with_compact_rowpair_path",
   "direction_id": "dir_01",
-  "direction_name": "Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class",
+  "direction_name": "Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path",
   "mode": "exploit",
-  "commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
-  "commit_short": "13d2454",
-  "subject": "node_c: single-run implement dir_01 Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class",
+  "commit": null,
+  "commit_short": null,
+  "subject": "node_c: round 1/1 implement dir_01 Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path",
   "selection_mode": "recommended",
-  "selected_at": "2026-04-21T16:48:46-07:00",
+  "selected_at": "2026-04-21T17:23:10-07:00",
   "selected_from_frontier_id": "frontier:global",
-  "source_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-  "selection_score": 1.035,
-  "planned_action_fingerprint": "trim_ptx_microkernel_accumulate_register_budget_to_restore_three_cta_residency",
-  "implemented_action_fingerprint": "trim_ptx_microkernel_accumulate_register_budget_to_restore_three_cta_residency",
+  "source_run_id": "20260421_170056_bf16_gemm_v1_13d24542",
+  "selection_score": 1.0675,
+  "planned_action_fingerprint": "replace_interleaved_hotband_ptx_microkernel_with_compact_rowpair_accumulate_path",
+  "implemented_action_fingerprint": "replace_interleaved_hotband_ptx_microkernel_with_compact_rowpair_accumulate_path",
   "score_breakdown": {
-    "policy_id": "manual_round11_register_budget_first_v1",
-    "headroom_score": 0.32,
-    "evidence_score": 0.33,
-    "implementation_bonus": 0.27,
-    "risk_penalty": -0.04,
+    "policy_id": "manual_round1_hotband_regression_recovery_v1",
+    "headroom_score": 0.37,
+    "evidence_score": 0.35,
+    "implementation_bonus": 0.24,
+    "risk_penalty": -0.06,
     "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
   },
   "semantic_delta_tags": [
-    "row_pair_interleave_right_left_right_left",
-    "column_outer_loop_refactor",
-    "new_helper_ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel",
-    "old_row_pair_helper_retained_but_unused"
+    "single_direction_attempt",
+    "kernel_code"
   ],
   "secondary_family_ids": [],
   "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu: new ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel helper (~lines 841-902)",
-    "src/kernels/bf16_gemm_v1.cu: rewritten ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel body to drive 4 column steps of interleaved Right-Left row-pair calls (~lines 904-922)",
-    "src/kernels/bf16_gemm_v1.cu: ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel left intact (lines 742-818) as __forceinline__ and is DCE'd since nothing calls it now"
+    "src/kernels/bf16_gemm_v1.cu"
   ],
   "implementation": {
-    "commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
-    "commit_short": "13d2454",
-    "subject": "node_c: single-run implement dir_01 Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class",
+    "commit": null,
+    "commit_short": null,
+    "subject": "node_c: round 1/1 implement dir_01 Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path",
     "build_status": "PASS",
     "failure_mode": null,
     "build_log_path": "state/node_c_last_build.log",
     "touched_files": [
-      "src/kernels/bf16_gemm_v1.cu: new ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel helper (~lines 841-902)",
-      "src/kernels/bf16_gemm_v1.cu: rewritten ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel body to drive 4 column steps of interleaved Right-Left row-pair calls (~lines 904-922)",
-      "src/kernels/bf16_gemm_v1.cu: ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel left intact (lines 742-818) as __forceinline__ and is DCE'd since nothing calls it now"
+      "src/kernels/bf16_gemm_v1.cu"
     ],
     "diff_stats": {
       "files_changed": 1,
-      "insertions": 98,
-      "deletions": 2
+      "insertions": 6,
+      "deletions": 96
     }
   },
   "build_status": "PASS",
   "failure_mode": null,
   "diff_stats": {
     "files_changed": 1,
-    "insertions": 98,
-    "deletions": 2
+    "insertions": 6,
+    "deletions": 96
   },
   "measurement": {
-    "run_id": "20260421_170056_bf16_gemm_v1_13d24542",
-    "measurement_commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
-    "runtime_ms": 31.23967934,
-    "runtime_delta_ms": 6.548606879999998,
-    "tflops": 23.27230744,
-    "correctness": true,
-    "ncu_analysis_path": "runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_analysis.json",
-    "headline_metrics": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": 37.48,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": 36.98,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 58.96,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 13.23,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": 24.66,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 16.6,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 9.8,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 4.64,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 3.19,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 15.39,
-      "launch__occupancy_limit_registers": 2.0
-    },
-    "headline_metric_deltas_vs_previous_run": {
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active": -10.89,
-      "sm__throughput.avg.pct_of_peak_sustained_elapsed": -10.920000000000002,
-      "gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed": 12.719999999999999,
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed": 0.7300000000000004,
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed": -5.140000000000001,
-      "sm__warps_active.avg.pct_of_peak_sustained_active": 0.020000000000003126,
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 3.460000000000001,
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": -0.8900000000000006,
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 1.3299999999999998,
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct": 11.39,
-      "launch__occupancy_limit_registers": 0.0
-    },
+    "run_id": null,
+    "measurement_commit": null,
+    "runtime_ms": null,
+    "runtime_delta_ms": null,
+    "tflops": null,
+    "correctness": null,
+    "ncu_analysis_path": null,
+    "headline_metrics": {},
+    "headline_metric_deltas_vs_previous_run": {},
     "structured_bottleneck_deltas": [],
     "top_hotspot_deltas": []
   },
-  "transition_class": "regressed",
-  "close_reason": "measured_by_node_a",
-  "notes": "Node A measured 20260421_170056_bf16_gemm_v1_13d24542 for candidate diagnosis_20260421_163733:dir_01; transition_label=PASS_LOSS.",
-  "transition_label": "PASS_LOSS"
+  "transition_class": null,
+  "close_reason": null,
+  "notes": "Build passed. Node A must measure this implementation next."
 }
