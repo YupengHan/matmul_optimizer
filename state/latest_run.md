@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
-- run dir: `runs/20260421_190652_bf16_gemm_v1_88a8acfc`
-- kernel tag: `bf16_gemm_v1_88a8acfc`
-- round label: `round 10/20`
+- run id: `20260421_191613_bf16_gemm_v1_9652b835`
+- run dir: `runs/20260421_191613_bf16_gemm_v1_9652b835`
+- kernel tag: `bf16_gemm_v1_9652b835`
+- round label: `round 11/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.689153 ms`
-- p10 runtime: `24.680449 ms`
-- p90 runtime: `26.078208 ms`
-- TFLOP/s: `29.446917 TFLOP/s`
-- previous run id: `20260421_190032_bf16_gemm_v1_9e21c98f`
-- runtime delta vs previous measured run: `-0.152062 ms`
-- TFLOP/s delta vs previous measured run: `+0.180256 TFLOP/s`
-- perf verdict: `improved`
-- implemented direction id: `dir_02`
-- implemented direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
+- median runtime: `30.174224 ms`
+- p10 runtime: `30.135098 ms`
+- p90 runtime: `31.168308 ms`
+- TFLOP/s: `24.094055 TFLOP/s`
+- previous run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
+- runtime delta vs previous measured run: `+5.485071 ms`
+- TFLOP/s delta vs previous measured run: `-5.352861 TFLOP/s`
+- perf verdict: `regressed`
+- implemented direction id: `dir_01`
+- implemented direction name: `Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Current Compact PTX Base`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_190652_bf16_gemm_v1_88a8acfc/summary.json`
-- ncu analysis path: `runs/20260421_190652_bf16_gemm_v1_88a8acfc/ncu_analysis.json`
-- measured commit: `88a8acfc6a0c4389f714a79adad71b17558c09a6`
+- raw summary json: `runs/20260421_191613_bf16_gemm_v1_9652b835/summary.json`
+- ncu analysis path: `runs/20260421_191613_bf16_gemm_v1_9652b835/ncu_analysis.json`
+- measured commit: `9652b83550cd0d483328509f8a3f908c72a1e03a`
 - new best custom: `no`
-- generated at: `2026-04-21T19:07:04-07:00`
+- generated at: `2026-04-21T19:16:25-07:00`

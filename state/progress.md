@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `88a8acfc6a0c4389f714a79adad71b17558c09a6`
-- plateau counter: `27`
-- round loop: `round 11/20`
-- rounds remaining: `10`
-- notes: `Node C build succeeded for round 11/20. Node A will now measure the new code path.`
+- latest measured commit: `9652b83550cd0d483328509f8a3f908c72a1e03a`
+- plateau counter: `28`
+- round loop: `round 12/20`
+- rounds remaining: `9`
+- notes: `Node A completed round 11/20. Run node_b to continue round 12/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
-- run dir: `runs/20260421_190652_bf16_gemm_v1_88a8acfc`
+- run id: `20260421_191613_bf16_gemm_v1_9652b835`
+- run dir: `runs/20260421_191613_bf16_gemm_v1_9652b835`
 - correctness: `PASS`
-- median runtime: `24.689153 ms`
-- TFLOP/s: `29.446917 TFLOP/s`
+- median runtime: `30.174224 ms`
+- TFLOP/s: `24.094055 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_191121`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 11/20 diagnosis emitted from the live 24.689153 ms compact PTX plateau; frontier should prefer a structural branch over stale restore-base replay.`
-- dir_01: Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Current Compact PTX Base | bottleneck: The dominant ceiling is occupancy and hot-band geometry on the active 128x128 PTX path, not raw DRAM bandwidth.
-- dir_02: Port The 2-K-Stage Pg2s Schedule Onto The Active 128x128 PTX Microkernel | bottleneck: The active PTX hot-band path is still limited by per-tile Pg2s cadence and the resulting latency-hiding gap.
-- dir_03: Reopen Pairwise Wait-Sync Collapse On The Current Compact PTX Surface | bottleneck: The remaining bottleneck on the compact PTX surface is hot-loop synchronization cadence rather than address setup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

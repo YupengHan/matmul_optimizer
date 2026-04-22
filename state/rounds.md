@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `10`
-- remaining rounds: `10`
-- current round label: `round 11/20`
+- completed rounds: `11`
+- remaining rounds: `9`
+- current round label: `round 12/20`
 - auto use recommended: `no`
 - auto select frontier: `yes`
 - accepted base run id: `20260421_190652_bf16_gemm_v1_88a8acfc`
@@ -14,15 +14,15 @@
 - started at: `2026-04-21T17:51:34-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 11/20. Node A will measure the result next.`
+- notes: `Completed round 11/20. Continue with node_b for round 12/20. Accepted base: 20260421_190652_bf16_gemm_v1_88a8acfc at 24.689153 ms.`
 
 ## Last completed round
 
-- round: `10/20`
-- direction: `dir_02`
-- direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
-- verdict: `improved`
-- runtime delta: `-0.152062 ms`
-- TFLOP/s delta: `+0.180256 TFLOP/s`
-- run dir: `runs/20260421_190652_bf16_gemm_v1_88a8acfc`
-- ncu rep path: `runs/20260421_190652_bf16_gemm_v1_88a8acfc/ncu_profile.ncu-rep`
+- round: `11/20`
+- direction: `dir_01`
+- direction name: `Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Current Compact PTX Base`
+- verdict: `regressed`
+- runtime delta: `+5.485071 ms`
+- TFLOP/s delta: `-5.352861 TFLOP/s`
+- run dir: `runs/20260421_191613_bf16_gemm_v1_9652b835`
+- ncu rep path: `runs/20260421_191613_bf16_gemm_v1_9652b835/ncu_profile.ncu-rep`

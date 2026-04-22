@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 11/20` with `10` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 12/20` with `9` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_191121`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 11/20 diagnosis emitted from the live 24.689153 ms compact PTX plateau; frontier should prefer a structural branch over stale restore-base replay.`
-- dir_01: Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Current Compact PTX Base | bottleneck: The dominant ceiling is occupancy and hot-band geometry on the active 128x128 PTX path, not raw DRAM bandwidth.
-- dir_02: Port The 2-K-Stage Pg2s Schedule Onto The Active 128x128 PTX Microkernel | bottleneck: The active PTX hot-band path is still limited by per-tile Pg2s cadence and the resulting latency-hiding gap.
-- dir_03: Reopen Pairwise Wait-Sync Collapse On The Current Compact PTX Surface | bottleneck: The remaining bottleneck on the compact PTX surface is hot-loop synchronization cadence rather than address setup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 
