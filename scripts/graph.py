@@ -14,6 +14,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import eval_kernel
 import ncu_analysis
+from gpu_lock import gpu_exclusive
 from search_policy import (
     classify_transition,
     fallback_search_score_v1,
@@ -3974,7 +3975,9 @@ def run_node_a(args: argparse.Namespace) -> int:
     if previous_analysis_path and previous_analysis_path.exists():
         cmd.extend(['--previous-ncu-analysis', str(previous_analysis_path)])
 
-    proc = run_command(cmd, capture=True)
+    lock_reason = f'node_a:{args.kernel_tag or default_kernel_tag(graph_state["current_kernel_path"])}'
+    with gpu_exclusive(reason=lock_reason):
+        proc = run_command(cmd, capture=True)
     if proc.returncode != 0:
         update_failure_state('node_a', 'evaluation failed; inspect the latest run logs under runs/')
         raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or 'node_a evaluation failed')

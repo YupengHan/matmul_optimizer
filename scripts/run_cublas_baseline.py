@@ -22,6 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from gpu_lock import gpu_exclusive
 from graph import refresh_all_views, render_benchmark_baselines_md
 from state_lib import BENCHMARK_STATE_PATH, REPO_ROOT, load_benchmark_state, now_local_iso, repo_rel, write_json, write_text
 
@@ -114,7 +115,8 @@ def main() -> None:
     for item in args.extra_runner_arg:
         cmd.append(f'--extra-runner-arg={item}')
 
-    proc = subprocess.run(cmd, text=True, capture_output=True, check=False)
+    with gpu_exclusive(reason=f'cublas_baseline:{args.kernel_tag}'):
+        proc = subprocess.run(cmd, text=True, capture_output=True, check=False)
     if proc.stdout:
         print(proc.stdout, end='')
     if proc.stderr:

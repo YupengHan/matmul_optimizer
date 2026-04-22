@@ -19,6 +19,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from gpu_lock import gpu_exclusive
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Run the CUTLASS baseline through eval_kernel.py')
@@ -65,7 +67,9 @@ def main() -> None:
     for item in args.extra_runner_arg:
         cmd += ['--extra-runner-arg', item]
 
-    raise SystemExit(subprocess.run(cmd, check=False).returncode)
+    with gpu_exclusive(reason=f'cutlass_baseline:{args.kernel_tag}'):
+        returncode = subprocess.run(cmd, check=False).returncode
+    raise SystemExit(returncode)
 
 
 if __name__ == '__main__':

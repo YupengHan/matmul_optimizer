@@ -389,6 +389,59 @@ Template reference:
 - `.gitmessage`
 - `docs/commit_convention.md`
 
+## Parallel dual-agent operation (shared GPU, isolated repos)
+
+Two LLM agents (for example one Codex instance and one Claude Code instance) may work on the same benchmark concurrently as long as they operate from **independent repo folders on different git branches**, and serialize every GPU-touching command through a shared cross-process lock.
+
+Layout:
+
+- `/home/aice/Desktop/Git/matmul_optimizer` — first folder, one branch (e.g. `refactor_minimal_18ms_base`), one agent.
+- `~/Desktop/matmul_optimizer` (or any other distinct folder) — second folder, a different branch, the other agent.
+- `state/`, `runs/`, `build/`, and `artifacts/` are physically separate between the two folders. They are not merged.
+- The two branches are parallel experiments and are not planned to be merged back into each other.
+
+Shared resources (must be serialized across folders):
+
+- the physical GPU (runner execution and `ncu` profiling)
+
+Non-shared resources (no coordination needed):
+
+- `state/*.json` and `state/*.md`
+- `build/` (per-folder `custom_runner`)
+- `runs/` measurement artifacts
+- `artifacts/datasets/` (can optionally be symlinked between folders to save disk, but do not write from both sides concurrently)
+
+GPU lock contract:
+
+1. a single lock file is shared across all folders on this host; default path `$HOME/.cache/matmul_optimizer/gpu.lock`
+2. override with the env var `MATMUL_GPU_LOCK` if both folders need a different shared location
+3. every command that runs the GPU (`custom_runner`, `cublas_runner`, `cutlass_runner`) or `ncu` must acquire this lock first
+4. acquisition is an exclusive `fcntl.flock(LOCK_EX)`; a waiter prints a `[gpu_lock] waiting …` heartbeat to stderr every 30s and reports the current holder
+5. the lock is released automatically when the holder process exits, even on crash
+6. a sidecar `<lock>.holder` JSON records `{pid, agent_id, cwd, reason, started_at}` for observability
+
+Agent identity:
+
+- set `MATMUL_AGENT_ID=claude` in one folder's shell and `MATMUL_AGENT_ID=codex` in the other
+- the value is recorded in the lock holder file and in `[gpu_lock]` heartbeats; it does not affect state or commit semantics
+
+Where the lock is already wired:
+
+- `scripts/graph.py` `run_node_a` wraps the `eval_kernel.py` subprocess
+- `scripts/run_cublas_baseline.py` wraps its `eval_kernel.py` subprocess
+- `scripts/run_cutlass_baseline.py` wraps its `eval_kernel.py` subprocess
+
+Manual GPU commands:
+
+- any hand-run GPU job (for example, a direct `./build/custom_runner ...` or `ncu ...` invocation) must also pass through the lock
+- use `python scripts/gpu_lock.py run -- <cmd> [args...]` to wrap an arbitrary command
+- inspect the current holder with `python scripts/gpu_lock.py status`
+
+Branch and push hygiene:
+
+- the two agents push to different branch names on the same `origin`; they never force-push each other's branches
+- no automatic cross-folder syncing; manual `git fetch` and inspection only
+
 ## Large-file and artifact policy
 
 Never commit:
