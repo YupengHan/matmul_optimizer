@@ -1,14 +1,14 @@
 {
-  "current_node": "node_b",
-  "previous_node": "node_a",
-  "status": "ready_for_node_b",
+  "current_node": "node_c",
+  "previous_node": "node_b",
+  "status": "ready_for_node_c",
   "latest_run_dir": "runs/20260421_183606_bf16_gemm_v1_c03bcd3a",
   "latest_summary_json": "state/latest_run.json",
   "latest_ncu_summary_json": "state/latest_ncu_summary.json",
   "latest_commit": "c03bcd3afa5031aacad05eaa97d0f16ad55b6192",
   "approved_direction_id": null,
-  "recommended_direction_id": null,
+  "recommended_direction_id": "dir_01",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
   "plateau_counter": 22,
-  "notes": "Node A completed round 5/20. Run node_b to continue round 6/20."
+  "notes": "Node C is ready to implement diagnosis_20260421_184151:dir_01 via frontier selection for round 6/20."
 }

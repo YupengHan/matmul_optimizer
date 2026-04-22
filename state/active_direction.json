@@ -1,21 +1,96 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop",
+  "candidate_id": "diagnosis_20260421_184151:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "sync_pipeline::ptx_microkernel_epilogue_drain_split",
+  "subfamily_id": "sync_pipeline::ptx_wait_group_final_drain_on_three_stage_pg2s_surface",
+  "action_fingerprint": "ptx_microkernel:pull_final_wait_sync_out_of_steady_state_loop_after_3stage_pg2s",
+  "selection_priority": 2.87,
+  "base_run_id": "20260421_183606_bf16_gemm_v1_c03bcd3a",
+  "selection_mode": "frontier",
+  "selected_at": "2026-04-21T18:43:28-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_184151",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop",
+    "family_id": "sync_pipeline::ptx_microkernel_epilogue_drain_split",
+    "subfamily_id": "sync_pipeline::ptx_wait_group_final_drain_on_three_stage_pg2s_surface",
+    "action_fingerprint": "ptx_microkernel:pull_final_wait_sync_out_of_steady_state_loop_after_3stage_pg2s",
+    "mode": "explore",
+    "hypothesis": "The 3-stage ring already solved the long_scoreboard problem, but the kernel still pays a full CTA sync on each late handoff while draining a larger in-flight shared-memory footprint. Pulling the no-refill drain into a narrower late path should keep the 3-stage latency win while trimming the extra barrier and mio_throttle tax that made both 4948b8ea and c03bcd3a lose.",
+    "expected_bottleneck": "Late-drain synchronization is now the clearest remaining local tax on the 3-stage PTX surface.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:2055-2090"
+    ],
+    "risk": "Moderate. This stays on the current PTX family and does not reopen tiling or dispatch, but it touches delicate wait_group drain logic and can still break correctness if mistimed.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+      "launch__shared_mem_per_block_allocated"
+    ],
+    "search_score_v1": 2.68,
+    "score_breakdown": {
+      "policy_id": "manual_round6_3stage_drain_fix_v1",
+      "rank_score": 2.16,
+      "evidence_bonus": 0.28,
+      "implementation_bonus": 0.3,
+      "risk_penalty": 0.06,
+      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 0.31,
+    "predicted_fail_risk": 0.24,
+    "ranking_notes": [
+      "This is the smallest remaining change that preserves the only decisive benefit from the 3-stage experiment: long_scoreboard dropped from 5.45% to 0.22%.",
+      "The grouped_rows=2 probe says launch-order depth was not the fix, so the next narrow move is the late-drain seam itself.",
+      "If it loses, the result cleanly justifies rolling back to the two-stage PTX anchor without more ambiguity."
+    ],
+    "stop_condition": "Stop if the late-drain split requires another stage-count rewrite, wider launch changes, or hot-loop predicates larger than a tiny late-path branch.",
+    "evidence_refs": [
+      "state/latest_run.md",
+      "state/latest_ncu_summary.md",
+      "runs/20260421_183606_bf16_gemm_v1_c03bcd3a/ncu_analysis.md",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "stall_breakdown",
+        "scope_name": "barrier",
+        "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      },
+      {
+        "scope_type": "stall_breakdown",
+        "scope_name": "mio_throttle",
+        "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+      }
+    ],
+    "expected_local_changes": [
+      "Split the late no-refill drain from the current 3-stage steady-state path.",
+      "Keep stage count at 3 and leave grouped_rows unchanged in the first pass.",
+      "Do not touch launch bounds or the accumulator schedule while testing the drain seam."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "correctness",
+        "guardrail": "must_pass"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "guardrail": "non_increasing_vs_current_run"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "guardrail": "non_increasing_vs_current_run"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "guardrail": "bounded_not_worse_than_current_run"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
