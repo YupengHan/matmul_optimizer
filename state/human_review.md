@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 15/20` with `6` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 16/20` with `5` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_193031`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 15/20 diagnosis emitted from the current accepted compact PTX base; frontier should try the smallest final-drain barrier trim before the checkpoint.`
-- dir_01: Skip The Final No-Refill CTA Sync On The Compact PTX Anchor | bottleneck: The remaining local tax is unnecessary final-drain barrier overhead on the accepted compact PTX surface.
-- dir_02: Keep The Guarded 2-K-Stage Pg2s Port As The Broader Fallback | bottleneck: If revisited later, the target remains compact-surface latency hiding and per-tile copy cadence.
-- dir_03: Leave The Wait-Sync-Collapse Family Parked Behind Smaller Compact Tweaks | bottleneck: If revisited later, the target would again be the compact loop's wait/refill seam, but not before smaller barrier trims flatten out.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 
