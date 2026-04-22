@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 6/20` with `15` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 7/20` with `14` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_184151`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 6 treats the grouped_rows=2 probe as a negative result on top of a still-informative 3-stage family. The next move should either fix the late drain or restore the clean two-stage PTX anchor before another broad branch jump.`
-- dir_01: Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop | bottleneck: Late-drain synchronization is now the clearest remaining local tax on the 3-stage PTX surface.
-- dir_02: Restore The Two-Stage PTX Anchor After The 3-Stage Probes | bottleneck: This is a fallback restore family, not a new bottleneck theory: it resets the search to the cleanest recent PTX anchor so later branches can be tested from a lower-variance surface.
-- dir_03: Reopen 256x128 64x64-Warp Hot-Band Tiling On The Dominant Surface | bottleneck: The 128x128 PTX surface may still be hitting a real tiling and warp-reuse ceiling even after local pipeline cleanup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 

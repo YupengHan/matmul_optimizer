@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_183606_bf16_gemm_v1_c03bcd3a`
-- run dir: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a`
-- kernel tag: `bf16_gemm_v1_c03bcd3a`
-- round label: `round 5/20`
+- run id: `20260421_184622_bf16_gemm_v1_d51419e6`
+- run dir: `runs/20260421_184622_bf16_gemm_v1_d51419e6`
+- kernel tag: `bf16_gemm_v1_d51419e6`
+- round label: `round 6/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.755136 ms`
-- p10 runtime: `25.732813 ms`
-- p90 runtime: `27.273494 ms`
-- TFLOP/s: `28.228134 TFLOP/s`
-- previous run id: `20260421_183233_bf16_gemm_v1_4948b8ea`
-- runtime delta vs previous measured run: `+0.503295 ms`
-- TFLOP/s delta vs previous measured run: `-0.562616 TFLOP/s`
+- median runtime: `28.767664 ms`
+- p10 runtime: `28.341050 ms`
+- p90 runtime: `29.645311 ms`
+- TFLOP/s: `25.272105 TFLOP/s`
+- previous run id: `20260421_183606_bf16_gemm_v1_c03bcd3a`
+- runtime delta vs previous measured run: `+3.012528 ms`
+- TFLOP/s delta vs previous measured run: `-2.956029 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface`
+- implemented direction name: `Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a/summary.json`
-- ncu analysis path: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a/ncu_analysis.json`
-- measured commit: `c03bcd3afa5031aacad05eaa97d0f16ad55b6192`
+- raw summary json: `runs/20260421_184622_bf16_gemm_v1_d51419e6/summary.json`
+- ncu analysis path: `runs/20260421_184622_bf16_gemm_v1_d51419e6/ncu_analysis.json`
+- measured commit: `d51419e68ece25d501edff44e937b6f56053d97c`
 - new best custom: `no`
-- generated at: `2026-04-21T18:36:19-07:00`
+- generated at: `2026-04-21T18:46:34-07:00`
