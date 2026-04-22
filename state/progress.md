@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `4948b8ea197c9869356471fedefa11a45b84ee35`
-- plateau counter: `21`
-- round loop: `round 5/20`
-- rounds remaining: `16`
-- notes: `Node C build succeeded for round 5/20. Node A will now measure the new code path.`
+- latest measured commit: `c03bcd3afa5031aacad05eaa97d0f16ad55b6192`
+- plateau counter: `22`
+- round loop: `round 6/20`
+- rounds remaining: `15`
+- notes: `Node A completed round 5/20. Run node_b to continue round 6/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_183233_bf16_gemm_v1_4948b8ea`
-- run dir: `runs/20260421_183233_bf16_gemm_v1_4948b8ea`
+- run id: `20260421_183606_bf16_gemm_v1_c03bcd3a`
+- run dir: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a`
 - correctness: `PASS`
-- median runtime: `25.251841 ms`
-- TFLOP/s: `28.790750 TFLOP/s`
+- median runtime: `25.755136 ms`
+- TFLOP/s: `28.228134 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_183411`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 5 treats the 3-stage Pg2s probe as informative but incomplete: it fixed the long_scoreboard problem and slightly reduced registers, so the next move should clean up the handoff tax before discarding the family.`
-- dir_01: Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface | bottleneck: Grouped-row batching is likely over-amortizing locality on the 3-stage surface and paying extra barrier plus handoff delay per CTA group.
-- dir_02: Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop | bottleneck: Late-drain synchronization is now the most likely remaining local tax on the 3-stage surface.
-- dir_03: Reopen 256x128 64x64-Warp Hot-Band Tiling On The Dominant Surface | bottleneck: The 128x128 PTX hot-band surface may be hitting a real tiling and reuse ceiling even after local pipeline cleanup.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

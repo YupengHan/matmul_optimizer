@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_183233_bf16_gemm_v1_4948b8ea`
-- run dir: `runs/20260421_183233_bf16_gemm_v1_4948b8ea`
-- kernel tag: `bf16_gemm_v1_4948b8ea`
-- round label: `round 4/20`
+- run id: `20260421_183606_bf16_gemm_v1_c03bcd3a`
+- run dir: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a`
+- kernel tag: `bf16_gemm_v1_c03bcd3a`
+- round label: `round 5/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.251841 ms`
-- p10 runtime: `25.244439 ms`
-- p90 runtime: `26.682778 ms`
-- TFLOP/s: `28.790750 TFLOP/s`
-- previous run id: `20260421_182631_bf16_gemm_v1_1f02b147`
-- runtime delta vs previous measured run: `+0.188433 ms`
-- TFLOP/s delta vs previous measured run: `-0.216456 TFLOP/s`
+- median runtime: `25.755136 ms`
+- p10 runtime: `25.732813 ms`
+- p90 runtime: `27.273494 ms`
+- TFLOP/s: `28.228134 TFLOP/s`
+- previous run id: `20260421_183233_bf16_gemm_v1_4948b8ea`
+- runtime delta vs previous measured run: `+0.503295 ms`
+- TFLOP/s delta vs previous measured run: `-0.562616 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Deepen The Active PTX Hot-Band To A 3-Stage Pg2s Pipeline`
+- implemented direction name: `Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_183233_bf16_gemm_v1_4948b8ea/summary.json`
-- ncu analysis path: `runs/20260421_183233_bf16_gemm_v1_4948b8ea/ncu_analysis.json`
-- measured commit: `4948b8ea197c9869356471fedefa11a45b84ee35`
+- raw summary json: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a/summary.json`
+- ncu analysis path: `runs/20260421_183606_bf16_gemm_v1_c03bcd3a/ncu_analysis.json`
+- measured commit: `c03bcd3afa5031aacad05eaa97d0f16ad55b6192`
 - new best custom: `no`
-- generated at: `2026-04-21T18:32:47-07:00`
+- generated at: `2026-04-21T18:36:19-07:00`

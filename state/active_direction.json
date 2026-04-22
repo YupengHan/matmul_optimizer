@@ -1,106 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface",
-  "candidate_id": "diagnosis_20260421_183411:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
-  "subfamily_id": "launch_order::ptx_grouped_rows_4_to_2_on_three_stage_pg2s",
-  "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->2_on_3stage_pg2s",
-  "selection_priority": 2.865,
-  "base_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
-  "selection_mode": "frontier",
-  "selected_at": "2026-04-21T18:35:47-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_183411",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface",
-    "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
-    "subfamily_id": "launch_order::ptx_grouped_rows_4_to_2_on_three_stage_pg2s",
-    "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->2_on_3stage_pg2s",
-    "mode": "exploit",
-    "hypothesis": "The current 3-stage run already removed long_scoreboard as the dominant tax, so the remaining regression is mostly handoff depth: barrier is up by 1.25 pts and mio_throttle is up by 0.59 while active warps stay flat. Reducing PTX grouped rows from 4 to 2 is the smallest way to shorten CTA group depth and reduce synchronization pressure without giving back the 3-stage latency-hiding benefit or touching the active PTX dispatch.",
-    "expected_bottleneck": "Grouped-row batching is likely over-amortizing locality on the 3-stage surface and paying extra barrier plus handoff delay per CTA group.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:155-156",
-      "src/kernels/bf16_gemm_v1.cu:2017-2024"
-    ],
-    "risk": "Low-moderate. This is a one-constant launch-order retune on the current winning kernel body, but smaller CTA groups can still lose locality if the batching cut is too aggressive.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "lts__throughput.avg.pct_of_peak_sustained_elapsed",
-      "dram__throughput.avg.pct_of_peak_sustained_elapsed",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-    ],
-    "search_score_v1": 2.74,
-    "score_breakdown": {
-      "policy_id": "manual_round5_grouped_rows_on_3stage_v1",
-      "rank_score": 2.18,
-      "evidence_bonus": 0.29,
-      "implementation_bonus": 0.35,
-      "risk_penalty": 0.08,
-      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 0.26,
-    "predicted_fail_risk": 0.18,
-    "ranking_notes": [
-      "This is the cheapest single-variable probe that targets the exact regressions introduced by the 3-stage run: barrier and mio_throttle.",
-      "It keeps the long_scoreboard win from the 3-stage surface instead of throwing that information away immediately.",
-      "If it loses, the result cleanly tells us whether the remaining tax is in CTA group depth or in the late-drain seam itself."
-    ],
-    "stop_condition": "Stop if grouped_rows=2 materially increases DRAM or L2 pressure without reducing barrier or mio_throttle, or if it forces a broader dispatch-family rewrite.",
-    "evidence_refs": [
-      "state/latest_run.md",
-      "state/latest_ncu_summary.md",
-      "runs/20260421_183233_bf16_gemm_v1_4948b8ea/ncu_analysis.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "stall_breakdown",
-        "scope_name": "barrier",
-        "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      },
-      {
-        "scope_type": "stall_breakdown",
-        "scope_name": "mio_throttle",
-        "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
-      }
-    ],
-    "expected_local_changes": [
-      "Retune kFixedHotBandPtxGroupedRows from 4 to 2.",
-      "Leave the 3-stage PTX ring intact.",
-      "Do not touch launch bounds, stage count, or the accumulator schedule in the first pass."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "guardrail": "bounded_not_worse_than_current_run"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->2_on_3stage_pg2s"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
