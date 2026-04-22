@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_175700_bf16_gemm_v1_05086a14`
-- run dir: `runs/20260421_175700_bf16_gemm_v1_05086a14`
-- kernel tag: `bf16_gemm_v1_05086a14`
-- round label: `round 1/20`
+- run id: `20260421_182124_bf16_gemm_v1_49dfa799`
+- run dir: `runs/20260421_182124_bf16_gemm_v1_49dfa799`
+- kernel tag: `bf16_gemm_v1_49dfa799`
+- round label: `round 2/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.385408 ms`
-- p10 runtime: `26.203135 ms`
-- p90 runtime: `27.347008 ms`
-- TFLOP/s: `27.553844 TFLOP/s`
-- previous run id: `20260421_172601_bf16_gemm_v1_117cd3e7`
-- runtime delta vs previous measured run: `+1.578464 ms`
-- TFLOP/s delta vs previous measured run: `-1.753248 TFLOP/s`
-- perf verdict: `regressed`
-- implemented direction id: `dir_01`
-- implemented direction name: `Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling`
-- implemented selection mode: `recommended`
-- implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_175700_bf16_gemm_v1_05086a14/summary.json`
-- ncu analysis path: `runs/20260421_175700_bf16_gemm_v1_05086a14/ncu_analysis.json`
-- measured commit: `05086a14f8df006f564c0071ea7d60dbf5ddc156`
+- median runtime: `26.306592 ms`
+- p10 runtime: `26.277887 ms`
+- p90 runtime: `27.511399 ms`
+- TFLOP/s: `27.636397 TFLOP/s`
+- previous run id: `20260421_175700_bf16_gemm_v1_05086a14`
+- runtime delta vs previous measured run: `-0.078816 ms`
+- TFLOP/s delta vs previous measured run: `+0.082553 TFLOP/s`
+- perf verdict: `improved`
+- implemented direction id: `seed_01`
+- implemented direction name: `Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup`
+- implemented selection mode: `frontier`
+- implemented idea origin: `master_heuristic_history_rehydration`
+- raw summary json: `runs/20260421_182124_bf16_gemm_v1_49dfa799/summary.json`
+- ncu analysis path: `runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.json`
+- measured commit: `49dfa799e322ba9331fa5ca20569d94830666c89`
 - new best custom: `no`
-- generated at: `2026-04-21T17:57:13-07:00`
+- generated at: `2026-04-21T18:21:38-07:00`
