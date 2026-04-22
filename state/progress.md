@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `40488b6e7f3a41519a2cc1af8152e45b02857870`
-- plateau counter: `30`
-- round loop: `round 14/20`
-- rounds remaining: `7`
-- notes: `Node C build succeeded for round 14/20. Node A will now measure the new code path.`
+- latest measured commit: `097581913eed49b85bf1043f45e2d165485732b1`
+- plateau counter: `31`
+- round loop: `round 15/20`
+- rounds remaining: `6`
+- notes: `Node A completed round 14/20. Run node_b to continue round 15/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_192654_bf16_gemm_v1_40488b6e`
-- run dir: `runs/20260421_192654_bf16_gemm_v1_40488b6e`
+- run id: `20260421_192933_bf16_gemm_v1_09758191`
+- run dir: `runs/20260421_192933_bf16_gemm_v1_09758191`
 - correctness: `PASS`
-- median runtime: `24.845312 ms`
-- TFLOP/s: `29.261835 TFLOP/s`
+- median runtime: `24.682431 ms`
+- TFLOP/s: `29.454936 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_192742`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 14/20 diagnosis emitted from a second compact-surface wait_sync_collapse loss; frontier should restore the clean compact seam before trying another family.`
-- dir_01: Restore The Compact Two-Stage PTX Anchor After The Failed Wait-Sync-Collapse Variant | bottleneck: The immediate problem is the regressing wait_sync_collapse variant itself, which raised barrier and registers on the active compact surface.
-- dir_02: Retry The Narrow Compact PTX Cadence Trim After Restoring The Anchor | bottleneck: Barrier remains the clearest unresolved compact-surface stall once the failed wait_sync_collapse variant is unwound.
-- dir_03: Keep The Guarded 2-K-Stage Pg2s Port As The Third Compact-Anchor Fallback | bottleneck: If revisited later, the target remains latency hiding on the compact PTX surface rather than another wide-tiling change.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_192654_bf16_gemm_v1_40488b6e`
-- run dir: `runs/20260421_192654_bf16_gemm_v1_40488b6e`
-- kernel tag: `bf16_gemm_v1_40488b6e`
-- round label: `round 13/20`
+- run id: `20260421_192933_bf16_gemm_v1_09758191`
+- run dir: `runs/20260421_192933_bf16_gemm_v1_09758191`
+- kernel tag: `bf16_gemm_v1_09758191`
+- round label: `round 14/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.845312 ms`
-- p10 runtime: `24.836096 ms`
-- p90 runtime: `26.128487 ms`
-- TFLOP/s: `29.261835 TFLOP/s`
-- previous run id: `20260421_192024_bf16_gemm_v1_8fd88cb4`
-- runtime delta vs previous measured run: `+0.151616 ms`
-- TFLOP/s delta vs previous measured run: `-0.179664 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.682431 ms`
+- p10 runtime: `24.669299 ms`
+- p90 runtime: `26.193101 ms`
+- TFLOP/s: `29.454936 TFLOP/s`
+- previous run id: `20260421_192654_bf16_gemm_v1_40488b6e`
+- runtime delta vs previous measured run: `-0.162881 ms`
+- TFLOP/s delta vs previous measured run: `+0.193101 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance`
+- implemented direction name: `Restore The Compact Two-Stage PTX Anchor After The Failed Wait-Sync-Collapse Variant`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_192654_bf16_gemm_v1_40488b6e/summary.json`
-- ncu analysis path: `runs/20260421_192654_bf16_gemm_v1_40488b6e/ncu_analysis.json`
-- measured commit: `40488b6e7f3a41519a2cc1af8152e45b02857870`
+- raw summary json: `runs/20260421_192933_bf16_gemm_v1_09758191/summary.json`
+- ncu analysis path: `runs/20260421_192933_bf16_gemm_v1_09758191/ncu_analysis.json`
+- measured commit: `097581913eed49b85bf1043f45e2d165485732b1`
 - new best custom: `no`
-- generated at: `2026-04-21T19:27:06-07:00`
+- generated at: `2026-04-21T19:29:44-07:00`
