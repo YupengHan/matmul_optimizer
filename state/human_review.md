@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 20/20` with `1` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_194853`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 20/20 diagnosis emitted from the failed 3-CTA PTX launch-bounds probe; frontier should restore the clean compact PTX anchor to close the loop.`
+- dir_01: Restore The Clean Compact PTX Anchor After The Failed Three-CTA Probe | bottleneck: The immediate problem is a failed register-budget probe, not an unresolved algorithmic bottleneck.
+- dir_02: Keep The Compact Barrier-Trim Family Parked After Its Earlier Losses | bottleneck: Residual synchronization cost on the compact PTX loop, but with weaker evidence than the immediate restore.
+- dir_03: Keep The Existing X32 Staged Family Closed On This Branch End State | bottleneck: Occupancy and synchronization tradeoffs on the staged family remain structurally unfavorable.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 

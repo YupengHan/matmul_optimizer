@@ -1,22 +1,231 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_194853",
+  "status": "completed",
+  "created_at": "2026-04-21T19:48:53-07:00",
   "source_run_id": "20260421_194813_bf16_gemm_v1_257c9662",
   "source_run_dir": "runs/20260421_194813_bf16_gemm_v1_257c9662",
   "source_summary_json": "runs/20260421_194813_bf16_gemm_v1_257c9662/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_llm_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "Run 20260421_194813_bf16_gemm_v1_257c9662 is a decisive loss for the three-CTA launch-bounds probe. It lowered registers from 201 to 168 and raised active warps from 16.61% to 24.77%, but runtime still regressed from 24.688641 ms to 26.079727 ms because barrier rose from 8.13% to 9.64% and short_scoreboard exploded from 2.42% to 6.18%. That means the clean compact PTX anchor is not starved by raw occupancy anymore; the tighter register budget harms the issue schedule enough to overwhelm the residency gain. With one round left, the correct action is not another experiment. It is to restore the clean compact PTX anchor with `__launch_bounds__(128, 2)` so the loop ends on the best known current branch surface. I keep the barrier-trim and staged-family ideas behind that restore only as ledger entries, not as live choices for the final round.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "state/search_frontier.json",
+    "state/search_closed.jsonl",
+    "runs/20260421_194813_bf16_gemm_v1_257c9662/summary.json",
+    "runs/20260421_194813_bf16_gemm_v1_257c9662/ncu_analysis.json"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_194853:dir_01",
+  "family_audit": [
+    "accept: the 3-CTA PTX launch-bounds probe improved occupancy but made end-to-end runtime materially worse, so the branch should end on the 2-CTA clean compact anchor.",
+    "restore: the correct final-round action is a one-line rollback of the PTX microkernel launch-bounds annotation from 3 back to 2.",
+    "defer: no remaining exploratory family outranks recovery on the last round after a 1.39 ms regression."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Restore The Clean Compact PTX Anchor After The Failed Three-CTA Probe",
+      "family_id": "restore_base::accepted_compact_ptx_cadence_after_failed_launch_bounds_probe",
+      "subfamily_id": "restore_base::compact_ptx_wait_sync_anchor_with_min_blocks_2_after_3cta_loss",
+      "action_fingerprint": "restore_clean_compact_ptx_anchor_launch_bounds_3->2_after_round19_loss",
+      "mode": "restore",
+      "hypothesis": "The round-19 loss shows that forcing 3-CTA residency hurts the compact PTX issue schedule more than it helps latency hiding. Restoring `__launch_bounds__(128, 2)` should return the branch to the clean compact anchor and recover the 1.39 ms regression.",
+      "expected_bottleneck": "The immediate problem is a failed register-budget probe, not an unresolved algorithmic bottleneck.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2012"
+      ],
+      "risk": "Low. This is a one-line rollback to the known-good clean anchor configuration.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__registers_per_thread",
+        "launch__occupancy_limit_registers",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 3.24,
+      "score_breakdown": {
+        "policy_id": "manual_round20_restore_after_3cta_loss_v1",
+        "rank_score": 2.52,
+        "evidence_bonus": 0.39,
+        "implementation_bonus": 0.42,
+        "risk_penalty": 0.09,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 1.39,
+      "predicted_fail_risk": 0.04,
+      "ranking_notes": [
+        "This is the only rational top choice after the 3-CTA probe produced a large regression with clear causal evidence.",
+        "It restores the best known current branch surface without reopening any speculative family on the last round.",
+        "Frontier should prefer this over all stale open candidates because the branch is in a known-lost state that needs direct recovery."
+      ],
+      "stop_condition": "Stop if restoring the clean anchor requires anything beyond resetting the PTX microkernel launch-bounds annotation from 3 back to 2.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "short_scoreboard",
+          "location": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Reset the compact PTX microkernel launch-bounds annotation from 3 back to 2.",
+        "Leave grouped_rows=4, the clean wait/sync cadence, dispatch routing, and stage depth unchanged."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "return_to_2cta_anchor_class"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Keep The Compact Barrier-Trim Family Parked After Its Earlier Losses",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::compact_barrier_trim_family_parked_after_anchor_and_launch_bounds_losses",
+      "action_fingerprint": "park_compact_barrier_trim_family_after_round19_launch_bounds_loss",
+      "mode": "explore",
+      "hypothesis": "The compact barrier-trim family still describes a real hotspot class, but the current branch already measured its highest-confidence low-risk variants and they lost. It should stay behind the direct rollback on the final round.",
+      "expected_bottleneck": "Residual synchronization cost on the compact PTX loop, but with weaker evidence than the immediate restore.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2054-2121"
+      ],
+      "risk": "Moderate. The family is local, but it already churned the compact anchor without winning.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "launch__registers_per_thread"
+      ],
+      "search_score_v1": 2.03,
+      "score_breakdown": {
+        "policy_id": "manual_round20_park_barrier_trim_v1",
+        "rank_score": 1.54,
+        "evidence_bonus": 0.16,
+        "implementation_bonus": 0.41,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.02,
+      "predicted_fail_risk": 0.28,
+      "ranking_notes": [
+        "This remains in the diagnosis only to keep the search ledger consistent about the unresolved local family.",
+        "It ranks far below the restore because the branch already has a large fresh regression to undo.",
+        "Do not spend the final round here."
+      ],
+      "stop_condition": "Stop if the proposal duplicates the refill-before-wait or skip-final-sync variants already measured.",
+      "evidence_refs": [
+        "state/search_closed.jsonl",
+        "state/latest_ncu_summary.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the compact barrier-trim family parked behind the restore."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep The Existing X32 Staged Family Closed On This Branch End State",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::existing_x32_stage_family_blocked_after_round19_loss",
+      "action_fingerprint": "keep_existing_x32_stage_family_closed_after_round19_launch_bounds_loss",
+      "mode": "explore",
+      "hypothesis": "The existing x32 staged family is even less attractive after the failed launch-bounds probe because the branch now has one fewer round and a fresh regression to undo. It should remain closed.",
+      "expected_bottleneck": "Occupancy and synchronization tradeoffs on the staged family remain structurally unfavorable.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1724-1887"
+      ],
+      "risk": "High. The staged family already lost badly on this branch.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "shared mem / block allocated",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "search_score_v1": 1.52,
+      "score_breakdown": {
+        "policy_id": "manual_round20_keep_x32_closed_v1",
+        "rank_score": 1.08,
+        "evidence_bonus": 0.14,
+        "implementation_bonus": 0.4,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.0,
+      "predicted_fail_risk": 0.61,
+      "ranking_notes": [
+        "This is listed only to document that the staged family stays closed through the end of the loop.",
+        "It ranks last because it does not help recover the current regression."
+      ],
+      "stop_condition": "Stop if anyone attempts to reopen the existing x32 staged family instead of restoring the clean anchor.",
+      "evidence_refs": [
+        "state/search_closed.jsonl",
+        "state/latest_ncu_summary.md"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the x32 staged family closed."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 20/20 diagnosis emitted from the failed 3-CTA PTX launch-bounds probe; frontier should restore the clean compact PTX anchor to close the loop."
 }

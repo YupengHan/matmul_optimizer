@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Restore The Clean Compact PTX Anchor After The Failed Three-CTA Probe`
+- candidate id: `diagnosis_20260421_194853:dir_01`
+- base run id: `20260421_194813_bf16_gemm_v1_257c9662`
+- primary family id: `restore_base::accepted_compact_ptx_cadence_after_failed_launch_bounds_probe`
+- planned action fingerprint: `restore_clean_compact_ptx_anchor_launch_bounds_3->2_after_round19_loss`
+- selection mode: `frontier`
+- source diagnosis id: `diagnosis_20260421_194853`
 - round loop: `round 20/20`
+- hypothesis: `The round-19 loss shows that forcing 3-CTA residency hurts the compact PTX issue schedule more than it helps latency hiding. Restoring `__launch_bounds__(128, 2)` should return the branch to the clean compact anchor and recover the 1.39 ms regression.`
+- expected bottleneck: `The immediate problem is a failed register-budget probe, not an unresolved algorithmic bottleneck.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:2012`
+- risk: `Low. This is a one-line rollback to the known-good clean anchor configuration.`
+- metrics to re-check: `median runtime, launch__registers_per_thread, launch__occupancy_limit_registers, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 - latest run id: `20260421_194813_bf16_gemm_v1_257c9662`
 - latest runtime: `26.079727 ms`
 - latest NCU analysis: `runs/20260421_194813_bf16_gemm_v1_257c9662/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `168.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `14.14` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `24.77` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `25.0` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `31.01` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` = `46.53` | GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
+- `stall_breakdown` `short_scoreboard` @ `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -39,14 +40,14 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `46.55` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `24.77` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `9.64` | barrier stalls are consuming 9.64% of active warp issue slots.
-- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct` `non_increasing` from `6.18` | short scoreboard stalls are consuming 6.18% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `launch__occupancy_limit_registers` `return_to_2cta_anchor_class` from `N/A` | N/A
+- `smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct` `non_increasing_vs_current_run` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Reset the compact PTX microkernel launch-bounds annotation from 3 back to 2.`
+- `Leave grouped_rows=4, the clean wait/sync cadence, dispatch routing, and stage depth unchanged.`
 
 ## Delta vs previous run
 
@@ -93,4 +94,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time
