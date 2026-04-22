@@ -5,73 +5,70 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `dir_01`
-- direction name: `Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor`
-- candidate id: `diagnosis_20260421_193427:dir_01`
-- base run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
-- primary family id: `async_copy::ptx_hotband_two_k_stage_pg2s`
-- planned action fingerprint: `launch_fixed_hot_band:compact_ptx_anchor->existing_128x128x32_guarded_probe_from_24p682`
-- selection mode: `frontier`
-- source diagnosis id: `diagnosis_20260421_193427`
-- round loop: `round 16/20`
-- hypothesis: `The branch is no longer obviously missing one tiny compact barrier trim. A bounded way to test a broader latency-hiding change is to switch the fixed hot-band dispatch to the existing 128x128x32 two-K-stage kernel and see whether amortizing the copy/sync cadence across two K tiles helps more than the current single-K compact PTX path.`
-- expected bottleneck: `The unresolved bottleneck is still latency hiding and copy/sync amortization on the accepted compact surface, not a new geometry family.`
-- code locations: `src/kernels/bf16_gemm_v1.cu:1722-1883, src/kernels/bf16_gemm_v1.cu:2154-2203`
-- risk: `Moderate-high. This stays on the 128x128 hot-band geometry, but it increases the staging footprint and changes the hot-band pipeline shape materially.`
-- metrics to re-check: `median runtime, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
-- latest run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
-- latest runtime: `24.882688 ms`
-- latest NCU analysis: `runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/ncu_analysis.json`
+- direction id: `None`
+- direction name: `N/A`
+- candidate id: `None`
+- base run id: `None`
+- primary family id: `None`
+- planned action fingerprint: `None`
+- selection mode: `None`
+- source diagnosis id: `None`
+- round loop: `round 17/20`
+- latest run id: `20260421_193649_bf16_gemm_v1_fd009266`
+- latest runtime: `31.612928 ms`
+- latest NCU analysis: `runs/20260421_193649_bf16_gemm_v1_fd009266/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
-- `stall_breakdown` `long_scoreboard` @ `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` | `unknown_metric` = `None` | N/A
+- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `213.0` | Launch Statistics is carrying metric Registers Per Thread.
+- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.56` | Occupancy is carrying metric Achieved Occupancy.
+- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `26.65` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `35.12` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` = `39.98` | GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.
 
 ## Relevant bottleneck evidence
 
-- `occupancy_latency_hiding_issue` | severity `43.04` | Low active-warps and occupancy limits point to a latency-hiding problem rather than pure bandwidth saturation.
-- evidence: `headline_metric` `metric::sm__warps_active.avg.pct_of_peak_sustained_active` | `sm__warps_active.avg.pct_of_peak_sustained_active` = `16.56` | Active warps are only 16.56% of peak sustained active.
+- `occupancy_latency_hiding_issue` | severity `45.43` | Low active-warps and occupancy limits point to a latency-hiding problem rather than pure bandwidth saturation.
+- evidence: `headline_metric` `metric::sm__warps_active.avg.pct_of_peak_sustained_active` | `sm__warps_active.avg.pct_of_peak_sustained_active` = `16.57` | Active warps are only 16.57% of peak sustained active.
 - evidence: `headline_metric` `metric::launch__occupancy_limit_registers` | `launch__occupancy_limit_registers` = `2.0` | Register pressure is limiting occupancy to 2 blocks per SM.
-- `tensor_core_underutilization` | severity `32.492` | Tensor activity (48.26%) is low relative to available memory bandwidth, and active warps (16.56%) are not hiding latency.
-- evidence: `headline_metric` `metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` | `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` = `48.26` | Tensor pipe activity is only 48.26% of peak sustained active.
-- evidence: `headline_metric` `metric::sm__warps_active.avg.pct_of_peak_sustained_active` | `sm__warps_active.avg.pct_of_peak_sustained_active` = `16.56` | Active warps are only 16.56% of peak sustained active.
-- `synchronization_barrier_issue` | severity `7.86` | Barrier or synchronization evidence suggests CTA-level handoff overhead is interrupting the steady-state issue flow.
-- evidence: `stall_breakdown` `stall::barrier` | `smsp__warp_issue_stalled_barrier_per_warp_active.pct` = `7.86` | barrier stalls are consuming 7.86% of active warp issue slots.
+- `tensor_core_underutilization` | severity `40.534` | Tensor activity (40.21%) is low relative to available memory bandwidth, and active warps (16.57%) are not hiding latency.
+- evidence: `headline_metric` `metric::sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` | `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` = `40.21` | Tensor pipe activity is only 40.21% of peak sustained active.
+- evidence: `headline_metric` `metric::sm__warps_active.avg.pct_of_peak_sustained_active` | `sm__warps_active.avg.pct_of_peak_sustained_active` = `16.57` | Active warps are only 16.57% of peak sustained active.
+- `synchronization_barrier_issue` | severity `9.85` | Barrier or synchronization evidence suggests CTA-level handoff overhead is interrupting the steady-state issue flow.
+- evidence: `stall_breakdown` `stall::barrier` | `smsp__warp_issue_stalled_barrier_per_warp_active.pct` = `9.85` | barrier stalls are consuming 9.85% of active warp issue slots.
 
 ## Guardrail metrics
 
-- `correctness` `must_pass` from `N/A` | N/A
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing_vs_current_run` from `N/A` | N/A
-- `launch__occupancy_limit_registers` `bounded_not_materially_worse_than_current_run` from `N/A` | N/A
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `bounded_not_materially_worse_than_current_run` from `N/A` | N/A
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `40.21` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
+- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.57` | Latency-hiding is already weak; active warps should not regress.
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `9.85` | barrier stalls are consuming 9.85% of active warp issue slots.
+- `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` `non_increasing` from `7.32` | long scoreboard stalls are consuming 7.32% of active warp issue slots.
 
 ## Expected local changes
 
-- `Switch the fixed hot-band dispatch from the compact PTX microkernel to the existing 128x128x32 staged kernel.`
-- `Keep grouped_rows=4, the peeled row band, and the 64x96 tail unchanged.`
-- `Do not combine the staged-kernel launch with another compact sync-family rewrite in the same round.`
+- no direction-specific local change notes were provided
 
 ## Delta vs previous run
 
-- baseline run id: `20260421_192933_bf16_gemm_v1_09758191`
-- stall `long_scoreboard` | delta `-1.8600000000000003` | trend `improved`
-- stall `barrier` | delta `-0.28000000000000025` | trend `improved`
-- stall `short_scoreboard` | delta `0.1299999999999999` | trend `regressed`
-- stall `mio_throttle` | delta `0.1200000000000001` | trend `regressed`
-- hotspot delta: `improved` `GPU Speed Of Light Throughput` | `L2 Cache Throughput` | delta `0.5399999999999991` | trend `improved`
-- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | delta `-0.11999999999999744` | trend `regressed`
-- hotspot delta: `regressed` `Occupancy` | `Achieved Occupancy` | delta `-0.07000000000000028` | trend `regressed`
-- hotspot delta: `improved` `GPU Speed Of Light Throughput` | `DRAM Throughput` | delta `0.03999999999999915` | trend `improved`
+- baseline run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
+- stall `long_scoreboard` | delta `3.9800000000000004` | trend `regressed`
+- stall `mio_throttle` | delta `2.2` | trend `regressed`
+- stall `barrier` | delta `1.9899999999999993` | trend `regressed`
+- stall `short_scoreboard` | delta `-0.1599999999999997` | trend `improved`
+- hotspot delta: `improved` `GPU Speed Of Light Throughput` | `DRAM Throughput` | delta `22.61` | trend `improved`
+- hotspot delta: `regressed` `Launch Statistics` | `Registers Per Thread` | delta `12.0` | trend `regressed`
+- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` | delta `-7.8700000000000045` | trend `regressed`
+- hotspot delta: `regressed` `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | delta `-6.460000000000001` | trend `regressed`
 
 ## Finalize recheck points
 
 - recheck `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` | Launch Statistics is carrying metric Registers Per Thread.
-- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
 - recheck `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` | Occupancy is carrying metric Achieved Occupancy.
 - recheck `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` | Occupancy is carrying metric Theoretical Occupancy.
-- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` | Previous delta was improved in the improved bucket.
-- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L1/TEX Cache Throughput` | Previous delta was regressed in the regressed bucket.
+- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
+- recheck `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` | Previous delta was improved in the improved bucket.
+- recheck `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` | Previous delta was regressed in the regressed bucket.
 
 ## Allowed edit surface
 
@@ -97,4 +94,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- `src/kernels/bf16_gemm_v1.cu`
+- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail

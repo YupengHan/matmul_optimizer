@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `5bbcf7bf12808e0ed5168a9dcd5ac93c81d2c65c`
-- plateau counter: `32`
-- round loop: `round 16/20`
-- rounds remaining: `5`
-- notes: `Node C build succeeded for round 16/20. Node A will now measure the new code path.`
+- latest measured commit: `fd0092669df3780c996e69e2f2236614caa3d2ec`
+- plateau counter: `33`
+- round loop: `round 17/20`
+- rounds remaining: `4`
+- notes: `Node A completed round 16/20. Run node_b to continue round 17/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
-- run dir: `runs/20260421_193214_bf16_gemm_v1_5bbcf7bf`
+- run id: `20260421_193649_bf16_gemm_v1_fd009266`
+- run dir: `runs/20260421_193649_bf16_gemm_v1_fd009266`
 - correctness: `PASS`
-- median runtime: `24.882688 ms`
-- TFLOP/s: `29.217882 TFLOP/s`
+- median runtime: `31.612928 ms`
+- TFLOP/s: `22.997535 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_193427`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 16/20 diagnosis emitted from the post-checkpoint compact anchor regression; frontier should try the existing 128x128x32 staged kernel before spending more rounds on tiny compact seam trims.`
-- dir_01: Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor | bottleneck: The unresolved bottleneck is still latency hiding and copy/sync amortization on the accepted compact surface, not a new geometry family.
-- dir_02: Restore The Accepted Compact PTX Anchor If The Broader Staged Probe Loses | bottleneck: The immediate fallback problem would be a failed staged-kernel branch rather than a fresh compact-surface bottleneck.
-- dir_03: Leave The Tiny Compact Sync Tweaks Parked Behind The Broader Staged Probe | bottleneck: If revisited later, the target would still be residual barrier overhead on the compact anchor, but not before the staged probe is measured.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

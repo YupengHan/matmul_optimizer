@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
-- run dir: `runs/20260421_193214_bf16_gemm_v1_5bbcf7bf`
-- kernel tag: `bf16_gemm_v1_5bbcf7bf`
-- round label: `round 15/20`
+- run id: `20260421_193649_bf16_gemm_v1_fd009266`
+- run dir: `runs/20260421_193649_bf16_gemm_v1_fd009266`
+- kernel tag: `bf16_gemm_v1_fd009266`
+- round label: `round 16/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.882688 ms`
-- p10 runtime: `24.877050 ms`
-- p90 runtime: `26.319770 ms`
-- TFLOP/s: `29.217882 TFLOP/s`
-- previous run id: `20260421_192933_bf16_gemm_v1_09758191`
-- runtime delta vs previous measured run: `+0.200256 ms`
-- TFLOP/s delta vs previous measured run: `-0.237054 TFLOP/s`
+- median runtime: `31.612928 ms`
+- p10 runtime: `31.230157 ms`
+- p90 runtime: `32.264634 ms`
+- TFLOP/s: `22.997535 TFLOP/s`
+- previous run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
+- runtime delta vs previous measured run: `+6.730241 ms`
+- TFLOP/s delta vs previous measured run: `-6.220347 TFLOP/s`
 - perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Skip The Final No-Refill CTA Sync On The Compact PTX Anchor`
+- implemented direction name: `Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/summary.json`
-- ncu analysis path: `runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/ncu_analysis.json`
-- measured commit: `5bbcf7bf12808e0ed5168a9dcd5ac93c81d2c65c`
+- raw summary json: `runs/20260421_193649_bf16_gemm_v1_fd009266/summary.json`
+- ncu analysis path: `runs/20260421_193649_bf16_gemm_v1_fd009266/ncu_analysis.json`
+- measured commit: `fd0092669df3780c996e69e2f2236614caa3d2ec`
 - new best custom: `no`
-- generated at: `2026-04-21T19:32:26-07:00`
+- generated at: `2026-04-21T19:37:01-07:00`
