@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_02`
+- direction name: `Hoist 128x128 Hot-Band Shared Offsets Out Of The Steady-State Loop`
+- candidate id: `diagnosis_20260421_185824:dir_02`
+- base run id: `20260421_185710_bf16_gemm_v1_823cbff4`
+- primary family id: `exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops`
+- planned action fingerprint: `hoist_128x128_hot_band_warp_local_shared_offsets_from_compact_ptx_base`
+- selection mode: `frontier`
+- source diagnosis id: `diagnosis_20260421_185824`
 - round loop: `round 10/20`
+- hypothesis: `Both active 128x128 hot-band kernels still carry invariant warp-local shared offset arithmetic through the K loop even though row and column warp positions are fixed for the CTA lifetime. Hoisting those offsets once per warp should shave integer address work and reduce control dilution on a surface that is already close to the branch best.`
+- expected bottleneck: `Warp-local shared-pointer arithmetic and hot-loop control overhead are small but still relevant on the accepted compact PTX base.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1775-1796, src/kernels/bf16_gemm_v1.cu:1910-1925, src/kernels/bf16_gemm_v1.cu:2024-2040`
+- risk: `Low. This is a bounded control-overhead cleanup and should not change tile geometry or shared-memory budgeting.`
+- metrics to re-check: `median runtime, launch__registers_per_thread, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, sm__warps_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct`
 - latest run id: `20260421_190032_bf16_gemm_v1_9e21c98f`
 - latest runtime: `24.841215 ms`
 - latest NCU analysis: `runs/20260421_190032_bf16_gemm_v1_9e21c98f/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `208.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `12.49` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.62` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `29.63` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.27` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
+- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,15 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `48.49` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.62` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `8.96` | barrier stalls are consuming 8.96% of active warp issue slots.
-- `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct` `non_increasing` from `4.39` | mio throttle stalls are consuming 4.39% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `launch__registers_per_thread` `bounded_not_worse_than_current_run` from `N/A` | N/A
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Hoist warp-local A and B shared offsets once per warp before the K loop in the active 128x128 hot-band kernels.`
+- `Leave synchronization, grouped_rows, and tiling unchanged.`
+- `Keep the change limited to loop-invariant address setup.`
 
 ## Delta vs previous run
 
@@ -94,4 +96,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `9e21c98f50fb159e6c01b4fecbe86beaaacf569a`
 - plateau counter: `26`
 - round loop: `round 10/20`
 - rounds remaining: `11`
-- notes: `Node A completed round 9/20. Run node_b to continue round 10/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_185824:dir_02 via frontier selection for round 10/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_190245`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 10 diagnosis emitted after the barrier-trim experiment regressed and should be cleared before the checkpoint.`
+- dir_01: Restore The Accepted Compact PTX Cadence After The Failed Barrier Trim | bottleneck: This is a recovery direction rather than a new bottleneck theory; its purpose is to remove a falsified sync variant and return to the accepted compact PTX surface.
+- dir_02: Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Accepted PTX Base | bottleneck: The 128x128 PTX surface may still be constrained by geometry and warp-reuse limits once the local cadence is back on the accepted base.
+- dir_03: Port The PTX Hot-Band Path To The Existing 2-K Pg2s Stage Schedule | bottleneck: Barrier, refill cadence, and latency hiding on the dominant hot-band path rather than raw DRAM bandwidth.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_02`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 

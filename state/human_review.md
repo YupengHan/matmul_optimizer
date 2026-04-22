@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 10/20` with `11` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_190245`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 10 diagnosis emitted after the barrier-trim experiment regressed and should be cleared before the checkpoint.`
+- dir_01: Restore The Accepted Compact PTX Cadence After The Failed Barrier Trim | bottleneck: This is a recovery direction rather than a new bottleneck theory; its purpose is to remove a falsified sync variant and return to the accepted compact PTX surface.
+- dir_02: Reopen The Writer-Safe 256x128 64x64-Warp Hot-Band Branch From The Accepted PTX Base | bottleneck: The 128x128 PTX surface may still be constrained by geometry and warp-reuse limits once the local cadence is back on the accepted base.
+- dir_03: Port The PTX Hot-Band Path To The Existing 2-K Pg2s Stage Schedule | bottleneck: Barrier, refill cadence, and latency hiding on the dominant hot-band path rather than raw DRAM bandwidth.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_02`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 
