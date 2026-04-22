@@ -11,7 +11,7 @@
   "selection_mode": "recommended",
   "selected_at": "2026-04-21T17:56:21-07:00",
   "source_diagnosis_id": "diagnosis_20260421_175153",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling",
@@ -98,5 +98,13 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "compact_ptx_hotband_recovery:microkernel->regular_128x128_single_k_sibling"
 }
