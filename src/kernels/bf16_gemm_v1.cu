@@ -360,6 +360,12 @@ __device__ __forceinline__ void cp_async_wait_group_1() {
 #endif
 }
 
+__device__ __forceinline__ void cp_async_wait_group_2() {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
+  asm volatile("cp.async.wait_group 2;\n" ::);
+#endif
+}
+
 __device__ __forceinline__ void store_bfloat162_pair(
     __nv_bfloat16* dst,
     const float2 values) {
@@ -1996,10 +2002,11 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
                 "The 128x128 PTX microkernel branch expects at least two K-tiles.");
   static_assert(FixedKTiles * kWmmaK == kFixedBenchmarkK,
                 "The 128x128 PTX microkernel branch must match the benchmark K dimension.");
+  constexpr int kPtxStageCount = 3;
   __shared__ __align__(16)
-      __nv_bfloat16 a_shared[2][FixedHotBandTile128x128::kASharedTileElems];
+      __nv_bfloat16 a_shared[kPtxStageCount][FixedHotBandTile128x128::kASharedTileElems];
   __shared__ __align__(16)
-      __nv_bfloat16 b_shared[2][FixedHotBandTile128x128::kBSharedTileElems];
+      __nv_bfloat16 b_shared[kPtxStageCount][FixedHotBandTile128x128::kBSharedTileElems];
   __shared__ __align__(16)
       float c_shared[FixedHotBandTile128x128PtxExportScratch::kTotalElems];
 
@@ -2052,7 +2059,19 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
       b_block + kWmmaK * kFixedBenchmarkN,
       kFixedBenchmarkN);
   cp_async_commit_group();
-  cp_async_wait_group_1();
+
+  if constexpr (FixedKTiles > 2) {
+    stage_a_shared_tile_async<FixedHotBandTile128x128>(
+        a_shared[2], a_block + 2 * kWmmaK, kFixedBenchmarkK);
+    stage_b_shared_tile_async<FixedHotBandTile128x128>(
+        b_shared[2],
+        b_block + 2 * kWmmaK * kFixedBenchmarkN,
+        kFixedBenchmarkN);
+    cp_async_commit_group();
+    cp_async_wait_group_2();
+  } else {
+    cp_async_wait_group_1();
+  }
   __syncthreads();
 
   const int a_shared_row_offset =
@@ -2063,9 +2082,9 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
 
   #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
-    const int curr_stage = tile_idx & 1;
+    const int curr_stage = tile_idx % kPtxStageCount;
     const int next_tile_idx = tile_idx + 1;
-    const int future_tile_idx = tile_idx + 2;
+    const int future_tile_idx = tile_idx + kPtxStageCount;
 
     const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
     const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_shared_col_offset;
@@ -2073,20 +2092,28 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
 
+    if (future_tile_idx < FixedKTiles) {
+      stage_a_shared_tile_async<FixedHotBandTile128x128>(
+          a_shared[curr_stage],
+          a_block + future_tile_idx * kWmmaK,
+          kFixedBenchmarkK);
+      stage_b_shared_tile_async<FixedHotBandTile128x128>(
+          b_shared[curr_stage],
+          b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
+          kFixedBenchmarkN);
+      cp_async_commit_group();
+    }
+
     if (next_tile_idx < FixedKTiles) {
-      cp_async_wait_group_0();
-      __syncthreads();
-      if (future_tile_idx < FixedKTiles) {
-        stage_a_shared_tile_async<FixedHotBandTile128x128>(
-            a_shared[curr_stage],
-            a_block + future_tile_idx * kWmmaK,
-            kFixedBenchmarkK);
-        stage_b_shared_tile_async<FixedHotBandTile128x128>(
-            b_shared[curr_stage],
-            b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
-            kFixedBenchmarkN);
-        cp_async_commit_group();
+      const int tiles_remaining_after_next = FixedKTiles - next_tile_idx - 1;
+      if (tiles_remaining_after_next >= 2) {
+        cp_async_wait_group_2();
+      } else if (tiles_remaining_after_next == 1) {
+        cp_async_wait_group_1();
+      } else {
+        cp_async_wait_group_0();
       }
+      __syncthreads();
     }
   }
 

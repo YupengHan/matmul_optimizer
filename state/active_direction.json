@@ -11,7 +11,7 @@
   "selection_mode": "frontier",
   "selected_at": "2026-04-21T18:30:47-07:00",
   "source_diagnosis_id": "diagnosis_20260421_182858",
-  "status": "ready_for_implementation",
+  "status": "implemented_pending_measurement",
   "summary": {
     "direction_id": "dir_01",
     "name": "Deepen The Active PTX Hot-Band To A 3-Stage Pg2s Pipeline",
@@ -96,5 +96,13 @@
     ],
     "idea_origin": "auto-analysis"
   },
-  "notes": "Node C may now implement this one candidate."
+  "notes": "Build passed. Node A must measure this implementation next.",
+  "actual_code_regions": [
+    "src/kernels/bf16_gemm_v1.cu"
+  ],
+  "semantic_delta_tags": [
+    "single_direction_attempt",
+    "kernel_code"
+  ],
+  "implemented_action_fingerprint": "extend_ptx_128x128_pipeline_to_three_stage_pg2s_without_register_budget_growth"
 }
