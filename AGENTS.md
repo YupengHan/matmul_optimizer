@@ -420,10 +420,24 @@ GPU lock contract:
 5. the lock is released automatically when the holder process exits, even on crash
 6. a sidecar `<lock>.holder` JSON records `{pid, agent_id, cwd, reason, started_at}` for observability
 
-Agent identity:
+Agent identity (auto-detected, in this precedence order):
 
-- set `MATMUL_AGENT_ID=claude` in one folder's shell and `MATMUL_AGENT_ID=codex` in the other
-- the value is recorded in the lock holder file and in `[gpu_lock]` heartbeats; it does not affect state or commit semantics
+1. env var `MATMUL_AGENT_ID` (highest priority; lets you temporarily override per shell)
+2. `.agent_id` file at the repo root — **recommended, one-time setup per folder**
+   ```bash
+   python scripts/gpu_lock.py set-agent claude   # or: set-agent codex
+   ```
+   The file is in `.gitignore`, so it does not get committed and does not cross folders.
+3. folder-name heuristic: if the repo folder name contains `claude` or `codex` (case-insensitive, unambiguous), that is used. E.g. `matmul_optimizer_claude` → `claude` with zero setup.
+4. fallback `unknown`
+
+Inspect what will be used with:
+
+```bash
+python scripts/gpu_lock.py whoami
+```
+
+The agent id is recorded in the lock holder file and in `[gpu_lock]` heartbeats; it does not affect state or commit semantics.
 
 Where the lock is already wired:
 

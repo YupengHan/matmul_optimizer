@@ -29,3 +29,6 @@ runs/*
 *.log
 *.tmp
 state/*.log
+
+# per-folder agent identity for the shared-GPU dual-agent setup
+.agent_id

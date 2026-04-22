@@ -91,6 +91,29 @@ If you are operating this repo through an LLM or another local agent, the workfl
 - [docs/supervisor_protocol.md](docs/supervisor_protocol.md)
 - [state/README.md](state/README.md)
 
+### Running two agents in parallel (shared GPU)
+
+Two LLM agents (for example one Codex instance and one Claude Code instance) can drive this benchmark in parallel on the same machine as long as:
+
+- each agent operates from its **own repo folder** on its **own git branch** — their `state/` / `build/` / `runs/` directories are physically separate and are not merged
+- every GPU-touching command is serialized through a single cross-process lock on `$HOME/.cache/matmul_optimizer/gpu.lock` (override via `MATMUL_GPU_LOCK`)
+
+The lock is already wired into `scripts/graph.py` (node_a) and the cuBLAS / CUTLASS baseline wrappers. For any hand-run GPU command, wrap it:
+
+```bash
+python scripts/gpu_lock.py run -- ./build/custom_runner ...
+python scripts/gpu_lock.py status    # show the current holder, if any
+```
+
+Agent identity (used only for lock-holder observability) is auto-detected in this order:
+
+1. env `MATMUL_AGENT_ID`
+2. `.agent_id` file at repo root — one-time: `python scripts/gpu_lock.py set-agent claude` (or `codex`). The file is in `.gitignore`.
+3. folder-name heuristic: a folder named `matmul_optimizer_claude` or `..._codex` is picked up automatically with zero setup.
+4. otherwise `unknown`
+
+Check the detected identity with `python scripts/gpu_lock.py whoami`. See [AGENTS.md](AGENTS.md#parallel-dual-agent-operation-shared-gpu-isolated-repos) for the full protocol.
+
 ## Why I Built It
 
 This started as a weekend project, but it was really a concrete question I wanted to test:

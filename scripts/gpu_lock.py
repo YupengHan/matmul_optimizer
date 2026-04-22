@@ -47,8 +47,43 @@ def _holder_path(lock_path: Path) -> Path:
     return lock_path.with_name(lock_path.name + '.holder')
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+AGENT_ID_FILE = REPO_ROOT / '.agent_id'
+_KNOWN_AGENT_KEYWORDS = ('claude', 'codex')
+
+
+def _agent_id_from_file() -> Optional[str]:
+    try:
+        value = AGENT_ID_FILE.read_text(encoding='utf-8').strip()
+    except (FileNotFoundError, OSError):
+        return None
+    return value or None
+
+
+def _agent_id_from_folder_name() -> Optional[str]:
+    name = REPO_ROOT.name.lower()
+    matches = [kw for kw in _KNOWN_AGENT_KEYWORDS if kw in name]
+    if len(matches) == 1:
+        return matches[0]
+    return None
+
+
+def detect_agent_id() -> tuple[str, str]:
+    """Return (agent_id, source). Source is 'env' | 'file' | 'folder' | 'default'."""
+    env_value = os.environ.get('MATMUL_AGENT_ID')
+    if env_value:
+        return env_value, 'env'
+    file_value = _agent_id_from_file()
+    if file_value:
+        return file_value, 'file'
+    folder_value = _agent_id_from_folder_name()
+    if folder_value:
+        return folder_value, 'folder'
+    return 'unknown', 'default'
+
+
 def _agent_id() -> str:
-    return os.environ.get('MATMUL_AGENT_ID', 'unknown')
+    return detect_agent_id()[0]
 
 
 def _write_holder(lock_path: Path, reason: Optional[str]) -> None:
@@ -151,6 +186,29 @@ def _cli_status() -> int:
     return 0
 
 
+def _cli_whoami() -> int:
+    agent, source = detect_agent_id()
+    print(f'agent_id: {agent}')
+    print(f'source:   {source}')
+    print(f'env MATMUL_AGENT_ID: {os.environ.get("MATMUL_AGENT_ID") or "(unset)"}')
+    print(f'file {AGENT_ID_FILE}: {"exists" if AGENT_ID_FILE.exists() else "(missing)"}')
+    print(f'folder name:  {REPO_ROOT.name}')
+    return 0
+
+
+def _cli_set_agent(argv: Sequence[str]) -> int:
+    if len(argv) != 1:
+        print('usage: gpu_lock.py set-agent <name>', file=sys.stderr)
+        return 2
+    name = argv[0].strip()
+    if not name or '\n' in name or '\r' in name:
+        print('invalid agent name (must be non-empty, single line)', file=sys.stderr)
+        return 2
+    AGENT_ID_FILE.write_text(name + '\n', encoding='utf-8')
+    print(f'wrote {AGENT_ID_FILE} -> {name}')
+    return 0
+
+
 def _cli_run(argv: Sequence[str]) -> int:
     if not argv:
         print('usage: gpu_lock.py run -- <cmd> [args...]', file=sys.stderr)
@@ -168,10 +226,14 @@ def _cli_run(argv: Sequence[str]) -> int:
 
 def main(argv: Sequence[str]) -> int:
     if not argv or argv[0] in ('-h', '--help'):
-        print('usage: gpu_lock.py {status|run -- <cmd> [args...]}')
+        print('usage: gpu_lock.py {status|whoami|set-agent <name>|run -- <cmd> [args...]}')
         return 0
     if argv[0] == 'status':
         return _cli_status()
+    if argv[0] == 'whoami':
+        return _cli_whoami()
+    if argv[0] == 'set-agent':
+        return _cli_set_agent(argv[1:])
     if argv[0] == 'run':
         return _cli_run(argv[1:])
     print(f'unknown subcommand: {argv[0]}', file=sys.stderr)
