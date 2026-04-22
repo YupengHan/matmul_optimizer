@@ -1,11 +1,11 @@
 # Round loop
 
 - active: `yes`
-- status: `awaiting_measurement`
+- status: `running`
 - total rounds: `20`
-- completed rounds: `0`
-- remaining rounds: `20`
-- current round label: `round 1/20`
+- completed rounds: `1`
+- remaining rounds: `19`
+- current round label: `round 2/20`
 - auto use recommended: `yes`
 - auto select frontier: `no`
 - accepted base run id: `20260421_172601_bf16_gemm_v1_117cd3e7`
@@ -14,8 +14,15 @@
 - started at: `2026-04-21T17:51:34-07:00`
 - completed at: `None`
 - history path: `state/round_history.jsonl`
-- notes: `Build passed for round 1/20. Node A will measure the result next.`
+- notes: `Completed round 1/20. Continue with node_b for round 2/20. Accepted base: 20260421_172601_bf16_gemm_v1_117cd3e7 at 24.806945 ms.`
 
 ## Last completed round
 
-- no completed round recorded yet
+- round: `1/20`
+- direction: `dir_01`
+- direction name: `Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling`
+- verdict: `regressed`
+- runtime delta: `+1.578464 ms`
+- TFLOP/s delta: `-1.753248 TFLOP/s`
+- run dir: `runs/20260421_175700_bf16_gemm_v1_05086a14`
+- ncu rep path: `runs/20260421_175700_bf16_gemm_v1_05086a14/ncu_profile.ncu-rep`

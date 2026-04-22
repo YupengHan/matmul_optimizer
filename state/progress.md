@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `117cd3e796a5742c1f15e040edf78cb668e1d5cf`
-- plateau counter: `17`
-- round loop: `round 1/20`
-- rounds remaining: `20`
-- notes: `Node C build succeeded for round 1/20. Node A will now measure the new code path.`
+- latest measured commit: `05086a14f8df006f564c0071ea7d60dbf5ddc156`
+- plateau counter: `18`
+- round loop: `round 2/20`
+- rounds remaining: `19`
+- notes: `Node A completed round 1/20. Run node_b to continue round 2/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_172601_bf16_gemm_v1_117cd3e7`
-- run dir: `runs/20260421_172601_bf16_gemm_v1_117cd3e7`
+- run id: `20260421_175700_bf16_gemm_v1_05086a14`
+- run dir: `runs/20260421_175700_bf16_gemm_v1_05086a14`
 - correctness: `PASS`
-- median runtime: `24.806945 ms`
-- TFLOP/s: `29.307092 TFLOP/s`
+- median runtime: `26.385408 ms`
+- TFLOP/s: `27.553844 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_175153`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 1/20 maps the persistent guidance explicitly: register reuse stays primary, tiling stays alive but deferred, and deeper async-copy staging is deferred because the staged 128x128 family already regressed while the current run is still first-order register/occupancy bound.`
-- dir_01: Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling | bottleneck: Microkernel-specific consume ordering and residual accumulator live range on the dominant 128x128 hot-band path are still holding occupancy to the 2-CTA class.
-- dir_02: Retune The PTX Hot-Band Launch Bounds For Three-CTA Residency | bottleneck: Register-pressure-driven CTA residency cap on the current PTX hot-band microkernel.
-- dir_03: Reopen The 256x128 64x64-Warp Hot-Band Family After The PTX Recovery | bottleneck: Hot-band tiling and panel-reuse ceiling on the current 128x128 surface rather than pure bandwidth or tail overhead.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

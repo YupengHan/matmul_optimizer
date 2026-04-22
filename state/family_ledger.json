@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-21T17:26:14-07:00",
-  "last_result_run_id": "20260421_172601_bf16_gemm_v1_117cd3e7",
-  "last_transition_label": "PASS_WIN",
+  "updated_at": "2026-04-21T17:57:13-07:00",
+  "last_result_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
+  "last_transition_label": "PASS_LOSS",
   "families": {
     "sync_pipeline::hotband_128x128_stage_swap": {
       "family_id": "sync_pipeline::hotband_128x128_stage_swap",
@@ -59,17 +59,17 @@
       "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
       "wins": 1,
       "flats": 0,
-      "losses": 0,
+      "losses": 1,
       "fails": 0,
-      "last_transition_label": "PASS_WIN",
-      "freeze_status": "open",
+      "last_transition_label": "PASS_LOSS",
+      "freeze_status": "closed_negative",
       "best_runtime_ms": 24.39260769,
       "best_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
-      "last_result_run_id": "20260421_152228_bf16_gemm_v1_2fbb368d",
-      "last_result_runtime_ms": 24.39260769,
-      "last_candidate_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
-      "last_attempt_id": "diagnosis_20260421_150910_round02_clean_7496aff2:dir_01",
-      "last_registers_per_thread": 196.0,
+      "last_result_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
+      "last_result_runtime_ms": 26.3854084,
+      "last_candidate_id": "diagnosis_20260421_175153:dir_01",
+      "last_attempt_id": "diagnosis_20260421_175153:dir_01",
+      "last_registers_per_thread": 168.0,
       "last_shared_mem_per_block_allocated": 22016.0
     },
     "exploit::hoist_hot_band_shared_offsets_out_of_128x128_steady_state_loops": {

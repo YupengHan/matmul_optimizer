@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 1/20` with `20` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 2/20` with `19` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_175153`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 1/20 maps the persistent guidance explicitly: register reuse stays primary, tiling stays alive but deferred, and deeper async-copy staging is deferred because the staged 128x128 family already regressed while the current run is still first-order register/occupancy bound.`
-- dir_01: Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling | bottleneck: Microkernel-specific consume ordering and residual accumulator live range on the dominant 128x128 hot-band path are still holding occupancy to the 2-CTA class.
-- dir_02: Retune The PTX Hot-Band Launch Bounds For Three-CTA Residency | bottleneck: Register-pressure-driven CTA residency cap on the current PTX hot-band microkernel.
-- dir_03: Reopen The 256x128 64x64-Warp Hot-Band Family After The PTX Recovery | bottleneck: Hot-band tiling and panel-reuse ceiling on the current 128x128 surface rather than pure bandwidth or tail overhead.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `recommended`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 
