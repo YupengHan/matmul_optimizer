@@ -2,16 +2,16 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_182631_bf16_gemm_v1_1f02b147",
-  "source_measured_commit": "1f02b14706466fc384b8bc6441be63e222670bba",
-  "source_diagnosis_id": "diagnosis_20260421_182858",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_182858",
+  "source_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+  "source_measured_commit": "4948b8ea197c9869356471fedefa11a45b84ee35",
+  "source_diagnosis_id": "diagnosis_20260421_183411",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_183411",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T18:32:47-07:00",
+  "updated_at": "2026-04-21T18:35:47-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_182858:dir_01 closed via pass_loss after selection.",
+  "selected_candidate_id": "diagnosis_20260421_183411:dir_01",
+  "selection_reason": "frontier_top_family_representative",
+  "selection_summary": "Selected diagnosis_20260421_183411:dir_01 -> dir_01 via mode=frontier.",
   "family_representative_count": 17,
   "reopened_candidate_ids": [],
   "candidates": [
@@ -4719,7 +4719,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.6175,
+      "family_representative_score": 0.5875,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -5277,7 +5277,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.935,
+      "family_representative_score": 0.905,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -5388,7 +5388,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 0.605,
+      "family_representative_score": 0.575,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -5808,7 +5808,7 @@
           "guardrail": "non_increasing_vs_current_run"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 19,
       "selection_count": 0,
       "reopen_count": 0,
@@ -5824,9 +5824,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 1.86,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     },
@@ -5923,7 +5923,7 @@
       "status": "measured_loss",
       "source_search_iteration": 20,
       "selection_count": 1,
-      "reopen_count": 0,
+      "reopen_count": 1,
       "last_selected_at": "2026-04-21T18:30:47-07:00",
       "last_selected_selection_mode": "frontier",
       "last_transition_label": "PASS_LOSS",
@@ -5932,10 +5932,10 @@
       "last_result_runtime_ms": 25.25184059,
       "last_runtime_delta_ms": 0.18843268999999907,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T18:32:47-07:00",
-      "last_closed_search_iteration": 20,
-      "last_reopened_search_iteration": null,
-      "reopened_at": null,
+      "last_closed_at": "2026-04-21T18:35:47-07:00",
+      "last_closed_search_iteration": 21,
+      "last_reopened_search_iteration": 21,
+      "reopened_at": "2026-04-21T18:35:47-07:00",
       "is_family_representative": false,
       "family_representative_score": null,
       "family_representative_reason": null,
@@ -6028,7 +6028,7 @@
           "guardrail": "non_decreasing_vs_current_run"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 20,
       "selection_count": 0,
       "reopen_count": 0,
@@ -6044,9 +6044,9 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
-      "is_family_representative": true,
-      "family_representative_score": 2.3225,
-      "family_representative_reason": "best_family_candidate_after_reorder",
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     },
@@ -6157,11 +6157,341 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 1.76,
+      "family_representative_score": 1.73,
       "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_183411:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_183411",
+      "base_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+      "base_measured_commit": "4948b8ea197c9869356471fedefa11a45b84ee35",
+      "base_runtime_ms": 25.25184059,
+      "direction_id": "dir_01",
+      "direction_name": "Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::ptx_grouped_rows_4_to_2_on_three_stage_pg2s",
+      "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_4->2_on_3stage_pg2s",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "exploit",
+      "priority": 2.74,
+      "search_score_v1": 2.74,
+      "score_breakdown": {
+        "policy_id": "manual_round5_grouped_rows_on_3stage_v1",
+        "rank_score": 2.18,
+        "evidence_bonus": 0.29,
+        "implementation_bonus": 0.35,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.26,
+      "predicted_fail_risk": 0.18,
+      "ranking_notes": [
+        "This is the cheapest single-variable probe that targets the exact regressions introduced by the 3-stage run: barrier and mio_throttle.",
+        "It keeps the long_scoreboard win from the 3-stage surface instead of throwing that information away immediately.",
+        "If it loses, the result cleanly tells us whether the remaining tax is in CTA group depth or in the late-drain seam itself."
+      ],
+      "hypothesis": "The current 3-stage run already removed long_scoreboard as the dominant tax, so the remaining regression is mostly handoff depth: barrier is up by 1.25 pts and mio_throttle is up by 0.59 while active warps stay flat. Reducing PTX grouped rows from 4 to 2 is the smallest way to shorten CTA group depth and reduce synchronization pressure without giving back the 3-stage latency-hiding benefit or touching the active PTX dispatch.",
+      "expected_bottleneck": "Grouped-row batching is likely over-amortizing locality on the 3-stage surface and paying extra barrier plus handoff delay per CTA group.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:155-156",
+        "src/kernels/bf16_gemm_v1.cu:2017-2024"
+      ],
+      "risk": "Low-moderate. This is a one-constant launch-order retune on the current winning kernel body, but smaller CTA groups can still lose locality if the batching cut is too aggressive.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if grouped_rows=2 materially increases DRAM or L2 pressure without reducing barrier or mio_throttle, or if it forces a broader dispatch-family rewrite.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_183233_bf16_gemm_v1_4948b8ea/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "mio_throttle",
+          "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Retune kFixedHotBandPtxGroupedRows from 4 to 2.",
+        "Leave the 3-stage PTX ring intact.",
+        "Do not touch launch bounds, stage count, or the accumulator schedule in the first pass."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "bounded_not_worse_than_current_run"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 21,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T18:35:47-07:00",
+      "last_selected_selection_mode": "frontier",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 2.865,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_183411:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_183411",
+      "base_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+      "base_measured_commit": "4948b8ea197c9869356471fedefa11a45b84ee35",
+      "base_runtime_ms": 25.25184059,
+      "direction_id": "dir_02",
+      "direction_name": "Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop",
+      "family_id": "sync_pipeline::ptx_microkernel_epilogue_drain_split",
+      "subfamily_id": "sync_pipeline::ptx_wait_group_final_drain_on_three_stage_pg2s_surface",
+      "action_fingerprint": "ptx_microkernel:pull_final_wait_sync_out_of_steady_state_loop_after_3stage_pg2s",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 2.36,
+      "search_score_v1": 2.36,
+      "score_breakdown": {
+        "policy_id": "manual_round5_3stage_drain_split_v1",
+        "rank_score": 1.9,
+        "evidence_bonus": 0.24,
+        "implementation_bonus": 0.28,
+        "risk_penalty": 0.06,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.22,
+      "predicted_fail_risk": 0.26,
+      "ranking_notes": [
+        "This is the next-smallest sync cleanup after grouped_rows and stays entirely on the current 3-stage PTX surface.",
+        "It is ranked behind dir_01 because grouped_rows=2 is a simpler probe with cleaner attribution if it wins or loses.",
+        "The idea still matters because the 3-stage run proved the latency-side benefit is real, so the next job is to shrink the coordination tail."
+      ],
+      "hypothesis": "The 3-stage ring now waits with thresholds 2 -> 1 -> 0 as the pipeline drains, but the late steady-state path still pays a full CTA sync on every remaining handoff. Pulling the no-refill drain into a narrower late-loop path should preserve the long_scoreboard win while trimming the extra barrier and mio_throttle cost that appeared after the 3-stage expansion.",
+      "expected_bottleneck": "Late-drain synchronization is now the most likely remaining local tax on the 3-stage surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2055-2090"
+      ],
+      "risk": "Moderate. This stays within the current PTX kernel body, but it touches performance-sensitive drain logic and can still break correctness if the final wait/sync thresholds are mistimed.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "launch__shared_mem_per_block_allocated"
+      ],
+      "stop_condition": "Stop if the late-drain split requires another stage-count change, a launch rewrite, or wider hot-loop predicates than a tiny late-path branch.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "runs/20260421_183233_bf16_gemm_v1_4948b8ea/ncu_analysis.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "mio_throttle",
+          "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Split the late no-refill drain from the current 3-stage steady-state path.",
+        "Keep stage count at 3 and leave grouped_rows unchanged in the first pass.",
+        "Do not touch launch bounds or the accumulator schedule while testing the drain seam."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "unchanged_vs_current_run"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 21,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 2.445,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_183411:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_183411",
+      "base_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+      "base_measured_commit": "4948b8ea197c9869356471fedefa11a45b84ee35",
+      "base_runtime_ms": 25.25184059,
+      "direction_id": "dir_03",
+      "direction_name": "Reopen 256x128 64x64-Warp Hot-Band Tiling On The Dominant Surface",
+      "family_id": "tiling::hotband_256x128_reopen",
+      "subfamily_id": "tiling::hotband_256x128_reopen::writer_safe_right_left_right_left_warp_tile",
+      "action_fingerprint": "reopen_256x128_64x64_warp_hotband_kernel_with_writer_safe_export",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 1.74,
+      "search_score_v1": 1.74,
+      "score_breakdown": {
+        "policy_id": "manual_round5_structural_256x128_reopen_v1",
+        "rank_score": 1.22,
+        "evidence_bonus": 0.16,
+        "implementation_bonus": 0.45,
+        "risk_penalty": 0.09,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.68,
+      "predicted_fail_risk": 0.67,
+      "ranking_notes": [
+        "This keeps the explicit 256x128 / 64x64 guidance alive without pretending it is the first response to a surface that just produced a clear local lesson.",
+        "It is still the highest-ceiling structural branch left if the current 128x128 PTX family stalls again.",
+        "Rank 3 is intentional: the 3-stage probe already found a real win in long_scoreboard, so one more narrow local fix should come first."
+      ],
+      "hypothesis": "The current PTX surface is still above both the accepted base and the best known custom run, and it remains capped at 16.60% active warps even after the 3-stage overlap fix. The source already carries a 256x128 hot-band path, and the persistent human guidance still asks for 256x128 block tiling with 64x64 warp tiling plus Right-Left-Right-Left reuse. That structural branch should stay alive as the next high-ceiling option if one more narrow local probe fails.",
+      "expected_bottleneck": "The 128x128 PTX hot-band surface may be hitting a real tiling and reuse ceiling even after local pipeline cleanup.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:80-105",
+        "src/kernels/bf16_gemm_v1.cu:675-739",
+        "src/kernels/bf16_gemm_v1.cu:1706-1798"
+      ],
+      "risk": "High. This is a broader geometry reopen with known correctness and performance history, and it touches launch routing, writer ownership, and export layout together.",
+      "metrics_to_recheck": [
+        "correctness on all 3 dataset cases before trusting runtime",
+        "median runtime",
+        "launch__registers_per_thread",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the reopen requires replaying a previously broken ownership or export path instead of a writer-safe 256x128 surface.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "state/human_guidance.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        }
+      ],
+      "expected_local_changes": [
+        "Reopen the fixed hot-band launch routing for the 256x128 dominant surface.",
+        "Keep writer ownership explicit and export-safe.",
+        "Preserve the 64x64 warp-tile reuse pattern instead of reviving the broken half-panel writer split."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass_all_dataset_cases"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_worse_than_current_run"
+        },
+        {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "bounded_by_current_surface"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 21,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 61 historical candidates; 17 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 64 historical candidates; 17 family representatives are currently active for selection."
 }

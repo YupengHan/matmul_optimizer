@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `4948b8ea197c9869356471fedefa11a45b84ee35`
 - plateau counter: `21`
 - round loop: `round 5/20`
 - rounds remaining: `16`
-- notes: `Node A completed round 4/20. Run node_b to continue round 5/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_183411:dir_01 via frontier selection for round 5/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_183411`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 5 treats the 3-stage Pg2s probe as informative but incomplete: it fixed the long_scoreboard problem and slightly reduced registers, so the next move should clean up the handoff tax before discarding the family.`
+- dir_01: Retune PTX Hot-Band Grouped Rows From 4 Down To 2 On The 3-Stage Surface | bottleneck: Grouped-row batching is likely over-amortizing locality on the 3-stage surface and paying extra barrier plus handoff delay per CTA group.
+- dir_02: Split The Final 3-Stage PTX Drain Out Of The Late Steady-State Loop | bottleneck: Late-drain synchronization is now the most likely remaining local tax on the 3-stage surface.
+- dir_03: Reopen 256x128 64x64-Warp Hot-Band Tiling On The Dominant Surface | bottleneck: The 128x128 PTX hot-band surface may be hitting a real tiling and reuse ceiling even after local pipeline cleanup.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
