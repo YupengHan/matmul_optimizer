@@ -26,8 +26,8 @@
   "last_selected_direction_id": "dir_01",
   "last_selected_selection_mode": "frontier",
   "last_selected_at": "2026-04-21T19:47:56-07:00",
-  "latest_attempt_id": "diagnosis_20260421_194243:dir_01",
-  "last_transition_type": "candidate_emission",
+  "latest_attempt_id": "diagnosis_20260421_194601:dir_01",
+  "last_transition_type": "node_c_finalize",
   "last_result_run_id": "20260421_194414_bf16_gemm_v1_ac1299d7",
   "last_result_measured_commit": "ac1299d7d6b0b67e7eb323da7621c4511e79d6d8",
   "last_result_runtime_ms": 24.68864059,
@@ -53,5 +53,5 @@
   "closed_jsonl": "state/search_closed.jsonl",
   "family_ledger_json": "state/family_ledger.json",
   "latest_attempt_json": "state/latest_attempt.json",
-  "notes": "Selected frontier candidate diagnosis_20260421_194601:dir_01 for node_c."
+  "notes": "Latest implementation edge recorded for diagnosis_20260421_194601:dir_01."
 }
