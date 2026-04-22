@@ -1,106 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore Grouped Rows From 2 Back To 4 On The Compact Two-Stage PTX Ring",
-  "candidate_id": "diagnosis_20260421_185158:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
-  "subfamily_id": "launch_order::ptx_grouped_rows_2_to_4_on_two_stage_compact_ring",
-  "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_2->4_on_two_stage_compact_ring",
-  "selection_priority": 3.0,
-  "base_run_id": "20260421_185050_bf16_gemm_v1_434ded2a",
-  "selection_mode": "frontier",
-  "selected_at": "2026-04-21T18:56:54-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_185158",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Restore Grouped Rows From 2 Back To 4 On The Compact Two-Stage PTX Ring",
-    "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
-    "subfamily_id": "launch_order::ptx_grouped_rows_2_to_4_on_two_stage_compact_ring",
-    "action_fingerprint": "ptx_hotband_launch_order:grouped_rows_2->4_on_two_stage_compact_ring",
-    "mode": "explore",
-    "hypothesis": "The grouped_rows=2 retest kept the recovered register budget but clearly reintroduced the long_scoreboard problem on the compact two-stage surface. Restoring grouped_rows to 4 should recover the better row-order reuse pattern from the earlier PTX anchor without reopening the losing round-6 split logic.",
-    "expected_bottleneck": "Long-scoreboard pressure from the grouped_rows=2 launch order is now the most specific local bottleneck to remove.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:156",
-      "src/kernels/bf16_gemm_v1.cu:2020-2031"
-    ],
-    "risk": "Low. This is a single-parameter launch-order restore on the currently healthy compact two-stage PTX surface.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
-      "launch__registers_per_thread",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 2.93,
-    "score_breakdown": {
-      "policy_id": "manual_round8_restore_grouped_rows4_v1",
-      "rank_score": 2.33,
-      "evidence_bonus": 0.31,
-      "implementation_bonus": 0.35,
-      "risk_penalty": 0.06,
-      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 0.38,
-    "predicted_fail_risk": 0.08,
-    "ranking_notes": [
-      "This is the highest-confidence next move because it directly targets the one metric that snapped back hardest on the compact two-stage surface: long_scoreboard.",
-      "It preserves the recovered 202-register budget and 22,016 B shared-memory footprint instead of reopening broader pipeline surgery.",
-      "If it still cannot beat the current 25.46 ms accepted base, the compact PTX family is likely plateaued and the next branch should be either barrier trim or 256x128."
-    ],
-    "stop_condition": "Stop if restoring grouped_rows to 4 requires any change beyond the hot-band launch-order constant and its immediate grouping math.",
-    "evidence_refs": [
-      "state/latest_run.md",
-      "state/latest_ncu_summary.md",
-      "runs/20260421_185050_bf16_gemm_v1_434ded2a/ncu_analysis.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "stall_breakdown",
-        "scope_name": "long_scoreboard",
-        "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      }
-    ],
-    "expected_local_changes": [
-      "Restore kFixedHotBandPtxGroupedRows from 2 back to 4.",
-      "Leave the compact two-stage PTX ring unchanged.",
-      "Re-measure whether the long_scoreboard rebound disappears without giving back the recovered register budget."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "launch__registers_per_thread",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "bounded_not_worse_than_current_run"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "ptx_hotband_launch_order:grouped_rows_2->4_on_two_stage_compact_ring"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }
