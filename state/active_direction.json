@@ -1,21 +1,97 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore The Compact 128x128 PTX Grouped-Rows-4 Anchor After The Failed 256x128 Reopen",
+  "candidate_id": "diagnosis_20260421_191808:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "restore_base::ptx_two_stage_anchor_after_failed_256x128_reopen",
+  "subfamily_id": "restore_base::compact_128x128_ptx_grouped_rows_4_anchor_after_writer_safe_256x128_loss",
+  "action_fingerprint": "restore_compact_128x128_ptx_dispatch_after_writer_safe_256x128_reopen_loss",
+  "selection_priority": 3.27,
+  "base_run_id": "20260421_191613_bf16_gemm_v1_9652b835",
+  "selection_mode": "frontier",
+  "selected_at": "2026-04-21T19:20:02-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_191808",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Restore The Compact 128x128 PTX Grouped-Rows-4 Anchor After The Failed 256x128 Reopen",
+    "family_id": "restore_base::ptx_two_stage_anchor_after_failed_256x128_reopen",
+    "subfamily_id": "restore_base::compact_128x128_ptx_grouped_rows_4_anchor_after_writer_safe_256x128_loss",
+    "action_fingerprint": "restore_compact_128x128_ptx_dispatch_after_writer_safe_256x128_reopen_loss",
+    "mode": "restore",
+    "hypothesis": "The latest 256x128 measurement is a full structural regression, not a local timing miss. Restoring the compact 128x128 PTX microkernel dispatch and grouped_rows=4 anchor is the shortest path back to the last known good surface before any further frontier experiment is layered on top.",
+    "expected_bottleneck": "The immediate problem is the bad 256x128 hot-band geometry itself, which inflated shared-memory footprint and collapsed tensor throughput.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:2154-2203"
+    ],
+    "risk": "Low. This is a bounded dispatch restore back to the last measured compact anchor and does not require new synchronization logic.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "launch__occupancy_limit_registers"
+    ],
+    "search_score_v1": 3.04,
+    "score_breakdown": {
+      "policy_id": "manual_round12_restore_after_256x128_loss_v1",
+      "rank_score": 2.36,
+      "evidence_bonus": 0.42,
+      "implementation_bonus": 0.38,
+      "risk_penalty": 0.12,
+      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 5.1,
+    "predicted_fail_risk": 0.08,
+    "ranking_notes": [
+      "The latest run regressed by 5.49 ms, so recovering the last known good compact PTX anchor is more valuable than forcing another speculative change on top of a proven-bad geometry.",
+      "This is the cleanest single-variable recovery because the code change is only the hot-band dispatch choice.",
+      "Once restored, the compact surface can immediately resume frontier search from a measured anchor instead of a contaminated loss state."
+    ],
+    "stop_condition": "Stop if restoring the dispatch requires reviving any non-writer-safe code path beyond the exact compact PTX launch already measured at 24.689153 ms.",
+    "evidence_refs": [
+      "state/latest_run.md",
+      "state/latest_ncu_summary.md",
+      "state/search_frontier.json",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "section",
+        "scope_name": "GPU Speed Of Light Throughput",
+        "location": "GPU Speed Of Light Throughput"
+      },
+      {
+        "scope_type": "stall_breakdown",
+        "scope_name": "short_scoreboard",
+        "location": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+      }
+    ],
+    "expected_local_changes": [
+      "Switch the fixed hot-band dispatch back from the writer-safe 256x128 kernel to the compact 128x128 PTX microkernel.",
+      "Keep the peeled 64x384 row band and 64x96 tail unchanged.",
+      "Leave grouped_rows=4 and the accepted compact cadence intact on the recovery measurement."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "correctness",
+        "guardrail": "must_pass"
+      },
+      {
+        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "guardrail": "non_decreasing_vs_current_run"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "guardrail": "non_increasing_vs_current_run"
+      },
+      {
+        "metric_name": "launch__occupancy_limit_registers",
+        "guardrail": "non_decreasing_vs_current_run"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }

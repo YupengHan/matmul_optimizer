@@ -2,17 +2,17 @@
   "schema_version": 2,
   "frontier_id": "frontier:global",
   "status": "ready",
-  "source_run_id": "20260421_190652_bf16_gemm_v1_88a8acfc",
-  "source_measured_commit": "88a8acfc6a0c4389f714a79adad71b17558c09a6",
-  "source_diagnosis_id": "diagnosis_20260421_191121",
-  "candidate_set_id": "candidate_set:diagnosis_20260421_191121",
+  "source_run_id": "20260421_191613_bf16_gemm_v1_9652b835",
+  "source_measured_commit": "9652b83550cd0d483328509f8a3f908c72a1e03a",
+  "source_diagnosis_id": "diagnosis_20260421_191808",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_191808",
   "generated_at": "2026-04-21T14:00:47-07:00",
-  "updated_at": "2026-04-21T19:16:25-07:00",
+  "updated_at": "2026-04-21T19:20:02-07:00",
   "selection_policy_id": "family_representative_v2",
-  "selected_candidate_id": null,
-  "selection_reason": null,
-  "selection_summary": "Candidate diagnosis_20260421_191121:dir_01 closed via pass_loss after selection.",
-  "family_representative_count": 20,
+  "selected_candidate_id": "diagnosis_20260421_191808:dir_01",
+  "selection_reason": "frontier_top_family_representative",
+  "selection_summary": "Selected diagnosis_20260421_191808:dir_01 -> dir_01 via mode=frontier.",
+  "family_representative_count": 21,
   "reopened_candidate_ids": [],
   "candidates": [
     {
@@ -7358,7 +7358,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 1.905,
+      "family_representative_score": 1.875,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -7895,7 +7895,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 3.1475,
+      "family_representative_score": 3.1175,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -8002,7 +8002,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.1325,
+      "family_representative_score": 2.1025,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -8214,8 +8214,8 @@
       "last_result_runtime_ms": 30.1742239,
       "last_runtime_delta_ms": 5.485071180000002,
       "last_result_correctness_passed": true,
-      "last_closed_at": "2026-04-21T19:16:25-07:00",
-      "last_closed_search_iteration": 28,
+      "last_closed_at": "2026-04-21T19:20:02-07:00",
+      "last_closed_search_iteration": 29,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": false,
@@ -8329,7 +8329,7 @@
       "last_reopened_search_iteration": null,
       "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.575,
+      "family_representative_score": 2.545,
       "family_representative_reason": "best_family_candidate_after_reorder",
       "invalid_reason": null,
       "notes": null
@@ -8420,7 +8420,7 @@
           "guardrail": "non_decreasing_vs_current_run"
         }
       ],
-      "status": "open",
+      "status": "parked",
       "source_search_iteration": 28,
       "selection_count": 0,
       "reopen_count": 0,
@@ -8436,12 +8436,339 @@
       "last_closed_search_iteration": null,
       "last_reopened_search_iteration": null,
       "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_191808:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_191808",
+      "base_run_id": "20260421_191613_bf16_gemm_v1_9652b835",
+      "base_measured_commit": "9652b83550cd0d483328509f8a3f908c72a1e03a",
+      "base_runtime_ms": 30.1742239,
+      "direction_id": "dir_01",
+      "direction_name": "Restore The Compact 128x128 PTX Grouped-Rows-4 Anchor After The Failed 256x128 Reopen",
+      "family_id": "restore_base::ptx_two_stage_anchor_after_failed_256x128_reopen",
+      "subfamily_id": "restore_base::compact_128x128_ptx_grouped_rows_4_anchor_after_writer_safe_256x128_loss",
+      "action_fingerprint": "restore_compact_128x128_ptx_dispatch_after_writer_safe_256x128_reopen_loss",
+      "rank_in_diagnosis": 1,
+      "recommended": true,
+      "mode": "restore",
+      "priority": 3.04,
+      "search_score_v1": 3.04,
+      "score_breakdown": {
+        "policy_id": "manual_round12_restore_after_256x128_loss_v1",
+        "rank_score": 2.36,
+        "evidence_bonus": 0.42,
+        "implementation_bonus": 0.38,
+        "risk_penalty": 0.12,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 5.1,
+      "predicted_fail_risk": 0.08,
+      "ranking_notes": [
+        "The latest run regressed by 5.49 ms, so recovering the last known good compact PTX anchor is more valuable than forcing another speculative change on top of a proven-bad geometry.",
+        "This is the cleanest single-variable recovery because the code change is only the hot-band dispatch choice.",
+        "Once restored, the compact surface can immediately resume frontier search from a measured anchor instead of a contaminated loss state."
+      ],
+      "hypothesis": "The latest 256x128 measurement is a full structural regression, not a local timing miss. Restoring the compact 128x128 PTX microkernel dispatch and grouped_rows=4 anchor is the shortest path back to the last known good surface before any further frontier experiment is layered on top.",
+      "expected_bottleneck": "The immediate problem is the bad 256x128 hot-band geometry itself, which inflated shared-memory footprint and collapsed tensor throughput.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2154-2203"
+      ],
+      "risk": "Low. This is a bounded dispatch restore back to the last measured compact anchor and does not require new synchronization logic.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "launch__occupancy_limit_registers"
+      ],
+      "stop_condition": "Stop if restoring the dispatch requires reviving any non-writer-safe code path beyond the exact compact PTX launch already measured at 24.689153 ms.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "short_scoreboard",
+          "location": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Switch the fixed hot-band dispatch back from the writer-safe 256x128 kernel to the compact 128x128 PTX microkernel.",
+        "Keep the peeled 64x384 row band and 64x96 tail unchanged.",
+        "Leave grouped_rows=4 and the accepted compact cadence intact on the recovery measurement."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ],
+      "status": "selected",
+      "source_search_iteration": 29,
+      "selection_count": 1,
+      "reopen_count": 0,
+      "last_selected_at": "2026-04-21T19:20:02-07:00",
+      "last_selected_selection_mode": "frontier",
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
       "is_family_representative": true,
-      "family_representative_score": 2.085,
+      "family_representative_score": 3.27,
       "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_191808:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_191808",
+      "base_run_id": "20260421_191613_bf16_gemm_v1_9652b835",
+      "base_measured_commit": "9652b83550cd0d483328509f8a3f908c72a1e03a",
+      "base_runtime_ms": 30.1742239,
+      "direction_id": "dir_02",
+      "direction_name": "Reopen Pairwise Wait-Sync Collapse Once The Compact PTX Anchor Is Restored",
+      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance_after_failed_256x128_reopen",
+      "action_fingerprint": "compact_two_stage_ptx_hotband:reopen_pairwise_stage_advance_after_256x128_loss",
+      "rank_in_diagnosis": 2,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 2.62,
+      "search_score_v1": 2.62,
+      "score_breakdown": {
+        "policy_id": "manual_round12_pairwise_collapse_after_restore_v1",
+        "rank_score": 2.01,
+        "evidence_bonus": 0.24,
+        "implementation_bonus": 0.52,
+        "risk_penalty": 0.15,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.34,
+      "predicted_fail_risk": 0.43,
+      "ranking_notes": [
+        "This remains the strongest post-recovery experiment on the compact surface because it attacks barrier and scoreboard without reopening the failed wide-tile branch.",
+        "It ranks behind dir_01 only because the current code must first be brought back to the compact anchor before the measurement is interpretable.",
+        "A historical win exists in the broader wait/sync-collapse family, so this stays live rather than speculative."
+      ],
+      "hypothesis": "After the failed 256x128 branch is unwound, the compact PTX surface still has a live synchronization family worth sampling. Reopening pairwise stage advance on the restored compact anchor can target barrier and scoreboard together without reopening the 42,496 B shared-memory surface.",
+      "expected_bottleneck": "On the restored compact PTX surface, the remaining bottleneck is still hot-loop wait/sync cadence and latency hiding rather than tile geometry.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2092-2120",
+        "src/kernels/bf16_gemm_v1.cu:2154-2203"
+      ],
+      "risk": "Moderate-high. This directly edits the compact PTX hot loop and would need a small dispatch restore first because the current source is still on the failed 256x128 branch.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active"
+      ],
+      "stop_condition": "Stop if the collapse requires extra hot-loop predicates beyond a small pairwise stage seam, or if it cannot be expressed after restoring the compact dispatch.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "state/search_closed.jsonl",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "short_scoreboard",
+          "location": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the compact 128x128 PTX dispatch if it is still disabled.",
+        "Collapse the compact PTX loop's wait/sync cadence into a pairwise stage advance.",
+        "Keep grouped_rows=4 and the 22,016 B shared-memory surface unchanged."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ],
+      "status": "open",
+      "source_search_iteration": 29,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": true,
+      "family_representative_score": 2.6625,
+      "family_representative_reason": "best_family_candidate_after_reorder",
+      "invalid_reason": null,
+      "notes": null
+    },
+    {
+      "candidate_id": "diagnosis_20260421_191808:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_191808",
+      "base_run_id": "20260421_191613_bf16_gemm_v1_9652b835",
+      "base_measured_commit": "9652b83550cd0d483328509f8a3f908c72a1e03a",
+      "base_runtime_ms": 30.1742239,
+      "direction_id": "dir_03",
+      "direction_name": "Retry The 2-K-Stage Pg2s Port Only After The Compact Anchor Is Back",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::ptx_hotband_two_k_stage_pg2s::defer_after_256x128_shared_budget_loss",
+      "action_fingerprint": "compact_ptx_anchor_then_retry_two_k_stage_pg2s_after_256x128_loss",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 2.12,
+      "search_score_v1": 2.12,
+      "score_breakdown": {
+        "policy_id": "manual_round12_two_k_stage_defer_after_256x128_loss_v1",
+        "rank_score": 1.62,
+        "evidence_bonus": 0.21,
+        "implementation_bonus": 0.44,
+        "risk_penalty": 0.15,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.28,
+      "predicted_fail_risk": 0.58,
+      "ranking_notes": [
+        "This family is still worth keeping in the tree, but the latest 42,496 B shared-memory loss means it no longer deserves top priority.",
+        "It ranks below dir_02 because a compact-surface wait/sync collapse is the cleaner post-recovery follow-up.",
+        "If revisited, the implementation should explicitly guard against replaying the one-CTA shared-budget failure pattern."
+      ],
+      "hypothesis": "The 2-K-stage Pg2s port is still conceptually useful for amortizing waits, but the failed 256x128 reopen increases the burden of proof against any direction that materially enlarges the shared-memory surface. It should be retried only after the compact anchor is back in place and only if the implementation can avoid replaying the one-CTA shared-budget failure pattern.",
+      "expected_bottleneck": "If revisited later, the target bottleneck is compact-surface latency hiding and per-tile copy cadence, not wide-tile geometry.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1724-1883",
+        "src/kernels/bf16_gemm_v1.cu:2059-2124"
+      ],
+      "risk": "High. The latest loss makes any larger shared-memory staging family harder to justify on this GPU until the compact anchor is restored.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "stop_condition": "Stop if the port implies another 42,496 B-class shared surface or otherwise forces the restored compact anchor back into a one-CTA regime.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the compact 128x128 PTX dispatch first.",
+        "Port the 2-K-stage preload and drain structure from the 128x128x32 schedule onto the PTX microkernel only if the shared-memory budget stays controlled.",
+        "Avoid coupling the port with a simultaneous tiling change."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        }
+      ],
+      "status": "parked",
+      "source_search_iteration": 29,
+      "selection_count": 0,
+      "reopen_count": 0,
+      "last_selected_at": null,
+      "last_selected_selection_mode": null,
+      "last_transition_label": null,
+      "last_transition_class": null,
+      "last_result_run_id": null,
+      "last_result_runtime_ms": null,
+      "last_runtime_delta_ms": null,
+      "last_result_correctness_passed": null,
+      "last_closed_at": null,
+      "last_closed_search_iteration": null,
+      "last_reopened_search_iteration": null,
+      "reopened_at": null,
+      "is_family_representative": false,
+      "family_representative_score": null,
+      "family_representative_reason": null,
       "invalid_reason": null,
       "notes": null
     }
   ],
-  "notes": "Persistent frontier tracks 82 historical candidates; 20 family representatives are currently active for selection."
+  "notes": "Persistent frontier tracks 85 historical candidates; 21 family representatives are currently active for selection."
 }

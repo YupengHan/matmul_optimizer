@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `9652b83550cd0d483328509f8a3f908c72a1e03a`
 - plateau counter: `28`
 - round loop: `round 12/20`
 - rounds remaining: `9`
-- notes: `Node A completed round 11/20. Run node_b to continue round 12/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_191808:dir_01 via frontier selection for round 12/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_191808`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 12/20 diagnosis emitted from the measured 256x128 loss; frontier should restore the compact 128x128 PTX anchor before spending another round on a new structural probe.`
+- dir_01: Restore The Compact 128x128 PTX Grouped-Rows-4 Anchor After The Failed 256x128 Reopen | bottleneck: The immediate problem is the bad 256x128 hot-band geometry itself, which inflated shared-memory footprint and collapsed tensor throughput.
+- dir_02: Reopen Pairwise Wait-Sync Collapse Once The Compact PTX Anchor Is Restored | bottleneck: On the restored compact PTX surface, the remaining bottleneck is still hot-loop wait/sync cadence and latency hiding rather than tile geometry.
+- dir_03: Retry The 2-K-Stage Pg2s Port Only After The Compact Anchor Is Back | bottleneck: If revisited later, the target bottleneck is compact-surface latency hiding and per-tile copy cadence, not wide-tile geometry.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
