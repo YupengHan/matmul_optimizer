@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_194414_bf16_gemm_v1_ac1299d7`
-- run dir: `runs/20260421_194414_bf16_gemm_v1_ac1299d7`
-- kernel tag: `bf16_gemm_v1_ac1299d7`
-- round label: `round 18/20`
+- run id: `20260421_194813_bf16_gemm_v1_257c9662`
+- run dir: `runs/20260421_194813_bf16_gemm_v1_257c9662`
+- kernel tag: `bf16_gemm_v1_257c9662`
+- round label: `round 19/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `24.688641 ms`
-- p10 runtime: `24.677990 ms`
-- p90 runtime: `26.303693 ms`
-- TFLOP/s: `29.447527 TFLOP/s`
-- previous run id: `20260421_194145_bf16_gemm_v1_f42c9310`
-- runtime delta vs previous measured run: `-0.192975 ms`
-- TFLOP/s delta vs previous measured run: `+0.228387 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `26.079727 ms`
+- p10 runtime: `25.838490 ms`
+- p90 runtime: `27.497780 ms`
+- TFLOP/s: `27.876803 TFLOP/s`
+- previous run id: `20260421_194414_bf16_gemm_v1_ac1299d7`
+- runtime delta vs previous measured run: `+1.391087 ms`
+- TFLOP/s delta vs previous measured run: `-1.570724 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore The Clean Compact PTX Wait-Sync Anchor After The Partial X32 Recovery`
+- implemented direction name: `Retune The Clean Compact PTX Launch Bounds To Target Three-CTA Residency`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_194414_bf16_gemm_v1_ac1299d7/summary.json`
-- ncu analysis path: `runs/20260421_194414_bf16_gemm_v1_ac1299d7/ncu_analysis.json`
-- measured commit: `ac1299d7d6b0b67e7eb323da7621c4511e79d6d8`
+- raw summary json: `runs/20260421_194813_bf16_gemm_v1_257c9662/summary.json`
+- ncu analysis path: `runs/20260421_194813_bf16_gemm_v1_257c9662/ncu_analysis.json`
+- measured commit: `257c9662ad79d8c40a9bd26f43d72ce39dc978f6`
 - new best custom: `no`
-- generated at: `2026-04-21T19:44:26-07:00`
+- generated at: `2026-04-21T19:48:25-07:00`

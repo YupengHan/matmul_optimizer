@@ -2,9 +2,9 @@
 
 ## Current workflow gate
 
-- next node: `node_a`
-- status: `ready_for_node_a`
-- round loop: `round 19/20` with `2` rounds remaining
+- next node: `node_b`
+- status: `ready_for_node_b`
+- round loop: `round 20/20` with `1` rounds remaining
 
 ## Direction approval policy
 
@@ -15,21 +15,19 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `diagnosis_20260421_194601`
-- diagnosis status: `completed`
-- recommended direction: `dir_01`
+- diagnosis id: `None`
+- diagnosis status: `pending_generation`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 19/20 diagnosis emitted from the restored clean compact PTX anchor; frontier should probe the PTX launch-bounds target before the loop closes.`
-- dir_01: Retune The Clean Compact PTX Launch Bounds To Target Three-CTA Residency | bottleneck: Register-pressure-driven CTA residency remains the cleanest unresolved local bottleneck on the restored compact PTX surface.
-- dir_02: Restore The Two-CTA Clean Compact PTX Anchor If The Launch-Bounds Probe Loses | bottleneck: The fallback issue would be a failed register-budget probe rather than a new algorithmic bottleneck.
-- dir_03: Keep The Compact Barrier-Trim Family Parked Behind The Launch-Bounds Probe | bottleneck: Residual synchronization cost on the compact PTX loop, but with weaker marginal evidence than the register-pressure lever.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no diagnosis recorded yet; run node_b first
 
 ## Active direction
 
-- selected direction: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- selected direction: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Persistent human guidance
 
