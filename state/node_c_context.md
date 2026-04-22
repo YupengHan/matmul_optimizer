@@ -5,27 +5,28 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
+- direction id: `dir_01`
+- direction name: `Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor`
+- candidate id: `diagnosis_20260421_193427:dir_01`
+- base run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
+- primary family id: `async_copy::ptx_hotband_two_k_stage_pg2s`
+- planned action fingerprint: `launch_fixed_hot_band:compact_ptx_anchor->existing_128x128x32_guarded_probe_from_24p682`
+- selection mode: `frontier`
+- source diagnosis id: `diagnosis_20260421_193427`
 - round loop: `round 16/20`
+- hypothesis: `The branch is no longer obviously missing one tiny compact barrier trim. A bounded way to test a broader latency-hiding change is to switch the fixed hot-band dispatch to the existing 128x128x32 two-K-stage kernel and see whether amortizing the copy/sync cadence across two K tiles helps more than the current single-K compact PTX path.`
+- expected bottleneck: `The unresolved bottleneck is still latency hiding and copy/sync amortization on the accepted compact surface, not a new geometry family.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:1722-1883, src/kernels/bf16_gemm_v1.cu:2154-2203`
+- risk: `Moderate-high. This stays on the 128x128 hot-band geometry, but it increases the staging footprint and changes the hot-band pipeline shape materially.`
+- metrics to re-check: `median runtime, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_barrier_per_warp_active.pct, smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct`
 - latest run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
 - latest runtime: `24.882688 ms`
 - latest NCU analysis: `runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `201.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `12.51` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.55` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `30.5` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Memory Throughput` = `46.3` | GPU Speed Of Light Throughput is carrying metric Memory Throughput.
+- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
+- `stall_breakdown` `long_scoreboard` @ `smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +41,16 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `48.26` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.56` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `7.86` | barrier stalls are consuming 7.86% of active warp issue slots.
-- `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct` `non_increasing` from `4.13` | mio throttle stalls are consuming 4.13% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing_vs_current_run` from `N/A` | N/A
+- `launch__occupancy_limit_registers` `bounded_not_materially_worse_than_current_run` from `N/A` | N/A
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `bounded_not_materially_worse_than_current_run` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Switch the fixed hot-band dispatch from the compact PTX microkernel to the existing 128x128x32 staged kernel.`
+- `Keep grouped_rows=4, the peeled row band, and the 64x96 tail unchanged.`
+- `Do not combine the staged-kernel launch with another compact sync-family rewrite in the same round.`
 
 ## Delta vs previous run
 
@@ -94,4 +97,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

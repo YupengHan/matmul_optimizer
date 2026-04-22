@@ -1,22 +1,255 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_193427",
+  "status": "completed",
+  "created_at": "2026-04-21T19:34:27-07:00",
   "source_run_id": "20260421_193214_bf16_gemm_v1_5bbcf7bf",
   "source_run_dir": "runs/20260421_193214_bf16_gemm_v1_5bbcf7bf",
   "source_summary_json": "runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_llm_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "Run 20260421_193214_bf16_gemm_v1_5bbcf7bf at 24.882688 ms says the very narrow compact barrier trims are no longer buying progress. The branch now has a clean accepted compact anchor at 24.682431 ms, and both the final no-refill sync skip and the recent wait_sync_collapse variants regressed from that neighborhood. That is enough evidence to stop spending rounds on tiny seam edits and take one broader but still bounded sample. The best bounded broader sample still available in-tree is the existing 128x128x32 two-K-stage hot-band kernel: it directly tests whether amortizing the copy/sync cadence over two K tiles can improve latency hiding without reopening the failed 256x128 geometry family. I rank a plain restore of the accepted compact anchor second as the safety fallback if the staged probe loses badly. I keep the compact trim family third only as a parked fallback, because the last few rounds have already shown that another tiny compact sync tweak is unlikely to be the breakthrough.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "state/search_frontier.json",
+    "runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/summary.json",
+    "runs/20260421_193214_bf16_gemm_v1_5bbcf7bf/ncu_analysis.json"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_193427:dir_01",
+  "family_audit": [
+    "accept: the compact 128x128 PTX grouped_rows=4 surface at 24.682431 ms remains the accepted anchor for this branch.",
+    "promote: the next sample should be the existing 2-K-stage 128x128x32 kernel because the tiny compact barrier trims have already flattened or regressed.",
+    "defer: keep plain restore and parked compact sync families behind the broader staged probe rather than spending another round on a tiny seam tweak."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::ptx_hotband_two_k_stage_pg2s::promote_existing_128x128x32_kernel_from_24p682_anchor",
+      "action_fingerprint": "launch_fixed_hot_band:compact_ptx_anchor->existing_128x128x32_guarded_probe_from_24p682",
+      "mode": "explore",
+      "hypothesis": "The branch is no longer obviously missing one tiny compact barrier trim. A bounded way to test a broader latency-hiding change is to switch the fixed hot-band dispatch to the existing 128x128x32 two-K-stage kernel and see whether amortizing the copy/sync cadence across two K tiles helps more than the current single-K compact PTX path.",
+      "expected_bottleneck": "The unresolved bottleneck is still latency hiding and copy/sync amortization on the accepted compact surface, not a new geometry family.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1722-1883",
+        "src/kernels/bf16_gemm_v1.cu:2154-2203"
+      ],
+      "risk": "Moderate-high. This stays on the 128x128 hot-band geometry, but it increases the staging footprint and changes the hot-band pipeline shape materially.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.98,
+      "score_breakdown": {
+        "policy_id": "manual_round16_promote_existing_x32_kernel_v1",
+        "rank_score": 2.19,
+        "evidence_bonus": 0.28,
+        "implementation_bonus": 0.61,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.14,
+      "predicted_fail_risk": 0.48,
+      "ranking_notes": [
+        "This is the strongest bounded next probe because the implementation already exists in-tree and does not require inventing a new pipeline from scratch.",
+        "It moves to a broader family only after the last few compact seam trims failed to improve the accepted anchor.",
+        "Even if it loses, the result will clearly answer whether the branch still has value in two-K-stage staging on the 128x128 geometry."
+      ],
+      "stop_condition": "Stop if the staged kernel pushes the hot-band path into a clearly worse residency regime or fails correctness on the first buildable attempt.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Switch the fixed hot-band dispatch from the compact PTX microkernel to the existing 128x128x32 staged kernel.",
+        "Keep grouped_rows=4, the peeled row band, and the 64x96 tail unchanged.",
+        "Do not combine the staged-kernel launch with another compact sync-family rewrite in the same round."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Restore The Accepted Compact PTX Anchor If The Broader Staged Probe Loses",
+      "family_id": "restore_base::ptx_two_stage_anchor_after_failed_x32_stage_probe",
+      "subfamily_id": "restore_base::compact_128x128_ptx_anchor_after_existing_x32_kernel_probe",
+      "action_fingerprint": "restore_compact_128x128_ptx_anchor_after_existing_x32_kernel_probe",
+      "mode": "restore",
+      "hypothesis": "If the staged-kernel probe loses badly, the branch should come straight back to the accepted compact PTX anchor rather than wander inside a broader staging family.",
+      "expected_bottleneck": "The immediate fallback problem would be a failed staged-kernel branch rather than a fresh compact-surface bottleneck.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2154-2203"
+      ],
+      "risk": "Low. This is the bounded recovery path back to the current accepted anchor.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.66,
+      "score_breakdown": {
+        "policy_id": "manual_round16_restore_after_x32_probe_v1",
+        "rank_score": 2.01,
+        "evidence_bonus": 0.29,
+        "implementation_bonus": 0.44,
+        "risk_penalty": 0.08,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.2,
+      "predicted_fail_risk": 0.1,
+      "ranking_notes": [
+        "This is the proper safety net if the broader staged probe produces another large regression.",
+        "It ranks second because the branch should still sample the broader family once before spending more rounds on pure recovery.",
+        "The accepted compact anchor is already well characterized and can be restored quickly if needed."
+      ],
+      "stop_condition": "Stop if restoring the accepted anchor requires extra unrelated code churn beyond the hot-band dispatch choice.",
+      "evidence_refs": [
+        "state/latest_run.md",
+        "state/latest_ncu_summary.md",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Launch Statistics",
+          "location": "Launch Statistics"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the fixed hot-band dispatch to the accepted compact PTX microkernel.",
+        "Leave grouped_rows=4, the peeled row band, and the tail path unchanged."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Leave The Tiny Compact Sync Tweaks Parked Behind The Broader Staged Probe",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::compact_sync_tweaks_parked_after_three_small_regressions",
+      "action_fingerprint": "park_compact_sync_tweaks_after_three_small_regressions",
+      "mode": "explore",
+      "hypothesis": "The compact sync families still target the right neighborhood, but the branch has already spent multiple rounds on tiny seam edits with no net win. They should stay parked behind the broader staged-kernel sample.",
+      "expected_bottleneck": "If revisited later, the target would still be residual barrier overhead on the compact anchor, but not before the staged probe is measured.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2092-2120"
+      ],
+      "risk": "Moderate. The family is not dangerous, but it currently offers low expected information value relative to the broader staged probe.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.18,
+      "score_breakdown": {
+        "policy_id": "manual_round16_park_compact_sync_tweaks_v1",
+        "rank_score": 1.69,
+        "evidence_bonus": 0.16,
+        "implementation_bonus": 0.39,
+        "risk_penalty": 0.06,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.04,
+      "predicted_fail_risk": 0.2,
+      "ranking_notes": [
+        "This family stays visible for completeness, but it no longer deserves immediate selection.",
+        "It ranks third because the branch already has enough evidence that tiny compact seam trims are close to exhausted.",
+        "If the staged probe fails cleanly, the search can still come back to these smaller tweaks later."
+      ],
+      "stop_condition": "Stop if revisiting this family would simply replay one of the already measured tiny barrier trims.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "state/search_closed.jsonl"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the compact sync-tweak family parked until the broader staged probe is measured."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 16/20 diagnosis emitted from the post-checkpoint compact anchor regression; frontier should try the existing 128x128x32 staged kernel before spending more rounds on tiny compact seam trims."
 }

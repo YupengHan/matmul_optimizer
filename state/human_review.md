@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 16/20` with `5` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_193427`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 16/20 diagnosis emitted from the post-checkpoint compact anchor regression; frontier should try the existing 128x128x32 staged kernel before spending more rounds on tiny compact seam trims.`
+- dir_01: Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor | bottleneck: The unresolved bottleneck is still latency hiding and copy/sync amortization on the accepted compact surface, not a new geometry family.
+- dir_02: Restore The Accepted Compact PTX Anchor If The Broader Staged Probe Loses | bottleneck: The immediate fallback problem would be a failed staged-kernel branch rather than a fresh compact-surface bottleneck.
+- dir_03: Leave The Tiny Compact Sync Tweaks Parked Behind The Broader Staged Probe | bottleneck: If revisited later, the target would still be residual barrier overhead on the compact anchor, but not before the staged probe is measured.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 
