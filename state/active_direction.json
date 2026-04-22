@@ -1,106 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance",
-  "candidate_id": "diagnosis_20260421_192105:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
-  "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance_after_compact_anchor_restore",
-  "action_fingerprint": "compact_two_stage_ptx_hotband:pairwise_stage_advance_after_round12_anchor_restore",
-  "selection_priority": 3.105,
-  "base_run_id": "20260421_192024_bf16_gemm_v1_8fd88cb4",
-  "selection_mode": "frontier",
-  "selected_at": "2026-04-21T19:22:44-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_192105",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance",
-    "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
-    "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance_after_compact_anchor_restore",
-    "action_fingerprint": "compact_two_stage_ptx_hotband:pairwise_stage_advance_after_round12_anchor_restore",
-    "mode": "explore",
-    "hypothesis": "The restored compact PTX loop still waits and synchronizes on every next_tile boundary before deciding whether a future refill exists. Recasting that handoff into a pairwise stage advance should reduce barrier and scoreboard pressure together without reopening the high-shared 256x128 loss surface.",
-    "expected_bottleneck": "Barrier and long-scoreboard are the clearest remaining compact-surface bottlenecks on the restored anchor.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:2092-2120"
-    ],
-    "risk": "Moderate. This stays on the compact PTX hot loop, but it directly touches the synchronization seam that guards the async-copy pipeline.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "sm__warps_active.avg.pct_of_peak_sustained_active"
-    ],
-    "search_score_v1": 2.94,
-    "score_breakdown": {
-      "policy_id": "manual_round13_pairwise_stage_advance_v1",
-      "rank_score": 2.24,
-      "evidence_bonus": 0.31,
-      "implementation_bonus": 0.49,
-      "risk_penalty": 0.1,
-      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 0.22,
-    "predicted_fail_risk": 0.34,
-    "ranking_notes": [
-      "The restored anchor proved the wide-tiling loss is gone, so the next high-signal move is to attack the compact loop's explicit wait/sync seam directly.",
-      "This family already has positive history in the search tree, but it has not been sampled from the current restored anchor.",
-      "It preserves the winning 22,016 B shared-memory surface and avoids mixing another geometry change into the same round."
-    ],
-    "stop_condition": "Stop if the pairwise advance requires extra hot-loop predicates or any third shared-memory stage, or if correctness fails on the first buildable attempt.",
-    "evidence_refs": [
-      "state/latest_ncu_summary.md",
-      "state/search_frontier.json",
-      "state/search_closed.jsonl",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "stall_breakdown",
-        "scope_name": "barrier",
-        "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      },
-      {
-        "scope_type": "stall_breakdown",
-        "scope_name": "long_scoreboard",
-        "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
-      }
-    ],
-    "expected_local_changes": [
-      "Refactor the compact PTX hot loop so wait/sync advances in pairwise stages instead of on every single next_tile boundary.",
-      "Keep grouped_rows=4, 128x128 CTA geometry, and the 22,016 B shared-memory footprint unchanged.",
-      "Do not mix this experiment with a tiling or export-path change."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "guardrail": "non_decreasing_vs_current_run"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "implemented_action_fingerprint": "compact_two_stage_ptx_hotband:refill_before_wait_with_wait_group_1_after_round12_restore",
-  "semantic_delta_tags": [
-    "same_family_variant",
-    "refill_before_wait",
-    "wait_group_1_steady_state"
-  ],
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu:2092-2120"
-  ]
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `8fd88cb415da428b274f41325006b803a7f795ae`
-- plateau counter: `29`
-- round loop: `round 13/20`
-- rounds remaining: `8`
-- notes: `Node C build succeeded for round 13/20. Node A will now measure the new code path.`
+- latest measured commit: `40488b6e7f3a41519a2cc1af8152e45b02857870`
+- plateau counter: `30`
+- round loop: `round 14/20`
+- rounds remaining: `7`
+- notes: `Node A completed round 13/20. Run node_b to continue round 14/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_192024_bf16_gemm_v1_8fd88cb4`
-- run dir: `runs/20260421_192024_bf16_gemm_v1_8fd88cb4`
+- run id: `20260421_192654_bf16_gemm_v1_40488b6e`
+- run dir: `runs/20260421_192654_bf16_gemm_v1_40488b6e`
 - correctness: `PASS`
-- median runtime: `24.693696 ms`
-- TFLOP/s: `29.441499 TFLOP/s`
+- median runtime: `24.845312 ms`
+- TFLOP/s: `29.261835 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_192105`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 13/20 diagnosis emitted from the restored compact PTX anchor; frontier should now prefer compact-surface sync experiments over any new geometry branch.`
-- dir_01: Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance | bottleneck: Barrier and long-scoreboard are the clearest remaining compact-surface bottlenecks on the restored anchor.
-- dir_02: Trim The Compact PTX Wait Group And Sync Cadence Without Growing Shared Memory | bottleneck: Barrier handoff overhead is still large enough to justify a smaller cadence-only probe on the compact PTX surface.
-- dir_03: Keep The 2-K-Stage Pg2s Port Parked Behind The Compact Sync Experiments | bottleneck: If revisited later, the target is still compact-surface latency hiding and copy cadence, not a new geometry surface.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
