@@ -1,22 +1,283 @@
 {
-  "diagnosis_id": null,
-  "status": "pending_generation",
-  "created_at": null,
+  "diagnosis_id": "diagnosis_20260421_192105",
+  "status": "completed",
+  "created_at": "2026-04-21T19:21:05-07:00",
   "source_run_id": "20260421_192024_bf16_gemm_v1_8fd88cb4",
   "source_run_dir": "runs/20260421_192024_bf16_gemm_v1_8fd88cb4",
   "source_summary_json": "runs/20260421_192024_bf16_gemm_v1_8fd88cb4/summary.json",
   "source_ncu_summary_json": "state/latest_ncu_summary.json",
   "heuristics_path": "docs/heuristics.md",
   "current_kernel_path": "src/kernels/bf16_gemm_v1.cu",
-  "reasoning_source": null,
-  "reasoning_mode": null,
-  "reasoning_summary": null,
-  "evidence_refs": [],
-  "recommended_direction_id": null,
+  "reasoning_source": "main_llm_agent",
+  "reasoning_mode": "manual_reasoned_best_model",
+  "reasoning_summary": "Run 20260421_192024_bf16_gemm_v1_8fd88cb4 at 24.693696 ms restored the compact 128x128 PTX anchor almost exactly: it is only about 0.0045 ms slower than the accepted 24.689153 ms base, with the same 201 registers/thread, 22,016 B shared-memory footprint, 16.61% active warps, and nearly identical tensor activity and stall mix. That means the round-11 256x128 loss is fully isolated and the search can continue on a clean compact PTX surface again. On this restored anchor, the strongest live next move is to collapse the per-tile wait/sync seam into a pairwise stage advance, because the current loop still executes a wait_group_0 plus __syncthreads handoff on every next_tile boundary while barrier is 8.20% and long-scoreboard is 5.17%. I rank a narrower cadence trim second as the lower-disruption alternative on the same 22,016 B surface. I keep the 2-K-stage Pg2s port third because the latest round reinforced how dangerous larger shared-memory surfaces are on this GPU, so that family should stay behind the compact-surface sync experiments until they are exhausted.",
+  "evidence_refs": [
+    "state/node_b_context.md",
+    "state/latest_run.md",
+    "state/latest_ncu_summary.md",
+    "state/progress.md",
+    "state/current_focus.md",
+    "state/human_review.md",
+    "state/human_guidance.md",
+    "docs/heuristics.md",
+    "src/kernels/bf16_gemm_v1.cu",
+    "state/search_frontier.json",
+    "state/search_closed.jsonl",
+    "runs/20260421_192024_bf16_gemm_v1_8fd88cb4/summary.json",
+    "runs/20260421_192024_bf16_gemm_v1_8fd88cb4/ncu_analysis.json"
+  ],
+  "recommended_direction_id": "dir_01",
   "approved_direction_id": null,
-  "selected_direction_id": null,
-  "selected_candidate_id": null,
-  "family_audit": [],
-  "directions": [],
-  "notes": "Run node_b to produce exactly three directions from the latest measured run."
+  "selected_direction_id": "dir_01",
+  "selected_candidate_id": "diagnosis_20260421_192105:dir_01",
+  "family_audit": [
+    "accept: the compact 128x128 PTX grouped_rows=4 anchor has been successfully restored and is again the live search surface.",
+    "reject_this_round: do not reopen the failed 256x128 writer-safe branch or any other high-shared geometry variant until the compact sync families are exhausted.",
+    "keep_open: pairwise wait/sync collapse, bounded cadence trim, and guarded 2-K-stage Pg2s remain the three useful families from the restored compact anchor."
+  ],
+  "directions": [
+    {
+      "direction_id": "dir_01",
+      "rank": 1,
+      "name": "Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance",
+      "family_id": "sync_pipeline::ptx_microkernel_wait_sync_collapse",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_pairwise_stage_advance_after_compact_anchor_restore",
+      "action_fingerprint": "compact_two_stage_ptx_hotband:pairwise_stage_advance_after_round12_anchor_restore",
+      "mode": "explore",
+      "hypothesis": "The restored compact PTX loop still waits and synchronizes on every next_tile boundary before deciding whether a future refill exists. Recasting that handoff into a pairwise stage advance should reduce barrier and scoreboard pressure together without reopening the high-shared 256x128 loss surface.",
+      "expected_bottleneck": "Barrier and long-scoreboard are the clearest remaining compact-surface bottlenecks on the restored anchor.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2092-2120"
+      ],
+      "risk": "Moderate. This stays on the compact PTX hot loop, but it directly touches the synchronization seam that guards the async-copy pipeline.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
+      ],
+      "search_score_v1": 2.94,
+      "score_breakdown": {
+        "policy_id": "manual_round13_pairwise_stage_advance_v1",
+        "rank_score": 2.24,
+        "evidence_bonus": 0.31,
+        "implementation_bonus": 0.49,
+        "risk_penalty": 0.1,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.22,
+      "predicted_fail_risk": 0.34,
+      "ranking_notes": [
+        "The restored anchor proved the wide-tiling loss is gone, so the next high-signal move is to attack the compact loop's explicit wait/sync seam directly.",
+        "This family already has positive history in the search tree, but it has not been sampled from the current restored anchor.",
+        "It preserves the winning 22,016 B shared-memory surface and avoids mixing another geometry change into the same round."
+      ],
+      "stop_condition": "Stop if the pairwise advance requires extra hot-loop predicates or any third shared-memory stage, or if correctness fails on the first buildable attempt.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "state/search_closed.jsonl",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Refactor the compact PTX hot loop so wait/sync advances in pairwise stages instead of on every single next_tile boundary.",
+        "Keep grouped_rows=4, 128x128 CTA geometry, and the 22,016 B shared-memory footprint unchanged.",
+        "Do not mix this experiment with a tiling or export-path change."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_02",
+      "rank": 2,
+      "name": "Trim The Compact PTX Wait Group And Sync Cadence Without Growing Shared Memory",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_wait_sync_cadence_after_compact_anchor_restore",
+      "action_fingerprint": "compact_two_stage_ptx_hotband:trim_wait_sync_cadence_after_round12_anchor_restore",
+      "mode": "explore",
+      "hypothesis": "If the pairwise collapse proves too invasive, a narrower retime of wait_group and __syncthreads placement on the restored compact surface can still attack barrier without reopening the shared-memory or geometry risks from recent failures.",
+      "expected_bottleneck": "Barrier handoff overhead is still large enough to justify a smaller cadence-only probe on the compact PTX surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:2106-2119"
+      ],
+      "risk": "Moderate. This is narrower than dir_01, but it still edits fragile synchronization placement in the hot loop.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "launch__occupancy_limit_registers"
+      ],
+      "search_score_v1": 2.43,
+      "score_breakdown": {
+        "policy_id": "manual_round13_cadence_trim_v1",
+        "rank_score": 1.87,
+        "evidence_bonus": 0.24,
+        "implementation_bonus": 0.41,
+        "risk_penalty": 0.09,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.14,
+      "predicted_fail_risk": 0.31,
+      "ranking_notes": [
+        "This is the lower-disruption fallback if the pairwise collapse looks too invasive in code review.",
+        "It keeps the compact PTX surface intact and only adjusts the timing of the existing wait/sync seam.",
+        "It ranks second because a true pairwise stage advance has a better chance of reducing both barrier and scoreboard together."
+      ],
+      "stop_condition": "Stop if the trim increases long-scoreboard or forces any shared-memory growth beyond the current 22,016 B footprint.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "barrier",
+          "location": "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "mio_throttle",
+          "location": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Retime wait_group and __syncthreads placement inside the compact PTX loop without changing stage depth.",
+        "Keep grouped_rows=4, the 128x128 dispatch, and the shared-memory budget unchanged.",
+        "Avoid pairing this with any pointer-hoist or tiling change."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        },
+        {
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        }
+      ]
+    },
+    {
+      "direction_id": "dir_03",
+      "rank": 3,
+      "name": "Keep The 2-K-Stage Pg2s Port Parked Behind The Compact Sync Experiments",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::ptx_hotband_two_k_stage_pg2s::guarded_after_compact_anchor_restore",
+      "action_fingerprint": "compact_ptx_anchor_then_guarded_two_k_stage_pg2s_after_round12_restore",
+      "mode": "explore",
+      "hypothesis": "The 2-K-stage Pg2s port may still amortize waits, but after the failed 256x128 reopen it should remain behind the compact sync families unless the implementation can clearly avoid replaying the large-shared-budget failure mode.",
+      "expected_bottleneck": "If revisited later, the target is still compact-surface latency hiding and copy cadence, not a new geometry surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:1724-1883",
+        "src/kernels/bf16_gemm_v1.cu:2059-2124"
+      ],
+      "risk": "High. This family still threatens shared-memory growth and a worse residency regime unless it is very carefully constrained.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "launch__occupancy_limit_registers",
+        "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+      ],
+      "search_score_v1": 2.18,
+      "score_breakdown": {
+        "policy_id": "manual_round13_two_k_stage_guarded_v1",
+        "rank_score": 1.71,
+        "evidence_bonus": 0.18,
+        "implementation_bonus": 0.41,
+        "risk_penalty": 0.12,
+        "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+      },
+      "predicted_gain_ms": 0.19,
+      "predicted_fail_risk": 0.56,
+      "ranking_notes": [
+        "This family stays in the tree because it still targets the right high-level problem, but it has lower priority after the recent shared-budget loss evidence.",
+        "It ranks behind both compact sync experiments because those are cleaner and cheaper on the restored anchor.",
+        "Only revisit it if the compact wait/sync families flatten out again."
+      ],
+      "stop_condition": "Stop if the port requires a larger shared-memory surface or drops the compact anchor below the current two-CTA register-limited regime.",
+      "evidence_refs": [
+        "state/latest_ncu_summary.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        },
+        {
+          "scope_type": "stall_breakdown",
+          "scope_name": "long_scoreboard",
+          "location": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        }
+      ],
+      "expected_local_changes": [
+        "Keep the compact 128x128 PTX dispatch active.",
+        "Only port the 2-K-stage preload/drain structure if the shared-memory budget remains tightly controlled.",
+        "Avoid combining the port with any tiling or launch-order change."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "launch__occupancy_limit_registers",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_current_run"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "bounded_not_materially_worse_than_current_run"
+        }
+      ]
+    }
+  ],
+  "notes": "Round 13/20 diagnosis emitted from the restored compact PTX anchor; frontier should now prefer compact-surface sync experiments over any new geometry branch."
 }

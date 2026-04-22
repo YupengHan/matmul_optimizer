@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 13/20` with `8` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_192105`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 13/20 diagnosis emitted from the restored compact PTX anchor; frontier should now prefer compact-surface sync experiments over any new geometry branch.`
+- dir_01: Collapse The Compact PTX Wait-Sync Seam Into A Pairwise Stage Advance | bottleneck: Barrier and long-scoreboard are the clearest remaining compact-surface bottlenecks on the restored anchor.
+- dir_02: Trim The Compact PTX Wait Group And Sync Cadence Without Growing Shared Memory | bottleneck: Barrier handoff overhead is still large enough to justify a smaller cadence-only probe on the compact PTX surface.
+- dir_03: Keep The 2-K-Stage Pg2s Port Parked Behind The Compact Sync Experiments | bottleneck: If revisited later, the target is still compact-surface latency hiding and copy cadence, not a new geometry surface.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 
