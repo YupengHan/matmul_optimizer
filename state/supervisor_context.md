@@ -1,6 +1,6 @@
 # Supervisor context
 
-This file is for the main Codex supervisor. It decides whether to run the next step directly or dispatch a sub-agent.
+This file is for the main LLM supervisor. It decides whether to run the next step directly or dispatch a sub-agent.
 
 ## Current dispatch
 
@@ -53,4 +53,4 @@ This file is for the main Codex supervisor. It decides whether to run the next s
 
 ## Notes
 
-- `Prepare node_b context if needed, spawn a diagnosis sub-agent for live reasoning, and do not replace node_b with a scripted helper before finalizing from the main Codex agent.`
+- `Prepare node_b context if needed, spawn a diagnosis sub-agent for live reasoning, and do not replace node_b with a scripted helper before finalizing from the main LLM agent.`

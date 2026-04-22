@@ -23,7 +23,7 @@ The goal is not to solve general matmul. The goal is to see how far a single eng
 - current local cuBLAS baseline: `22.000000 ms` on this machine
 - current gap vs CUTLASS: `-1.753616 ms`, with custom at `0.932340x` the CUTLASS runtime / `6.766049%` faster than CUTLASS
 - refactor-branch goal: restore the best measured custom source as the clean branch baseline, then drive toward `<= 18.0 ms` and beat cuBLAS on the same workload
-- execution model: local and script-first, with Codex used for diagnosis and implementation
+- execution model: local and script-first, with an LLM agent used for diagnosis and implementation
 - runtime dependencies: no OpenAI API key, cloud service, or LangGraph runtime required
 
 The authoritative benchmark snapshot lives in [state/benchmark_baselines.md](state/benchmark_baselines.md). The exact workload definition lives in [docs/benchmark_spec.md](docs/benchmark_spec.md).
@@ -84,10 +84,10 @@ cmake --build build -j 4 --target cublas_runner
 python scripts/run_cublas_baseline.py --runner ./build/cublas_runner --kernel-tag cublas_ref_v1
 ```
 
-If you are operating this repo through Codex or another local agent, the workflow guide now lives outside this README:
+If you are operating this repo through an LLM or another local agent, the workflow guide now lives outside this README:
 
 - [AGENTS.md](AGENTS.md)
-- [docs/codex_workflow.md](docs/codex_workflow.md)
+- [docs/llm_workflow.md](docs/llm_workflow.md)
 - [docs/supervisor_protocol.md](docs/supervisor_protocol.md)
 - [state/README.md](state/README.md)
 
@@ -333,6 +333,10 @@ The latest 10-round refactor loop rebuilt a clean accepted base at `24.195072 ms
 
 ## Major Workflow Updates
 
+- [x] Checkpoint - Apr 21, 2026: workflow wording generalized from `Codex` to `LLM`
+
+  The protocol docs, `AGENTS.md`, `scripts/graph.py`, and the regenerated context files used to be written for Codex specifically. They now describe the supervisor and sub-agent roles in LLM-neutral terms so the same loop reads correctly whether Codex, Claude, or another future agent is driving it. `docs/codex_workflow.md` moved to `docs/llm_workflow.md`. The validator in `scripts/graph.py` accepts both the new `main_llm_agent` / `llm_sub_agent` `reasoning_source` values and the legacy `main_codex_agent` / `codex_sub_agent` values, so existing history under `state/*.jsonl` is preserved as-is. Historical narrative in the blog and the "Tool setup matters" paragraph below keep their factual `GPT-5.4` / `Codex CLI` references.
+
 - [x] Checkpoint - Apr 20, 2026: next-direction search moved to a persistent family-representative frontier (`ce7a092`, with supporting migration in `51c80ca`)
 
   The current exploration format is no longer "pick only from the latest 3 ideas." `node_b` still emits exactly 3 fresh directions into `state/search_candidates.json`, but those directions are merged into a persistent `state/search_frontier.json` instead of replacing it. Each idea family exposes at most one active representative at a time, sibling candidates are parked inside the same family, and `select-next` competes only across those active representatives. Older candidates can reopen only under bounded near-miss rules, so the loop can revisit promising historical work without turning selection into a full rescore over every past attempt. In practice this is a heuristic, candidate-centric, A*-like frontier rather than a full A* implementation; the detailed policy lives in [docs/search_policy.md](docs/search_policy.md).
@@ -351,14 +355,14 @@ The latest 10-round refactor loop rebuilt a clean accepted base at `24.195072 ms
 
 - [ ] TODO - add a host-level resident supervisor runner
 
-  The current protocol now marks active-loop continue points machine-readably, but it still depends on a live top-level Codex supervisor process to consume that state. To keep long round loops running across SSH disconnects, IP changes, or terminal loss, add a host-level resident executor around `python scripts/graph.py supervisor` that survives shell/session churn, re-reads `state/supervisor_task.json`, honors the continue contract, and resumes the active dispatch step until the round budget is exhausted or the user explicitly redirects the workflow.
+  The current protocol now marks active-loop continue points machine-readably, but it still depends on a live top-level LLM supervisor process to consume that state. To keep long round loops running across SSH disconnects, IP changes, or terminal loss, add a host-level resident executor around `python scripts/graph.py supervisor` that survives shell/session churn, re-reads `state/supervisor_task.json`, honors the continue contract, and resumes the active dispatch step until the round budget is exhausted or the user explicitly redirects the workflow.
 
 ## Document Map
 
-This README is intentionally public-facing now. The workflow-specific and Codex-specific operating details live in narrower docs:
+This README is intentionally public-facing now. The workflow-specific and LLM-specific operating details live in narrower docs:
 
-- [AGENTS.md](AGENTS.md): repo-local instructions for Codex and other coding agents
-- [docs/codex_workflow.md](docs/codex_workflow.md): operator quickstart for the local optimization loop
+- [AGENTS.md](AGENTS.md): repo-local instructions for LLM agents and other coding agents
+- [docs/llm_workflow.md](docs/llm_workflow.md): operator quickstart for the local optimization loop
 - [docs/supervisor_protocol.md](docs/supervisor_protocol.md): supervisor dispatch contract
 - [docs/node_b_protocol.md](docs/node_b_protocol.md): diagnosis-node protocol
 - [docs/node_c_protocol.md](docs/node_c_protocol.md): implementation-node protocol

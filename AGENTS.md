@@ -1,6 +1,6 @@
 # AGENTS
 
-This repository is a local, Codex-oriented workflow for one fixed benchmark:
+This repository is a local, LLM-oriented workflow for one fixed benchmark:
 
 - historical recorded baseline: beat the local CUTLASS baseline on `fixed_bf16_gemm_v1`
 - refactor-branch target: remeasure from the restored best custom source, then drive toward `<= 18.0 ms` and beat cuBLAS on the same benchmark
@@ -66,7 +66,7 @@ cmake --build build -j 4 --target cublas_runner
 python scripts/run_cublas_baseline.py --runner ./build/cublas_runner --kernel-tag cublas_ref_v1
 ```
 
-`python scripts/graph.py cycle` reads `state/graph_state.json` and either runs the script-first node or prepares the next Codex handoff context.
+`python scripts/graph.py cycle` reads `state/graph_state.json` and either runs the script-first node or prepares the next LLM handoff context.
 
 `python scripts/graph.py supervisor` refreshes and prints the current main-agent dispatch task from `state/supervisor_task.json`.
 
@@ -74,11 +74,11 @@ python scripts/run_cublas_baseline.py --runner ./build/cublas_runner --kernel-ta
 
 The execution model has one extra orchestration layer:
 
-- the main Codex agent is the supervisor
+- the main LLM agent is the supervisor
 - `node_a` is executed directly by the main agent
 - `node_b` and `node_c` are executed through one dedicated `sub-agent` each
 - repo-local scripts prepare context, validate state, and finalize commits
-- repo-local scripts do **not** try to spawn Codex agents by themselves
+- repo-local scripts do **not** try to spawn LLM agents by themselves
 
 The supervisor contract lives in:
 
@@ -149,7 +149,7 @@ Supervisor watchdog rule:
 
 When the user says `开始运行 node_a`:
 
-1. run `python scripts/graph.py node_a` outside the Codex sandbox, with direct CUDA access
+1. run `python scripts/graph.py node_a` outside the LLM sandbox, with direct CUDA access
 2. read `state/latest_run.json`, `state/latest_ncu_summary.json`, and `state/graph_state.json`
 3. report the real measured outcome only after the script finishes
 
@@ -157,7 +157,7 @@ When the user says `开始运行 node_b`:
 
 1. run `python scripts/graph.py node_b`
 2. read `docs/supervisor_protocol.md`, `docs/node_b_protocol.md`, and `state/node_b_context.md`
-3. main Codex supervisor spawns one diagnosis `sub-agent` for node_b
+3. main LLM supervisor spawns one diagnosis `sub-agent` for node_b
 4. the sub-agent reads the files listed there and edits `state/latest_diagnosis.json` so it contains exactly 3 directions, plus live-reasoning provenance fields
 5. the diagnosis must come from real best-model reasoning, not a repo-external scripted helper or template emitter
 6. the diagnosis must include concrete evidence refs for the live run context and distinct direction names / action fingerprints
@@ -172,7 +172,7 @@ When the user says `开始运行 node_c`:
    - `python scripts/graph.py use-recommended-direction`
 3. run `python scripts/graph.py node_c`
 4. read `docs/supervisor_protocol.md`, `docs/node_c_protocol.md`, and `state/node_c_context.md`
-5. main Codex supervisor spawns one implementation `sub-agent` for node_c
+5. main LLM supervisor spawns one implementation `sub-agent` for node_c
 6. the sub-agent implements exactly one direction with a real compiled-code edit in the allowed build surface
 7. the implementation must not be a repo-external scripted history replay or a no-op state-only change
 8. after the sub-agent returns, the main agent runs `python scripts/graph.py node_c --finalize`
@@ -240,7 +240,7 @@ When the user asks to restore an exact measured base by run id:
 Role:
 
 - script-first measurement node
-- must run outside the Codex sandbox because the benchmark and NCU profiling require direct CUDA device access
+- must run outside the LLM sandbox because the benchmark and NCU profiling require direct CUDA device access
 
 Must:
 
@@ -273,8 +273,8 @@ Must not:
 
 Role:
 
-- Codex-friendly diagnosis node
-- normally executed through one diagnosis `sub-agent` under the main Codex supervisor
+- LLM-friendly diagnosis node
+- normally executed through one diagnosis `sub-agent` under the main LLM supervisor
 
 Must read:
 
@@ -291,7 +291,7 @@ Must output:
 
 - exactly 3 directions in `state/latest_diagnosis.json`
 - one `recommended_direction_id`
-- `reasoning_source` set to `main_codex_agent` or `codex_sub_agent`
+- `reasoning_source` set to `main_llm_agent` or `llm_sub_agent` (legacy values `main_codex_agent` / `codex_sub_agent` are still accepted for backcompat)
 - `reasoning_mode` set to `manual_reasoned_best_model`
 - a non-trivial `reasoning_summary`
 - `evidence_refs` that include the live run context files
@@ -317,8 +317,8 @@ Must also:
 
 Role:
 
-- Codex-friendly implementation node
-- normally executed through one implementation `sub-agent` under the main Codex supervisor
+- LLM-friendly implementation node
+- normally executed through one implementation `sub-agent` under the main LLM supervisor
 
 Must:
 

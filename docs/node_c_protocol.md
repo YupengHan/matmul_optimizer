@@ -2,7 +2,7 @@
 
 Node C is the implementation node. It consumes one selected direction, makes one bounded code change, proves the code still builds, commits that implementation, then hands control back to node_a.
 
-In the intended workflow, Node C is executed by one implementation `sub-agent` under the main Codex supervisor.
+In the intended workflow, Node C is executed by one implementation `sub-agent` under the main LLM supervisor.
 
 ## Entry
 
@@ -36,7 +36,7 @@ Finalize after editing code:
 python scripts/graph.py node_c --finalize
 ```
 
-The main Codex supervisor is responsible for the prepare and finalize commands. The `sub-agent` owns the bounded code edit.
+The main LLM supervisor is responsible for the prepare and finalize commands. The `sub-agent` owns the bounded code edit.
 
 ## Required inputs
 
@@ -91,7 +91,7 @@ The implementation `sub-agent` should:
 - if the edit crosses families, write `secondary_family_ids` before finalize
 - leave build validation and finalize orchestration to the main agent
 
-After the `sub-agent` returns, the main Codex supervisor must run:
+After the `sub-agent` returns, the main LLM supervisor must run:
 
 ```bash
 python scripts/graph.py node_c --finalize

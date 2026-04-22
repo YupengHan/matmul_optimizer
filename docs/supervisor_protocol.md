@@ -5,9 +5,9 @@ This document defines the extra orchestration layer above `node_a -> node_b -> n
 It is intentionally small:
 
 - the repo keeps execution script-first
-- the main Codex agent acts as the supervisor
-- `node_b` and `node_c` may use Codex `sub-agent`s
-- repo-local Python does **not** attempt to spawn Codex agents
+- the main LLM agent acts as the supervisor
+- `node_b` and `node_c` may use LLM `sub-agent`s
+- repo-local Python does **not** attempt to spawn LLM agents
 
 ## Sources of truth
 
@@ -22,7 +22,7 @@ Read these first:
 
 ## Supervisor responsibilities
 
-The main Codex agent owns:
+The main LLM agent owns:
 
 - graph-aware dispatch
 - loop continuation and stop conditions
@@ -31,7 +31,7 @@ The main Codex agent owns:
 - verifying the workflow moves to the next graph node
 - not prematurely terminating an active round loop just because a node finished and the next node is ready
 
-The main Codex agent does **not**:
+The main LLM agent does **not**:
 
 - claim performance without `node_a`
 - skip build validation for `node_c`
@@ -152,7 +152,7 @@ Operational consequences:
 
 - no `sub-agent`
 - main agent runs `python scripts/graph.py node_a`
-- must run outside the Codex sandbox with direct CUDA and Nsight Compute access
+- must run outside the LLM sandbox with direct CUDA and Nsight Compute access
 - after a real measurement finishes, node_a is also responsible for feeding the
   measured transition back into search memory (`search_state`, `family_ledger`,
   and `search_closed.jsonl` when a pending implementation attempt was actually measured)

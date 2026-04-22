@@ -1,8 +1,8 @@
-# Codex Workflow Guide
+# LLM Workflow Guide
 
-This document keeps Codex-operator details out of the public-facing `README.md`.
+This document keeps LLM-operator details out of the public-facing `README.md`.
 
-Use it as the quick entrypoint when you are running the optimization loop locally through Codex CLI or another coding agent.
+Use it as the quick entrypoint when you are running the optimization loop locally through an LLM CLI or another coding agent.
 
 ## Read Order
 

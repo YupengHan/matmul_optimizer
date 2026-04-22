@@ -1,8 +1,8 @@
 # Node B protocol
 
-Node B is the diagnosis node. It does not call a remote model from inside `scripts/graph.py`; Codex performs the reasoning step after the repo prepares the context.
+Node B is the diagnosis node. It does not call a remote model from inside `scripts/graph.py`; the LLM agent performs the reasoning step after the repo prepares the context.
 
-In the intended workflow, Node B is executed by one diagnosis `sub-agent` under the main Codex supervisor.
+In the intended workflow, Node B is executed by one diagnosis `sub-agent` under the main LLM supervisor.
 
 ## Entry
 
@@ -18,7 +18,7 @@ Finalize the diagnosis with:
 python scripts/graph.py node_b --finalize
 ```
 
-The main Codex supervisor is responsible for both commands. The `sub-agent` owns only the reasoning and the edit to `state/latest_diagnosis.json`.
+The main LLM supervisor is responsible for both commands. The `sub-agent` owns only the reasoning and the edit to `state/latest_diagnosis.json`.
 
 ## Required inputs
 
@@ -87,7 +87,7 @@ It must contain:
 The top-level `notes` field should be used when useful to record human-guided ranking rationale.
 The top-level `family_audit` field should remain a list and should summarize which idea families were accepted, deferred, or rejected this round.
 `selected_direction_id` may remain `null` at diagnosis time because finalize now emits candidates into the frontier without automatically selecting one.
-`reasoning_source` must be `main_codex_agent` or `codex_sub_agent`.
+`reasoning_source` must be `main_llm_agent` or `llm_sub_agent`. The legacy values `main_codex_agent` and `codex_sub_agent` are also accepted for backcompat.
 `reasoning_mode` must be `manual_reasoned_best_model`.
 `reasoning_summary` must be a concrete prose explanation of the ranking, not a template stub.
 `evidence_refs` must be a non-empty list of the concrete files reviewed, including:
@@ -155,7 +155,7 @@ The diagnosis `sub-agent` should:
 - perform real reasoning instead of using a repo-external template/helper emitter
 - avoid running the finalize command by itself
 
-After the `sub-agent` returns, the main Codex supervisor must run:
+After the `sub-agent` returns, the main LLM supervisor must run:
 
 ```bash
 python scripts/graph.py node_b --finalize

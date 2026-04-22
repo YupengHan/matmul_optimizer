@@ -302,7 +302,7 @@ class NcuRichHandoffTests(unittest.TestCase):
             'guardrail_metrics': latest_ncu['handoff']['node_c']['guardrail_metrics'][:2],
         }
         diagnosis = {
-            'status': 'awaiting_codex',
+            'status': 'awaiting_llm',
             'recommended_direction_id': 'dir_01',
             'directions': [diagnosis_direction],
         }

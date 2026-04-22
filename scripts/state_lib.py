@@ -414,7 +414,7 @@ def default_round_loop_state() -> Dict[str, Any]:
 
 def default_supervisor_task() -> Dict[str, Any]:
     return {
-        'supervisor_role': 'main_codex_agent',
+        'supervisor_role': 'main_llm_agent',
         'dispatch_node': 'node_a',
         'dispatch_mode': 'direct_script',
         'graph_status': 'ready_for_node_a',
@@ -445,7 +445,7 @@ def default_supervisor_task() -> Dict[str, Any]:
         'watchdog_latest_progress_at': None,
         'watchdog_latest_progress_path': None,
         'watchdog_continue_instruction': None,
-        'notes': 'Run node_a directly from the main Codex agent.',
+        'notes': 'Run node_a directly from the main LLM agent.',
     }
 
 

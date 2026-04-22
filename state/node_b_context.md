@@ -66,7 +66,7 @@
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
         - keep top-level `family_audit` as a list
         - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
-        - set `reasoning_source` to `main_codex_agent` or `codex_sub_agent`
+        - set `reasoning_source` to `main_llm_agent` or `llm_sub_agent` (legacy values `main_codex_agent` / `codex_sub_agent` are still accepted for backcompat)
         - set `reasoning_mode` to `manual_reasoned_best_model`
         - write a non-empty `reasoning_summary` with concrete ranking rationale
         - write `evidence_refs` as a non-empty list of concrete files reviewed

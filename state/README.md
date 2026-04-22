@@ -2,7 +2,7 @@
 
 The state layer now has two tiers:
 
-1. machine-readable JSON for scripts and Codex
+1. machine-readable JSON for scripts and LLM agents
 2. human-readable Markdown for review and hiring-manager readability
 
 The two tiers should describe the same workflow state.
@@ -223,7 +223,7 @@ Directions may also carry an `idea_origin` field such as `human-idea` when a rou
 
 ## `supervisor_task.json`
 
-Machine-readable dispatch contract for the main Codex supervisor.
+Machine-readable dispatch contract for the main LLM supervisor.
 
 Contains:
 
@@ -272,7 +272,7 @@ Prepared implementation brief and allowed edit surface for node_c.
 
 ## `supervisor_context.md`
 
-Human-readable mirror of `supervisor_task.json` for the main Codex supervisor.
+Human-readable mirror of `supervisor_task.json` for the main LLM supervisor.
 
 ## Update rules
 

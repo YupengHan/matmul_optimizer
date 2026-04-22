@@ -276,7 +276,7 @@ def running_inside_codex_sandbox() -> bool:
 def ensure_node_a_can_access_gpu() -> None:
     if running_inside_codex_sandbox():
         raise RuntimeError(
-            'node_a must run outside the Codex sandbox because it requires direct CUDA / Nsight Compute access; '
+            'node_a must run outside the LLM sandbox because it requires direct CUDA / Nsight Compute access; '
             'rerun `python scripts/graph.py node_a` with escalated permissions.'
         )
 
@@ -1999,7 +1999,7 @@ def render_node_b_context(
         - preserve `direction_id` values `dir_01`, `dir_02`, `dir_03`
         - keep top-level `family_audit` as a list
         - keep top-level `selected_direction_id` as `null` during diagnosis emission unless a later explicit selection writes it
-        - set `reasoning_source` to `main_codex_agent` or `codex_sub_agent`
+        - set `reasoning_source` to `main_llm_agent` or `llm_sub_agent` (legacy values `main_codex_agent` / `codex_sub_agent` are still accepted for backcompat)
         - set `reasoning_mode` to `manual_reasoned_best_model`
         - write a non-empty `reasoning_summary` with concrete ranking rationale
         - write `evidence_refs` as a non-empty list of concrete files reviewed
@@ -2205,7 +2205,7 @@ def compute_supervisor_task(
     refresh_frontier_family_representatives(search_frontier, load_search_state(), load_family_ledger())
     has_frontier_candidate = best_frontier_candidate(search_frontier, diagnosis) is not None
     task = {
-        'supervisor_role': 'main_codex_agent',
+        'supervisor_role': 'main_llm_agent',
         'dispatch_node': current_node,
         'dispatch_mode': 'direct_script',
         'graph_status': graph_state.get('status', 'unknown'),
@@ -2258,7 +2258,7 @@ def compute_supervisor_task(
                 'requires_gpu_access': True,
                 'prepare_command': 'python scripts/graph.py node_a',
                 'protocol_doc': 'AGENTS.md',
-                'notes': 'Run node_a directly from the main Codex agent outside the sandbox, then re-read graph state.',
+                'notes': 'Run node_a directly from the main LLM agent outside the sandbox, then re-read graph state.',
             }
         )
     elif current_node == 'node_b':
@@ -2269,7 +2269,7 @@ def compute_supervisor_task(
                 'finalize_command': 'python scripts/graph.py node_b --finalize',
                 'protocol_doc': 'docs/node_b_protocol.md',
                 'context_file': repo_rel(NODE_B_CONTEXT_PATH),
-                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent for live reasoning, and do not replace node_b with a scripted helper before finalizing from the main Codex agent.',
+                'notes': 'Prepare node_b context if needed, spawn a diagnosis sub-agent for live reasoning, and do not replace node_b with a scripted helper before finalizing from the main LLM agent.',
             }
         )
     elif current_node == 'node_c':
@@ -2291,7 +2291,7 @@ def compute_supervisor_task(
                 'finalize_command': 'python scripts/graph.py node_c --finalize',
                 'protocol_doc': 'docs/node_c_protocol.md',
                 'context_file': repo_rel(NODE_C_CONTEXT_PATH),
-                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent for a real code edit, and do not replace node_c with a scripted helper before finalizing from the main Codex agent.',
+                'notes': 'Ensure exactly one direction is selected, spawn an implementation sub-agent for a real code edit, and do not replace node_c with a scripted helper before finalizing from the main LLM agent.',
             }
         )
     else:
@@ -2318,7 +2318,7 @@ def render_supervisor_context(
     round_loop: Dict[str, Any],
 ) -> str:
     lines = ['# Supervisor context', '']
-    lines.append('This file is for the main Codex supervisor. It decides whether to run the next step directly or dispatch a sub-agent.')
+    lines.append('This file is for the main LLM supervisor. It decides whether to run the next step directly or dispatch a sub-agent.')
     lines.append('')
     lines.append('## Current dispatch')
     lines.append('')
@@ -4092,7 +4092,7 @@ def run_node_a(args: argparse.Namespace) -> int:
 def diagnosis_template(latest_run: Dict[str, Any], graph_state: Dict[str, Any]) -> Dict[str, Any]:
     diagnosis = default_latest_diagnosis()
     diagnosis['diagnosis_id'] = f'diagnosis_{timestamp_tag()}'
-    diagnosis['status'] = 'awaiting_codex'
+    diagnosis['status'] = 'awaiting_llm'
     diagnosis['created_at'] = now_local_iso()
     diagnosis['source_run_id'] = latest_run.get('run_id')
     diagnosis['source_run_dir'] = latest_run.get('run_dir')
@@ -4413,8 +4413,8 @@ def validate_diagnosis(
     if diagnosis_id.startswith('auto_diagnosis_'):
         raise RuntimeError('node_b diagnosis ids must not be auto-generated helper ids')
     reasoning_source = diagnosis.get('reasoning_source')
-    if reasoning_source not in {'main_codex_agent', 'codex_sub_agent'}:
-        raise RuntimeError('node_b diagnosis requires reasoning_source=main_codex_agent or codex_sub_agent')
+    if reasoning_source not in {'main_codex_agent', 'codex_sub_agent', 'main_llm_agent', 'llm_sub_agent'}:
+        raise RuntimeError('node_b diagnosis requires reasoning_source=main_llm_agent or llm_sub_agent (legacy main_codex_agent or codex_sub_agent also accepted)')
     reasoning_mode = diagnosis.get('reasoning_mode')
     if reasoning_mode != 'manual_reasoned_best_model':
         raise RuntimeError('node_b diagnosis requires reasoning_mode=manual_reasoned_best_model')

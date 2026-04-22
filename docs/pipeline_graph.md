@@ -8,9 +8,9 @@ dataset_init -> node_a -> node_b -> node_c -> node_a
 
 Only the state / node / edge idea is borrowed. The execution path stays local and script-first.
 
-Codex now operates this graph through a small supervisor layer:
+LLM agents now operate this graph through a small supervisor layer:
 
-- the main Codex agent owns graph dispatch
+- the main LLM agent owns graph dispatch
 - `node_a` is executed directly
 - `node_b` and `node_c` are dispatched to one `sub-agent` each
 - the repo exposes the current dispatch through `state/supervisor_task.json`
@@ -18,8 +18,8 @@ Codex now operates this graph through a small supervisor layer:
 ## Design principles
 
 - execution-critical steps stay in scripts
-- reasoning-heavy steps are Codex-friendly agent nodes
-- the main Codex agent remains the supervisor and finalize owner
+- reasoning-heavy steps are LLM-friendly agent nodes
+- the main LLM agent remains the supervisor and finalize owner
 - machine-readable state and human-readable state are both required
 - git is the audit log for measured runs, diagnoses, and implementations
 - optional multi-round loop state can budget repeated node_b -> node_c -> node_a rounds
@@ -29,7 +29,7 @@ Codex now operates this graph through a small supervisor layer:
 
 ```mermaid
 flowchart TD
-    SUP[main Codex supervisor] --> D0[dataset_init script]
+    SUP[main LLM supervisor] --> D0[dataset_init script]
     SUP --> A[node_a script]
     SUP --> B[node_b diagnosis sub-agent]
     SUP --> SEL[approve or use recommended direction]
@@ -62,7 +62,7 @@ The fully script-first measurement node.
 
 Responsibilities:
 
-- run outside the Codex sandbox so CUDA benchmarking and Nsight Compute can reach the GPU
+- run outside the LLM sandbox so CUDA benchmarking and Nsight Compute can reach the GPU
 - build `custom_runner` if needed
 - run `scripts/eval_kernel.py`
 - record correctness / performance / Nsight Compute
@@ -85,7 +85,7 @@ The diagnosis node.
 
 Responsibilities:
 
-- run under the main Codex supervisor as one diagnosis `sub-agent`
+- run under the main LLM supervisor as one diagnosis `sub-agent`
 - read the latest lightweight run summary
 - read the latest lightweight NCU summary
 - read `docs/heuristics.md`
@@ -108,7 +108,7 @@ The implementation node.
 
 Responsibilities:
 
-- run under the main Codex supervisor as one implementation `sub-agent`
+- run under the main LLM supervisor as one implementation `sub-agent`
 - read the selected direction
 - implement exactly one direction
 - build before claiming success
@@ -166,7 +166,7 @@ The two layers must not contradict each other.
 
 The extra orchestration layer is explicit rather than implicit.
 
-`state/supervisor_task.json` tells the main Codex agent:
+`state/supervisor_task.json` tells the main LLM agent:
 
 - which node to dispatch next
 - whether to run it directly or through a `sub-agent`
