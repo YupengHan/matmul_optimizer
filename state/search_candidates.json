@@ -1,66 +1,64 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_175153",
-  "source_run_id": "20260421_172601_bf16_gemm_v1_117cd3e7",
-  "source_diagnosis_id": "diagnosis_20260421_175153",
-  "generated_at": "2026-04-21T17:56:21-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_175735",
+  "source_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
+  "source_diagnosis_id": "diagnosis_20260421_175735",
+  "generated_at": "2026-04-21T18:00:25-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_175153:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_175735:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_175153:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_175153",
-      "base_run_id": "20260421_172601_bf16_gemm_v1_117cd3e7",
-      "base_measured_commit": "117cd3e796a5742c1f15e040edf78cb668e1d5cf",
-      "base_runtime_ms": 24.80694485,
+      "candidate_id": "diagnosis_20260421_175735:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_175735",
+      "base_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
+      "base_measured_commit": "05086a14f8df006f564c0071ea7d60dbf5ddc156",
+      "base_runtime_ms": 26.3854084,
       "direction_id": "dir_01",
-      "direction_name": "Swap The Recovered PTX Hot-Band Back To The Regular 128x128 Single-K Sibling",
-      "family_id": "kernel_variant::swap_to_nonmicrokernel_128x128",
-      "subfamily_id": "kernel_variant::fixed_hot_band_128x128_regular_accumulate_from_compact_ptx_recovery",
-      "action_fingerprint": "compact_ptx_hotband_recovery:microkernel->regular_128x128_single_k_sibling",
+      "direction_name": "Restore The Compact PTX Hot-Band And Retest Three-CTA Residency There",
+      "family_id": "register_pressure::retune_ptx_launch_bounds",
+      "subfamily_id": "register_pressure::launch_bounds_128x128_ptx_min_blocks_2_to_3_after_regular_sibling_regression",
+      "action_fingerprint": "restore_compact_ptx_hotband:launch_bounds_min_blocks_2->3",
       "rank_in_diagnosis": 1,
       "recommended": true,
       "mode": "exploit",
-      "priority": 0.84,
-      "search_score_v1": 0.84,
+      "priority": 0.83,
+      "search_score_v1": 0.83,
       "score_breakdown": {
-        "policy_id": "manual_round1_recovered_hotband_followup_v1",
-        "headroom_score": 0.31,
-        "evidence_score": 0.28,
-        "implementation_bonus": 0.31,
+        "policy_id": "manual_round2_isolate_good_lever_v1",
+        "headroom_score": 0.32,
+        "evidence_score": 0.27,
+        "implementation_bonus": 0.3,
         "risk_penalty": -0.06,
         "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.45,
-      "predicted_fail_risk": 0.28,
+      "predicted_gain_ms": 0.4,
+      "predicted_fail_risk": 0.34,
       "ranking_notes": [
-        "This is the strongest evidence-backed follow-up because it stays on the current hot-band surface and already has an in-repo measured win on the clean baseline.",
-        "It directly attacks the current top hotspot, registers per thread, without reopening the staged-kernel family that already failed.",
-        "It is a better first move than grouped-row or launch-bounds retunes because the current bottleneck is still dominated by the hot-band consume path itself."
+        "This is the best isolation experiment because it keeps the accepted compact PTX surface and imports only the one positive signal from the regressed run: higher CTA residency.",
+        "It directly matches the latest delta table: occupancy improved, but barrier and short-scoreboard regressed. This edit is designed to keep the first while avoiding the latter.",
+        "It is lower risk than another full sibling swap or a fresh tiling reopen."
       ],
-      "hypothesis": "The compact PTX row-pair reset removed the worst regression, but the current hot-band microkernel still sits at 202 registers/thread and only 16.59% active warps. The existing single-K 128x128 sibling keeps the same CTA geometry and one-K staging depth while using the regular 64x64 accumulate helper instead of the microkernel-specific consume order. Repo history already measured this sibling at a slightly lower register footprint (196 regs/thread) and a small win on the clean baseline, so it is the best next local exploit on the current branch.",
-      "expected_bottleneck": "Microkernel-specific consume ordering and residual accumulator live range on the dominant 128x128 hot-band path are still holding occupancy to the 2-CTA class.",
+      "hypothesis": "The regular sibling regression shows that 3-CTA residency is not bad by itself; the bad part is the regular sibling's barrier-heavy consume path. Restoring the accepted compact PTX hot-band launch and then tightening only the PTX kernel launch-bounds target from 2 to 3 CTAs/SM is the cleanest way to test whether the occupancy win can be kept without inheriting the 10.15% barrier tax.",
+      "expected_bottleneck": "The accepted compact PTX surface is still register-limited, but the beneficial part of the current regression may be the 3-CTA residency rather than the sibling kernel body.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:734-829",
-        "src/kernels/bf16_gemm_v1.cu:1876-1988",
-        "src/kernels/bf16_gemm_v1.cu:1990-2094",
-        "src/kernels/bf16_gemm_v1.cu:2144-2151"
+        "src/kernels/bf16_gemm_v1.cu:1989-2094",
+        "src/kernels/bf16_gemm_v1.cu:2142-2151"
       ],
-      "risk": "Moderate. The sibling is already in-tree and has prior positive evidence, but the branch currently carries the compact PTX recovery rather than the old clean baseline, so the win size may be smaller than before.",
+      "risk": "Moderate. This is only a two-part local edit on the accepted PTX surface, but a tighter launch-bounds target can still introduce spills or weaken instruction scheduling.",
       "metrics_to_recheck": [
         "median runtime",
         "launch__registers_per_thread",
         "launch__occupancy_limit_registers",
         "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct"
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct"
       ],
-      "stop_condition": "Stop if the swap fails to lower registers or active warps stay flat while runtime does not improve by at least measurement noise.",
+      "stop_condition": "Stop if runtime regresses again without a clear barrier reduction, or if build / NCU evidence suggests spill-driven residency forcing.",
       "evidence_refs": [
         "state/latest_run.md",
         "state/latest_ncu_summary.md",
+        "runs/20260421_175700_bf16_gemm_v1_05086a14/ncu_analysis.md",
         "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
-        "state/search_closed.jsonl",
         "state/search_frontier.json",
         "src/kernels/bf16_gemm_v1.cu"
       ],
@@ -77,9 +75,9 @@
         }
       ],
       "expected_local_changes": [
-        "Keep the current 128x128 hot-band launch region and one-K staging depth.",
-        "Route the dominant hot-band launch back to the regular 128x128 single-K sibling instead of the compact PTX microkernel wrapper.",
-        "Leave grouped rows, cp.async widths, and the 64x384 / 64x96 side paths unchanged for the first validation pass."
+        "Restore the default fixed-shape hot-band dispatch to the compact PTX microkernel surface.",
+        "Retune the PTX hot-band launch-bounds annotation from the current 2-CTA target toward 3-CTA residency.",
+        "Leave grouped rows, shared-memory footprint, and stage depth unchanged in the first validation pass."
       ],
       "guardrail_metrics": [
         {
@@ -87,69 +85,70 @@
           "guardrail": "must_pass"
         },
         {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing_vs_current_regressed_run"
+        },
+        {
           "metric_name": "launch__registers_per_thread",
-          "guardrail": "non_increasing"
+          "guardrail": "bounded_not_worse_than_accepted_ptx_base"
         },
         {
-          "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
-          "guardrail": "non_decreasing"
-        },
-        {
-          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-          "guardrail": "non_increasing"
+          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+          "guardrail": "non_decreasing_vs_accepted_ptx_base"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_175153:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_175153",
-      "base_run_id": "20260421_172601_bf16_gemm_v1_117cd3e7",
-      "base_measured_commit": "117cd3e796a5742c1f15e040edf78cb668e1d5cf",
-      "base_runtime_ms": 24.80694485,
+      "candidate_id": "diagnosis_20260421_175735:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_175735",
+      "base_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
+      "base_measured_commit": "05086a14f8df006f564c0071ea7d60dbf5ddc156",
+      "base_runtime_ms": 26.3854084,
       "direction_id": "dir_02",
-      "direction_name": "Retune The PTX Hot-Band Launch Bounds For Three-CTA Residency",
-      "family_id": "register_pressure::retune_ptx_launch_bounds",
-      "subfamily_id": "register_pressure::launch_bounds_128x128_ptx_min_blocks_2_to_3_after_compact_rowpair_reset",
-      "action_fingerprint": "compact_ptx_hotband_recovery:launch_bounds_min_blocks_2->3",
+      "direction_name": "Restore The Compact PTX Hot-Band And Trim Barrier Cadence Without Shared-Memory Blowup",
+      "family_id": "sync_pipeline::trim_microkernel_barriers_without_shared_blowup",
+      "subfamily_id": "sync_pipeline::ptx_microkernel_wait_sync_cadence_with_22016b_shared_budget",
+      "action_fingerprint": "restore_compact_ptx_hotband:trim_wait_sync_cadence_keep_22016b_shared",
       "rank_in_diagnosis": 2,
       "recommended": false,
       "mode": "explore",
-      "priority": 0.62,
-      "search_score_v1": 0.62,
+      "priority": 0.66,
+      "search_score_v1": 0.66,
       "score_breakdown": {
-        "policy_id": "manual_round1_recovered_hotband_followup_v1",
-        "headroom_score": 0.24,
-        "evidence_score": 0.14,
-        "implementation_bonus": 0.29,
-        "risk_penalty": -0.05,
+        "policy_id": "manual_round2_isolate_good_lever_v1",
+        "headroom_score": 0.3,
+        "evidence_score": 0.17,
+        "implementation_bonus": 0.11,
+        "risk_penalty": -0.12,
         "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.2,
-      "predicted_fail_risk": 0.46,
+      "predicted_gain_ms": 0.45,
+      "predicted_fail_risk": 0.58,
       "ranking_notes": [
-        "This is the narrowest direct probe on the current top hotspot, so it stays near the top despite weaker historical evidence.",
-        "It ranks behind dir_01 because prior repo evidence suggests a sibling-kernel swap is more likely to lower regs without collateral scheduling damage.",
-        "It still outranks the structural tiling reopen because the current 128x128 family has not been exhausted yet."
+        "This is the strongest barrier-focused fallback once the regular sibling has been ruled out as a net win.",
+        "It stays below dir_01 because it is much riskier and touches the PTX microkernel loop directly.",
+        "It is still more aligned with the latest live bottleneck than a fresh tiling reopen."
       ],
-      "hypothesis": "The current recovery path still reports 202 registers/thread with occupancy limited to two resident CTAs. Tightening the PTX hot-band launch-bounds target from 2 to 3 blocks per SM is the cheapest direct probe on the top Launch Statistics hotspot and could trim enough live state to improve latency hiding, provided the compiler does not spill or destabilize the issue schedule.",
-      "expected_bottleneck": "Register-pressure-driven CTA residency cap on the current PTX hot-band microkernel.",
+      "hypothesis": "The regular sibling regression moved the bottleneck from long-scoreboard to barrier plus short-scoreboard. A surgical edit on the accepted compact PTX surface that trims wait/sync cadence without adding the extra x32 shared-memory staging buffers could recover the barrier loss while preserving the compact row-pair microkernel's better long-scoreboard and mio-throttle behavior.",
+      "expected_bottleneck": "Single-K barrier cadence and CTA handoff overhead on the accepted compact PTX hot-band surface remain the unresolved latency tax once the row-pair live-range reset is in place.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:1989",
-        "src/kernels/bf16_gemm_v1.cu:1990-2094"
+        "src/kernels/bf16_gemm_v1.cu:1989-2094",
+        "src/kernels/bf16_gemm_v1.cu:2046-2089"
       ],
-      "risk": "Moderate-high. This is a tiny code change, but occupancy alone is not the full gap and a tighter register cap can easily trade one problem for spills or weaker instruction scheduling.",
+      "risk": "High. This is still PTX-microkernel surgery, and it can easily break correctness or recreate the staged-family regressions if the shared-memory footprint or synchronization contract grows.",
       "metrics_to_recheck": [
         "median runtime",
+        "launch__shared_mem_per_block_allocated",
         "launch__registers_per_thread",
-        "launch__occupancy_limit_registers",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
+        "sm__warps_active.avg.pct_of_peak_sustained_active"
       ],
-      "stop_condition": "Stop immediately if build output or the next NCU capture shows spills, or if registers stay flat and runtime regresses.",
+      "stop_condition": "Stop if shared memory rises above the accepted 22,016 B footprint or if barrier does not improve materially against the accepted PTX base.",
       "evidence_refs": [
         "state/latest_ncu_summary.md",
+        "runs/20260421_175700_bf16_gemm_v1_05086a14/ncu_analysis.md",
         "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
         "state/search_frontier.json",
         "src/kernels/bf16_gemm_v1.cu"
@@ -167,9 +166,9 @@
         }
       ],
       "expected_local_changes": [
-        "Leave the compact PTX row-pair recovery logic in place.",
-        "Retune the PTX hot-band kernel launch-bounds annotation from the current 2-CTA target toward 3-CTA residency.",
-        "Avoid widening scope into grouped-row, stage-depth, or tiling changes in the same round."
+        "Restore the accepted compact PTX microkernel launch surface before editing the wait/sync cadence.",
+        "Trim the single-K consumer barrier / wait-group handoff without allocating a second full staged buffer pair.",
+        "Keep grouped rows and hot-band geometry unchanged while testing the synchronization change."
       ],
       "guardrail_metrics": [
         {
@@ -177,109 +176,106 @@
           "guardrail": "must_pass"
         },
         {
-          "metric_name": "launch__registers_per_thread",
-          "guardrail": "non_increasing"
-        },
-        {
-          "metric_name": "launch__occupancy_limit_registers",
-          "guardrail": "non_increasing"
-        },
-        {
-          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "guardrail": "non_decreasing"
-        }
-      ],
-      "status": "open"
-    },
-    {
-      "candidate_id": "diagnosis_20260421_175153:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_175153",
-      "base_run_id": "20260421_172601_bf16_gemm_v1_117cd3e7",
-      "base_measured_commit": "117cd3e796a5742c1f15e040edf78cb668e1d5cf",
-      "base_runtime_ms": 24.80694485,
-      "direction_id": "dir_03",
-      "direction_name": "Reopen The 256x128 64x64-Warp Hot-Band Family After The PTX Recovery",
-      "family_id": "tiling::hotband_256x128_reopen",
-      "subfamily_id": "tiling::hotband_256x128_reopen::writer_safe_right_left_right_left_after_compact_ptx_recovery",
-      "action_fingerprint": "reopen_256x128_64x64_warp_hotband_after_compact_ptx_recovery",
-      "rank_in_diagnosis": 3,
-      "recommended": false,
-      "mode": "explore",
-      "priority": 0.55,
-      "search_score_v1": 0.55,
-      "score_breakdown": {
-        "policy_id": "manual_round1_recovered_hotband_followup_v1",
-        "headroom_score": 0.34,
-        "evidence_score": 0.09,
-        "implementation_bonus": 0.18,
-        "risk_penalty": -0.06,
-        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
-      },
-      "predicted_gain_ms": 1.1,
-      "predicted_fail_risk": 0.72,
-      "ranking_notes": [
-        "This remains the structural ceiling and is the clearest mapping to the persistent human tiling guidance.",
-        "It ranks third because the current 128x128 branch still has cheaper local follow-ups with better measured support.",
-        "Do not spend another round here until the local 128x128 sibling / register-pressure probes are exhausted or explicitly falsified."
-      ],
-      "hypothesis": "The dominant 128x128 hot-band surface still owns most of the runtime, and the persistent human guidance continues to ask for 256x128 block tiling with 64x64 warp tiling and Right-Left-Right-Left register reuse. The source already contains the 256x128 family. If the cheaper local 128x128 fixes plateau, reopening the writer-safe 256x128 path is still the only structural branch with enough reuse headroom to matter against the 18 ms target.",
-      "expected_bottleneck": "Hot-band tiling and panel-reuse ceiling on the current 128x128 surface rather than pure bandwidth or tail overhead.",
-      "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-105",
-        "src/kernels/bf16_gemm_v1.cu:622-739",
-        "src/kernels/bf16_gemm_v1.cu:1610-1716",
-        "src/kernels/bf16_gemm_v1.cu:2139-2156"
-      ],
-      "risk": "High. Prior reopens in this family have correctness and regression history, and this path is broader than the current evidence strictly requires.",
-      "metrics_to_recheck": [
-        "correctness on all 3 dataset cases before trusting runtime",
-        "median runtime",
-        "launch__registers_per_thread",
-        "sm__warps_active.avg.pct_of_peak_sustained_active",
-        "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_barrier_per_warp_active.pct"
-      ],
-      "stop_condition": "Stop immediately on any correctness failure or on any first measurement that lands back in the high-20 ms class.",
-      "evidence_refs": [
-        "state/human_guidance.md",
-        "state/human_review.md",
-        "state/diagnosis_history.jsonl",
-        "state/autotune_round18_main_tiles.md",
-        "src/kernels/bf16_gemm_v1.cu"
-      ],
-      "target_hotspots": [
-        {
-          "scope_type": "section",
-          "scope_name": "Launch Statistics",
-          "location": "Launch Statistics"
-        },
-        {
-          "scope_type": "section",
-          "scope_name": "Occupancy",
-          "location": "Occupancy"
-        }
-      ],
-      "expected_local_changes": [
-        "Restore or repair the writer-safe 256x128 hot-band kernel surface.",
-        "Rewire the dominant hot-band launch to the 256x128 / 64x64-warp family while leaving the 64x384 and 64x96 side paths unchanged.",
-        "Apply the Right-Left-Right-Left 64x64 warp-tile consume order as part of the reopen rather than layering extra stage depth."
-      ],
-      "guardrail_metrics": [
-        {
-          "metric_name": "correctness",
-          "guardrail": "must_pass"
-        },
-        {
-          "metric_name": "launch__registers_per_thread",
-          "guardrail": "bounded_with_no_new_spill_regression"
-        },
-        {
-          "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-          "guardrail": "non_decreasing"
+          "metric_name": "launch__shared_mem_per_block_allocated",
+          "guardrail": "non_increasing_vs_accepted_ptx_base"
         },
         {
           "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
           "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "bounded_not_worse_than_accepted_ptx_base"
+        }
+      ],
+      "status": "open"
+    },
+    {
+      "candidate_id": "diagnosis_20260421_175735:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_175735",
+      "base_run_id": "20260421_175700_bf16_gemm_v1_05086a14",
+      "base_measured_commit": "05086a14f8df006f564c0071ea7d60dbf5ddc156",
+      "base_runtime_ms": 26.3854084,
+      "direction_id": "dir_03",
+      "direction_name": "Restore The Compact PTX Hot-Band And Try Grouped Rows Equals Two",
+      "family_id": "launch_order::ptx_hotband_grouped_rows_tune",
+      "subfamily_id": "launch_order::grouped_rows_4_to_2_for_a_locality_after_regular_sibling_regression",
+      "action_fingerprint": "restore_compact_ptx_hotband:grouped_rows_4->2",
+      "rank_in_diagnosis": 3,
+      "recommended": false,
+      "mode": "explore",
+      "priority": 0.49,
+      "search_score_v1": 0.49,
+      "score_breakdown": {
+        "policy_id": "manual_round2_isolate_good_lever_v1",
+        "headroom_score": 0.17,
+        "evidence_score": 0.12,
+        "implementation_bonus": 0.24,
+        "risk_penalty": -0.04,
+        "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
+      },
+      "predicted_gain_ms": 0.2,
+      "predicted_fail_risk": 0.31,
+      "ranking_notes": [
+        "This stays in the set as the cheapest opposite-direction launch-order test after the earlier grouped_rows=8 loss.",
+        "It ranks below dir_02 because the current live regression is more clearly about barrier cadence than grouped traversal.",
+        "Use it only after the PTX launch-bounds isolation and barrier-trim probes fail or plateau."
+      ],
+      "hypothesis": "The earlier grouped_rows=8 test already showed that deeper B reuse was the wrong launch-order direction. After the current run demonstrated that occupancy alone is insufficient, the cheapest remaining launch-order probe is to restore the compact PTX base and reduce kFixedHotBandPtxGroupedRows from 4 to 2, favoring tighter A locality and shorter grouped traversal without changing stage depth or the consume kernel body.",
+      "expected_bottleneck": "The accepted PTX grouped-row traversal may still be mismatched to the A/B locality balance on the fixed hot-band surface.",
+      "code_locations": [
+        "src/kernels/bf16_gemm_v1.cu:156",
+        "src/kernels/bf16_gemm_v1.cu:1999-2024",
+        "src/kernels/bf16_gemm_v1.cu:2142-2151"
+      ],
+      "risk": "Moderate. This is a very small change, but the upside may be noise-sized because the opposite grouped-row direction already failed and launch order was never the main bottleneck.",
+      "metrics_to_recheck": [
+        "median runtime",
+        "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+        "lts__throughput.avg.pct_of_peak_sustained_elapsed"
+      ],
+      "stop_condition": "Stop if runtime change is within noise or if barrier / scoreboard behavior does not improve after one measurement.",
+      "evidence_refs": [
+        "runs/20260421_175700_bf16_gemm_v1_05086a14/ncu_analysis.md",
+        "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
+        "state/search_frontier.json",
+        "src/kernels/bf16_gemm_v1.cu"
+      ],
+      "target_hotspots": [
+        {
+          "scope_type": "section",
+          "scope_name": "GPU Speed Of Light Throughput",
+          "location": "GPU Speed Of Light Throughput"
+        },
+        {
+          "scope_type": "section",
+          "scope_name": "Occupancy",
+          "location": "Occupancy"
+        }
+      ],
+      "expected_local_changes": [
+        "Restore the accepted compact PTX hot-band dispatch if needed.",
+        "Decrease kFixedHotBandPtxGroupedRows from 4 to 2.",
+        "Leave launch-bounds, stage depth, and the hot-band consume helper unchanged for the first measurement."
+      ],
+      "guardrail_metrics": [
+        {
+          "metric_name": "correctness",
+          "guardrail": "must_pass"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
+          "guardrail": "non_increasing"
+        },
+        {
+          "metric_name": "dram__throughput.avg.pct_of_peak_sustained_elapsed",
+          "guardrail": "non_decreasing"
         }
       ],
       "status": "open"
