@@ -1814,6 +1814,18 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
   const int b_shared_col_offset =
       b_shared_col_from_logical<FixedHotBandTile128x128>(
           warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+  const __nv_bfloat16* a_stage0_tile0 = a_shared[0] + a_shared_row_offset;
+  const __nv_bfloat16* a_stage0_tile1 =
+      a_shared[0] + FixedHotBandTile128x128::kASharedTileElems + a_shared_row_offset;
+  const __nv_bfloat16* a_stage1_tile0 = a_shared[1] + a_shared_row_offset;
+  const __nv_bfloat16* a_stage1_tile1 =
+      a_shared[1] + FixedHotBandTile128x128::kASharedTileElems + a_shared_row_offset;
+  const __nv_bfloat16* b_stage0_tile0 = b_shared[0] + b_shared_col_offset;
+  const __nv_bfloat16* b_stage0_tile1 =
+      b_shared[0] + FixedHotBandTile128x128::kBSharedTileElems + b_shared_col_offset;
+  const __nv_bfloat16* b_stage1_tile0 = b_shared[1] + b_shared_col_offset;
+  const __nv_bfloat16* b_stage1_tile1 =
+      b_shared[1] + FixedHotBandTile128x128::kBSharedTileElems + b_shared_col_offset;
 
   #pragma unroll 1
   for (int stage_idx = 0; stage_idx < FixedKStages; ++stage_idx) {
@@ -1821,15 +1833,14 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128x32_kernel(
     const int next_stage_idx = stage_idx + 1;
     const int future_stage_idx = stage_idx + 2;
 
-    const __nv_bfloat16* a_tile_0 = a_shared[curr_stage] + a_shared_row_offset;
+    const __nv_bfloat16* a_tile_0 =
+        (curr_stage == 0) ? a_stage0_tile0 : a_stage1_tile0;
     const __nv_bfloat16* a_tile_1 =
-        a_shared[curr_stage] + FixedHotBandTile128x128::kASharedTileElems +
-        a_shared_row_offset;
+        (curr_stage == 0) ? a_stage0_tile1 : a_stage1_tile1;
     const __nv_bfloat16* b_tile_0 =
-        b_shared[curr_stage] + b_shared_col_offset;
+        (curr_stage == 0) ? b_stage0_tile0 : b_stage1_tile0;
     const __nv_bfloat16* b_tile_1 =
-        b_shared[curr_stage] + FixedHotBandTile128x128::kBSharedTileElems +
-        b_shared_col_offset;
+        (curr_stage == 0) ? b_stage0_tile1 : b_stage1_tile1;
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile_0, b_tile_0);
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile_1, b_tile_1);
@@ -1951,6 +1962,10 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
   const int b_shared_col_offset =
       b_shared_col_from_logical<FixedHotBandTile128x128>(
           warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+  const __nv_bfloat16* a_stage_tile0 = a_shared[0] + a_shared_row_offset;
+  const __nv_bfloat16* a_stage_tile1 = a_shared[1] + a_shared_row_offset;
+  const __nv_bfloat16* b_stage_tile0 = b_shared[0] + b_shared_col_offset;
+  const __nv_bfloat16* b_stage_tile1 = b_shared[1] + b_shared_col_offset;
 
   #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
@@ -1958,8 +1973,10 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_kernel(
     const int next_tile_idx = tile_idx + 1;
     const int future_tile_idx = tile_idx + 2;
 
-    const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
-    const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_shared_col_offset;
+    const __nv_bfloat16* a_tile =
+        (curr_stage == 0) ? a_stage_tile0 : a_stage_tile1;
+    const __nv_bfloat16* b_tile =
+        (curr_stage == 0) ? b_stage_tile0 : b_stage_tile1;
 
     ptx_wmma_accumulate_tile_set_64x64(acc_tiles, a_tile, b_tile);
 
@@ -2067,6 +2084,10 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
   const int b_shared_col_offset =
       b_shared_col_from_logical<FixedHotBandTile128x128>(
           warp_tile_n * FixedHotBandTile128x128::kWarpGroupCols);
+  const __nv_bfloat16* a_stage_tile0 = a_shared[0] + a_shared_row_offset;
+  const __nv_bfloat16* a_stage_tile1 = a_shared[1] + a_shared_row_offset;
+  const __nv_bfloat16* b_stage_tile0 = b_shared[0] + b_shared_col_offset;
+  const __nv_bfloat16* b_stage_tile1 = b_shared[1] + b_shared_col_offset;
 
   #pragma unroll 2
   for (int tile_idx = 0; tile_idx < FixedKTiles; ++tile_idx) {
@@ -2074,31 +2095,28 @@ void bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel(
     const int next_tile_idx = tile_idx + 1;
     const int future_tile_idx = tile_idx + 2;
 
-    const __nv_bfloat16* a_tile = a_shared[curr_stage] + a_shared_row_offset;
-    const __nv_bfloat16* b_tile = b_shared[curr_stage] + b_shared_col_offset;
+    const __nv_bfloat16* a_tile =
+        (curr_stage == 0) ? a_stage_tile0 : a_stage_tile1;
+    const __nv_bfloat16* b_tile =
+        (curr_stage == 0) ? b_stage_tile0 : b_stage_tile1;
 
     ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel(
         acc_tiles, a_tile, b_tile);
 
-    if (future_tile_idx < FixedKTiles) {
-      stage_a_shared_tile_async<FixedHotBandTile128x128>(
-          a_shared[curr_stage],
-          a_block + future_tile_idx * kWmmaK,
-          kFixedBenchmarkK);
-      stage_b_shared_tile_async<FixedHotBandTile128x128>(
-          b_shared[curr_stage],
-          b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
-          kFixedBenchmarkN);
-      cp_async_commit_group();
-    }
-
     if (next_tile_idx < FixedKTiles) {
-      if (future_tile_idx < FixedKTiles) {
-        cp_async_wait_group_1();
-      } else {
-        cp_async_wait_group_0();
-      }
+      cp_async_wait_group_0();
       __syncthreads();
+      if (future_tile_idx < FixedKTiles) {
+        stage_a_shared_tile_async<FixedHotBandTile128x128>(
+            a_shared[curr_stage],
+            a_block + future_tile_idx * kWmmaK,
+            kFixedBenchmarkK);
+        stage_b_shared_tile_async<FixedHotBandTile128x128>(
+            b_shared[curr_stage],
+            b_block + future_tile_idx * kWmmaK * kFixedBenchmarkN,
+            kFixedBenchmarkN);
+        cp_async_commit_group();
+      }
     }
   }
 
