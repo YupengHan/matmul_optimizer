@@ -1,21 +1,98 @@
 {
-  "direction_id": null,
-  "name": null,
-  "candidate_id": null,
-  "selected_from_frontier_id": null,
-  "family_id": null,
-  "subfamily_id": null,
-  "action_fingerprint": null,
-  "selection_priority": null,
-  "base_run_id": null,
-  "selection_mode": null,
-  "selected_at": null,
-  "source_diagnosis_id": null,
-  "secondary_family_ids": [],
-  "semantic_delta_tags": [],
-  "actual_code_regions": [],
-  "implemented_action_fingerprint": null,
-  "status": "idle",
-  "summary": null,
-  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
+  "direction_id": "dir_01",
+  "name": "Restore A Compact Two-Stage PTX Ring While Keeping Grouped Rows At 2",
+  "candidate_id": "diagnosis_20260421_184831:dir_01",
+  "selected_from_frontier_id": "frontier:global",
+  "family_id": "sync_pipeline::ptx_two_stage_restore_keep_grouped_rows_2",
+  "subfamily_id": "sync_pipeline::ptx_hotband_two_stage_restore_keep_grouped_rows_2_after_failed_drain_split",
+  "action_fingerprint": "restore_compact_ptx_two_stage_ring_keep_grouped_rows_2_after_failed_drain_split",
+  "selection_priority": 3.035,
+  "base_run_id": "20260421_184622_bf16_gemm_v1_d51419e6",
+  "selection_mode": "frontier",
+  "selected_at": "2026-04-21T18:49:57-07:00",
+  "source_diagnosis_id": "diagnosis_20260421_184831",
+  "status": "ready_for_implementation",
+  "summary": {
+    "direction_id": "dir_01",
+    "name": "Restore A Compact Two-Stage PTX Ring While Keeping Grouped Rows At 2",
+    "family_id": "sync_pipeline::ptx_two_stage_restore_keep_grouped_rows_2",
+    "subfamily_id": "sync_pipeline::ptx_hotband_two_stage_restore_keep_grouped_rows_2_after_failed_drain_split",
+    "action_fingerprint": "restore_compact_ptx_two_stage_ring_keep_grouped_rows_2_after_failed_drain_split",
+    "mode": "explore",
+    "hypothesis": "The latest regression is dominated by register-pressure and occupancy collapse from the duplicated 3-stage split loop, not by grouped_rows=2 itself. Dropping back to a compact two-stage PTX ring while keeping grouped_rows=2 should recover a large chunk of the 57-register spike and tell us whether the row-group retune can help once the hot path is lean again.",
+    "expected_bottleneck": "Registers-per-thread and occupancy are the first bottlenecks to remove; barrier cleanup is no longer the primary limiter after the round-6 regression.",
+    "code_locations": [
+      "src/kernels/bf16_gemm_v1.cu:156",
+      "src/kernels/bf16_gemm_v1.cu:2005-2138"
+    ],
+    "risk": "Low to moderate. This stays on the active PTX dispatch path, but it rewrites stage-count and drain control together and still has correctness risk if the two-stage wait cadence is restored incorrectly.",
+    "metrics_to_recheck": [
+      "median runtime",
+      "launch__registers_per_thread",
+      "sm__warps_active.avg.pct_of_peak_sustained_active",
+      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
+      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+      "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct"
+    ],
+    "search_score_v1": 2.84,
+    "score_breakdown": {
+      "policy_id": "manual_round7_two_stage_grouped_rows2_reset_v1",
+      "rank_score": 2.24,
+      "evidence_bonus": 0.26,
+      "implementation_bonus": 0.4,
+      "risk_penalty": 0.06,
+      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
+    },
+    "predicted_gain_ms": 2.95,
+    "predicted_fail_risk": 0.22,
+    "ranking_notes": [
+      "This is the best deconfounding move because the latest loss is clearly a register-budget failure, not a barrier failure.",
+      "Keeping grouped_rows=2 makes the next measurement informative instead of just replaying the exact old grouped_rows=4 anchor.",
+      "If this still loses, the data cleanly justifies falling back to the full grouped_rows=4 anchor next."
+    ],
+    "stop_condition": "Stop if recovering the two-stage ring requires reopening launch bounds, dispatch routing, or any multi-family rewrite outside the PTX hot-band kernel body.",
+    "evidence_refs": [
+      "state/latest_run.md",
+      "state/latest_ncu_summary.md",
+      "runs/20260421_184622_bf16_gemm_v1_d51419e6/ncu_analysis.md",
+      "src/kernels/bf16_gemm_v1.cu"
+    ],
+    "target_hotspots": [
+      {
+        "scope_type": "section",
+        "scope_name": "Launch Statistics",
+        "location": "Launch Statistics"
+      },
+      {
+        "scope_type": "section",
+        "scope_name": "Occupancy",
+        "location": "Occupancy"
+      }
+    ],
+    "expected_local_changes": [
+      "Reduce the PTX hot-band ring from 3 stages back to 2.",
+      "Remove the split steady-state and drain loop duplication that inflated the live register set.",
+      "Keep kFixedHotBandPtxGroupedRows at 2 during the first two-stage reset."
+    ],
+    "guardrail_metrics": [
+      {
+        "metric_name": "correctness",
+        "guardrail": "must_pass"
+      },
+      {
+        "metric_name": "launch__registers_per_thread",
+        "guardrail": "non_increasing_vs_current_run"
+      },
+      {
+        "metric_name": "sm__warps_active.avg.pct_of_peak_sustained_active",
+        "guardrail": "non_decreasing"
+      },
+      {
+        "metric_name": "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "guardrail": "non_increasing_vs_current_run"
+      }
+    ],
+    "idea_origin": "auto-analysis"
+  },
+  "notes": "Node C may now implement this one candidate."
 }
