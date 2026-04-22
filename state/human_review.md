@@ -2,8 +2,8 @@
 
 ## Current workflow gate
 
-- next node: `node_b`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- status: `ready_for_node_c`
 - round loop: `round 4/20` with `17` rounds remaining
 
 ## Direction approval policy
@@ -15,19 +15,21 @@
 
 ## Latest diagnosis
 
-- diagnosis id: `None`
-- diagnosis status: `pending_generation`
-- recommended direction: `None`
+- diagnosis id: `diagnosis_20260421_182858`
+- diagnosis status: `completed`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no diagnosis recorded yet; run node_b first
+- diagnosis notes: `Round 4 treats 1f02b147 as the new accepted local PTX anchor. The next directions should exploit that recovery instead of replaying the exact register-interleave fingerprint that already failed and regressed.`
+- dir_01: Deepen The Active PTX Hot-Band To A 3-Stage Pg2s Pipeline | bottleneck: Global-to-shared latency hiding at low occupancy: long_scoreboard 5.45% and mio_throttle 3.98% indicate cp.async completion is still arriving too late for the current two-stage PTX pipeline.
+- dir_02: Split The Final PTX Wait/Sync Drain Out Of The Steady-State Loop | bottleneck: Residual barrier tax from the final no-refill handoff inside the PTX steady-state loop.
+- dir_03: Reopen 256x128 64x64-Warp Hot-Band Tiling On The Dominant Surface | bottleneck: Hot-band tiling and warp-level reuse ceiling: the 128x128 PTX surface may simply have run out of occupancy and locality headroom.
 
 ## Active direction
 
-- selected direction: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- selected direction: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Persistent human guidance
 
