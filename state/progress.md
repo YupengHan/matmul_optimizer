@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `fd0092669df3780c996e69e2f2236614caa3d2ec`
 - plateau counter: `33`
 - round loop: `round 17/20`
 - rounds remaining: `4`
-- notes: `Node A completed round 16/20. Run node_b to continue round 17/20.`
+- notes: `Node C is ready to implement diagnosis_20260421_193904:dir_01 via frontier selection for round 17/20.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_193904`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Round 17/20 diagnosis emitted from the failed existing 128x128x32 staged-kernel probe; frontier should restore the accepted compact PTX anchor before any further search.`
+- dir_01: Restore The Accepted Compact PTX Anchor After The Failed Existing X32 Probe | bottleneck: The immediate bottleneck is not an unresolved compact-surface seam; it is the residency and sync damage introduced by the x32 staged probe.
+- dir_02: Reopen Compact Barrier Trims Only After The Anchor Is Back | bottleneck: Residual barrier overhead on the compact PTX surface after the broken x32 branch is removed.
+- dir_03: Only Revisit X32 Staging If Its Register And Shared-Memory Footprint Is Cut Materially | bottleneck: Occupancy and latency hiding would remain the dominant failure mode unless the staged kernel's resident footprint is reduced substantially.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `frontier`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
