@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_193649_bf16_gemm_v1_fd009266`
-- run dir: `runs/20260421_193649_bf16_gemm_v1_fd009266`
-- kernel tag: `bf16_gemm_v1_fd009266`
-- round label: `round 16/20`
+- run id: `20260421_194145_bf16_gemm_v1_f42c9310`
+- run dir: `runs/20260421_194145_bf16_gemm_v1_f42c9310`
+- kernel tag: `bf16_gemm_v1_f42c9310`
+- round label: `round 17/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `31.612928 ms`
-- p10 runtime: `31.230157 ms`
-- p90 runtime: `32.264634 ms`
-- TFLOP/s: `22.997535 TFLOP/s`
-- previous run id: `20260421_193214_bf16_gemm_v1_5bbcf7bf`
-- runtime delta vs previous measured run: `+6.730241 ms`
-- TFLOP/s delta vs previous measured run: `-6.220347 TFLOP/s`
-- perf verdict: `regressed`
+- median runtime: `24.881616 ms`
+- p10 runtime: `24.876889 ms`
+- p90 runtime: `26.218730 ms`
+- TFLOP/s: `29.219140 TFLOP/s`
+- previous run id: `20260421_193649_bf16_gemm_v1_fd009266`
+- runtime delta vs previous measured run: `-6.731313 ms`
+- TFLOP/s delta vs previous measured run: `+6.221606 TFLOP/s`
+- perf verdict: `improved`
 - implemented direction id: `dir_01`
-- implemented direction name: `Promote The Existing 128x128x32 Two-K-Stage Hot-Band Kernel From The Clean Compact Anchor`
+- implemented direction name: `Restore The Accepted Compact PTX Anchor After The Failed Existing X32 Probe`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_193649_bf16_gemm_v1_fd009266/summary.json`
-- ncu analysis path: `runs/20260421_193649_bf16_gemm_v1_fd009266/ncu_analysis.json`
-- measured commit: `fd0092669df3780c996e69e2f2236614caa3d2ec`
+- raw summary json: `runs/20260421_194145_bf16_gemm_v1_f42c9310/summary.json`
+- ncu analysis path: `runs/20260421_194145_bf16_gemm_v1_f42c9310/ncu_analysis.json`
+- measured commit: `f42c93101ebc1d8ce622165a216d68ff55b0839e`
 - new best custom: `no`
-- generated at: `2026-04-21T19:37:01-07:00`
+- generated at: `2026-04-21T19:41:57-07:00`

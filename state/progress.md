@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `fd0092669df3780c996e69e2f2236614caa3d2ec`
-- plateau counter: `33`
-- round loop: `round 17/20`
-- rounds remaining: `4`
-- notes: `Node C build succeeded for round 17/20. Node A will now measure the new code path.`
+- latest measured commit: `f42c93101ebc1d8ce622165a216d68ff55b0839e`
+- plateau counter: `34`
+- round loop: `round 18/20`
+- rounds remaining: `3`
+- notes: `Node A completed round 17/20. Run node_b to continue round 18/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_193649_bf16_gemm_v1_fd009266`
-- run dir: `runs/20260421_193649_bf16_gemm_v1_fd009266`
+- run id: `20260421_194145_bf16_gemm_v1_f42c9310`
+- run dir: `runs/20260421_194145_bf16_gemm_v1_f42c9310`
 - correctness: `PASS`
-- median runtime: `31.612928 ms`
-- TFLOP/s: `22.997535 TFLOP/s`
+- median runtime: `24.881616 ms`
+- TFLOP/s: `29.219140 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_193904`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 17/20 diagnosis emitted from the failed existing 128x128x32 staged-kernel probe; frontier should restore the accepted compact PTX anchor before any further search.`
-- dir_01: Restore The Accepted Compact PTX Anchor After The Failed Existing X32 Probe | bottleneck: The immediate bottleneck is not an unresolved compact-surface seam; it is the residency and sync damage introduced by the x32 staged probe.
-- dir_02: Reopen Compact Barrier Trims Only After The Anchor Is Back | bottleneck: Residual barrier overhead on the compact PTX surface after the broken x32 branch is removed.
-- dir_03: Only Revisit X32 Staging If Its Register And Shared-Memory Footprint Is Cut Materially | bottleneck: Occupancy and latency hiding would remain the dominant failure mode unless the staged kernel's resident footprint is reduced substantially.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 
