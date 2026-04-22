@@ -5,27 +5,29 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Selected direction
 
-- direction id: `None`
-- direction name: `N/A`
-- candidate id: `None`
-- base run id: `None`
-- primary family id: `None`
-- planned action fingerprint: `None`
-- selection mode: `None`
-- source diagnosis id: `None`
-- round loop: `single-run`
+- direction id: `dir_01`
+- direction name: `Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path`
+- candidate id: `diagnosis_20260421_171314:dir_01`
+- base run id: `20260421_170056_bf16_gemm_v1_13d24542`
+- primary family id: `register_reuse::ptx_hotband_microkernel_live_range_reset`
+- planned action fingerprint: `replace_interleaved_hotband_ptx_microkernel_with_compact_rowpair_accumulate_path`
+- selection mode: `recommended`
+- source diagnosis id: `diagnosis_20260421_171314`
+- round loop: `round 1/1`
+- hypothesis: `The newly added outer-col-step interleave helper at `src/kernels/bf16_gemm_v1.cu:820-921` failed its own premise. Instead of shrinking the hot-band PTX live set, the measured run landed at 241 registers/thread and the hot-band kernel now dominates the NCU capture. Replacing that helper with the existing compact 64x64 PTX accumulate path (`ptx_wmma_accumulate_tile_set_64x64<false>`) or an equivalently scoped row-pair schedule should recover occupancy and most of the 6.55 ms regression without changing launch geometry, shared layout, or the row-group mapping.`
+- expected bottleneck: `Register-pressure-driven occupancy collapse on the dominant hot-band PTX kernel: 241 registers/thread keeps the kernel at 2 CTAs/SM and leaves tensor utilization low despite unsaturated memory bandwidth.`
+- code locations: `src/kernels/bf16_gemm_v1.cu:733-922 (generic 64x64 PTX accumulate helper, failed interleaved helper, and dispatch wrapper), src/kernels/bf16_gemm_v1.cu:2080-2185 (bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel steady-state loop), src/kernels/bf16_gemm_v1.cu:2068-2185 (hot-band PTX store and loop callsite that now routes through the failed helper)`
+- risk: `Moderate. The math path stays the same, but removing the interleaved helper can give back some of the intended B-fragment sharing or re-expose prior barrier pressure if the replacement is not kept compact.`
+- metrics to re-check: `launch__registers_per_thread, launch__occupancy_limit_registers, sm__warps_active.avg.pct_of_peak_sustained_active, sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active, smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct, smsp__warp_issue_stalled_barrier_per_warp_active.pct, gpu__time_duration.sum`
 - latest run id: `20260421_170056_bf16_gemm_v1_13d24542`
 - latest runtime: `31.239679 ms`
 - latest NCU analysis: `runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_analysis.json`
 
 ## Relevant hotspots
 
-- `section` `Launch Statistics` @ `Launch Statistics` | `Registers Per Thread` = `241.0` | Launch Statistics is carrying metric Registers Per Thread.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `DRAM Throughput` = `12.92` | GPU Speed Of Light Throughput is carrying metric DRAM Throughput.
-- `section` `Occupancy` @ `Occupancy` | `Achieved Occupancy` = `16.6` | Occupancy is carrying metric Achieved Occupancy.
-- `section` `Occupancy` @ `Occupancy` | `Theoretical Occupancy` = `16.67` | Occupancy is carrying metric Theoretical Occupancy.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `L2 Cache Throughput` = `24.67` | GPU Speed Of Light Throughput is carrying metric L2 Cache Throughput.
-- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `Compute (SM) Throughput` = `36.94` | GPU Speed Of Light Throughput is carrying metric Compute (SM) Throughput.
+- `section` `Launch Statistics` @ `Launch Statistics` | `unknown_metric` = `None` | N/A
+- `section` `Occupancy` @ `Occupancy` | `unknown_metric` = `None` | N/A
+- `section` `GPU Speed Of Light Throughput` @ `GPU Speed Of Light Throughput` | `unknown_metric` = `None` | N/A
 
 ## Relevant bottleneck evidence
 
@@ -40,14 +42,16 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Guardrail metrics
 
-- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `37.48` | Tensor activity is part of the active bottleneck picture and should not drop after the next code edit.
-- `sm__warps_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `16.6` | Latency-hiding is already weak; active warps should not regress.
-- `smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct` `non_increasing` from `15.39` | mio throttle stalls are consuming 15.39% of active warp issue slots.
-- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `non_increasing` from `9.8` | barrier stalls are consuming 9.80% of active warp issue slots.
+- `correctness` `must_pass` from `N/A` | N/A
+- `launch__registers_per_thread` `non_increasing` from `N/A` | N/A
+- `sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active` `non_decreasing` from `N/A` | N/A
+- `smsp__warp_issue_stalled_barrier_per_warp_active.pct` `bounded_not_worse_than_current_run` from `N/A` | N/A
 
 ## Expected local changes
 
-- no direction-specific local change notes were provided
+- `Delete or bypass `ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel` and stop routing the hot-band PTX kernel through that helper.`
+- `Reuse the existing compact 64x64 PTX accumulate helper or a similarly scoped row-pair schedule so A/B fragment lifetimes stay local instead of being spread across the templated outer column loop.`
+- `Leave grouped-row mapping, cp.async wide loads, and the current hot-band launch shape unchanged for the first validation pass.`
 
 ## Delta vs previous run
 
@@ -86,4 +90,4 @@ Use the structured NCU handoff as the default source of truth for local hotspots
 
 ## Dirty working tree snapshot before node_c finalize
 
-- no active direction selected yet; use `python scripts/graph.py select-next` or `python scripts/graph.py use-recommended-direction` before using the dirty-path guardrail
+- no tracked dirty paths at prepare time

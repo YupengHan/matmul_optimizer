@@ -1,67 +1,67 @@
 {
   "schema_version": 1,
-  "candidate_set_id": "candidate_set:diagnosis_20260421_163733",
-  "source_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-  "source_diagnosis_id": "diagnosis_20260421_163733",
-  "generated_at": "2026-04-21T16:48:43-07:00",
+  "candidate_set_id": "candidate_set:diagnosis_20260421_171314",
+  "source_run_id": "20260421_170056_bf16_gemm_v1_13d24542",
+  "source_diagnosis_id": "diagnosis_20260421_171314",
+  "generated_at": "2026-04-21T17:23:10-07:00",
   "recommended_direction_id": "dir_01",
-  "recommended_candidate_id": "diagnosis_20260421_163733:dir_01",
+  "recommended_candidate_id": "diagnosis_20260421_171314:dir_01",
   "candidates": [
     {
-      "candidate_id": "diagnosis_20260421_163733:dir_01",
-      "source_diagnosis_id": "diagnosis_20260421_163733",
-      "base_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-      "base_measured_commit": "35400d356bf46fb91f112282fe39c8fa1960b391",
-      "base_runtime_ms": 24.69107246,
+      "candidate_id": "diagnosis_20260421_171314:dir_01",
+      "source_diagnosis_id": "diagnosis_20260421_171314",
+      "base_run_id": "20260421_170056_bf16_gemm_v1_13d24542",
+      "base_measured_commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
+      "base_runtime_ms": 31.23967934,
       "direction_id": "dir_01",
-      "direction_name": "Trim PTX 64x64 Microkernel Register Footprint Back To 3-CTA Class",
-      "family_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim",
-      "subfamily_id": "register_reuse::ptx_microkernel_64x64_register_budget_trim::row_pair_interleave_right_left_right_left",
-      "action_fingerprint": "trim_ptx_microkernel_accumulate_register_budget_to_restore_three_cta_residency",
+      "direction_name": "Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path",
+      "family_id": "register_reuse::ptx_hotband_microkernel_live_range_reset",
+      "subfamily_id": "register_reuse::ptx_hotband_microkernel_live_range_reset::replace_colstep_interleave_with_compact_rowpair_path",
+      "action_fingerprint": "replace_interleaved_hotband_ptx_microkernel_with_compact_rowpair_accumulate_path",
       "rank_in_diagnosis": 1,
       "recommended": true,
       "mode": "exploit",
-      "priority": 0.88,
-      "search_score_v1": 0.88,
+      "priority": 0.9,
+      "search_score_v1": 0.9,
       "score_breakdown": {
-        "policy_id": "manual_round11_register_budget_first_v1",
-        "headroom_score": 0.32,
-        "evidence_score": 0.33,
-        "implementation_bonus": 0.27,
-        "risk_penalty": -0.04,
+        "policy_id": "manual_round1_hotband_regression_recovery_v1",
+        "headroom_score": 0.37,
+        "evidence_score": 0.35,
+        "implementation_bonus": 0.24,
+        "risk_penalty": -0.06,
         "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.9,
-      "predicted_fail_risk": 0.38,
+      "predicted_gain_ms": 5.0,
+      "predicted_fail_risk": 0.33,
       "ranking_notes": [
-        "This is the single best upside/risk tradeoff: the dominant bottleneck class (occupancy_latency_hiding_issue, severity 43.22) is directly caused by the 34-register delta produced last round.",
-        "If registers fall back to the 168 class, occupancy_limit_registers returns to 3 and we regain most of the latency hiding lost this round, while keeping the barrier stall wins of round 10.",
-        "Maps onto the human guidance family Register Reuse (Right-Left-Right-Left warp tile) almost literally, so the direction is also audit-aligned with state/human_guidance.md."
+        "The current dir_01 implementation is directly falsified by measurement: the code comment claims a path back toward the 3-CTA class, but the live run reports 241 registers/thread and a much slower runtime.",
+        "The hot-band PTX kernel is the problem surface. `ncu_details_page.csv` shows it consuming 42.27 ms of profiled duration, while the peeled 64x384 and tail kernels are both below 1 ms.",
+        "This is the best upside/risk tradeoff because it attacks a fresh localized regression before adding more staging state or reopening a broader family."
       ],
-      "hypothesis": "The round-10 wait-group collapse restored the PTX anchor and fixed the barrier and short_scoreboard stalls, but it caused registers/thread to jump 168 -> 202 because the restored microkernel keeps 16 f32 accumulator fragments plus live A/B fragments across both 64x64 row pairs. By reordering ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel so the two row pairs are interleaved column-by-column (Right-Left-Right-Left across RowPairBase = 0 and 2) instead of sequentially, and by reducing the simultaneous live PtxWmmaBf16Fragment count, we should be able to hold registers/thread below ~180 and restore launch__occupancy_limit_registers = 3. That directly attacks the dominant occupancy_latency_hiding_issue (severity 43.22) without touching barrier wins.",
-      "expected_bottleneck": "Register-pressure-bound occupancy: 202 regs/thread caps SM residency at 2 CTAs, starving the long_scoreboard / mio_throttle latency hiding budget at 16.58% active warps.",
+      "hypothesis": "The newly added outer-col-step interleave helper at `src/kernels/bf16_gemm_v1.cu:820-921` failed its own premise. Instead of shrinking the hot-band PTX live set, the measured run landed at 241 registers/thread and the hot-band kernel now dominates the NCU capture. Replacing that helper with the existing compact 64x64 PTX accumulate path (`ptx_wmma_accumulate_tile_set_64x64<false>`) or an equivalently scoped row-pair schedule should recover occupancy and most of the 6.55 ms regression without changing launch geometry, shared layout, or the row-group mapping.",
+      "expected_bottleneck": "Register-pressure-driven occupancy collapse on the dominant hot-band PTX kernel: 241 registers/thread keeps the kernel at 2 CTAs/SM and leaves tensor utilization low despite unsaturated memory bandwidth.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:750-826 (ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel and ptx_wmma_accumulate_tile_set_64x64_ptx_microkernel)",
-        "src/kernels/bf16_gemm_v1.cu:405-408 (PtxWmmaAccTileSet64x64)",
-        "src/kernels/bf16_gemm_v1.cu:1982-2095 (bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel)"
+        "src/kernels/bf16_gemm_v1.cu:733-922 (generic 64x64 PTX accumulate helper, failed interleaved helper, and dispatch wrapper)",
+        "src/kernels/bf16_gemm_v1.cu:2080-2185 (bf16_gemm_v1_tensor_core_fixed_hot_band_128x128_ptx_microkernel steady-state loop)",
+        "src/kernels/bf16_gemm_v1.cu:2068-2185 (hot-band PTX store and loop callsite that now routes through the failed helper)"
       ],
-      "risk": "Moderate. The microkernel ordering is performance-sensitive but fully preserves the WMMA math; correctness risk is low and register pressure can be verified with ncu launch__registers_per_thread on the first compile.",
+      "risk": "Moderate. The math path stays the same, but removing the interleaved helper can give back some of the intended B-fragment sharing or re-expose prior barrier pressure if the replacement is not kept compact.",
       "metrics_to_recheck": [
         "launch__registers_per_thread",
         "launch__occupancy_limit_registers",
         "sm__warps_active.avg.pct_of_peak_sustained_active",
         "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
         "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
         "gpu__time_duration.sum"
       ],
-      "stop_condition": "Stop if launch__registers_per_thread does not fall below 190 after the interleave rewrite, or if the rewrite regresses barrier above 8% or runtime above 25.5 ms.",
+      "stop_condition": "Stop if the hot-band PTX kernel still reports more than about 220 registers/thread after the simplification, or if runtime fails to return to the sub-27 ms class while barrier worsens materially.",
       "evidence_refs": [
-        "state/latest_ncu_summary.md",
         "state/latest_run.md",
-        "src/kernels/bf16_gemm_v1.cu",
-        "state/human_guidance.md"
+        "state/latest_ncu_summary.md",
+        "runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_analysis.md",
+        "runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_details_page.csv",
+        "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
         {
@@ -81,9 +81,9 @@
         }
       ],
       "expected_local_changes": [
-        "Rework ptx_wmma_accumulate_row_pair_64x64_ptx_microkernel so the two row pairs are interleaved column-by-column instead of both sequentially materialized, shrinking the live A-fragment window.",
-        "Confirm nvcc does not inflate fragment state by adding --maxrregcount guard only if necessary, avoiding spills to local memory.",
-        "Leave wait_group_0 / wait_group_1 ordering from round 10 untouched so recovered barrier and short_scoreboard gains are preserved."
+        "Delete or bypass `ptx_wmma_accumulate_col_step_interleaved_64x64_ptx_microkernel` and stop routing the hot-band PTX kernel through that helper.",
+        "Reuse the existing compact 64x64 PTX accumulate helper or a similarly scoped row-pair schedule so A/B fragment lifetimes stay local instead of being spread across the templated outer column loop.",
+        "Leave grouped-row mapping, cp.async wide loads, and the current hot-band launch shape unchanged for the first validation pass."
       ],
       "guardrail_metrics": [
         {
@@ -91,73 +91,76 @@
           "guardrail": "must_pass"
         },
         {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "non_increasing"
+        },
+        {
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
           "guardrail": "non_decreasing"
         },
         {
           "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "guardrail": "non_increasing"
-        },
-        {
-          "metric_name": "launch__registers_per_thread",
-          "guardrail": "non_increasing"
+          "guardrail": "bounded_not_worse_than_current_run"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_163733:dir_02",
-      "source_diagnosis_id": "diagnosis_20260421_163733",
-      "base_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-      "base_measured_commit": "35400d356bf46fb91f112282fe39c8fa1960b391",
-      "base_runtime_ms": 24.69107246,
+      "candidate_id": "diagnosis_20260421_171314:dir_02",
+      "source_diagnosis_id": "diagnosis_20260421_171314",
+      "base_run_id": "20260421_170056_bf16_gemm_v1_13d24542",
+      "base_measured_commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
+      "base_runtime_ms": 31.23967934,
       "direction_id": "dir_02",
-      "direction_name": "Deepen PTX 128x128 Async Copy Pipeline To A 3-Stage Pg2s Buffer",
-      "family_id": "async_copy::ptx_hotband_three_stage_pg2s",
-      "subfamily_id": "async_copy::ptx_hotband_three_stage_pg2s::triple_buffer_without_register_growth",
-      "action_fingerprint": "extend_ptx_128x128_pipeline_to_three_stage_pg2s_without_register_budget_growth",
+      "direction_name": "Port The PTX Hot-Band Path To The Existing 2-K Pg2s Stage Schedule",
+      "family_id": "async_copy::ptx_hotband_two_k_stage_pg2s",
+      "subfamily_id": "async_copy::ptx_hotband_two_k_stage_pg2s::reuse_128x128x32_stage_schedule_for_ptx_math",
+      "action_fingerprint": "port_ptx_hotband_kernel_to_two_k_stage_pg2s_schedule",
       "rank_in_diagnosis": 2,
       "recommended": false,
       "mode": "explore",
-      "priority": 0.71,
-      "search_score_v1": 0.71,
+      "priority": 0.73,
+      "search_score_v1": 0.73,
       "score_breakdown": {
-        "policy_id": "manual_round11_register_budget_first_v1",
+        "policy_id": "manual_round1_hotband_regression_recovery_v1",
         "headroom_score": 0.26,
-        "evidence_score": 0.22,
-        "implementation_bonus": 0.28,
+        "evidence_score": 0.21,
+        "implementation_bonus": 0.31,
         "risk_penalty": -0.05,
         "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 0.45,
-      "predicted_fail_risk": 0.5,
+      "predicted_gain_ms": 1.6,
+      "predicted_fail_risk": 0.57,
       "ranking_notes": [
-        "Directly targets the two regressed stall classes (long_scoreboard, mio_throttle) without relying on occupancy recovery.",
-        "Maps onto the Pg2s, Async Copy, and Stage families from human guidance in one edit.",
-        "Ranked second because it grows shared memory and is more fragile than the register trim in dir_01; also, if dir_01 succeeds, much of the latency hiding gap closes for free."
+        "This directly maps to the measured barrier and mio_throttle signals and to the user guidance around Async Copy, Pg2s, and Stage.",
+        "The code already contains a neighboring two-K-stage schedule, so the direction has a concrete implementation template instead of being a blank-slate pipeline rewrite.",
+        "It ranks behind dir_01 because layering more stage state onto a 241-register kernel is riskier than first removing the fresh register-live-range regression."
       ],
-      "hypothesis": "Even if we cannot drop registers immediately, the PTX anchor now pays 5.53% long_scoreboard and 4.0% mio_throttle (both regressed this round). That is a classic symptom of under-hidden global -> shared latency at low occupancy. Moving the double-buffer (2-stage) cp.async scheme to a 3-stage Pg2s ring (so one MMA issue cycle, one cp.async wait_group_2, and one in-flight refill overlap) should cut long_scoreboard and mio_throttle without requiring more active warps, since the hiding now comes from pipeline depth rather than warp count.",
-      "expected_bottleneck": "Global-to-shared latency hiding at low occupancy: long_scoreboard 5.53 (+3.26 vs prev) and mio_throttle 4.0 (+2.23 vs prev) indicate warps are stalling on cp.async completion instead of making tensor-pipe progress.",
+      "hypothesis": "The current PTX hot-band kernel still waits and synchronizes every single K tile. Barrier is 9.8%, mio_throttle is 15.39%, and long_scoreboard is 4.64%, all on a kernel whose DRAM throughput is only 12.92%. The file already contains a two-K-stage 128x128 hot-band sibling at `src/kernels/bf16_gemm_v1.cu:1813-1956` that batches two K tiles per stage. Porting the PTX hot-band math path onto that Pg2s schedule should reduce barrier cadence and refill exposure without changing the 128x128 CTA footprint.",
+      "expected_bottleneck": "Wait-group, barrier, and refill cadence on the dominant hot-band path rather than raw global-memory bandwidth.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:119-132 (FixedHotBandTile128x128: kASharedBytes uses factor 4, which can accommodate 3 stages)",
-        "src/kernels/bf16_gemm_v1.cu:1993-1999 (a_shared/b_shared allocations with hardcoded 2)",
-        "src/kernels/bf16_gemm_v1.cu:2036-2095 (cp.async commit/wait_group_N sequence)"
+        "src/kernels/bf16_gemm_v1.cu:1813-1956 (existing 128x128x32 two-K-stage hot-band schedule)",
+        "src/kernels/bf16_gemm_v1.cu:2089-2185 (current PTX hot-band shared buffers, prolog, and steady-state loop)",
+        "src/kernels/bf16_gemm_v1.cu:107-120 (FixedHotBandTile128x128 shared/stage budget constants)"
       ],
-      "risk": "Moderate-high. A 3-stage ring touches the prolog, the steady-state refill order, and the epilogue drain simultaneously; requires careful wait_group_2 / wait_group_1 / wait_group_0 sequencing and 50% more shared memory for A/B buffers.",
+      "risk": "Moderate-high. This touches the prolog, steady-state loop, and drain logic together, and it can worsen register or shared-memory pressure if the PTX path is not kept bounded.",
       "metrics_to_recheck": [
-        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
-        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+        "smsp__warp_issue_stalled_mio_throttle_per_warp_active.pct",
+        "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct",
         "launch__shared_mem_per_block_allocated",
+        "launch__registers_per_thread",
         "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "dram__throughput.avg.pct_of_peak_sustained_elapsed",
         "gpu__time_duration.sum"
       ],
-      "stop_condition": "Stop if long_scoreboard does not drop below 4% or if shared memory allocation pushes occupancy_limit_shared_mem below the current occupancy_limit_registers class.",
+      "stop_condition": "Stop if barrier fails to drop below the current 9.8% class, or if shared/register growth keeps the hot-band PTX kernel pinned at the current 2-CTA occupancy class.",
       "evidence_refs": [
         "state/latest_ncu_summary.md",
         "state/latest_ncu_summary.json",
-        "src/kernels/bf16_gemm_v1.cu"
+        "runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_analysis.json",
+        "runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_details_page.csv",
+        "src/kernels/bf16_gemm_v1.cu",
+        "state/human_guidance.md"
       ],
       "target_hotspots": [
         {
@@ -172,9 +175,9 @@
         }
       ],
       "expected_local_changes": [
-        "Grow the a_shared / b_shared arrays from [2] to [3] stages (already allowed by the factor-4 budget in FixedHotBandTile128x128).",
-        "Replace the prolog two cp.async_commit_group calls + wait_group_1 with a three-commit prolog + wait_group_2 schedule.",
-        "In the steady-state loop, keep the cp.async_wait_group_0 / __syncthreads() sequence but fire refills two tiles ahead of current stage so three commits are always in flight."
+        "Reuse the existing two-K-stage hot-band prolog and refill cadence as the template for the PTX 128x128 branch.",
+        "Batch two A/B async-copy loads per stage so the PTX hot-band path synchronizes once per two K tiles instead of once per single K tile.",
+        "Adjust wait-group placement so the PTX path keeps more work in flight without growing the launch surface beyond the current 128x128 hot-band region."
       ],
       "guardrail_metrics": [
         {
@@ -187,66 +190,70 @@
         },
         {
           "metric_name": "launch__shared_mem_per_block_allocated",
-          "guardrail": "bounded_48KiB_static"
+          "guardrail": "bounded_with_no_extra_occupancy_loss"
+        },
+        {
+          "metric_name": "launch__registers_per_thread",
+          "guardrail": "bounded_not_worse_than_current_run"
         }
       ],
       "status": "open"
     },
     {
-      "candidate_id": "diagnosis_20260421_163733:dir_03",
-      "source_diagnosis_id": "diagnosis_20260421_163733",
-      "base_run_id": "20260421_160557_bf16_gemm_v1_35400d35",
-      "base_measured_commit": "35400d356bf46fb91f112282fe39c8fa1960b391",
-      "base_runtime_ms": 24.69107246,
+      "candidate_id": "diagnosis_20260421_171314:dir_03",
+      "source_diagnosis_id": "diagnosis_20260421_171314",
+      "base_run_id": "20260421_170056_bf16_gemm_v1_13d24542",
+      "base_measured_commit": "13d245423db024e85562e537ddcb71b1b9e8d722",
+      "base_runtime_ms": 31.23967934,
       "direction_id": "dir_03",
-      "direction_name": "Reopen 256x128 Half-Panel Register-Reuse Tiling Branch",
-      "family_id": "tiling::reopen_256x128_half_panel_register_reuse",
-      "subfamily_id": "tiling::reopen_256x128_half_panel_register_reuse::right_left_right_left_warp_tile",
-      "action_fingerprint": "reopen_256x128_half_panel_register_reuse_with_right_left_right_left_warp_tile",
+      "direction_name": "Reopen 256x128 64x64-Warp Hot-Band Tiling For The Dominant Surface",
+      "family_id": "tiling::hotband_256x128_reopen",
+      "subfamily_id": "tiling::hotband_256x128_reopen::writer_safe_right_left_right_left_warp_tile",
+      "action_fingerprint": "reopen_256x128_64x64_warp_hotband_kernel_with_writer_safe_export",
       "rank_in_diagnosis": 3,
       "recommended": false,
       "mode": "explore",
-      "priority": 0.6,
-      "search_score_v1": 0.6,
+      "priority": 0.61,
+      "search_score_v1": 0.61,
       "score_breakdown": {
-        "policy_id": "manual_round11_register_budget_first_v1",
-        "headroom_score": 0.38,
+        "policy_id": "manual_round1_hotband_regression_recovery_v1",
+        "headroom_score": 0.41,
         "evidence_score": 0.08,
-        "implementation_bonus": 0.22,
+        "implementation_bonus": 0.2,
         "risk_penalty": -0.08,
         "formula": "headroom_score + evidence_score + implementation_bonus + risk_penalty"
       },
-      "predicted_gain_ms": 1.2,
-      "predicted_fail_risk": 0.72,
+      "predicted_gain_ms": 2.4,
+      "predicted_fail_risk": 0.76,
       "ranking_notes": [
-        "Kept alive because it is the highest-ceiling branch in the repo and directly maps to the persistent human Tiling and Register Reuse guidance.",
-        "Ranked third because prior rounds already measured two negative outcomes on reopen attempts, and the current loop has cheaper, more targeted options (dir_01, dir_02) on the nearer family.",
-        "Should only be exploited after dir_01 either succeeds and plateaus or fails cleanly on register pressure."
+        "This is the highest-ceiling family left because it directly targets the kernel that dominates profiled time and aligns with the user's tiling guidance.",
+        "It stays third because the current run is not evidence that the 128x128 family is fundamentally exhausted; it is evidence that one brand-new microkernel rewrite failed badly.",
+        "Only reopen this branch after the current hot-band PTX regression is repaired or cleanly shown to have no fast local fix."
       ],
-      "hypothesis": "The persistent human guidance explicitly calls for 256x128 block tiling with 64x64 warp tiling and a Right-Left-Right-Left warp-tile traversal. FixedHotBandTile256x128 already exists in the repo (kWarpMmaTilesM = 4, kWarpMmaTilesN = 4, 8 warps/CTA) and previous rounds closed the pivot family due to correctness/regression cost, but the current state (occupancy pinned at 2 CTAs/SM anyway) makes a larger tile attractive because it amortizes the A-panel load and the per-warp register accumulator over 4x the math. This is the highest-ceiling branch if dir_01 and dir_02 fail to close the 6.7 ms remaining gap to the 18 ms target.",
-      "expected_bottleneck": "Tile-granularity / register-reuse ceiling: at 128x128 the A panel is reloaded for every 128 columns; a 256x128 panel doubles A reuse per cp.async batch while keeping B staging compact.",
+      "hypothesis": "The raw details-page export shows the 128x128 PTX hot-band kernel dominating profiled time, while the 64x384 peeled path and the tail path are small. The source already contains `FixedHotBandTile256x128`, and the persistent human guidance explicitly asks for 256x128 block tiling with 64x64 warp tiling and Right-Left-Right-Left register reuse. Reopening that family is the only broad structural move with enough ceiling to matter if the current 128x128 repair path plateaus.",
+      "expected_bottleneck": "Hot-band tiling and panel-reuse ceiling: the 128x128 hot-band surface is doing too much coordination per useful math tile and leaves too much work on the slowest profiled kernel.",
       "code_locations": [
-        "src/kernels/bf16_gemm_v1.cu:80-105 (FixedHotBandTile256x128)",
-        "src/kernels/bf16_gemm_v1.cu:622-699 (256x128 accumulate helpers)",
-        "src/kernels/bf16_gemm_v1.cu:1507-1676 (correctness-safe 256x128 pivot writer path)",
-        "src/kernels/bf16_gemm_v1.cu:2139-2156 (fallback launch wiring)"
+        "src/kernels/bf16_gemm_v1.cu:80-105 (FixedHotBandTile256x128 geometry and shared budget)",
+        "src/kernels/bf16_gemm_v1.cu:675-739 (generic 64x64 PTX accumulate helper already aligned with larger warp-tile reuse)",
+        "src/kernels/bf16_gemm_v1.cu:1706-1798 (256x128 fixed hot-band kernel body)"
       ],
-      "risk": "High. This is a broader structural rewrite. Two prior rounds closed 256x128 pivot attempts on correctness/regression grounds; reopening requires re-verifying writer-ownership and half-panel export mapping, and the correctness-first reopens historically regressed to the 28-30 ms class.",
+      "risk": "High. This is a broader structural reopen with known correctness and performance history. It touches writer ownership, export layout, and launch routing, and should not be the first recovery move after a localized regression.",
       "metrics_to_recheck": [
         "correctness on all 3 dataset cases before trusting runtime",
-        "median runtime versus the 24.195072 ms accepted base",
+        "median runtime",
         "launch__registers_per_thread",
         "sm__warps_active.avg.pct_of_peak_sustained_active",
         "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
         "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
         "gpu__time_duration.sum"
       ],
-      "stop_condition": "Stop immediately on any correctness failure or any measurement above the 28 ms class; do not spend more than one round on this family without a new machine-state change.",
+      "stop_condition": "Stop immediately on any correctness failure, or if the first measured reopen stays in the previously bad 28-30 ms class instead of clearly beating the current 31.24 ms regression surface.",
       "evidence_refs": [
         "state/human_guidance.md",
         "state/human_review.md",
         "state/diagnosis_history.jsonl",
-        "state/autotune_round18_main_tiles.md"
+        "runs/20260421_170056_bf16_gemm_v1_13d24542/ncu_details_page.csv",
+        "src/kernels/bf16_gemm_v1.cu"
       ],
       "target_hotspots": [
         {
@@ -261,9 +268,9 @@
         }
       ],
       "expected_local_changes": [
-        "Restore the correctness-safe 256x128 writer ownership path.",
-        "Wire the PTX anchor launch to the 256x128 kernel for the pivot hot band while keeping the 64x96 tail and 64x384 row-band paths unchanged.",
-        "Apply the Right-Left-Right-Left warp tile traversal on the 4x4 = 16 accumulator tiles so B-fragment reuse increases across the warp tile."
+        "Rewire the hot-band launch surface so the dominant region uses the 256x128 / 64x64-warp family instead of the current 128x128 PTX microkernel.",
+        "Repair or restore writer-safe export ownership on the 256x128 path before trusting any runtime number.",
+        "Keep the 64x384 main path and the 64x96 tail unchanged so the experiment isolates the hot-band family itself."
       ],
       "guardrail_metrics": [
         {
@@ -271,12 +278,12 @@
           "guardrail": "must_pass"
         },
         {
-          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-          "guardrail": "non_increasing"
-        },
-        {
           "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
           "guardrail": "non_decreasing"
+        },
+        {
+          "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
+          "guardrail": "non_increasing"
         }
       ],
       "status": "open"

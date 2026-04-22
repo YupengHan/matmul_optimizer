@@ -9,15 +9,15 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_b`
-- previous node: `node_a`
-- status: `ready_for_node_b`
+- next node: `node_c`
+- previous node: `node_b`
+- status: `ready_for_node_c`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
 - latest measured commit: `13d245423db024e85562e537ddcb71b1b9e8d722`
 - plateau counter: `16`
-- round loop: `single-run`
-- rounds remaining: `0`
-- notes: `Node A completed. Run node_b to produce exactly three directions from the latest measured summaries.`
+- round loop: `round 1/1`
+- rounds remaining: `1`
+- notes: `Node C is ready to implement diagnosis_20260421_171314:dir_01 via recommended selection for round 1/1.`
 
 ## Latest measured custom run
 
@@ -31,19 +31,21 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Latest diagnosis state
 
-- diagnosis status: `pending_generation`
-- diagnosis id: `None`
-- recommended direction: `None`
+- diagnosis status: `completed`
+- diagnosis id: `diagnosis_20260421_171314`
+- recommended direction: `dir_01`
 - approved direction: `None`
-- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
-- no directions recorded yet
+- diagnosis notes: `Human-guidance audit for this round: keep Register Reuse as the primary family, but reject the just-measured `col_step_interleaved` subfamily because the live run contradicts its design claim. Keep Async Copy / Pg2s / Stage accepted as the secondary family on the same 128x128 PTX surface, and keep 256x128 Tiling / Data Reuse alive only as the high-ceiling reopen once the current localized regression has been unwound.`
+- dir_01: Replace The Failed Interleaved PTX 64x64 Hot-Band Microkernel With The Compact Row-Pair Path | bottleneck: Register-pressure-driven occupancy collapse on the dominant hot-band PTX kernel: 241 registers/thread keeps the kernel at 2 CTAs/SM and leaves tensor utilization low despite unsaturated memory bandwidth.
+- dir_02: Port The PTX Hot-Band Path To The Existing 2-K Pg2s Stage Schedule | bottleneck: Wait-group, barrier, and refill cadence on the dominant hot-band path rather than raw global-memory bandwidth.
+- dir_03: Reopen 256x128 64x64-Warp Hot-Band Tiling For The Dominant Surface | bottleneck: Hot-band tiling and panel-reuse ceiling: the 128x128 hot-band surface is doing too much coordination per useful math tile and leaves too much work on the slowest profiled kernel.
 
 ## Active implementation direction
 
-- direction id: `None`
-- selection mode: `None`
-- status: `idle`
-- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
+- direction id: `dir_01`
+- selection mode: `recommended`
+- status: `ready_for_implementation`
+- notes: `Node C may now implement this one candidate.`
 
 ## Benchmark snapshot
 
