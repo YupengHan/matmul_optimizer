@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_182631_bf16_gemm_v1_1f02b147`
-- run dir: `runs/20260421_182631_bf16_gemm_v1_1f02b147`
-- kernel tag: `bf16_gemm_v1_1f02b147`
-- round label: `round 3/20`
+- run id: `20260421_183233_bf16_gemm_v1_4948b8ea`
+- run dir: `runs/20260421_183233_bf16_gemm_v1_4948b8ea`
+- kernel tag: `bf16_gemm_v1_4948b8ea`
+- round label: `round 4/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `25.063408 ms`
-- p10 runtime: `24.912691 ms`
-- p90 runtime: `25.881085 ms`
-- TFLOP/s: `29.007205 TFLOP/s`
-- previous run id: `20260421_182124_bf16_gemm_v1_49dfa799`
-- runtime delta vs previous measured run: `-1.243184 ms`
-- TFLOP/s delta vs previous measured run: `+1.370808 TFLOP/s`
-- perf verdict: `improved`
+- median runtime: `25.251841 ms`
+- p10 runtime: `25.244439 ms`
+- p90 runtime: `26.682778 ms`
+- TFLOP/s: `28.790750 TFLOP/s`
+- previous run id: `20260421_182631_bf16_gemm_v1_1f02b147`
+- runtime delta vs previous measured run: `+0.188433 ms`
+- TFLOP/s delta vs previous measured run: `-0.216456 TFLOP/s`
+- perf verdict: `regressed`
 - implemented direction id: `dir_01`
-- implemented direction name: `Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path`
+- implemented direction name: `Deepen The Active PTX Hot-Band To A 3-Stage Pg2s Pipeline`
 - implemented selection mode: `frontier`
 - implemented idea origin: `auto-analysis`
-- raw summary json: `runs/20260421_182631_bf16_gemm_v1_1f02b147/summary.json`
-- ncu analysis path: `runs/20260421_182631_bf16_gemm_v1_1f02b147/ncu_analysis.json`
-- measured commit: `1f02b14706466fc384b8bc6441be63e222670bba`
+- raw summary json: `runs/20260421_183233_bf16_gemm_v1_4948b8ea/summary.json`
+- ncu analysis path: `runs/20260421_183233_bf16_gemm_v1_4948b8ea/ncu_analysis.json`
+- measured commit: `4948b8ea197c9869356471fedefa11a45b84ee35`
 - new best custom: `no`
-- generated at: `2026-04-21T18:26:45-07:00`
+- generated at: `2026-04-21T18:32:47-07:00`

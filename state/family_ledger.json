@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-21T18:26:45-07:00",
-  "last_result_run_id": "20260421_182631_bf16_gemm_v1_1f02b147",
-  "last_transition_label": "PASS_WIN",
+  "updated_at": "2026-04-21T18:32:47-07:00",
+  "last_result_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+  "last_transition_label": "PASS_LOSS",
   "families": {
     "sync_pipeline::hotband_128x128_stage_swap": {
       "family_id": "sync_pipeline::hotband_128x128_stage_swap",
@@ -258,6 +258,23 @@
       "last_attempt_id": "diagnosis_20260421_182251:dir_01",
       "last_registers_per_thread": 202.0,
       "last_shared_mem_per_block_allocated": 22016.0
+    },
+    "async_copy::ptx_hotband_three_stage_pg2s": {
+      "family_id": "async_copy::ptx_hotband_three_stage_pg2s",
+      "wins": 0,
+      "flats": 0,
+      "losses": 1,
+      "fails": 0,
+      "last_transition_label": "PASS_LOSS",
+      "freeze_status": "closed_negative",
+      "best_runtime_ms": 25.25184059,
+      "best_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+      "last_result_run_id": "20260421_183233_bf16_gemm_v1_4948b8ea",
+      "last_result_runtime_ms": 25.25184059,
+      "last_candidate_id": "diagnosis_20260421_182858:dir_01",
+      "last_attempt_id": "diagnosis_20260421_182858:dir_01",
+      "last_registers_per_thread": 197.0,
+      "last_shared_mem_per_block_allocated": 30464.0
     }
   },
   "notes": "Family-level attempt memory is empty until search transitions are recorded."
