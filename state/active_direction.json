@@ -1,106 +1,21 @@
 {
-  "direction_id": "dir_01",
-  "name": "Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path",
-  "candidate_id": "diagnosis_20260421_182251:dir_01",
-  "selected_from_frontier_id": "frontier:global",
-  "family_id": "register_pressure::ptx_microkernel_launch_bounds_restore",
-  "subfamily_id": "register_pressure::ptx_hot_band_min_blocks_3_to_2_keep_dispatch",
-  "action_fingerprint": "ptx_hotband_active:launch_bounds_min_blocks_3->2",
-  "selection_priority": 2.94,
-  "base_run_id": "20260421_182124_bf16_gemm_v1_49dfa799",
-  "selection_mode": "frontier",
-  "selected_at": "2026-04-21T18:26:11-07:00",
-  "source_diagnosis_id": "diagnosis_20260421_182251",
-  "status": "implemented_pending_measurement",
-  "summary": {
-    "direction_id": "dir_01",
-    "name": "Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path",
-    "family_id": "register_pressure::ptx_microkernel_launch_bounds_restore",
-    "subfamily_id": "register_pressure::ptx_hot_band_min_blocks_3_to_2_keep_dispatch",
-    "action_fingerprint": "ptx_hotband_active:launch_bounds_min_blocks_3->2",
-    "mode": "exploit",
-    "hypothesis": "The current run already restored the compact PTX hot-band dispatch and preserved the 22016 B shared-memory footprint, but it still trails the accepted PTX base by about 1.50 ms while carrying the exact same 168 regs/thread. The main new lever is __launch_bounds__(128, 3), so rolling that back to 2 should recover scheduler freedom and remove the extra barrier plus short-scoreboard tax without touching grouped rows, stage depth, or the row-pair accumulator path.",
-    "expected_bottleneck": "The explicit 3-CTA minimum is over-constraining the PTX microkernel schedule, inflating barrier and short-scoreboard even though it does not reduce the measured register footprint.",
-    "code_locations": [
-      "src/kernels/bf16_gemm_v1.cu:1988-1993"
-    ],
-    "risk": "Low. This is a one-line rollback on the live PTX surface and keeps the current dispatch, shared-memory footprint, and row-pair math path intact.",
-    "metrics_to_recheck": [
-      "median runtime",
-      "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-      "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-      "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-      "sm__warps_active.avg.pct_of_peak_sustained_active",
-      "launch__occupancy_limit_registers"
-    ],
-    "search_score_v1": 2.72,
-    "score_breakdown": {
-      "policy_id": "manual_round3_launch_bounds_rollback_v1",
-      "rank_score": 2.25,
-      "evidence_bonus": 0.35,
-      "implementation_bonus": 0.22,
-      "risk_penalty": 0.1,
-      "formula": "rank_score + evidence_bonus + implementation_bonus - risk_penalty"
-    },
-    "predicted_gain_ms": 1.25,
-    "predicted_fail_risk": 0.12,
-    "ranking_notes": [
-      "This is the cleanest single-variable experiment because the accepted PTX base and the current run share the same 168 regs/thread and 22016 B/block footprint.",
-      "The accepted-base comparison points straight at launch policy: barrier is +3.34 pts, short-scoreboard is +5.46 pts, and tensor activity is lower even though occupancy_limit_registers improved to 3.",
-      "It preserves the row-pair PTX kernel body that already beat CUTLASS and only removes the new residency forcing lever."
-    ],
-    "stop_condition": "Stop if reverting launch_bounds to 2 does not materially recover barrier or short-scoreboard versus 49dfa799, or if more than the launch-bounds annotation has to change to build.",
-    "evidence_refs": [
-      "state/latest_run.md",
-      "state/latest_ncu_summary.md",
-      "runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.md",
-      "runs/20260421_172601_bf16_gemm_v1_117cd3e7/ncu_analysis.md",
-      "src/kernels/bf16_gemm_v1.cu"
-    ],
-    "target_hotspots": [
-      {
-        "scope_type": "section",
-        "scope_name": "Launch Statistics",
-        "location": "Launch Statistics"
-      },
-      {
-        "scope_type": "section",
-        "scope_name": "Occupancy",
-        "location": "Occupancy"
-      }
-    ],
-    "expected_local_changes": [
-      "Retune the PTX hot-band __launch_bounds__ annotation from 3 back to 2.",
-      "Leave the active PTX dispatch in place.",
-      "Leave grouped rows, shared-memory stage depth, and export scratch untouched in this validation pass."
-    ],
-    "guardrail_metrics": [
-      {
-        "metric_name": "correctness",
-        "guardrail": "must_pass"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_barrier_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct",
-        "guardrail": "non_increasing_vs_current_run"
-      },
-      {
-        "metric_name": "sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active",
-        "guardrail": "non_decreasing_vs_current_run"
-      }
-    ],
-    "idea_origin": "auto-analysis"
-  },
-  "notes": "Build passed. Node A must measure this implementation next.",
-  "actual_code_regions": [
-    "src/kernels/bf16_gemm_v1.cu"
-  ],
-  "semantic_delta_tags": [
-    "single_direction_attempt",
-    "kernel_code"
-  ],
-  "implemented_action_fingerprint": "ptx_hotband_active:launch_bounds_min_blocks_3->2"
+  "direction_id": null,
+  "name": null,
+  "candidate_id": null,
+  "selected_from_frontier_id": null,
+  "family_id": null,
+  "subfamily_id": null,
+  "action_fingerprint": null,
+  "selection_priority": null,
+  "base_run_id": null,
+  "selection_mode": null,
+  "selected_at": null,
+  "source_diagnosis_id": null,
+  "secondary_family_ids": [],
+  "semantic_delta_tags": [],
+  "actual_code_regions": [],
+  "implemented_action_fingerprint": null,
+  "status": "idle",
+  "summary": null,
+  "notes": "No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b."
 }

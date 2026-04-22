@@ -9,43 +9,41 @@ Beat cuBLAS and drive the fixed-shape BF16 GEMM `fixed_bf16_gemm_v1` to `<= 18.0
 
 ## Workflow state
 
-- next node: `node_a`
-- previous node: `node_c`
-- status: `ready_for_node_a`
+- next node: `node_b`
+- previous node: `node_a`
+- status: `ready_for_node_b`
 - current kernel path: `src/kernels/bf16_gemm_v1.cu`
-- latest measured commit: `49dfa799e322ba9331fa5ca20569d94830666c89`
-- plateau counter: `19`
-- round loop: `round 3/20`
-- rounds remaining: `18`
-- notes: `Node C build succeeded for round 3/20. Node A will now measure the new code path.`
+- latest measured commit: `1f02b14706466fc384b8bc6441be63e222670bba`
+- plateau counter: `20`
+- round loop: `round 4/20`
+- rounds remaining: `17`
+- notes: `Node A completed round 3/20. Run node_b to continue round 4/20.`
 
 ## Latest measured custom run
 
-- run id: `20260421_182124_bf16_gemm_v1_49dfa799`
-- run dir: `runs/20260421_182124_bf16_gemm_v1_49dfa799`
+- run id: `20260421_182631_bf16_gemm_v1_1f02b147`
+- run dir: `runs/20260421_182631_bf16_gemm_v1_1f02b147`
 - correctness: `PASS`
-- median runtime: `26.306592 ms`
-- TFLOP/s: `27.636397 TFLOP/s`
+- median runtime: `25.063408 ms`
+- TFLOP/s: `29.007205 TFLOP/s`
 - latest run summary: `state/latest_run.json`
 - latest NCU summary: `state/latest_ncu_summary.json`
 
 ## Latest diagnosis state
 
-- diagnosis status: `completed`
-- diagnosis id: `diagnosis_20260421_182251`
-- recommended direction: `dir_01`
+- diagnosis status: `pending_generation`
+- diagnosis id: `None`
+- recommended direction: `None`
 - approved direction: `None`
-- diagnosis notes: `Round 3 treats 49dfa799 as a local launch-policy regression on top of the compact PTX base, not as a reason to abandon the PTX hot-band family. The next move should isolate launch_bounds before reopening larger geometry or shared-memory families.`
-- dir_01: Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path | bottleneck: The explicit 3-CTA minimum is over-constraining the PTX microkernel schedule, inflating barrier and short-scoreboard even though it does not reduce the measured register footprint.
-- dir_02: Split The Final PTX Wait/Sync Drain Out Of The Steady-State Loop | bottleneck: The final steady-state handoff is paying an unnecessary wait/sync pair that shows up as barrier and short-scoreboard tax on the PTX path.
-- dir_03: Retune PTX Hot-Band Grouped Rows From 4 Down To 2 | bottleneck: PTX grouped-row batching may be over-amortizing locality and paying too much synchronization and scheduler delay per group.
+- diagnosis notes: `Run node_b to produce exactly three directions from the latest measured run.`
+- no directions recorded yet
 
 ## Active implementation direction
 
-- direction id: `dir_01`
-- selection mode: `frontier`
-- status: `implemented_pending_measurement`
-- notes: `Build passed. Node A must measure this implementation next.`
+- direction id: `None`
+- selection mode: `None`
+- status: `idle`
+- notes: `No direction selected yet. Use approve, use-recommended-direction, or select-next after node_b.`
 
 ## Benchmark snapshot
 

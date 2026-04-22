@@ -1,27 +1,27 @@
 # Latest run
 
-- run id: `20260421_182124_bf16_gemm_v1_49dfa799`
-- run dir: `runs/20260421_182124_bf16_gemm_v1_49dfa799`
-- kernel tag: `bf16_gemm_v1_49dfa799`
-- round label: `round 2/20`
+- run id: `20260421_182631_bf16_gemm_v1_1f02b147`
+- run dir: `runs/20260421_182631_bf16_gemm_v1_1f02b147`
+- kernel tag: `bf16_gemm_v1_1f02b147`
+- round label: `round 3/20`
 - runner: `/home/aice/Desktop/Git/matmul_optimizer/build/custom_runner`
 - correctness: `PASS`
 - correctness cases: `3/3`
 - perf status: `PASS`
-- median runtime: `26.306592 ms`
-- p10 runtime: `26.277887 ms`
-- p90 runtime: `27.511399 ms`
-- TFLOP/s: `27.636397 TFLOP/s`
-- previous run id: `20260421_175700_bf16_gemm_v1_05086a14`
-- runtime delta vs previous measured run: `-0.078816 ms`
-- TFLOP/s delta vs previous measured run: `+0.082553 TFLOP/s`
+- median runtime: `25.063408 ms`
+- p10 runtime: `24.912691 ms`
+- p90 runtime: `25.881085 ms`
+- TFLOP/s: `29.007205 TFLOP/s`
+- previous run id: `20260421_182124_bf16_gemm_v1_49dfa799`
+- runtime delta vs previous measured run: `-1.243184 ms`
+- TFLOP/s delta vs previous measured run: `+1.370808 TFLOP/s`
 - perf verdict: `improved`
-- implemented direction id: `seed_01`
-- implemented direction name: `Trim Microkernel Barriers Without Reintroducing Shared-Memory Blowup`
+- implemented direction id: `dir_01`
+- implemented direction name: `Restore PTX Launch Bounds Back To 2-CTA On The Active Hot-Band Path`
 - implemented selection mode: `frontier`
-- implemented idea origin: `master_heuristic_history_rehydration`
-- raw summary json: `runs/20260421_182124_bf16_gemm_v1_49dfa799/summary.json`
-- ncu analysis path: `runs/20260421_182124_bf16_gemm_v1_49dfa799/ncu_analysis.json`
-- measured commit: `49dfa799e322ba9331fa5ca20569d94830666c89`
+- implemented idea origin: `auto-analysis`
+- raw summary json: `runs/20260421_182631_bf16_gemm_v1_1f02b147/summary.json`
+- ncu analysis path: `runs/20260421_182631_bf16_gemm_v1_1f02b147/ncu_analysis.json`
+- measured commit: `1f02b14706466fc384b8bc6441be63e222670bba`
 - new best custom: `no`
-- generated at: `2026-04-21T18:21:38-07:00`
+- generated at: `2026-04-21T18:26:45-07:00`
