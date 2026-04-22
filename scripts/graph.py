@@ -68,6 +68,7 @@ from state_lib import (
     load_latest_run,
     load_round_loop_state,
     load_run_registry,
+    load_search_closed,
     load_search_candidates,
     load_search_frontier,
     load_search_state,
@@ -1354,8 +1355,62 @@ def frontier_sort_key(candidate: Dict[str, Any]) -> tuple[float, int, str, str]:
     )
 
 
+def git_is_ancestor(ancestor_commit: Optional[str], descendant_commit: Optional[str]) -> bool:
+    if not ancestor_commit or not descendant_commit:
+        return False
+    proc = run_command(
+        ['git', 'merge-base', '--is-ancestor', str(ancestor_commit), str(descendant_commit)],
+        capture=False,
+    )
+    return proc.returncode == 0
+
+
+def measured_commit_for_run_id(run_id: Optional[str]) -> Optional[str]:
+    if not run_id:
+        return None
+
+    latest_run = load_latest_run()
+    if latest_run.get('run_id') == run_id:
+        return latest_run.get('measured_commit') or latest_run.get('source_commit')
+
+    for entry in reversed(load_run_registry()):
+        if entry.get('run_id') != run_id:
+            continue
+        return entry.get('measured_commit') or entry.get('source_commit')
+
+    search_state = load_search_state()
+    for run_field, commit_field in (
+        ('exact_base_run_id', 'exact_base_measured_commit'),
+        ('accepted_base_run_id', 'accepted_base_measured_commit'),
+        ('best_known_run_id', 'best_known_measured_commit'),
+    ):
+        if search_state.get(run_field) == run_id:
+            return search_state.get(commit_field)
+    return None
+
+
+def fingerprint_already_in_current_branch(action_fingerprint: str) -> Optional[str]:
+    if not action_fingerprint:
+        return None
+
+    current_head = git_output(['rev-parse', 'HEAD'])
+    for closed in reversed(load_search_closed()):
+        closed_fingerprint = str(
+            closed.get('implemented_action_fingerprint')
+            or closed.get('planned_action_fingerprint')
+            or ''
+        ).strip()
+        if closed_fingerprint != action_fingerprint:
+            continue
+
+        result_commit = measured_commit_for_run_id(closed.get('result_run_id'))
+        if git_is_ancestor(result_commit, current_head):
+            return result_commit
+    return None
+
+
 def candidate_invalid_reason(candidate: Dict[str, Any], diagnosis: Dict[str, Any]) -> Optional[str]:
-    if candidate.get('status') not in {'open', 'reopened'}:
+    if candidate.get('status') not in {'open', 'reopened', 'selected'}:
         return 'not_open'
     if not str(candidate.get('candidate_id') or '').strip():
         return 'missing_candidate_id'
@@ -1367,6 +1422,11 @@ def candidate_invalid_reason(candidate: Dict[str, Any], diagnosis: Dict[str, Any
         return 'missing_family_id'
     if not str(candidate.get('action_fingerprint') or '').strip():
         return 'missing_action_fingerprint'
+    existing_commit = fingerprint_already_in_current_branch(
+        str(candidate.get('action_fingerprint') or '').strip()
+    )
+    if existing_commit:
+        return f'already_in_current_branch:{existing_commit[:7]}'
     if parse_priority(candidate.get('priority')) is None:
         return 'non_numeric_priority'
     if not str(candidate.get('hypothesis') or '').strip():
@@ -1405,6 +1465,43 @@ def selectable_frontier_candidates(frontier: Dict[str, Any], diagnosis: Dict[str
 def best_frontier_candidate(frontier: Dict[str, Any], diagnosis: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     candidates = selectable_frontier_candidates(frontier, diagnosis)
     return candidates[0] if candidates else None
+
+
+def clear_stale_frontier_selection(
+    frontier: Dict[str, Any],
+    diagnosis: Dict[str, Any],
+    active_direction: Dict[str, Any],
+    reason: str,
+) -> None:
+    candidate_id = active_direction.get('candidate_id')
+    candidate = frontier_candidate_lookup(frontier, candidate_id) if candidate_id else None
+    if candidate is not None:
+        candidate['status'] = 'invalid'
+        candidate['invalid_reason'] = reason
+
+    frontier['selected_candidate_id'] = None
+    frontier['selection_reason'] = 'stale_selection_cleared'
+    frontier['selection_summary'] = (
+        f"Cleared stale frontier selection {candidate_id or active_direction.get('direction_id')}; "
+        f"reason={reason}."
+    )
+    write_json(SEARCH_FRONTIER_PATH, frontier)
+
+    if diagnosis.get('selected_candidate_id') == candidate_id:
+        diagnosis['selected_candidate_id'] = None
+        if diagnosis.get('selected_direction_id') == active_direction.get('direction_id'):
+            diagnosis['selected_direction_id'] = None
+        write_json(LATEST_DIAGNOSIS_PATH, diagnosis)
+
+    search_state = load_search_state()
+    search_state['active_candidate_id'] = None
+    search_state['status'] = 'frontier_ready'
+    search_state['notes'] = (
+        f"Cleared stale frontier candidate {candidate_id or active_direction.get('direction_id')}; "
+        f"reason={reason}."
+    )
+    write_json(SEARCH_STATE_PATH, search_state)
+    write_json(ACTIVE_DIRECTION_PATH, default_active_direction())
 
 
 def direction_summary_line(direction: Dict[str, Any]) -> str:
@@ -4970,10 +5067,6 @@ def select_direction(direction_id: str, selection_mode: str) -> int:
 
 def select_next_candidate() -> int:
     ensure_machine_state()
-    active_direction = load_active_direction()
-    if active_direction.get('direction_id'):
-        raise RuntimeError('active_direction is already set; clear or finish the current selection before using select-next')
-
     diagnosis = load_latest_diagnosis()
     if diagnosis.get('status') != 'completed':
         raise RuntimeError('node_b must be finalized before selecting from the frontier')
@@ -4982,6 +5075,28 @@ def select_next_candidate() -> int:
     normalize_search_frontier(frontier)
     reconcile_frontier_with_latest_attempt(frontier)
     refresh_frontier_family_representatives(frontier, load_search_state(), load_family_ledger())
+    active_direction = load_active_direction()
+    if active_direction.get('direction_id'):
+        if active_direction.get('selection_mode') != 'frontier':
+            raise RuntimeError('active_direction is already set; clear or finish the current selection before using select-next')
+        selected_candidate = (
+            frontier_candidate_lookup(frontier, active_direction.get('candidate_id'))
+            if active_direction.get('candidate_id')
+            else None
+        )
+        selected_reason = (
+            candidate_invalid_reason(selected_candidate, diagnosis)
+            if selected_candidate is not None
+            else 'missing_selected_candidate'
+        )
+        if selected_reason is None:
+            raise RuntimeError('active_direction is already set; clear or finish the current selection before using select-next')
+        clear_stale_frontier_selection(frontier, diagnosis, active_direction, selected_reason)
+        frontier = load_search_frontier()
+        normalize_search_frontier(frontier)
+        reconcile_frontier_with_latest_attempt(frontier)
+        refresh_frontier_family_representatives(frontier, load_search_state(), load_family_ledger())
+
     candidates = frontier.get('candidates', [])
     if not candidates:
         raise RuntimeError('search frontier is empty; finalize node_b first')
