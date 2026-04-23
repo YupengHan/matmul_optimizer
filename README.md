@@ -10,7 +10,12 @@ This repo is the working harness behind a narrow CUDA optimization experiment:
 - one local CUTLASS baseline
 - one human-in-the-loop optimization loop
 
-The goal is not to solve general matmul. The goal is to see how far a single engineer can push a shape-specialized kernel, locally, with strong profiling, short iteration loops, and LLM assistance used inside a disciplined harness.
+I wasn’t trying to answer “can an LLM beat CUTLASS?” I was trying to explore a more practical question: how far can a harness-engineering + human-in-the-loop workflow push optimization in the last mile of GPU execution?
+
+In real systems, we often end up lowering a small, customized computation graph onto specific hardware. At that point, the problem is no longer “just call a library.” It becomes profiling, measurement, kernel design, and search.
+I intentionally chose an awkward matrix shape that is not cleanly divisible by 128. The goal was not to create a weak baseline, but to simulate a realistic scenario where standard library paths are no longer perfectly aligned with the workload.
+
+One thing I specifically wanted to test was whether this kind of workflow could surface hybrid ideas — for example, using Tensor Cores where the shape aligns well, while handling the irregular remainder more carefully with CUDA Core style logic.
 
 ## Repo Snapshot
 
